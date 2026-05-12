@@ -8,6 +8,7 @@ import {
   Download,
   FileText,
   Layers3,
+  PanelLeft,
   Search,
   Settings,
   ShieldAlert,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react"
 
 import { AppShell } from "@nextide/ui/blocks/app-shell"
+import { NavigationPanel } from "@nextide/ui/blocks/navigation-panel"
 import { Sidebar } from "@nextide/ui/blocks/sidebar"
 import { WorkflowStepper } from "@nextide/ui/blocks/workflow-stepper"
 import { Badge } from "@nextide/ui/components/badge"
@@ -41,7 +43,8 @@ import {
   SurfaceTitle,
 } from "@nextide/ui/components/surface"
 import { Switch } from "@nextide/ui/components/switch"
-import { useStagedSidebar } from "@nextide/ui/hooks/use-staged-sidebar"
+import { useStagedDrawer } from "@nextide/ui/hooks/use-staged-drawer"
+import { cn } from "@nextide/ui/lib/utils"
 
 const sidebarItems = [
   {
@@ -55,7 +58,7 @@ const sidebarItems = [
   {
     id: "blocks",
     label: "Blocks",
-    meta: "3 patterns",
+    meta: "4 patterns",
     status: "Active",
     tone: "processing" as const,
     icon: <Layers3 />,
@@ -79,7 +82,7 @@ const workflowSteps = [
 
 export function App() {
   const [activeItemId, setActiveItemId] = useState("primitives")
-  const sidebar = useStagedSidebar()
+  const sidebar = useStagedDrawer()
   const [density, setDensity] = useState("comfortable")
   const [confidence, setConfidence] = useState([72])
   const [checked, setChecked] = useState(true)
@@ -314,6 +317,20 @@ function ComponentMatrix({
 }
 
 function BlockPreview() {
+  const navigationDrawer = useStagedDrawer()
+  const [activeNavigationItemId, setActiveNavigationItemId] =
+    useState("dashboard")
+  const navigationLabels: Record<string, string> = {
+    dashboard: "Dashboard",
+    campaigns: "Campaigns",
+    "clients-partners": "Clients & Partners",
+    creators: "Creators",
+    settings: "Settings",
+    "service-health": "Service Health",
+  }
+  const activeNavigationLabel =
+    navigationLabels[activeNavigationItemId] ?? "Dashboard"
+
   return (
     <Surface className="grid gap-4">
       <SurfaceHeader>
@@ -338,12 +355,22 @@ function BlockPreview() {
         <Surface variant="plain" className="grid gap-3">
           <div className="flex items-center gap-2">
             <Layers3 className="size-4 text-nextide-tide" />
-            <strong className="text-sm">Sidebar</strong>
+            <strong className="text-sm">Report sidebar</strong>
           </div>
           <Separator />
           <p className="text-sm text-muted-foreground">
             Brand, action, status-aware nav items, collapse behavior, and footer
             slot.
+          </p>
+        </Surface>
+        <Surface variant="plain" className="grid gap-3">
+          <div className="flex items-center gap-2">
+            <PanelLeft className="size-4 text-nextide-tide" />
+            <strong className="text-sm">Navigation panel</strong>
+          </div>
+          <Separator />
+          <p className="text-sm text-muted-foreground">
+            Product wayfinding for workspace and system-level application areas.
           </p>
         </Surface>
         <Surface variant="plain" className="grid gap-3">
@@ -356,6 +383,78 @@ function BlockPreview() {
             Horizontal workflow navigation with active and completed states.
           </p>
         </Surface>
+      </div>
+
+      <div
+        className={cn(
+          "grid min-h-[34rem] grid-cols-1 items-start gap-3 overflow-hidden rounded-xl border border-nextide-line bg-black/20 p-3 transition-[grid-template-columns] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none xl:grid-cols-[18rem_minmax(0,1fr)]",
+          navigationDrawer.collapsed && "xl:grid-cols-[4.5rem_minmax(0,1fr)]"
+        )}
+      >
+        <div
+          className={cn(
+            "h-full min-h-[31rem] overflow-visible transition-[width] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            navigationDrawer.collapsed ? "w-[4.5rem]" : "w-full max-w-[18rem]"
+          )}
+        >
+          <NavigationPanel
+            brand="Nextide"
+            eyebrow="Platform"
+            activeItemId={activeNavigationItemId}
+            collapsed={navigationDrawer.collapsed}
+            drawerCollapsed={navigationDrawer.drawerCollapsed}
+            footer={
+              <div className="grid gap-2 text-xs text-muted-foreground">
+                <StatusBadge tone="success">Workspace live</StatusBadge>
+                <span>Shared staged drawer motion</span>
+              </div>
+            }
+            onCommand={() => setActiveNavigationItemId("campaigns")}
+            onSelectItem={(item) => setActiveNavigationItemId(item.id)}
+            onToggle={navigationDrawer.toggleCollapsed}
+          />
+        </div>
+        <div
+          className={cn(
+            "min-w-0 overflow-hidden rounded-xl border border-nextide-line bg-nextide-panel p-4 transition-[opacity,transform] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            navigationDrawer.transitioning && "will-change-transform"
+          )}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="grid gap-1">
+              <span className="text-xs text-muted-foreground">
+                Navigation target
+              </span>
+              <strong className="text-xl leading-tight font-bold">
+                {activeNavigationLabel}
+              </strong>
+            </div>
+            <StatusBadge tone="success">Nominal</StatusBadge>
+          </div>
+          <div className="mt-5 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr))] gap-3">
+            <Metric
+              icon={<Activity />}
+              value="6"
+              label="Primary routes"
+              detail="Workspace plus system"
+            />
+            <Metric
+              icon={<ShieldAlert />}
+              value="0"
+              label="Service alerts"
+              detail="Nominal behaviour"
+            />
+          </div>
+          <Separator className="my-5" />
+          <div className="grid gap-2 text-sm text-muted-foreground">
+            <span>Dashboard</span>
+            <span>Campaigns</span>
+            <span>Clients & Partners</span>
+            <span>Creators</span>
+            <span>Settings</span>
+            <span>Service Health</span>
+          </div>
+        </div>
       </div>
     </Surface>
   )
