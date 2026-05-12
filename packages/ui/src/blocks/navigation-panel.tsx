@@ -127,13 +127,22 @@ function NavigationPanel({
 }) {
   const navRef = React.useRef<HTMLElement | null>(null)
   const itemRefs = React.useRef<Record<string, HTMLButtonElement | null>>({})
+  const outlineReadyRef = React.useRef(false)
+  const [outlineReady, setOutlineReady] = React.useState(false)
   const commandShortcutLabel = commandShortcut ?? getDefaultCommandShortcut()
   const showCommandShortcut = commandShortcutLabel.length > 0
   const railActive = collapsed || drawerCollapsed
   const compactCommand = collapsed
 
   const setOutline = React.useCallback(
-    (top: number, height: number, left: number, width: number) => {
+    (
+      top: number,
+      height: number,
+      left: number,
+      width: number,
+      railTop = top + 6,
+      railHeight = Math.max(0, height - 12)
+    ) => {
       const nav = navRef.current
       if (!nav) return
 
@@ -141,6 +150,8 @@ function NavigationPanel({
       nav.style.setProperty("--navigation-outline-height", `${height}px`)
       nav.style.setProperty("--navigation-outline-left", `${left}px`)
       nav.style.setProperty("--navigation-outline-width", `${width}px`)
+      nav.style.setProperty("--navigation-rail-top", `${railTop}px`)
+      nav.style.setProperty("--navigation-rail-height", `${railHeight}px`)
     },
     []
   )
@@ -156,12 +167,24 @@ function NavigationPanel({
       const compactWidth = Math.min(itemRect.width, 44)
       const left = itemRect.left - navRect.left + nav.scrollLeft
       const top = itemRect.top - navRect.top + nav.scrollTop
+      const icon = item.querySelector<HTMLElement>(
+        "[data-slot='navigation-panel-item-icon']"
+      )
+      const iconRect = icon?.getBoundingClientRect()
+      const railTop = iconRect
+        ? iconRect.top - navRect.top + nav.scrollTop - 2
+        : top + 6
+      const railHeight = iconRect
+        ? iconRect.height + 4
+        : Math.max(0, itemRect.height - 12)
 
       setOutline(
         top,
         itemRect.height,
         compactOutline ? left + (itemRect.width - compactWidth) / 2 : left,
-        compactOutline ? compactWidth : itemRect.width
+        compactOutline ? compactWidth : itemRect.width,
+        railTop,
+        railHeight
       )
     },
     [collapsed, setOutline]
@@ -194,13 +217,26 @@ function NavigationPanel({
     }
 
     let frame = 0
+    let transitionFrame = 0
     const measureActiveOutline = () => measureOutline(activeItem)
     const scheduleMeasureOutline = () => {
       window.cancelAnimationFrame(frame)
       frame = window.requestAnimationFrame(measureActiveOutline)
     }
+    const measureDuringTransition = () => {
+      measureActiveOutline()
+      transitionFrame = window.requestAnimationFrame(measureDuringTransition)
+    }
 
     measureActiveOutline()
+    if (!outlineReadyRef.current) {
+      outlineReadyRef.current = true
+      setOutlineReady(true)
+    }
+
+    if (drawerTransitioning) {
+      transitionFrame = window.requestAnimationFrame(measureDuringTransition)
+    }
 
     const resizeObserver = new ResizeObserver(scheduleMeasureOutline)
     resizeObserver.observe(nav)
@@ -209,10 +245,11 @@ function NavigationPanel({
 
     return () => {
       window.cancelAnimationFrame(frame)
+      window.cancelAnimationFrame(transitionFrame)
       resizeObserver.disconnect()
       window.removeEventListener("resize", scheduleMeasureOutline)
     }
-  }, [activeItemId, measureOutline, sections, setOutline])
+  }, [activeItemId, drawerTransitioning, measureOutline, sections, setOutline])
 
   return (
     <div
@@ -309,8 +346,14 @@ function NavigationPanel({
         >
           <span
             aria-hidden="true"
+            data-slot="navigation-panel-selection"
             className={cn(
-              "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] transition-[top,height,left,width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              !outlineReady
+                ? "transition-none"
+                : drawerTransitioning
+                  ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
+                  : "transition-[top,height,left,width,opacity] duration-[220ms]",
               activeItemId && !collapsed && !drawerCollapsed
                 ? "opacity-100"
                 : "opacity-0 duration-[var(--nextide-drawer-icon-duration)]",
@@ -325,15 +368,21 @@ function NavigationPanel({
           />
           <span
             aria-hidden="true"
+            data-slot="navigation-panel-rail"
             className={cn(
-              "pointer-events-none absolute z-0 rounded-full bg-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.45)] transition-[top,height,opacity] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              "pointer-events-none absolute z-0 rounded-full bg-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.45)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              !outlineReady
+                ? "transition-none"
+                : drawerTransitioning
+                  ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
+                  : "transition-[top,height,opacity] duration-[220ms]",
               activeItemId && railActive ? "opacity-100" : "opacity-0"
             )}
             style={{
-              top: "calc(var(--navigation-outline-top, 0px) + 6px)",
+              top: "var(--navigation-rail-top, 0px)",
               left: "2px",
               width: "3px",
-              height: "calc(var(--navigation-outline-height, 0px) - 12px)",
+              height: "var(--navigation-rail-height, 0px)",
             }}
           />
           {sections.map((section) => (
@@ -392,6 +441,7 @@ function NavigationPanel({
                         }}
                       >
                         <span
+                          data-slot="navigation-panel-item-icon"
                           className={cn(
                             "grid size-7 place-items-center justify-self-center rounded-full bg-nextide-panel text-nextide-tide transition-[background-color,box-shadow] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] [&_svg]:block [&_svg]:size-4",
                             active &&
