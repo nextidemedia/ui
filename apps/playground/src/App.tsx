@@ -90,8 +90,9 @@ export function App() {
       collapsed={sidebarCollapsed}
       sidebar={
         <Sidebar
-          brand="nextide"
-          eyebrow="UI package"
+          brand="Nextide UI"
+          eyebrow="Package"
+          byline="Nextide"
           items={sidebarItems}
           activeItemId={activeItemId}
           collapsed={sidebarCollapsed}

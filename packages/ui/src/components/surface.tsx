@@ -74,7 +74,7 @@ function SurfaceDescription({
   return (
     <p
       data-slot="surface-description"
-      className={cn("text-xs font-thin text-muted-foreground", className)}
+      className={cn("text-xs font-normal text-muted-foreground", className)}
       {...props}
     />
   )
