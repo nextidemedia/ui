@@ -41,6 +41,7 @@ import {
   SurfaceTitle,
 } from "@nextide/ui/components/surface"
 import { Switch } from "@nextide/ui/components/switch"
+import { useStagedSidebar } from "@nextide/ui/hooks/use-staged-sidebar"
 
 const sidebarItems = [
   {
@@ -78,7 +79,7 @@ const workflowSteps = [
 
 export function App() {
   const [activeItemId, setActiveItemId] = useState("primitives")
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const sidebar = useStagedSidebar()
   const [density, setDensity] = useState("comfortable")
   const [confidence, setConfidence] = useState([72])
   const [checked, setChecked] = useState(true)
@@ -87,7 +88,9 @@ export function App() {
 
   return (
     <AppShell
-      collapsed={sidebarCollapsed}
+      collapsed={sidebar.collapsed}
+      drawerCollapsed={sidebar.drawerCollapsed}
+      sidebarTransitioning={sidebar.transitioning}
       sidebar={
         <Sidebar
           brand="Nextide UI"
@@ -95,7 +98,8 @@ export function App() {
           byline="Nextide"
           items={sidebarItems}
           activeItemId={activeItemId}
-          collapsed={sidebarCollapsed}
+          collapsed={sidebar.collapsed}
+          drawerCollapsed={sidebar.drawerCollapsed}
           actionLabel="New block"
           footer={
             <div className="grid gap-2 text-xs text-muted-foreground">
@@ -105,7 +109,7 @@ export function App() {
           }
           onAction={() => setActiveItemId("blocks")}
           onSelectItem={(item) => setActiveItemId(item.id)}
-          onToggle={() => setSidebarCollapsed((value) => !value)}
+          onToggle={sidebar.toggleCollapsed}
         />
       }
       aside={<Inspector density={density} confidence={confidence[0] ?? 0} />}

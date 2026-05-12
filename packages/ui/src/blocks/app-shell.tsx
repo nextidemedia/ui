@@ -7,17 +7,25 @@ function AppShell({
   aside,
   children,
   collapsed = false,
+  drawerCollapsed = collapsed,
+  sidebarTransitioning = false,
+  stabilizeResize = true,
   className,
   ...props
 }: React.ComponentProps<"div"> & {
   sidebar?: React.ReactNode
   aside?: React.ReactNode
   collapsed?: boolean
+  drawerCollapsed?: boolean
+  sidebarTransitioning?: boolean
+  stabilizeResize?: boolean
 }) {
   return (
     <div
       data-slot="app-shell"
       data-collapsed={collapsed}
+      data-drawer-collapsed={drawerCollapsed}
+      data-sidebar-transitioning={sidebarTransitioning}
       className={cn(
         "grid min-h-svh grid-cols-1 gap-4 bg-background p-4 text-foreground transition-[grid-template-columns] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
         collapsed
@@ -34,7 +42,14 @@ function AppShell({
           {sidebar}
         </aside>
       ) : null}
-      <main className="relative z-0 min-w-0">{children}</main>
+      <main
+        className={cn(
+          "relative z-0 min-w-0",
+          stabilizeResize && sidebarTransitioning && "overflow-hidden"
+        )}
+      >
+        {children}
+      </main>
       {aside ? (
         <aside className="hidden min-h-0 lg:block">{aside}</aside>
       ) : null}
