@@ -162,7 +162,7 @@ function SidebarBrand({
         "relative z-30 grid w-full overflow-visible transition-[gap,min-height,padding] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
         collapsed
           ? "grid-cols-[4rem] items-center py-1 pr-0 pl-1"
-          : "grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-1 pr-2 pl-1",
+          : "grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-0 py-1 pr-2 pl-1",
         className
       )}
     >
@@ -181,7 +181,7 @@ function SidebarBrand({
         <span
           data-slot="sidebar-brand-text"
           className={cn(
-            "relative z-10 -my-3 min-w-0 py-3 whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            "relative z-10 -my-3 min-w-0 py-3 pr-3 pl-3 whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
             drawerCollapsed ? "max-w-0" : "max-w-56",
             clipBrandText ? "overflow-hidden" : "overflow-visible"
           )}
@@ -191,7 +191,7 @@ function SidebarBrand({
             data-slot="sidebar-brand-text-inner"
             className={cn(
               "grid gap-0.5 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-              drawerCollapsed ? "-translate-x-16" : "translate-x-0"
+              drawerCollapsed ? "-translate-x-56" : "translate-x-0"
             )}
           >
             <strong
@@ -213,15 +213,6 @@ function SidebarBrand({
             </span>
           </span>
         </span>
-      ) : null}
-      {!collapsed ? (
-        <span
-          aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute top-0 bottom-0 left-[4.25rem] z-20 w-10 bg-[linear-gradient(to_right,var(--background)_0%,color-mix(in_srgb,var(--background)_82%,transparent)_48%,transparent_100%)] opacity-0 transition-opacity duration-[180ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-            (drawerCollapsed || drawerTransitioning) && "opacity-100"
-          )}
-        />
       ) : null}
       {!collapsed ? toggleButton : null}
     </header>
@@ -266,6 +257,8 @@ function Sidebar({
   const activeIndex = items.findIndex((item) => item.id === activeItemId)
   const navRef = React.useRef<HTMLElement | null>(null)
   const itemRefs = React.useRef<Array<HTMLButtonElement | null>>([])
+  const outlineReadyRef = React.useRef(false)
+  const [outlineReady, setOutlineReady] = React.useState(false)
   const railActive = collapsed || drawerCollapsed
   const compactAction = collapsed
 
@@ -277,12 +270,16 @@ function Sidebar({
       top: number,
       height: number,
       left: number,
-      width: number
+      width: number,
+      railTop = top + 6,
+      railHeight = Math.max(0, height - 12)
     ) => {
       nav.style.setProperty("--sidebar-outline-top", `${top}px`)
       nav.style.setProperty("--sidebar-outline-height", `${height}px`)
       nav.style.setProperty("--sidebar-outline-left", `${left}px`)
       nav.style.setProperty("--sidebar-outline-width", `${width}px`)
+      nav.style.setProperty("--sidebar-rail-top", `${railTop}px`)
+      nav.style.setProperty("--sidebar-rail-height", `${railHeight}px`)
     }
 
     if (activeIndex < 0) {
@@ -310,6 +307,7 @@ function Sidebar({
     if (!activeItem) return
 
     let frame = 0
+    let transitionFrame = 0
     const measureOutline = () => {
       const navRect = nav.getBoundingClientRect()
       const itemRect = activeItem.getBoundingClientRect()
@@ -317,21 +315,45 @@ function Sidebar({
       const compactWidth = Math.min(itemRect.width, 44)
       const left = itemRect.left - navRect.left + nav.scrollLeft
       const top = itemRect.top - navRect.top + nav.scrollTop
+      const icon = activeItem.querySelector<HTMLElement>(
+        "[data-slot='sidebar-item-icon']"
+      )
+      const iconRect = icon?.getBoundingClientRect()
+      const railTop = iconRect
+        ? iconRect.top - navRect.top + nav.scrollTop - 2
+        : top + 6
+      const railHeight = iconRect
+        ? iconRect.height + 4
+        : Math.max(0, itemRect.height - 12)
       setOutline(
         top,
         itemRect.height,
         collapsed
           ? left + (itemRect.width - compactWidth) / 2
           : left,
-        compactOutline ? compactWidth : itemRect.width
+        compactOutline ? compactWidth : itemRect.width,
+        railTop,
+        railHeight
       )
     }
     const scheduleMeasureOutline = () => {
       window.cancelAnimationFrame(frame)
       frame = window.requestAnimationFrame(measureOutline)
     }
+    const measureDuringTransition = () => {
+      measureOutline()
+      transitionFrame = window.requestAnimationFrame(measureDuringTransition)
+    }
 
     measureOutline()
+    if (!outlineReadyRef.current) {
+      outlineReadyRef.current = true
+      setOutlineReady(true)
+    }
+
+    if (drawerTransitioning) {
+      transitionFrame = window.requestAnimationFrame(measureDuringTransition)
+    }
 
     const resizeObserver = new ResizeObserver(scheduleMeasureOutline)
     resizeObserver.observe(nav)
@@ -340,10 +362,11 @@ function Sidebar({
 
     return () => {
       window.cancelAnimationFrame(frame)
+      window.cancelAnimationFrame(transitionFrame)
       resizeObserver.disconnect()
       window.removeEventListener("resize", scheduleMeasureOutline)
     }
-  }, [activeIndex, collapsed, drawerCollapsed, items.length])
+  }, [activeIndex, collapsed, drawerCollapsed, drawerTransitioning, items.length])
 
   return (
     <div
@@ -442,37 +465,49 @@ function Sidebar({
         <nav
           ref={navRef}
           className={cn(
-            "relative grid min-h-0 w-full flex-1 content-start gap-2 overflow-y-auto py-px",
+            "relative grid min-h-0 w-full flex-1 content-start gap-2 overflow-y-auto",
             activeIndex < 0 && "[--sidebar-outline-height:0px]"
           )}
         >
           <span
             aria-hidden="true"
+            data-slot="sidebar-selection"
             className={cn(
-              "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] transition-[top,height,left,width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              !outlineReady
+                ? "transition-none"
+                : drawerTransitioning
+                  ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
+                  : "transition-[top,height,left,width,opacity] duration-[220ms]",
               activeIndex < 0 || collapsed || drawerCollapsed
                 ? "opacity-0 duration-[var(--nextide-drawer-icon-duration)]"
-                : "opacity-100 duration-[var(--nextide-drawer-outline-duration)]",
+                : "opacity-100",
               collapsed && "transition-none"
             )}
             style={{
-              top: "calc(var(--sidebar-outline-top, 0px) - 1px)",
+              top: "var(--sidebar-outline-top, 0px)",
               left: "0px",
               width: "100%",
-              height: "calc(var(--sidebar-outline-height, 0px) + 2px)",
+              height: "var(--sidebar-outline-height, 0px)",
             }}
           />
           <span
             aria-hidden="true"
+            data-slot="sidebar-rail"
             className={cn(
-              "pointer-events-none absolute z-0 rounded-full bg-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.45)] transition-[top,height,opacity] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              "pointer-events-none absolute z-0 rounded-full bg-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.45)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              !outlineReady
+                ? "transition-none"
+                : drawerTransitioning
+                  ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
+                  : "transition-[top,height,opacity] duration-[220ms]",
               activeIndex >= 0 && railActive ? "opacity-100" : "opacity-0"
             )}
             style={{
-              top: "calc(var(--sidebar-outline-top, 0px) + 6px)",
+              top: "var(--sidebar-rail-top, 0px)",
               left: "2px",
               width: "3px",
-              height: "calc(var(--sidebar-outline-height, 0px) - 12px)",
+              height: "var(--sidebar-rail-height, 0px)",
             }}
           />
           {items.map((item, itemIndex) => {
@@ -504,6 +539,7 @@ function Sidebar({
                 onClick={() => onSelectItem?.(item)}
               >
                 <span
+                  data-slot="sidebar-item-icon"
                   className={cn(
                     "grid size-7 place-items-center justify-self-center rounded-full bg-nextide-panel leading-none text-nextide-tide [&_svg]:block [&_svg]:size-4",
                     collapsed && "[&_svg]:translate-y-px"
