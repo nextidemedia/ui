@@ -82,7 +82,10 @@ function SegmentedControl({
             className="grid h-full grid-flow-col transition-transform duration-[520ms] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
             style={{
               width: "calc(var(--segmented-count) * 100%)",
-              transform: "translateX(calc(var(--segmented-index) * -100%))",
+              gridTemplateColumns:
+                "repeat(var(--segmented-count), minmax(0, 1fr))",
+              transform:
+                "translateX(calc(var(--segmented-index) * -100% / var(--segmented-count)))",
             }}
           >
             {options.map((option) => (

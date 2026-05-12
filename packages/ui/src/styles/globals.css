@@ -159,7 +159,16 @@
   background: transparent;
 }
 
-[data-slot="workflow-stepper"]::-webkit-scrollbar-track,
+[data-slot="workflow-stepper"] {
+  scrollbar-width: none;
+}
+
+[data-slot="workflow-stepper"]::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 [data-slot="segmented-control"]::-webkit-scrollbar-track,
 [data-slot="sidebar"] nav::-webkit-scrollbar-track {
   margin: 0 18px;

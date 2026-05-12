@@ -33,15 +33,24 @@ function WorkflowStepper({
     }
 
     const stepper = event.currentTarget
-    if (
-      stepper.scrollWidth <= stepper.clientWidth ||
-      Math.abs(event.deltaY) <= Math.abs(event.deltaX)
-    ) {
+    if (stepper.scrollWidth <= stepper.clientWidth) {
       return
     }
 
-    stepper.scrollLeft += event.deltaY
+    const deltaModeMultiplier =
+      event.deltaMode === 1
+        ? 16
+        : event.deltaMode === 2
+          ? stepper.clientWidth
+          : 1
+    const dominantDelta =
+      Math.abs(event.deltaX) > Math.abs(event.deltaY)
+        ? event.deltaX
+        : event.deltaY
+
+    stepper.scrollLeft += dominantDelta * deltaModeMultiplier
     event.preventDefault()
+    event.stopPropagation()
   }
 
   React.useLayoutEffect(() => {
@@ -101,7 +110,7 @@ function WorkflowStepper({
     <nav
       data-slot="workflow-stepper"
       className={cn(
-        "relative flex [scrollbar-gutter:stable] gap-2 overflow-x-auto overscroll-x-contain rounded-xl border border-nextide-line bg-nextide-panel p-2 pb-3",
+        "relative flex [scrollbar-width:none] gap-2 overflow-x-auto overscroll-contain rounded-xl border border-nextide-line bg-nextide-panel p-2 [&::-webkit-scrollbar]:hidden",
         activeIndex < 0 && "[--workflow-outline-width:0px]",
         className
       )}
