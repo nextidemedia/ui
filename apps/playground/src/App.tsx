@@ -107,7 +107,7 @@ export function App() {
               brand="Nextide"
               eyebrow="Platform"
               activeItemId={activeNavigationItemId}
-              collapsed={sidebar.collapsed}
+              collapsed={sidebar.iconsCollapsed}
               drawerCollapsed={sidebar.drawerCollapsed}
               footer={
                 <div className="grid gap-2 text-xs text-muted-foreground">
@@ -126,7 +126,7 @@ export function App() {
               byline="Nextide"
               items={sidebarItems}
               activeItemId={activeItemId}
-              collapsed={sidebar.collapsed}
+              collapsed={sidebar.iconsCollapsed}
               drawerCollapsed={sidebar.drawerCollapsed}
               actionLabel="New block"
               footer={
@@ -441,7 +441,7 @@ function BlockPreview() {
             brand="Nextide"
             eyebrow="Platform"
             activeItemId={activeNavigationItemId}
-            collapsed={navigationDrawer.collapsed}
+            collapsed={navigationDrawer.iconsCollapsed}
             drawerCollapsed={navigationDrawer.drawerCollapsed}
             footer={
               <div className="grid gap-2 text-xs text-muted-foreground">

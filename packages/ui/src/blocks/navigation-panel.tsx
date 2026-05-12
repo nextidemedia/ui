@@ -80,7 +80,6 @@ const defaultNavigationPanelSections: NavigationPanelSection[] = [
       {
         id: "service-health",
         label: "Service Health",
-        meta: "Nominal service behaviour",
         status: "Nominal",
         tone: "success",
         icon: <HeartPulse />,
@@ -100,7 +99,7 @@ function NavigationPanel({
   collapsed = false,
   drawerCollapsed = collapsed,
   commandLabel = "Search",
-  commandShortcut = "Cmd K",
+  commandShortcut,
   onCommand,
   onToggle,
   onSelectItem,
@@ -126,24 +125,49 @@ function NavigationPanel({
 }) {
   const navRef = React.useRef<HTMLElement | null>(null)
   const itemRefs = React.useRef<Record<string, HTMLButtonElement | null>>({})
+  const commandShortcutLabel = commandShortcut ?? getDefaultCommandShortcut()
+  const showCommandShortcut = commandShortcutLabel.length > 0
+
+  const setOutline = React.useCallback(
+    (top: number, height: number, left: number, width: number) => {
+      const nav = navRef.current
+      if (!nav) return
+
+      nav.style.setProperty("--navigation-outline-top", `${top}px`)
+      nav.style.setProperty("--navigation-outline-height", `${height}px`)
+      nav.style.setProperty("--navigation-outline-left", `${left}px`)
+      nav.style.setProperty("--navigation-outline-width", `${width}px`)
+    },
+    []
+  )
+
+  const measureOutline = React.useCallback(
+    (item: HTMLButtonElement) => {
+      const nav = navRef.current
+      if (!nav) return
+
+      const itemRect = item.getBoundingClientRect()
+      const navRect = nav.getBoundingClientRect()
+      const compactOutline = collapsed || drawerCollapsed
+      const compactWidth = Math.min(item.offsetWidth, 44)
+      const left = itemRect.left - navRect.left + nav.scrollLeft
+      const top = itemRect.top - navRect.top + nav.scrollTop
+
+      setOutline(
+        top,
+        item.offsetHeight,
+        compactOutline ? left + (item.offsetWidth - compactWidth) / 2 : left,
+        compactOutline ? compactWidth : item.offsetWidth
+      )
+    },
+    [collapsed, drawerCollapsed, setOutline]
+  )
 
   React.useLayoutEffect(() => {
     const nav = navRef.current
     if (!nav) return
 
     const activeItem = activeItemId ? itemRefs.current[activeItemId] : null
-    const setOutline = (
-      top: number,
-      height: number,
-      left: number,
-      width: number
-    ) => {
-      nav.style.setProperty("--navigation-outline-top", `${top}px`)
-      nav.style.setProperty("--navigation-outline-height", `${height}px`)
-      nav.style.setProperty("--navigation-outline-left", `${left}px`)
-      nav.style.setProperty("--navigation-outline-width", `${width}px`)
-    }
-
     if (!activeItem) {
       const top =
         Number.parseFloat(
@@ -166,25 +190,13 @@ function NavigationPanel({
     }
 
     let frame = 0
-    const measureOutline = () => {
-      const compactOutline = collapsed || drawerCollapsed
-      const compactWidth = Math.min(activeItem.offsetWidth, 44)
-
-      setOutline(
-        activeItem.offsetTop,
-        activeItem.offsetHeight,
-        compactOutline
-          ? activeItem.offsetLeft + (activeItem.offsetWidth - compactWidth) / 2
-          : activeItem.offsetLeft,
-        compactOutline ? compactWidth : activeItem.offsetWidth
-      )
-    }
+    const measureActiveOutline = () => measureOutline(activeItem)
     const scheduleMeasureOutline = () => {
       window.cancelAnimationFrame(frame)
-      frame = window.requestAnimationFrame(measureOutline)
+      frame = window.requestAnimationFrame(measureActiveOutline)
     }
 
-    measureOutline()
+    measureActiveOutline()
 
     const resizeObserver = new ResizeObserver(scheduleMeasureOutline)
     resizeObserver.observe(nav)
@@ -196,7 +208,7 @@ function NavigationPanel({
       resizeObserver.disconnect()
       window.removeEventListener("resize", scheduleMeasureOutline)
     }
-  }, [activeItemId, collapsed, drawerCollapsed, sections])
+  }, [activeItemId, measureOutline, sections, setOutline])
 
   return (
     <div
@@ -234,9 +246,9 @@ function NavigationPanel({
           type="button"
           className={cn(
             "grid min-h-11 items-center rounded-lg border border-nextide-line bg-nextide-panel text-left text-sm text-foreground transition-[width,grid-template-columns,padding,color,background-color] duration-[260ms] ease-[var(--nextide-drawer-ease)] hover:bg-nextide-panel-strong motion-reduce:transition-none",
-            collapsed || drawerCollapsed
+            collapsed
               ? "size-10 grid-cols-1 place-items-center p-0"
-              : "w-full grid-cols-[auto_1fr_auto] gap-2 px-3"
+              : "w-full grid-cols-[auto_minmax(0,1fr)] gap-2 px-3"
           )}
           aria-label={commandLabel}
           onClick={onCommand}
@@ -246,24 +258,26 @@ function NavigationPanel({
             <>
               <span
                 className={cn(
-                  "min-w-0 overflow-hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                  "min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
                   drawerCollapsed
-                    ? "max-w-0 -translate-x-8 opacity-0"
-                    : "max-w-40 translate-x-0 opacity-100"
+                    ? "max-w-0"
+                    : "max-w-52 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
                 )}
               >
-                {commandLabel}
+                <span
+                  className={cn(
+                    "flex min-w-0 items-center justify-between gap-2 transition-transform duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                    drawerCollapsed ? "-translate-x-10" : "translate-x-0"
+                  )}
+                >
+                  <span className="min-w-0 truncate">{commandLabel}</span>
+                  {showCommandShortcut ? (
+                    <kbd className="hidden shrink-0 rounded-md border border-nextide-line bg-background/40 px-1.5 py-0.5 text-[0.65rem] leading-none text-muted-foreground sm:inline-flex">
+                      {commandShortcutLabel}
+                    </kbd>
+                  ) : null}
+                </span>
               </span>
-              <kbd
-                className={cn(
-                  "rounded-md border border-nextide-line bg-background/40 px-1.5 py-0.5 text-[0.65rem] leading-none text-muted-foreground transition-[max-width,opacity,transform] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                  drawerCollapsed
-                    ? "max-w-0 translate-x-4 opacity-0"
-                    : "max-w-16 translate-x-0 opacity-100"
-                )}
-              >
-                {commandShortcut}
-              </kbd>
             </>
           ) : null}
         </button>
@@ -275,7 +289,7 @@ function NavigationPanel({
           <span
             aria-hidden="true"
             className={cn(
-              "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] transition-[top,height,left,width,opacity] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] transition-[top,height,left,width,opacity] duration-[520ms] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
               activeItemId ? "opacity-100" : "opacity-0"
             )}
             style={{
@@ -328,7 +342,10 @@ function NavigationPanel({
                               .join(" ")
                           : undefined
                       }
-                      onClick={() => onSelectItem?.(item)}
+                      onClick={(event) => {
+                        measureOutline(event.currentTarget)
+                        onSelectItem?.(item)
+                      }}
                     >
                       <span
                         className={cn(
@@ -344,32 +361,41 @@ function NavigationPanel({
                         <>
                           <span
                             className={cn(
-                              "grid min-w-0 gap-0.5 overflow-hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                              "min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
                               drawerCollapsed
-                                ? "max-w-0 -translate-x-12 opacity-0"
-                                : "max-w-52 translate-x-0 opacity-100"
+                                ? "max-w-0"
+                                : "max-w-52 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
                             )}
                           >
-                            <span className="truncate text-sm font-medium">
-                              {item.label}
-                            </span>
-                            {item.meta || item.status ? (
-                              <span className="flex min-w-0 items-center gap-2">
-                                {item.meta ? (
-                                  <small className="min-w-0 truncate text-xs text-muted-foreground">
-                                    {item.meta}
-                                  </small>
-                                ) : null}
-                                {item.status ? (
-                                  <StatusBadge
-                                    tone={item.tone ?? "neutral"}
-                                    className="px-1.5 py-0.5"
-                                  >
-                                    {item.status}
-                                  </StatusBadge>
-                                ) : null}
+                            <span
+                              className={cn(
+                                "grid min-w-0 gap-0.5 transition-transform duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                                drawerCollapsed
+                                  ? "-translate-x-12"
+                                  : "translate-x-0"
+                              )}
+                            >
+                              <span className="truncate text-sm font-medium">
+                                {item.label}
                               </span>
-                            ) : null}
+                              {item.meta || item.status ? (
+                                <span className="flex min-w-0 items-center gap-2">
+                                  {item.meta ? (
+                                    <small className="min-w-0 truncate text-xs text-muted-foreground">
+                                      {item.meta}
+                                    </small>
+                                  ) : null}
+                                  {item.status ? (
+                                    <StatusBadge
+                                      tone={item.tone ?? "neutral"}
+                                      className="px-1.5 py-0.5"
+                                    >
+                                      {item.status}
+                                    </StatusBadge>
+                                  ) : null}
+                                </span>
+                              ) : null}
+                            </span>
                           </span>
                         </>
                       ) : null}
@@ -397,6 +423,15 @@ function NavigationPanel({
       </Surface>
     </div>
   )
+}
+
+function getDefaultCommandShortcut() {
+  if (typeof navigator === "undefined") {
+    return "CMD K"
+  }
+
+  const platform = `${navigator.platform} ${navigator.userAgent}`
+  return /win/i.test(platform) ? "CTRL K" : "CMD K"
 }
 
 export {

@@ -143,7 +143,7 @@ function SidebarBrand({
         <span
           data-slot="sidebar-brand-text"
           className={cn(
-            "relative z-10 min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            "relative z-10 -my-2 min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] py-2 whitespace-nowrap transition-[max-width] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
             drawerCollapsed
               ? "max-w-0"
               : "max-w-52 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
@@ -326,7 +326,7 @@ function Sidebar({
             type="button"
             className={cn(
               "transition-[width,padding] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-              collapsed || drawerCollapsed ? "size-10 gap-0 p-0" : "w-full"
+              collapsed ? "size-10 gap-0 p-0" : "w-full"
             )}
             aria-label={actionLabel}
             onClick={onAction}
@@ -335,10 +335,10 @@ function Sidebar({
             {!collapsed ? (
               <span
                 className={cn(
-                  "overflow-hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                  "overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width,transform] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
                   drawerCollapsed
-                    ? "max-w-0 -translate-x-6 opacity-0"
-                    : "max-w-32 translate-x-0 opacity-100"
+                    ? "max-w-0 -translate-x-6"
+                    : "max-w-32 translate-x-0 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
                 )}
               >
                 {actionLabel}
@@ -406,26 +406,33 @@ function Sidebar({
                 {!collapsed ? (
                   <span
                     className={cn(
-                      "grid min-w-0 gap-1 overflow-hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                      "min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
                       drawerCollapsed
-                        ? "max-w-0 -translate-x-12 opacity-0"
-                        : "max-w-52 translate-x-0 opacity-100"
+                        ? "max-w-0"
+                        : "max-w-52 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
                     )}
                   >
-                    <span className="truncate text-sm font-medium">
-                      {item.label}
-                    </span>
-                    <span className="flex min-w-0 items-center gap-2">
-                      {item.status ? (
-                        <StatusBadge tone={item.tone ?? "neutral"}>
-                          {item.status}
-                        </StatusBadge>
-                      ) : null}
-                      {item.meta ? (
-                        <small className="truncate text-xs text-muted-foreground">
-                          {item.meta}
-                        </small>
-                      ) : null}
+                    <span
+                      className={cn(
+                        "grid min-w-0 gap-1 transition-transform duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                        drawerCollapsed ? "-translate-x-12" : "translate-x-0"
+                      )}
+                    >
+                      <span className="truncate text-sm font-medium">
+                        {item.label}
+                      </span>
+                      <span className="flex min-w-0 items-center gap-2">
+                        {item.status ? (
+                          <StatusBadge tone={item.tone ?? "neutral"}>
+                            {item.status}
+                          </StatusBadge>
+                        ) : null}
+                        {item.meta ? (
+                          <small className="truncate text-xs text-muted-foreground">
+                            {item.meta}
+                          </small>
+                        ) : null}
+                      </span>
                     </span>
                   </span>
                 ) : null}

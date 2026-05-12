@@ -1,59 +1,71 @@
 import * as React from "react"
 
 const DEFAULT_STAGE_DURATION_MS = 260
+const DEFAULT_ICON_STAGE_DURATION_MS = 180
 
 function useStagedDrawer({
   defaultCollapsed = false,
   durationMs = DEFAULT_STAGE_DURATION_MS,
+  iconDurationMs = DEFAULT_ICON_STAGE_DURATION_MS,
 }: {
   defaultCollapsed?: boolean
   durationMs?: number
+  iconDurationMs?: number
 } = {}) {
   const [requestedCollapsed, setRequestedCollapsed] =
     React.useState(defaultCollapsed)
   const [collapsed, setCollapsedState] = React.useState(defaultCollapsed)
+  const [iconsCollapsed, setIconsCollapsed] = React.useState(defaultCollapsed)
   const [drawerCollapsed, setDrawerCollapsed] = React.useState(defaultCollapsed)
   const [transitioning, setTransitioning] = React.useState(false)
   const requestedCollapsedRef = React.useRef(defaultCollapsed)
-  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timeoutRefs = React.useRef<Array<ReturnType<typeof setTimeout>>>([])
 
-  React.useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
+  const clearTimers = React.useCallback(() => {
+    for (const timeout of timeoutRefs.current) {
+      clearTimeout(timeout)
     }
+    timeoutRefs.current = []
   }, [])
+
+  const schedule = React.useCallback((callback: () => void, delay: number) => {
+    const timeout = setTimeout(() => {
+      timeoutRefs.current = timeoutRefs.current.filter(
+        (scheduledTimeout) => scheduledTimeout !== timeout
+      )
+      callback()
+    }, delay)
+    timeoutRefs.current.push(timeout)
+  }, [])
+
+  React.useEffect(() => clearTimers, [clearTimers])
 
   const setCollapsed = React.useCallback(
     (nextCollapsed: boolean) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-        timeoutRef.current = null
-      }
+      clearTimers()
 
       setRequestedCollapsed(nextCollapsed)
       requestedCollapsedRef.current = nextCollapsed
       setTransitioning(true)
 
       if (nextCollapsed) {
+        setCollapsedState(true)
         setDrawerCollapsed(true)
-        timeoutRef.current = setTimeout(() => {
-          setCollapsedState(true)
+        schedule(() => setIconsCollapsed(true), durationMs)
+        schedule(() => {
           setTransitioning(false)
-          timeoutRef.current = null
-        }, durationMs)
+        }, durationMs + iconDurationMs)
         return
       }
 
-      setCollapsedState(false)
-      timeoutRef.current = setTimeout(() => {
+      setIconsCollapsed(false)
+      schedule(() => setCollapsedState(false), iconDurationMs)
+      schedule(() => {
         setDrawerCollapsed(false)
         setTransitioning(false)
-        timeoutRef.current = null
-      }, durationMs)
+      }, iconDurationMs + durationMs)
     },
-    [durationMs]
+    [clearTimers, durationMs, iconDurationMs, schedule]
   )
 
   const toggleCollapsed = React.useCallback(() => {
@@ -63,6 +75,7 @@ function useStagedDrawer({
   return {
     collapsed,
     drawerCollapsed,
+    iconsCollapsed,
     requestedCollapsed,
     transitioning,
     setCollapsed,
