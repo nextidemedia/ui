@@ -29,8 +29,12 @@ function AppShell({
       )}
       {...props}
     >
-      {sidebar ? <aside className="min-h-0">{sidebar}</aside> : null}
-      <main className="min-w-0">{children}</main>
+      {sidebar ? (
+        <aside className="relative z-20 min-h-0 overflow-visible">
+          {sidebar}
+        </aside>
+      ) : null}
+      <main className="relative z-0 min-w-0">{children}</main>
       {aside ? (
         <aside className="hidden min-h-0 lg:block">{aside}</aside>
       ) : null}
