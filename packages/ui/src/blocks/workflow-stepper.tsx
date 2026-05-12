@@ -14,6 +14,7 @@ function WorkflowStepper({
   steps,
   activeStepId,
   onStepChange,
+  onWheel: onWheelProp,
   className,
   ...props
 }: React.ComponentProps<"nav"> & {
@@ -24,6 +25,24 @@ function WorkflowStepper({
   const activeIndex = steps.findIndex((step) => step.id === activeStepId)
   const stepperRef = React.useRef<HTMLElement | null>(null)
   const stepRefs = React.useRef<Array<HTMLButtonElement | null>>([])
+
+  const onWheel = (event: React.WheelEvent<HTMLElement>) => {
+    onWheelProp?.(event)
+    if (event.defaultPrevented) {
+      return
+    }
+
+    const stepper = event.currentTarget
+    if (
+      stepper.scrollWidth <= stepper.clientWidth ||
+      Math.abs(event.deltaY) <= Math.abs(event.deltaX)
+    ) {
+      return
+    }
+
+    stepper.scrollLeft += event.deltaY
+    event.preventDefault()
+  }
 
   React.useLayoutEffect(() => {
     const stepper = stepperRef.current
@@ -60,6 +79,11 @@ function WorkflowStepper({
     }
 
     measureOutline()
+    activeStepElement.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+      behavior: "smooth",
+    })
 
     const resizeObserver = new ResizeObserver(scheduleMeasureOutline)
     resizeObserver.observe(stepper)
@@ -77,12 +101,13 @@ function WorkflowStepper({
     <nav
       data-slot="workflow-stepper"
       className={cn(
-        "relative flex [scrollbar-width:none] gap-2 overflow-x-auto rounded-xl border border-nextide-line bg-nextide-panel p-2 [&::-webkit-scrollbar]:hidden",
+        "relative flex [scrollbar-gutter:stable] gap-2 overflow-x-auto overscroll-x-contain rounded-xl border border-nextide-line bg-nextide-panel p-2 pb-3",
         activeIndex < 0 && "[--workflow-outline-width:0px]",
         className
       )}
       aria-label="Workflow"
       ref={stepperRef}
+      onWheel={onWheel}
       {...props}
     >
       <span

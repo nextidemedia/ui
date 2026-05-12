@@ -132,6 +132,39 @@
   --nextide-drawer-ease: cubic-bezier(0.2, 0, 0.2, 1);
 }
 
+* {
+  scrollbar-color: color-mix(in srgb, var(--nextide-tide) 48%, transparent)
+    transparent;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  margin: 18px 0;
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nextide-tide) 58%, transparent);
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+[data-slot="workflow-stepper"]::-webkit-scrollbar-track,
+[data-slot="segmented-control"]::-webkit-scrollbar-track,
+[data-slot="sidebar"] nav::-webkit-scrollbar-track {
+  margin: 0 18px;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
