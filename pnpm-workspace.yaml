@@ -1,3 +1,10 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+blockExoticSubdeps: true
+strictDepBuilds: true
+strictPeerDependencies: true
+allowBuilds: {}

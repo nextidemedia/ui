@@ -16,6 +16,10 @@ coverage
 # Turbo
 .turbo
 
+# Local agent/browser artifacts
+.ask-pro
+.playwright-cli
+
 # Vercel
 .vercel
 

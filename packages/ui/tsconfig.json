@@ -8,9 +8,10 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
-      "@workspace/ui/*": ["./src/*"]
+      "@nextide/ui/*": ["./src/*"]
     }
   },
   "include": ["."],
