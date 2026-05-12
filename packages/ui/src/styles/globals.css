@@ -1,7 +1,30 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+
+@font-face {
+  font-family: "Obviously";
+  src: url("../assets/fonts/Obviously-Thin.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 100;
+}
+
+@font-face {
+  font-family: "Obviously";
+  src: url("../assets/fonts/Obviously-Regular.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Obviously";
+  src: url("../assets/fonts/Obviously-Bold.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 700;
+}
 
 @custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";
@@ -55,7 +78,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  --font-sans: "Geist Variable", sans-serif;
+  --font-sans: "Obviously", "Inter", system-ui, sans-serif;
 }
 
 :root {
@@ -71,8 +94,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: var(--nx-turquoise);
+  --primary-foreground: #020203;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -104,6 +127,9 @@
   --nextide-panel: oklch(0.985 0 0 / 70%);
   --nextide-panel-strong: oklch(0.96 0 0 / 88%);
   --nextide-line: oklch(0.145 0 0 / 12%);
+  --nextide-ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --nextide-ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --nextide-drawer-ease: cubic-bezier(0.2, 0, 0.2, 1);
 }
 
 .dark {
@@ -113,8 +139,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: var(--nx-turquoise);
+  --primary-foreground: #020203;
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -153,5 +179,36 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-weight: 100;
+  }
+
+  strong,
+  b,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 700;
+  }
+}
+
+@keyframes nextide-step-coin-flip {
+  0% {
+    transform: rotateY(0deg) scale(1);
+  }
+
+  49% {
+    transform: rotateY(88deg) scale(0.96);
+  }
+
+  51% {
+    transform: rotateY(92deg) scale(0.96);
+  }
+
+  100% {
+    transform: rotateY(0deg) scale(1);
   }
 }

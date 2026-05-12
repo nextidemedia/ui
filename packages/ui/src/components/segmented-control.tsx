@@ -13,6 +13,7 @@ function SegmentedControl({
   options,
   onValueChange,
   className,
+  style,
   "aria-label": ariaLabel = "Segmented control",
   ...props
 }: Omit<React.ComponentProps<"div">, "onChange"> & {
@@ -20,17 +21,40 @@ function SegmentedControl({
   options: SegmentedControlOption[]
   onValueChange: (value: string) => void
 }) {
+  const activeIndex = Math.max(
+    0,
+    options.findIndex((option) => option.value === value)
+  )
+  const count = Math.max(options.length, 1)
+
   return (
     <div
       data-slot="segmented-control"
       className={cn(
-        "grid w-full min-w-0 grid-flow-col rounded-lg border border-nextide-line bg-nextide-panel p-1",
+        "relative grid w-full min-w-0 grid-flow-col rounded-lg border border-nextide-line bg-nextide-panel p-1",
         className
       )}
       role="radiogroup"
       aria-label={ariaLabel}
+      style={
+        {
+          "--segmented-count": count,
+          "--segmented-index": activeIndex,
+          ...style,
+        } as React.CSSProperties
+      }
       {...props}
     >
+      {options.length > 0 ? (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-1 left-1 rounded-md bg-nextide-tide shadow-[0_0_18px_rgb(30_228_188/0.2)] transition-transform duration-[520ms] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
+          style={{
+            width: "calc((100% - 0.5rem) / var(--segmented-count))",
+            transform: "translateX(calc(var(--segmented-index) * 100%))",
+          }}
+        />
+      ) : null}
       {options.map((option) => (
         <button
           key={option.value}
@@ -39,10 +63,9 @@ function SegmentedControl({
           aria-checked={option.value === value}
           disabled={option.disabled}
           className={cn(
-            "h-7 min-w-0 truncate rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors outline-none",
+            "relative z-10 h-7 min-w-0 truncate rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors duration-[220ms] outline-none",
             "focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40",
-            option.value === value &&
-              "bg-nextide-tide text-black shadow-[0_0_18px_rgb(30_228_188/0.2)]"
+            option.value === value && "text-black"
           )}
           onClick={() => onValueChange(option.value)}
         >

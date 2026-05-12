@@ -19,6 +19,7 @@ coverage
 # Local agent/browser artifacts
 .ask-pro
 .playwright-cli
+output
 
 # Vercel
 .vercel

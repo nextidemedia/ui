@@ -19,7 +19,7 @@ function AppShell({
       data-slot="app-shell"
       data-collapsed={collapsed}
       className={cn(
-        "grid min-h-svh grid-cols-1 gap-4 bg-background p-4 text-foreground transition-[grid-template-columns] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+        "grid min-h-svh grid-cols-1 gap-4 bg-background p-4 text-foreground transition-[grid-template-columns] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
         collapsed
           ? "lg:grid-cols-[4.5rem_minmax(0,1fr)]"
           : "lg:grid-cols-[18rem_minmax(0,1fr)]",

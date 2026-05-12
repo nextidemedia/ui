@@ -114,7 +114,7 @@ export function App() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <SurfaceHeader>
               <SurfaceDescription>Shared component package</SurfaceDescription>
-              <h1 className="max-w-3xl text-3xl leading-tight font-semibold tracking-normal">
+              <h1 className="max-w-3xl text-3xl leading-tight font-bold tracking-normal">
                 Nextide UI primitives and product blocks
               </h1>
             </SurfaceHeader>
@@ -131,7 +131,6 @@ export function App() {
           <WorkflowStepper
             steps={workflowSteps}
             activeStepId={activeStepId}
-            completedStepIds={["scaffold", "primitives"]}
             onStepChange={(step) => setActiveStepId(step.id)}
           />
         </Surface>
