@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import { ChevronLeft, Plus } from "lucide-react"
 
 import { Button } from "@nextide/ui/components/button"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
@@ -64,11 +64,16 @@ function SidebarBrand({
       type="button"
       variant="outline"
       size="icon-sm"
-      className="relative z-10"
+      className="relative z-10 overflow-hidden"
       aria-label={drawerCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       onClick={onToggle}
     >
-      {drawerCollapsed ? <ChevronRight /> : <ChevronLeft />}
+      <ChevronLeft
+        className={cn(
+          "transition-[rotate] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+          drawerCollapsed && "rotate-180"
+        )}
+      />
     </Button>
   ) : null
 
@@ -217,6 +222,7 @@ function Sidebar({
   const activeIndex = items.findIndex((item) => item.id === activeItemId)
   const navRef = React.useRef<HTMLElement | null>(null)
   const itemRefs = React.useRef<Array<HTMLButtonElement | null>>([])
+  const railActive = collapsed || drawerCollapsed
 
   React.useLayoutEffect(() => {
     const nav = navRef.current
@@ -358,13 +364,27 @@ function Sidebar({
             aria-hidden="true"
             className={cn(
               "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] transition-[top,height,left,width,opacity] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-              activeIndex < 0 ? "opacity-0" : "opacity-100"
+              activeIndex < 0 || railActive ? "opacity-0" : "opacity-100",
+              railActive && "transition-none"
             )}
             style={{
               top: "var(--sidebar-outline-top, 0px)",
               left: "var(--sidebar-outline-left, 0px)",
               width: "var(--sidebar-outline-width, 0px)",
               height: "var(--sidebar-outline-height, 0px)",
+            }}
+          />
+          <span
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute z-0 rounded-full bg-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.45)] transition-[top,height,opacity] duration-[180ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              activeIndex >= 0 && railActive ? "opacity-100" : "opacity-0"
+            )}
+            style={{
+              top: "calc(var(--sidebar-outline-top, 0px) + 10px)",
+              left: "2px",
+              width: "3px",
+              height: "calc(var(--sidebar-outline-height, 0px) - 20px)",
             }}
           />
           {items.map((item, itemIndex) => {

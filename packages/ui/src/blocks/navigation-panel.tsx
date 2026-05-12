@@ -127,6 +127,7 @@ function NavigationPanel({
   const itemRefs = React.useRef<Record<string, HTMLButtonElement | null>>({})
   const commandShortcutLabel = commandShortcut ?? getDefaultCommandShortcut()
   const showCommandShortcut = commandShortcutLabel.length > 0
+  const railActive = collapsed || drawerCollapsed
 
   const setOutline = React.useCallback(
     (top: number, height: number, left: number, width: number) => {
@@ -290,13 +291,27 @@ function NavigationPanel({
             aria-hidden="true"
             className={cn(
               "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] transition-[top,height,left,width,opacity] duration-[520ms] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
-              activeItemId ? "opacity-100" : "opacity-0"
+              activeItemId && !railActive ? "opacity-100" : "opacity-0",
+              railActive && "transition-none"
             )}
             style={{
               top: "var(--navigation-outline-top, 0px)",
               left: "var(--navigation-outline-left, 0px)",
               width: "var(--navigation-outline-width, 0px)",
               height: "var(--navigation-outline-height, 0px)",
+            }}
+          />
+          <span
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute z-0 rounded-full bg-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.45)] transition-[top,height,opacity] duration-[180ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              activeItemId && railActive ? "opacity-100" : "opacity-0"
+            )}
+            style={{
+              top: "calc(var(--navigation-outline-top, 0px) + 10px)",
+              left: "2px",
+              width: "3px",
+              height: "calc(var(--navigation-outline-height, 0px) - 20px)",
             }}
           />
           {sections.map((section) => (
