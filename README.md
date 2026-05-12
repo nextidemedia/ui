@@ -2,6 +2,10 @@
 
 Shared Nextide shadcn/ui components with a Vite playground.
 
+## Brand
+
+The implementation guide from `nextide-saas-meta` is copied into `docs/brand_assets/NEXTIDE_BRAND_AGENT_GUIDE.md`. The large PDF and font zip stay in the meta repo for now.
+
 ## Structure
 
 - `packages/ui/src/components`: primitive shadcn-compatible components.

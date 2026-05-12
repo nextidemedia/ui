@@ -157,7 +157,7 @@ export function App() {
                 Operational states from the mined intelligence UI.
               </SurfaceDescription>
             </SurfaceHeader>
-            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-3 xl:grid-cols-1">
               <Metric
                 icon={<Activity />}
                 value="24"
@@ -212,7 +212,7 @@ function ComponentMatrix({
         </SurfaceDescription>
       </SurfaceHeader>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-4">
         <Card>
           <CardHeader>
             <CardTitle>Buttons</CardTitle>
@@ -319,7 +319,7 @@ function BlockPreview() {
         </SurfaceDescription>
       </SurfaceHeader>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4">
         <Surface variant="plain" className="grid gap-3">
           <div className="flex items-center gap-2">
             <Database className="size-4 text-nextide-tide" />
