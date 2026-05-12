@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { type CSSProperties, useState } from "react"
 import {
   Activity,
   BarChart3,
@@ -82,12 +82,25 @@ const workflowSteps = [
 
 type PlaygroundViewMode = "report" | "platform"
 
+const DRAWER_DEBUG_SLOWDOWN = 10
+const DRAWER_STAGE_DURATION_MS = 260 * DRAWER_DEBUG_SLOWDOWN
+const DRAWER_ICON_STAGE_DURATION_MS = 180 * DRAWER_DEBUG_SLOWDOWN
+const DRAWER_OUTLINE_DURATION_MS = 520 * DRAWER_DEBUG_SLOWDOWN
+const drawerDebugMotionStyle = {
+  "--nextide-drawer-duration": `${DRAWER_STAGE_DURATION_MS}ms`,
+  "--nextide-drawer-icon-duration": `${DRAWER_ICON_STAGE_DURATION_MS}ms`,
+  "--nextide-drawer-outline-duration": `${DRAWER_OUTLINE_DURATION_MS}ms`,
+} as CSSProperties
+
 export function App() {
   const [viewMode, setViewMode] = useState<PlaygroundViewMode>("report")
   const [activeItemId, setActiveItemId] = useState("primitives")
   const [activeNavigationItemId, setActiveNavigationItemId] =
     useState("dashboard")
-  const sidebar = useStagedDrawer()
+  const sidebar = useStagedDrawer({
+    durationMs: DRAWER_STAGE_DURATION_MS,
+    iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS,
+  })
   const [density, setDensity] = useState("comfortable")
   const [confidence, setConfidence] = useState([72])
   const [checked, setChecked] = useState(true)
@@ -98,6 +111,7 @@ export function App() {
   return (
     <>
       <AppShell
+        style={drawerDebugMotionStyle}
         collapsed={sidebar.collapsed}
         drawerCollapsed={sidebar.drawerCollapsed}
         sidebarTransitioning={sidebar.transitioning}
@@ -109,6 +123,7 @@ export function App() {
               activeItemId={activeNavigationItemId}
               collapsed={sidebar.iconsCollapsed}
               drawerCollapsed={sidebar.drawerCollapsed}
+              drawerTransitioning={sidebar.transitioning}
               footer={
                 <div className="grid gap-2 text-xs text-muted-foreground">
                   <StatusBadge tone="success">Workspace live</StatusBadge>
@@ -128,6 +143,7 @@ export function App() {
               activeItemId={activeItemId}
               collapsed={sidebar.iconsCollapsed}
               drawerCollapsed={sidebar.drawerCollapsed}
+              drawerTransitioning={sidebar.transitioning}
               actionLabel="New block"
               footer={
                 <div className="grid gap-2 text-xs text-muted-foreground">
@@ -357,7 +373,10 @@ function ComponentMatrix({
 }
 
 function BlockPreview() {
-  const navigationDrawer = useStagedDrawer()
+  const navigationDrawer = useStagedDrawer({
+    durationMs: DRAWER_STAGE_DURATION_MS,
+    iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS,
+  })
   const [activeNavigationItemId, setActiveNavigationItemId] =
     useState("dashboard")
   const navigationLabels: Record<string, string> = {
@@ -427,13 +446,13 @@ function BlockPreview() {
 
       <div
         className={cn(
-          "grid min-h-[34rem] grid-cols-1 items-start gap-3 overflow-hidden rounded-xl border border-nextide-line bg-black/20 p-3 transition-[grid-template-columns] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none xl:grid-cols-[18rem_minmax(0,1fr)]",
+          "grid min-h-[34rem] grid-cols-1 items-start gap-3 overflow-hidden rounded-xl border border-nextide-line bg-black/20 p-3 transition-[grid-template-columns] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none xl:grid-cols-[18rem_minmax(0,1fr)]",
           navigationDrawer.collapsed && "xl:grid-cols-[4.5rem_minmax(0,1fr)]"
         )}
       >
         <div
           className={cn(
-            "h-full min-h-[31rem] overflow-visible transition-[width] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            "h-full min-h-[31rem] overflow-visible transition-[width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
             navigationDrawer.collapsed ? "w-[4.5rem]" : "w-full max-w-[18rem]"
           )}
         >
@@ -443,6 +462,7 @@ function BlockPreview() {
             activeItemId={activeNavigationItemId}
             collapsed={navigationDrawer.iconsCollapsed}
             drawerCollapsed={navigationDrawer.drawerCollapsed}
+            drawerTransitioning={navigationDrawer.transitioning}
             footer={
               <div className="grid gap-2 text-xs text-muted-foreground">
                 <StatusBadge tone="success">Workspace live</StatusBadge>
@@ -456,7 +476,7 @@ function BlockPreview() {
         </div>
         <div
           className={cn(
-            "min-w-0 overflow-hidden rounded-xl border border-nextide-line bg-nextide-panel p-4 transition-[opacity,transform] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            "min-w-0 overflow-hidden rounded-xl border border-nextide-line bg-nextide-panel p-4 transition-[opacity,transform] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
             navigationDrawer.transitioning && "will-change-transform"
           )}
         >

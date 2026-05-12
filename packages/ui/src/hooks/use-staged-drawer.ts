@@ -59,9 +59,11 @@ function useStagedDrawer({
       }
 
       setIconsCollapsed(false)
-      schedule(() => setCollapsedState(false), iconDurationMs)
       schedule(() => {
+        setCollapsedState(false)
         setDrawerCollapsed(false)
+      }, iconDurationMs)
+      schedule(() => {
         setTransitioning(false)
       }, iconDurationMs + durationMs)
     },

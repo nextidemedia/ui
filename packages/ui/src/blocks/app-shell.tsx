@@ -27,7 +27,7 @@ function AppShell({
       data-drawer-collapsed={drawerCollapsed}
       data-sidebar-transitioning={sidebarTransitioning}
       className={cn(
-        "isolate grid min-h-svh grid-cols-1 gap-4 bg-background p-4 text-foreground transition-[grid-template-columns] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+        "isolate grid min-h-svh grid-cols-1 gap-4 bg-background p-4 text-foreground transition-[grid-template-columns] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
         collapsed
           ? "lg:grid-cols-[4.5rem_minmax(0,1fr)]"
           : "lg:grid-cols-[18rem_minmax(0,1fr)]",

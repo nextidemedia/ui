@@ -130,6 +130,9 @@
   --nextide-ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --nextide-ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
   --nextide-drawer-ease: cubic-bezier(0.2, 0, 0.2, 1);
+  --nextide-drawer-duration: 260ms;
+  --nextide-drawer-icon-duration: 180ms;
+  --nextide-drawer-outline-duration: 520ms;
 }
 
 * {

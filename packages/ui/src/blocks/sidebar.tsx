@@ -39,13 +39,71 @@ type SidebarBrandProps = {
   bylineLogo?: React.ReactNode
   collapsed?: boolean
   drawerCollapsed?: boolean
+  drawerTransitioning?: boolean
   onToggle?: () => void
+  className?: string
+}
+
+type SidebarToggleButtonProps = {
+  drawerCollapsed?: boolean
+  onToggle: () => void
   className?: string
 }
 
 const brandTitleGlow: React.CSSProperties = {
   textShadow:
     "0 0 1px rgba(255,255,255,0.9), 0 0 14px rgba(30,228,188,0.72), 0 0 28px rgba(30,228,188,0.32)",
+}
+
+const brandTextGlowFilter: React.CSSProperties = {
+  filter:
+    "drop-shadow(0 0 10px rgb(30 228 188 / 0.46)) drop-shadow(0 0 22px rgb(30 228 188 / 0.22))",
+}
+
+function SidebarToggleButton({
+  drawerCollapsed = false,
+  onToggle,
+  className,
+}: SidebarToggleButtonProps) {
+  const handledPointerToggleRef = React.useRef(false)
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      data-slot="sidebar-toggle"
+      className={cn(
+        "relative z-30 overflow-visible transition-[right,rotate,opacity,box-shadow,background-color] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] before:absolute before:-inset-1 before:content-[''] active:translate-y-0 motion-reduce:transition-none",
+        className
+      )}
+      aria-label={drawerCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return
+
+        handledPointerToggleRef.current = true
+        window.setTimeout(() => {
+          handledPointerToggleRef.current = false
+        }, 500)
+        onToggle()
+      }}
+      onClick={() => {
+        if (handledPointerToggleRef.current) {
+          handledPointerToggleRef.current = false
+          return
+        }
+
+        onToggle()
+      }}
+    >
+      <ChevronLeft
+        className={cn(
+          "transition-[rotate] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+          drawerCollapsed && "rotate-180"
+        )}
+      />
+    </Button>
+  )
 }
 
 function SidebarBrand({
@@ -56,56 +114,31 @@ function SidebarBrand({
   bylineLogo,
   collapsed = false,
   drawerCollapsed = collapsed,
+  drawerTransitioning = false,
   onToggle,
   className,
 }: SidebarBrandProps) {
+  const clipBrandText = drawerCollapsed || drawerTransitioning
   const toggleButton = onToggle ? (
-    <Button
-      type="button"
-      variant="outline"
-      size="icon-sm"
-      className="relative z-10 overflow-hidden"
-      aria-label={drawerCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-      onClick={onToggle}
-    >
-      <ChevronLeft
-        className={cn(
-          "transition-[rotate] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-          drawerCollapsed && "rotate-180"
-        )}
-      />
-    </Button>
+    <SidebarToggleButton
+      drawerCollapsed={drawerCollapsed}
+      onToggle={onToggle}
+    />
   ) : null
 
   const brandMark = (
-    <span
-      className={cn(
-        "relative z-30 grid shrink-0 place-items-center overflow-visible transition-[width,height] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-        collapsed ? "size-8" : "size-12"
-      )}
-    >
+    <span className="relative z-30 grid size-16 shrink-0 place-items-center overflow-visible transition-[width,height] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none">
       <span
         aria-hidden="true"
-        className={cn(
-          "pointer-events-none absolute rounded-[22px] bg-[linear-gradient(135deg,rgb(30_228_188/0.55),rgb(30_228_188/0.04))] blur-xl",
-          collapsed ? "-inset-1.5 opacity-75" : "-inset-2 opacity-85"
-        )}
+        className="pointer-events-none absolute -inset-2.5 rounded-[24px] bg-[linear-gradient(135deg,rgb(30_228_188/0.55),rgb(30_228_188/0.04))] opacity-85 blur-xl"
       />
-      <span
-        className={cn(
-          "relative grid size-full place-items-center overflow-hidden border border-nextide-line bg-[#08080b] shadow-[inset_0_1px_1px_rgb(255_255_255/0.06)] transition-[border-radius] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-          collapsed ? "rounded-xl" : "rounded-[16px]"
-        )}
-      >
+      <span className="relative grid size-full place-items-center overflow-hidden rounded-[18px] border border-nextide-line bg-[#08080b] shadow-[inset_0_1px_1px_rgb(255_255_255/0.06)] transition-[border-radius] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none">
         {logo ?? (
           <img
             src={defaultLogoUrl}
             alt=""
             draggable={false}
-            className={cn(
-              "block object-contain",
-              collapsed ? "size-5" : "size-8"
-            )}
+            className="block size-11 object-contain"
           />
         )}
       </span>
@@ -116,7 +149,7 @@ function SidebarBrand({
       src={defaultBylineLogoUrl}
       alt={byline}
       draggable={false}
-      className="h-4 w-auto object-contain object-left drop-shadow-[0_0_10px_rgb(30_228_188/0.45)]"
+      className="h-5 w-auto object-contain object-left drop-shadow-[0_0_10px_rgb(30_228_188/0.45)]"
     />
   )
 
@@ -126,10 +159,10 @@ function SidebarBrand({
       data-collapsed={collapsed}
       data-drawer-collapsed={drawerCollapsed}
       className={cn(
-        "relative z-30 grid w-full overflow-visible transition-[gap,min-height,padding] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+        "relative z-30 grid w-full overflow-visible transition-[gap,min-height,padding] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
         collapsed
-          ? "justify-items-center gap-2"
-          : "grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-2 py-1",
+          ? "grid-cols-[4rem] items-center py-1 pr-0 pl-1"
+          : "grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-1 pr-2 pl-1",
         className
       )}
     >
@@ -148,16 +181,18 @@ function SidebarBrand({
         <span
           data-slot="sidebar-brand-text"
           className={cn(
-            "relative z-10 -my-2 min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] py-2 whitespace-nowrap transition-[max-width] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-            drawerCollapsed
-              ? "max-w-0"
-              : "max-w-52 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
+            "relative z-10 -my-3 min-w-0 py-3 whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            drawerCollapsed ? "max-w-0" : "max-w-56",
+            clipBrandText
+              ? "overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)]"
+              : "overflow-visible [mask-image:none]"
           )}
+          style={brandTextGlowFilter}
         >
           <span
             data-slot="sidebar-brand-text-inner"
             className={cn(
-              "grid gap-0.5 transition-transform duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              "grid gap-0.5 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
               drawerCollapsed ? "-translate-x-16" : "translate-x-0"
             )}
           >
@@ -174,7 +209,7 @@ function SidebarBrand({
               <b className="-translate-y-[0.24rem] text-[0.6rem] leading-none font-bold text-muted-foreground">
                 By
               </b>
-              <span className="grid h-4 min-w-0 place-items-start overflow-visible">
+              <span className="grid h-5 min-w-0 place-items-start overflow-visible">
                 {bylineMark}
               </span>
             </span>
@@ -196,6 +231,7 @@ function Sidebar({
   activeItemId,
   collapsed = false,
   drawerCollapsed = collapsed,
+  drawerTransitioning = false,
   actionLabel = "New",
   onAction,
   onToggle,
@@ -213,6 +249,7 @@ function Sidebar({
   activeItemId?: string
   collapsed?: boolean
   drawerCollapsed?: boolean
+  drawerTransitioning?: boolean
   actionLabel?: string
   onAction?: () => void
   onToggle?: () => void
@@ -223,6 +260,7 @@ function Sidebar({
   const navRef = React.useRef<HTMLElement | null>(null)
   const itemRefs = React.useRef<Array<HTMLButtonElement | null>>([])
   const railActive = collapsed || drawerCollapsed
+  const compactAction = collapsed
 
   React.useLayoutEffect(() => {
     const nav = navRef.current
@@ -266,15 +304,19 @@ function Sidebar({
 
     let frame = 0
     const measureOutline = () => {
-      const compactOutline = drawerCollapsed || collapsed
-      const compactWidth = Math.min(activeItem.offsetWidth, 44)
+      const navRect = nav.getBoundingClientRect()
+      const itemRect = activeItem.getBoundingClientRect()
+      const compactOutline = collapsed
+      const compactWidth = Math.min(itemRect.width, 44)
+      const left = itemRect.left - navRect.left + nav.scrollLeft
+      const top = itemRect.top - navRect.top + nav.scrollTop
       setOutline(
-        activeItem.offsetTop,
-        activeItem.offsetHeight,
+        top,
+        itemRect.height,
         collapsed
-          ? activeItem.offsetLeft + (activeItem.offsetWidth - compactWidth) / 2
-          : activeItem.offsetLeft,
-        compactOutline ? compactWidth : activeItem.offsetWidth
+          ? left + (itemRect.width - compactWidth) / 2
+          : left,
+        compactOutline ? compactWidth : itemRect.width
       )
     }
     const scheduleMeasureOutline = () => {
@@ -314,7 +356,7 @@ function Sidebar({
         bylineLogo={bylineLogo}
         collapsed={collapsed}
         drawerCollapsed={drawerCollapsed}
-        onToggle={onToggle}
+        drawerTransitioning={drawerTransitioning}
       />
 
       <Surface
@@ -322,69 +364,108 @@ function Sidebar({
         data-collapsed={collapsed}
         data-drawer-collapsed={drawerCollapsed}
         className={cn(
-          "flex min-h-0 flex-1 flex-col gap-3 overflow-hidden transition-[padding,border-radius,box-shadow,background-color] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-          collapsed ? "items-center p-2" : "p-3"
+          "flex min-h-0 flex-1 flex-col gap-3 overflow-visible transition-[padding,border-radius,box-shadow,background-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+          collapsed ? "items-center overflow-visible p-3" : "p-3"
         )}
         {...props}
       >
-        {onAction ? (
-          <Button
-            type="button"
+        {onAction || onToggle ? (
+          <div
             className={cn(
-              "transition-[width,padding] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-              collapsed ? "size-10 gap-0 p-0" : "w-full"
+              "relative flex h-8 w-full items-center overflow-visible",
+              compactAction && "justify-center"
             )}
-            aria-label={actionLabel}
-            onClick={onAction}
           >
-            <Plus />
-            {!collapsed ? (
-              <span
+            {onAction ? (
+              <Button
+                type="button"
                 className={cn(
-                  "overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width,transform] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                  drawerCollapsed
-                    ? "max-w-0 -translate-x-6"
-                    : "max-w-32 translate-x-0 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
+                  "relative h-8 gap-0 overflow-visible transition-[width,padding] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                  compactAction
+                    ? "size-8 p-0"
+                    : "grid w-[max(2.75rem,calc(100%-2.75rem))] grid-cols-[2.75rem_minmax(0,1fr)] p-0"
                 )}
+                aria-label={actionLabel}
+                onClick={onAction}
               >
-                {actionLabel}
-              </span>
+                <span
+                  className={cn(
+                    "pointer-events-none absolute -top-px grid size-8 shrink-0 place-items-center",
+                    compactAction
+                      ? "left-[calc((100%-2rem)/2)]"
+                      : "left-[0.375rem]"
+                  )}
+                >
+                  <Plus />
+                </span>
+                {!collapsed ? (
+                  <span
+                    className={cn(
+                      "col-start-2 min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                      drawerCollapsed
+                        ? "max-w-0"
+                        : "max-w-32 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "block transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                        drawerCollapsed ? "-translate-x-6" : "translate-x-0"
+                      )}
+                    >
+                      {actionLabel}
+                    </span>
+                  </span>
+                ) : null}
+              </Button>
             ) : null}
-          </Button>
+            {onToggle ? (
+              <SidebarToggleButton
+                drawerCollapsed={drawerCollapsed}
+                onToggle={onToggle}
+                className={cn(
+                  "absolute top-0 shadow-[0_0_18px_rgb(30_228_188/0.16)]",
+                  drawerCollapsed || collapsed ? "right-[-1.75rem]" : "right-0"
+                )}
+              />
+            ) : null}
+          </div>
         ) : null}
 
         <nav
           ref={navRef}
           className={cn(
-            "relative grid min-h-0 flex-1 content-start gap-2 overflow-y-auto",
+            "relative grid min-h-0 w-full flex-1 content-start gap-2 overflow-y-auto",
             activeIndex < 0 && "[--sidebar-outline-height:0px]"
           )}
         >
           <span
             aria-hidden="true"
             className={cn(
-              "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] transition-[top,height,left,width,opacity] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-              activeIndex < 0 || railActive ? "opacity-0" : "opacity-100",
-              railActive && "transition-none"
+              "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] transition-[top,height,left,width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              activeIndex < 0 || collapsed || drawerCollapsed
+                ? "opacity-0 duration-[var(--nextide-drawer-icon-duration)]"
+                : "opacity-100 duration-[var(--nextide-drawer-outline-duration)]",
+              collapsed && "transition-none"
             )}
             style={{
-              top: "var(--sidebar-outline-top, 0px)",
-              left: "var(--sidebar-outline-left, 0px)",
-              width: "var(--sidebar-outline-width, 0px)",
-              height: "var(--sidebar-outline-height, 0px)",
+              top: "calc(var(--sidebar-outline-top, 0px) - 1px)",
+              left: "0px",
+              width: "100%",
+              height: "calc(var(--sidebar-outline-height, 0px) + 2px)",
             }}
           />
           <span
             aria-hidden="true"
             className={cn(
-              "pointer-events-none absolute z-0 rounded-full bg-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.45)] transition-[top,height,opacity] duration-[180ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              "pointer-events-none absolute z-0 rounded-full bg-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.45)] transition-[top,height,opacity] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
               activeIndex >= 0 && railActive ? "opacity-100" : "opacity-0"
             )}
             style={{
-              top: "calc(var(--sidebar-outline-top, 0px) + 10px)",
+              top: "calc(var(--sidebar-outline-top, 0px) + 6px)",
               left: "2px",
               width: "3px",
-              height: "calc(var(--sidebar-outline-height, 0px) - 20px)",
+              height: "calc(var(--sidebar-outline-height, 0px) - 12px)",
             }}
           />
           {items.map((item, itemIndex) => {
@@ -397,10 +478,10 @@ function Sidebar({
                   itemRefs.current[itemIndex] = node
                 }}
                 className={cn(
-                  "group relative z-10 grid min-h-11 w-full items-center gap-2 rounded-lg border border-transparent text-left transition-[width,height,grid-template-columns,padding,color,background-color] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                  "group relative z-10 grid min-h-11 w-full items-center gap-2 rounded-lg border border-transparent text-left transition-[width,height,grid-template-columns,padding,color,background-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
                   collapsed
-                    ? "size-12 grid-cols-1 place-items-center p-0"
-                    : "grid-cols-[auto_1fr] p-2",
+                    ? "mx-auto size-11 grid-cols-1 place-items-center p-0"
+                    : "h-[3.25rem] grid-cols-[2.75rem_minmax(0,1fr)] p-0",
                   active
                     ? "text-foreground"
                     : "text-muted-foreground hover:bg-nextide-panel hover:text-foreground"
@@ -417,7 +498,7 @@ function Sidebar({
               >
                 <span
                   className={cn(
-                    "grid size-7 place-items-center rounded-full bg-nextide-panel leading-none text-nextide-tide [&_svg]:block [&_svg]:size-4",
+                    "grid size-7 place-items-center justify-self-center rounded-full bg-nextide-panel leading-none text-nextide-tide [&_svg]:block [&_svg]:size-4",
                     collapsed && "[&_svg]:translate-y-px"
                   )}
                 >
@@ -426,7 +507,7 @@ function Sidebar({
                 {!collapsed ? (
                   <span
                     className={cn(
-                      "min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                      "min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
                       drawerCollapsed
                         ? "max-w-0"
                         : "max-w-52 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
@@ -434,7 +515,7 @@ function Sidebar({
                   >
                     <span
                       className={cn(
-                        "grid min-w-0 gap-1 transition-transform duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                        "grid min-w-0 gap-1 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
                         drawerCollapsed ? "-translate-x-12" : "translate-x-0"
                       )}
                     >
@@ -443,7 +524,10 @@ function Sidebar({
                       </span>
                       <span className="flex min-w-0 items-center gap-2">
                         {item.status ? (
-                          <StatusBadge tone={item.tone ?? "neutral"}>
+                          <StatusBadge
+                            tone={item.tone ?? "neutral"}
+                            className="relative z-20"
+                          >
                             {item.status}
                           </StatusBadge>
                         ) : null}
@@ -465,7 +549,7 @@ function Sidebar({
           <footer
             aria-hidden={collapsed || drawerCollapsed}
             className={cn(
-              "w-full overflow-hidden border-t border-nextide-line transition-[max-height,opacity,padding,transform] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              "w-full overflow-hidden border-t border-nextide-line transition-[max-height,opacity,padding,transform] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
               collapsed || drawerCollapsed
                 ? "max-h-0 -translate-x-10 pt-0 opacity-0"
                 : "max-h-24 translate-x-0 pt-3 opacity-100"
@@ -482,6 +566,7 @@ function Sidebar({
 export {
   Sidebar,
   SidebarBrand,
+  SidebarToggleButton,
   type SidebarBrandProps,
   type SidebarItem,
   type SidebarStatusTone,
