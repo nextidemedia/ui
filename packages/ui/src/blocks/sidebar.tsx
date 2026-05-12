@@ -183,9 +183,7 @@ function SidebarBrand({
           className={cn(
             "relative z-10 -my-3 min-w-0 py-3 whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
             drawerCollapsed ? "max-w-0" : "max-w-56",
-            clipBrandText
-              ? "overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)]"
-              : "overflow-visible [mask-image:none]"
+            clipBrandText ? "overflow-hidden" : "overflow-visible"
           )}
           style={brandTextGlowFilter}
         >
@@ -215,6 +213,15 @@ function SidebarBrand({
             </span>
           </span>
         </span>
+      ) : null}
+      {!collapsed ? (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute top-0 bottom-0 left-[4.25rem] z-20 w-10 bg-[linear-gradient(to_right,var(--background)_0%,color-mix(in_srgb,var(--background)_82%,transparent)_48%,transparent_100%)] opacity-0 transition-opacity duration-[180ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            (drawerCollapsed || drawerTransitioning) && "opacity-100"
+          )}
+        />
       ) : null}
       {!collapsed ? toggleButton : null}
     </header>
@@ -435,7 +442,7 @@ function Sidebar({
         <nav
           ref={navRef}
           className={cn(
-            "relative grid min-h-0 w-full flex-1 content-start gap-2 overflow-y-auto",
+            "relative grid min-h-0 w-full flex-1 content-start gap-2 overflow-y-auto py-px",
             activeIndex < 0 && "[--sidebar-outline-height:0px]"
           )}
         >
