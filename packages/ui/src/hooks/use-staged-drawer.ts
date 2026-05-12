@@ -14,6 +14,7 @@ function useStagedDrawer({
   const [collapsed, setCollapsedState] = React.useState(defaultCollapsed)
   const [drawerCollapsed, setDrawerCollapsed] = React.useState(defaultCollapsed)
   const [transitioning, setTransitioning] = React.useState(false)
+  const requestedCollapsedRef = React.useRef(defaultCollapsed)
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   React.useEffect(() => {
@@ -32,6 +33,7 @@ function useStagedDrawer({
       }
 
       setRequestedCollapsed(nextCollapsed)
+      requestedCollapsedRef.current = nextCollapsed
       setTransitioning(true)
 
       if (nextCollapsed) {
@@ -55,8 +57,8 @@ function useStagedDrawer({
   )
 
   const toggleCollapsed = React.useCallback(() => {
-    setCollapsed(!requestedCollapsed)
-  }, [requestedCollapsed, setCollapsed])
+    setCollapsed(!requestedCollapsedRef.current)
+  }, [setCollapsed])
 
   return {
     collapsed,

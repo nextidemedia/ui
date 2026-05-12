@@ -80,114 +80,154 @@ const workflowSteps = [
   { id: "publish", label: "Publish", meta: "main branch" },
 ]
 
+type PlaygroundViewMode = "report" | "platform"
+
 export function App() {
+  const [viewMode, setViewMode] = useState<PlaygroundViewMode>("report")
   const [activeItemId, setActiveItemId] = useState("primitives")
+  const [activeNavigationItemId, setActiveNavigationItemId] =
+    useState("dashboard")
   const sidebar = useStagedDrawer()
   const [density, setDensity] = useState("comfortable")
   const [confidence, setConfidence] = useState([72])
   const [checked, setChecked] = useState(true)
   const [enabled, setEnabled] = useState(true)
   const [activeStepId, setActiveStepId] = useState("blocks")
+  const platformView = viewMode === "platform"
 
   return (
-    <AppShell
-      collapsed={sidebar.collapsed}
-      drawerCollapsed={sidebar.drawerCollapsed}
-      sidebarTransitioning={sidebar.transitioning}
-      sidebar={
-        <Sidebar
-          brand="Nextide UI"
-          eyebrow="Package"
-          byline="Nextide"
-          items={sidebarItems}
-          activeItemId={activeItemId}
-          collapsed={sidebar.collapsed}
-          drawerCollapsed={sidebar.drawerCollapsed}
-          actionLabel="New block"
-          footer={
-            <div className="grid gap-2 text-xs text-muted-foreground">
-              <StatusBadge tone="success">Local package</StatusBadge>
-              <span>@nextide/ui</span>
-            </div>
-          }
-          onAction={() => setActiveItemId("blocks")}
-          onSelectItem={(item) => setActiveItemId(item.id)}
-          onToggle={sidebar.toggleCollapsed}
-        />
-      }
-      aside={<Inspector density={density} confidence={confidence[0] ?? 0} />}
-    >
-      <div className="grid gap-4">
-        <Surface variant="strong" className="grid gap-4">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <SurfaceHeader>
-              <SurfaceDescription>Shared component package</SurfaceDescription>
-              <h1 className="max-w-3xl text-3xl leading-tight font-bold tracking-normal">
-                Nextide UI primitives and product blocks
-              </h1>
-            </SurfaceHeader>
-            <div className="flex flex-wrap gap-2">
-              <Button>
-                <Download />
-                Export
-              </Button>
-              <Button variant="outline" size="icon" aria-label="Settings">
-                <Settings />
-              </Button>
-            </div>
-          </div>
-          <WorkflowStepper
-            steps={workflowSteps}
-            activeStepId={activeStepId}
-            onStepChange={(step) => setActiveStepId(step.id)}
-          />
-        </Surface>
-
-        <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-          <div className="grid gap-4">
-            <ComponentMatrix
-              density={density}
-              confidence={confidence}
-              checked={checked}
-              enabled={enabled}
-              onDensityChange={setDensity}
-              onConfidenceChange={setConfidence}
-              onCheckedChange={setChecked}
-              onEnabledChange={setEnabled}
+    <>
+      <AppShell
+        collapsed={sidebar.collapsed}
+        drawerCollapsed={sidebar.drawerCollapsed}
+        sidebarTransitioning={sidebar.transitioning}
+        sidebar={
+          platformView ? (
+            <NavigationPanel
+              brand="Nextide"
+              eyebrow="Platform"
+              activeItemId={activeNavigationItemId}
+              collapsed={sidebar.collapsed}
+              drawerCollapsed={sidebar.drawerCollapsed}
+              footer={
+                <div className="grid gap-2 text-xs text-muted-foreground">
+                  <StatusBadge tone="success">Workspace live</StatusBadge>
+                  <span>Platform navigation</span>
+                </div>
+              }
+              onCommand={() => setActiveNavigationItemId("campaigns")}
+              onSelectItem={(item) => setActiveNavigationItemId(item.id)}
+              onToggle={sidebar.toggleCollapsed}
             />
-            <BlockPreview />
-          </div>
-          <Surface className="grid content-start gap-4">
-            <SurfaceHeader>
-              <SurfaceTitle>Signals</SurfaceTitle>
-              <SurfaceDescription>
-                Operational states from the mined intelligence UI.
-              </SurfaceDescription>
-            </SurfaceHeader>
-            <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-3 xl:grid-cols-1">
-              <Metric
-                icon={<Activity />}
-                value="24"
-                label="Queued states"
-                detail="Includes warning and processing tones"
-              />
-              <Metric
-                icon={<ShieldAlert />}
-                value="3"
-                label="Risk levels"
-                detail="Danger, warning, neutral"
-              />
-              <Metric
-                icon={<BarChart3 />}
-                value="72%"
-                label="Confidence"
-                detail="Bound to the slider primitive"
-              />
+          ) : (
+            <Sidebar
+              brand="Nextide UI"
+              eyebrow="Package"
+              byline="Nextide"
+              items={sidebarItems}
+              activeItemId={activeItemId}
+              collapsed={sidebar.collapsed}
+              drawerCollapsed={sidebar.drawerCollapsed}
+              actionLabel="New block"
+              footer={
+                <div className="grid gap-2 text-xs text-muted-foreground">
+                  <StatusBadge tone="success">Local package</StatusBadge>
+                  <span>@nextide/ui</span>
+                </div>
+              }
+              onAction={() => setActiveItemId("blocks")}
+              onSelectItem={(item) => setActiveItemId(item.id)}
+              onToggle={sidebar.toggleCollapsed}
+            />
+          )
+        }
+        aside={
+          <Inspector
+            density={density}
+            confidence={confidence[0] ?? 0}
+            viewMode={viewMode}
+          />
+        }
+      >
+        <div className="grid gap-4">
+          <Surface variant="strong" className="grid gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <SurfaceHeader>
+                <SurfaceDescription>
+                  {platformView
+                    ? "Platform shell preview"
+                    : "Shared component package"}
+                </SurfaceDescription>
+                <h1 className="max-w-3xl text-3xl leading-tight font-bold tracking-normal">
+                  {platformView
+                    ? "Nextide platform shell and product blocks"
+                    : "Nextide UI primitives and product blocks"}
+                </h1>
+              </SurfaceHeader>
+              <div className="flex flex-wrap gap-2">
+                <Button>
+                  <Download />
+                  Export
+                </Button>
+                <Button variant="outline" size="icon" aria-label="Settings">
+                  <Settings />
+                </Button>
+              </div>
             </div>
+            <WorkflowStepper
+              steps={workflowSteps}
+              activeStepId={activeStepId}
+              onStepChange={(step) => setActiveStepId(step.id)}
+            />
           </Surface>
-        </section>
-      </div>
-    </AppShell>
+
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <div className="grid gap-4">
+              <ComponentMatrix
+                density={density}
+                confidence={confidence}
+                checked={checked}
+                enabled={enabled}
+                onDensityChange={setDensity}
+                onConfidenceChange={setConfidence}
+                onCheckedChange={setChecked}
+                onEnabledChange={setEnabled}
+              />
+              <BlockPreview />
+            </div>
+            <Surface className="grid content-start gap-4">
+              <SurfaceHeader>
+                <SurfaceTitle>Signals</SurfaceTitle>
+                <SurfaceDescription>
+                  Operational states from the mined intelligence UI.
+                </SurfaceDescription>
+              </SurfaceHeader>
+              <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-3 xl:grid-cols-1">
+                <Metric
+                  icon={<Activity />}
+                  value="24"
+                  label="Queued states"
+                  detail="Includes warning and processing tones"
+                />
+                <Metric
+                  icon={<ShieldAlert />}
+                  value="3"
+                  label="Risk levels"
+                  detail="Danger, warning, neutral"
+                />
+                <Metric
+                  icon={<BarChart3 />}
+                  value="72%"
+                  label="Confidence"
+                  detail="Bound to the slider primitive"
+                />
+              </div>
+            </Surface>
+          </section>
+        </div>
+      </AppShell>
+      <ViewModeToggle mode={viewMode} onModeChange={setViewMode} />
+    </>
   )
 }
 
@@ -460,12 +500,62 @@ function BlockPreview() {
   )
 }
 
+function ViewModeToggle({
+  mode,
+  onModeChange,
+}: {
+  mode: PlaygroundViewMode
+  onModeChange: (mode: PlaygroundViewMode) => void
+}) {
+  return (
+    <div
+      data-slot="view-mode-toggle"
+      className="fixed top-1/2 right-3 z-50 grid -translate-y-1/2 gap-1 rounded-full border border-nextide-line bg-background/80 p-1 shadow-[0_12px_40px_rgb(0_0_0/0.32)] backdrop-blur-xl"
+      aria-label="Playground view"
+      role="radiogroup"
+    >
+      <button
+        type="button"
+        role="radio"
+        aria-checked={mode === "report"}
+        aria-label="Report view"
+        title="Report view"
+        className={cn(
+          "grid size-9 place-items-center rounded-full text-muted-foreground transition-[background-color,color,box-shadow] duration-[220ms] hover:text-foreground",
+          mode === "report" &&
+            "bg-nextide-tide text-black shadow-[0_0_18px_rgb(30_228_188/0.2)]"
+        )}
+        onClick={() => onModeChange("report")}
+      >
+        <Layers3 className="size-4" />
+      </button>
+      <button
+        type="button"
+        role="radio"
+        aria-checked={mode === "platform"}
+        aria-label="Platform view"
+        title="Platform view"
+        className={cn(
+          "grid size-9 place-items-center rounded-full text-muted-foreground transition-[background-color,color,box-shadow] duration-[220ms] hover:text-foreground",
+          mode === "platform" &&
+            "bg-nextide-tide text-black shadow-[0_0_18px_rgb(30_228_188/0.2)]"
+        )}
+        onClick={() => onModeChange("platform")}
+      >
+        <PanelLeft className="size-4" />
+      </button>
+    </div>
+  )
+}
+
 function Inspector({
   density,
   confidence,
+  viewMode,
 }: {
   density: string
   confidence: number
+  viewMode: PlaygroundViewMode
 }) {
   return (
     <Surface className="grid gap-4">
@@ -475,6 +565,7 @@ function Inspector({
       </SurfaceHeader>
       <div className="grid gap-3 text-sm">
         <InspectorRow label="Package" value="@nextide/ui" />
+        <InspectorRow label="View" value={viewMode} />
         <InspectorRow label="Density" value={density} />
         <InspectorRow label="Confidence" value={`${confidence}%`} />
         <InspectorRow label="Consumer" value="apps/playground" />

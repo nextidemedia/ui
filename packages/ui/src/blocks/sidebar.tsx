@@ -75,7 +75,7 @@ function SidebarBrand({
   const brandMark = (
     <span
       className={cn(
-        "relative z-10 grid shrink-0 place-items-center overflow-visible transition-[width,height] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+        "relative z-30 grid shrink-0 place-items-center overflow-visible transition-[width,height] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
         collapsed ? "size-8" : "size-12"
       )}
     >
@@ -141,28 +141,37 @@ function SidebarBrand({
       {brandMark}
       {!collapsed ? (
         <span
+          data-slot="sidebar-brand-text"
           className={cn(
-            "relative z-10 grid min-w-0 gap-0.5 overflow-visible whitespace-nowrap transition-[max-width,opacity,transform] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            "relative z-10 min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
             drawerCollapsed
-              ? "max-w-0 -translate-x-10 opacity-0"
-              : "max-w-48 translate-x-0 opacity-100"
+              ? "max-w-0"
+              : "max-w-52 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
           )}
         >
-          <strong
-            className="text-lg leading-none font-bold"
-            style={brandTitleGlow}
+          <span
+            data-slot="sidebar-brand-text-inner"
+            className={cn(
+              "grid gap-0.5 transition-transform duration-[260ms] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              drawerCollapsed ? "-translate-x-16" : "translate-x-0"
+            )}
           >
-            {brand}
-          </strong>
-          <small className="truncate text-xs leading-none font-bold text-nextide-tide uppercase">
-            {eyebrow}
-          </small>
-          <span className="mt-1 flex items-start gap-1.5 leading-none uppercase">
-            <b className="-translate-y-[0.24rem] text-[0.6rem] leading-none font-bold text-muted-foreground">
-              By
-            </b>
-            <span className="grid h-4 min-w-0 place-items-start overflow-visible">
-              {bylineMark}
+            <strong
+              className="text-lg leading-none font-bold"
+              style={brandTitleGlow}
+            >
+              {brand}
+            </strong>
+            <small className="truncate text-xs leading-none font-bold text-nextide-tide uppercase">
+              {eyebrow}
+            </small>
+            <span className="mt-1 flex items-start gap-1.5 leading-none uppercase">
+              <b className="-translate-y-[0.24rem] text-[0.6rem] leading-none font-bold text-muted-foreground">
+                By
+              </b>
+              <span className="grid h-4 min-w-0 place-items-start overflow-visible">
+                {bylineMark}
+              </span>
             </span>
           </span>
         </span>
