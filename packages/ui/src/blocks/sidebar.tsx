@@ -50,6 +50,47 @@ type SidebarToggleButtonProps = {
   className?: string
 }
 
+type SidebarProps = React.ComponentProps<typeof Surface> & {
+  brand?: string
+  eyebrow?: string
+  byline?: string
+  logo?: React.ReactNode
+  bylineLogo?: React.ReactNode
+  items: SidebarItem[]
+  activeItemId?: string
+  collapsed?: boolean
+  drawerCollapsed?: boolean
+  drawerTransitioning?: boolean
+  actionLabel?: string
+  onAction?: () => void
+  onToggle?: () => void
+  onSelectItem?: (item: SidebarItem) => void
+  footer?: React.ReactNode
+}
+
+type SidebarActionRowProps = {
+  collapsed: boolean
+  drawerCollapsed: boolean
+  actionLabel: string
+  onAction?: () => void
+  onToggle?: () => void
+}
+
+type SidebarNavProps = {
+  items: SidebarItem[]
+  activeItemId?: string
+  collapsed: boolean
+  drawerCollapsed: boolean
+  drawerTransitioning: boolean
+  onSelectItem?: (item: SidebarItem) => void
+}
+
+type SidebarFooterProps = {
+  collapsed: boolean
+  drawerCollapsed: boolean
+  footer?: React.ReactNode
+}
+
 const brandTitleGlow: React.CSSProperties = {
   textShadow:
     "0 0 1px rgba(255,255,255,0.9), 0 0 14px rgba(30,228,188,0.72), 0 0 28px rgba(30,228,188,0.32)",
@@ -219,54 +260,97 @@ function SidebarBrand({
   )
 }
 
-function Sidebar({
-  brand = "Nextide UI",
-  eyebrow = "Package",
-  byline = "Nextide",
-  logo,
-  bylineLogo,
-  items,
-  activeItemId,
-  collapsed = false,
-  drawerCollapsed = collapsed,
-  drawerTransitioning = false,
-  actionLabel = "New",
+function SidebarActionRow({
+  collapsed,
+  drawerCollapsed,
+  actionLabel,
   onAction,
   onToggle,
+}: SidebarActionRowProps) {
+  if (!onAction && !onToggle) {
+    return null
+  }
+
+  return (
+    <div
+      className={cn(
+        "relative flex h-8 w-full items-center overflow-visible",
+        collapsed && "justify-center"
+      )}
+    >
+      {onAction ? (
+        <Button
+          type="button"
+          className={cn(
+            "relative h-8 gap-0 overflow-visible transition-[width,padding] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            collapsed
+              ? "size-8 p-0"
+              : "grid w-[max(2.75rem,calc(100%-2.75rem))] grid-cols-[2.75rem_minmax(0,1fr)] p-0"
+          )}
+          aria-label={actionLabel}
+          onClick={onAction}
+        >
+          <span
+            className={cn(
+              "pointer-events-none absolute -top-px grid size-8 shrink-0 place-items-center",
+              collapsed ? "left-[calc((100%-2rem)/2)]" : "left-[0.375rem]"
+            )}
+          >
+            <Plus />
+          </span>
+          {!collapsed ? (
+            <span
+              className={cn(
+                "col-start-2 min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                drawerCollapsed
+                  ? "max-w-0"
+                  : "max-w-32 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
+              )}
+            >
+              <span
+                className={cn(
+                  "block transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                  drawerCollapsed ? "-translate-x-6" : "translate-x-0"
+                )}
+              >
+                {actionLabel}
+              </span>
+            </span>
+          ) : null}
+        </Button>
+      ) : null}
+      {onToggle ? (
+        <SidebarToggleButton
+          drawerCollapsed={drawerCollapsed}
+          onToggle={onToggle}
+          className={cn(
+            "absolute top-0 shadow-[0_0_18px_rgb(30_228_188/0.16)]",
+            drawerCollapsed || collapsed ? "right-[-1.75rem]" : "right-0"
+          )}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+function SidebarNav({
+  items,
+  activeItemId,
+  collapsed,
+  drawerCollapsed,
+  drawerTransitioning,
   onSelectItem,
-  footer,
-  className,
-  ...props
-}: React.ComponentProps<typeof Surface> & {
-  brand?: string
-  eyebrow?: string
-  byline?: string
-  logo?: React.ReactNode
-  bylineLogo?: React.ReactNode
-  items: SidebarItem[]
-  activeItemId?: string
-  collapsed?: boolean
-  drawerCollapsed?: boolean
-  drawerTransitioning?: boolean
-  actionLabel?: string
-  onAction?: () => void
-  onToggle?: () => void
-  onSelectItem?: (item: SidebarItem) => void
-  footer?: React.ReactNode
-}) {
+}: SidebarNavProps) {
   const activeIndex = items.findIndex((item) => item.id === activeItemId)
   const navRef = React.useRef<HTMLElement | null>(null)
   const itemRefs = React.useRef<Array<HTMLButtonElement | null>>([])
-  const outlineReadyRef = React.useRef(false)
-  const [outlineReady, setOutlineReady] = React.useState(false)
   const railActive = collapsed || drawerCollapsed
-  const compactAction = collapsed
 
   React.useLayoutEffect(() => {
     const nav = navRef.current
     if (!nav) return
 
-    const setOutline = (
+    const writeOutlineVars = (
       top: number,
       height: number,
       left: number,
@@ -299,7 +383,7 @@ function Sidebar({
         Number.parseFloat(
           nav.style.getPropertyValue("--sidebar-outline-width")
         ) || 0
-      setOutline(top + height / 2, 0, left + width / 2, 0)
+      writeOutlineVars(top + height / 2, 0, left + width / 2, 0)
       return
     }
 
@@ -325,12 +409,11 @@ function Sidebar({
       const railHeight = iconRect
         ? iconRect.height + 4
         : Math.max(0, itemRect.height - 12)
-      setOutline(
+
+      writeOutlineVars(
         top,
         itemRect.height,
-        collapsed
-          ? left + (itemRect.width - compactWidth) / 2
-          : left,
+        collapsed ? left + (itemRect.width - compactWidth) / 2 : left,
         compactOutline ? compactWidth : itemRect.width,
         railTop,
         railHeight
@@ -346,10 +429,6 @@ function Sidebar({
     }
 
     measureOutline()
-    if (!outlineReadyRef.current) {
-      outlineReadyRef.current = true
-      setOutlineReady(true)
-    }
 
     if (drawerTransitioning) {
       transitionFrame = window.requestAnimationFrame(measureDuringTransition)
@@ -366,8 +445,174 @@ function Sidebar({
       resizeObserver.disconnect()
       window.removeEventListener("resize", scheduleMeasureOutline)
     }
-  }, [activeIndex, collapsed, drawerCollapsed, drawerTransitioning, items.length])
+  }, [activeIndex, collapsed, drawerTransitioning, items.length])
 
+  return (
+    <nav
+      ref={navRef}
+      className={cn(
+        "relative grid min-h-0 w-full flex-1 content-start gap-2 overflow-y-auto",
+        activeIndex < 0 && "[--sidebar-outline-height:0px]"
+      )}
+    >
+      <span
+        aria-hidden="true"
+        data-slot="sidebar-selection"
+        className={cn(
+          "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+          drawerTransitioning
+            ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
+            : "transition-[top,height,left,width,opacity] duration-[220ms]",
+          activeIndex < 0 || collapsed || drawerCollapsed
+            ? "opacity-0 duration-[var(--nextide-drawer-icon-duration)]"
+            : "opacity-100",
+          collapsed && "transition-none"
+        )}
+        style={{
+          top: "var(--sidebar-outline-top, 0px)",
+          left: "0px",
+          width: "100%",
+          height: "var(--sidebar-outline-height, 0px)",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        data-slot="sidebar-rail"
+        className={cn(
+          "pointer-events-none absolute z-0 rounded-full bg-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.45)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+          drawerTransitioning
+            ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
+            : "transition-[top,height,opacity] duration-[220ms]",
+          activeIndex >= 0 && railActive ? "opacity-100" : "opacity-0"
+        )}
+        style={{
+          top: "var(--sidebar-rail-top, 0px)",
+          left: "2px",
+          width: "3px",
+          height: "var(--sidebar-rail-height, 0px)",
+        }}
+      />
+      {items.map((item, itemIndex) => {
+        const active = item.id === activeItemId
+        return (
+          <button
+            key={item.id}
+            type="button"
+            ref={(node) => {
+              itemRefs.current[itemIndex] = node
+            }}
+            className={cn(
+              "group relative z-10 grid min-h-11 w-full items-center gap-2 rounded-lg border border-transparent text-left transition-[width,height,grid-template-columns,padding,color,background-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              collapsed
+                ? "mx-auto size-11 grid-cols-1 place-items-center p-0"
+                : "h-[3.25rem] grid-cols-[2.75rem_minmax(0,1fr)] p-0",
+              active
+                ? "text-foreground"
+                : "text-muted-foreground hover:bg-nextide-panel hover:text-foreground"
+            )}
+            aria-current={active ? "page" : undefined}
+            aria-label={
+              collapsed
+                ? [item.label, item.status, item.meta].filter(Boolean).join(" ")
+                : undefined
+            }
+            onClick={() => onSelectItem?.(item)}
+          >
+            <span
+              data-slot="sidebar-item-icon"
+              className={cn(
+                "grid size-7 place-items-center justify-self-center rounded-full bg-nextide-panel leading-none text-nextide-tide [&_svg]:block [&_svg]:size-4",
+                collapsed && "[&_svg]:translate-y-px"
+              )}
+            >
+              {item.icon ?? item.label.slice(0, 1)}
+            </span>
+            {!collapsed ? (
+              <span
+                className={cn(
+                  "min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                  drawerCollapsed
+                    ? "max-w-0"
+                    : "max-w-52 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
+                )}
+              >
+                <span
+                  className={cn(
+                    "grid min-w-0 gap-1 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                    drawerCollapsed ? "-translate-x-12" : "translate-x-0"
+                  )}
+                >
+                  <span className="truncate text-sm font-medium">
+                    {item.label}
+                  </span>
+                  <span className="flex min-w-0 items-center gap-2">
+                    {item.status ? (
+                      <StatusBadge
+                        tone={item.tone ?? "neutral"}
+                        className="relative z-20"
+                      >
+                        {item.status}
+                      </StatusBadge>
+                    ) : null}
+                    {item.meta ? (
+                      <small className="truncate text-xs text-muted-foreground">
+                        {item.meta}
+                      </small>
+                    ) : null}
+                  </span>
+                </span>
+              </span>
+            ) : null}
+          </button>
+        )
+      })}
+    </nav>
+  )
+}
+
+function SidebarFooter({
+  collapsed,
+  drawerCollapsed,
+  footer,
+}: SidebarFooterProps) {
+  if (!footer) {
+    return null
+  }
+
+  return (
+    <footer
+      aria-hidden={collapsed || drawerCollapsed}
+      className={cn(
+        "w-full overflow-hidden border-t border-nextide-line transition-[max-height,opacity,padding,transform] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+        collapsed || drawerCollapsed
+          ? "max-h-0 -translate-x-10 pt-0 opacity-0"
+          : "max-h-24 translate-x-0 pt-3 opacity-100"
+      )}
+    >
+      {footer}
+    </footer>
+  )
+}
+
+function Sidebar({
+  brand = "Nextide UI",
+  eyebrow = "Package",
+  byline = "Nextide",
+  logo,
+  bylineLogo,
+  items,
+  activeItemId,
+  collapsed = false,
+  drawerCollapsed = collapsed,
+  drawerTransitioning = false,
+  actionLabel = "New",
+  onAction,
+  onToggle,
+  onSelectItem,
+  footer,
+  className,
+  ...props
+}: SidebarProps) {
   return (
     <div
       data-slot="sidebar-frame"
@@ -399,208 +644,26 @@ function Sidebar({
         )}
         {...props}
       >
-        {onAction || onToggle ? (
-          <div
-            className={cn(
-              "relative flex h-8 w-full items-center overflow-visible",
-              compactAction && "justify-center"
-            )}
-          >
-            {onAction ? (
-              <Button
-                type="button"
-                className={cn(
-                  "relative h-8 gap-0 overflow-visible transition-[width,padding] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                  compactAction
-                    ? "size-8 p-0"
-                    : "grid w-[max(2.75rem,calc(100%-2.75rem))] grid-cols-[2.75rem_minmax(0,1fr)] p-0"
-                )}
-                aria-label={actionLabel}
-                onClick={onAction}
-              >
-                <span
-                  className={cn(
-                    "pointer-events-none absolute -top-px grid size-8 shrink-0 place-items-center",
-                    compactAction
-                      ? "left-[calc((100%-2rem)/2)]"
-                      : "left-[0.375rem]"
-                  )}
-                >
-                  <Plus />
-                </span>
-                {!collapsed ? (
-                  <span
-                    className={cn(
-                      "col-start-2 min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                      drawerCollapsed
-                        ? "max-w-0"
-                        : "max-w-32 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "block transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                        drawerCollapsed ? "-translate-x-6" : "translate-x-0"
-                      )}
-                    >
-                      {actionLabel}
-                    </span>
-                  </span>
-                ) : null}
-              </Button>
-            ) : null}
-            {onToggle ? (
-              <SidebarToggleButton
-                drawerCollapsed={drawerCollapsed}
-                onToggle={onToggle}
-                className={cn(
-                  "absolute top-0 shadow-[0_0_18px_rgb(30_228_188/0.16)]",
-                  drawerCollapsed || collapsed ? "right-[-1.75rem]" : "right-0"
-                )}
-              />
-            ) : null}
-          </div>
-        ) : null}
-
-        <nav
-          ref={navRef}
-          className={cn(
-            "relative grid min-h-0 w-full flex-1 content-start gap-2 overflow-y-auto",
-            activeIndex < 0 && "[--sidebar-outline-height:0px]"
-          )}
-        >
-          <span
-            aria-hidden="true"
-            data-slot="sidebar-selection"
-            className={cn(
-              "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-              !outlineReady
-                ? "transition-none"
-                : drawerTransitioning
-                  ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
-                  : "transition-[top,height,left,width,opacity] duration-[220ms]",
-              activeIndex < 0 || collapsed || drawerCollapsed
-                ? "opacity-0 duration-[var(--nextide-drawer-icon-duration)]"
-                : "opacity-100",
-              collapsed && "transition-none"
-            )}
-            style={{
-              top: "var(--sidebar-outline-top, 0px)",
-              left: "0px",
-              width: "100%",
-              height: "var(--sidebar-outline-height, 0px)",
-            }}
-          />
-          <span
-            aria-hidden="true"
-            data-slot="sidebar-rail"
-            className={cn(
-              "pointer-events-none absolute z-0 rounded-full bg-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.45)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-              !outlineReady
-                ? "transition-none"
-                : drawerTransitioning
-                  ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
-                  : "transition-[top,height,opacity] duration-[220ms]",
-              activeIndex >= 0 && railActive ? "opacity-100" : "opacity-0"
-            )}
-            style={{
-              top: "var(--sidebar-rail-top, 0px)",
-              left: "2px",
-              width: "3px",
-              height: "var(--sidebar-rail-height, 0px)",
-            }}
-          />
-          {items.map((item, itemIndex) => {
-            const active = item.id === activeItemId
-            return (
-              <button
-                key={item.id}
-                type="button"
-                ref={(node) => {
-                  itemRefs.current[itemIndex] = node
-                }}
-                className={cn(
-                  "group relative z-10 grid min-h-11 w-full items-center gap-2 rounded-lg border border-transparent text-left transition-[width,height,grid-template-columns,padding,color,background-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                  collapsed
-                    ? "mx-auto size-11 grid-cols-1 place-items-center p-0"
-                    : "h-[3.25rem] grid-cols-[2.75rem_minmax(0,1fr)] p-0",
-                  active
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:bg-nextide-panel hover:text-foreground"
-                )}
-                aria-current={active ? "page" : undefined}
-                aria-label={
-                  collapsed
-                    ? [item.label, item.status, item.meta]
-                        .filter(Boolean)
-                        .join(" ")
-                    : undefined
-                }
-                onClick={() => onSelectItem?.(item)}
-              >
-                <span
-                  data-slot="sidebar-item-icon"
-                  className={cn(
-                    "grid size-7 place-items-center justify-self-center rounded-full bg-nextide-panel leading-none text-nextide-tide [&_svg]:block [&_svg]:size-4",
-                    collapsed && "[&_svg]:translate-y-px"
-                  )}
-                >
-                  {item.icon ?? item.label.slice(0, 1)}
-                </span>
-                {!collapsed ? (
-                  <span
-                    className={cn(
-                      "min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                      drawerCollapsed
-                        ? "max-w-0"
-                        : "max-w-52 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "grid min-w-0 gap-1 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                        drawerCollapsed ? "-translate-x-12" : "translate-x-0"
-                      )}
-                    >
-                      <span className="truncate text-sm font-medium">
-                        {item.label}
-                      </span>
-                      <span className="flex min-w-0 items-center gap-2">
-                        {item.status ? (
-                          <StatusBadge
-                            tone={item.tone ?? "neutral"}
-                            className="relative z-20"
-                          >
-                            {item.status}
-                          </StatusBadge>
-                        ) : null}
-                        {item.meta ? (
-                          <small className="truncate text-xs text-muted-foreground">
-                            {item.meta}
-                          </small>
-                        ) : null}
-                      </span>
-                    </span>
-                  </span>
-                ) : null}
-              </button>
-            )
-          })}
-        </nav>
-
-        {footer ? (
-          <footer
-            aria-hidden={collapsed || drawerCollapsed}
-            className={cn(
-              "w-full overflow-hidden border-t border-nextide-line transition-[max-height,opacity,padding,transform] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-              collapsed || drawerCollapsed
-                ? "max-h-0 -translate-x-10 pt-0 opacity-0"
-                : "max-h-24 translate-x-0 pt-3 opacity-100"
-            )}
-          >
-            {footer}
-          </footer>
-        ) : null}
+        <SidebarActionRow
+          collapsed={collapsed}
+          drawerCollapsed={drawerCollapsed}
+          actionLabel={actionLabel}
+          onAction={onAction}
+          onToggle={onToggle}
+        />
+        <SidebarNav
+          items={items}
+          activeItemId={activeItemId}
+          collapsed={collapsed}
+          drawerCollapsed={drawerCollapsed}
+          drawerTransitioning={drawerTransitioning}
+          onSelectItem={onSelectItem}
+        />
+        <SidebarFooter
+          collapsed={collapsed}
+          drawerCollapsed={drawerCollapsed}
+          footer={footer}
+        />
       </Surface>
     </div>
   )

@@ -1,4 +1,4 @@
-import { type CSSProperties, useState } from "react"
+import { type CSSProperties, useReducer } from "react"
 import {
   Activity,
   BarChart3,
@@ -82,6 +82,35 @@ const workflowSteps = [
 
 type PlaygroundViewMode = "report" | "platform"
 
+type PlaygroundState = {
+  viewMode: PlaygroundViewMode
+  activeItemId: string
+  activeNavigationItemId: string
+  density: string
+  confidence: number[]
+  checked: boolean
+  enabled: boolean
+  activeStepId: string
+}
+
+const initialPlaygroundState: PlaygroundState = {
+  viewMode: "report",
+  activeItemId: "primitives",
+  activeNavigationItemId: "dashboard",
+  density: "comfortable",
+  confidence: [72],
+  checked: true,
+  enabled: true,
+  activeStepId: "blocks",
+}
+
+function playgroundReducer(
+  state: PlaygroundState,
+  patch: Partial<PlaygroundState>
+) {
+  return { ...state, ...patch }
+}
+
 const DRAWER_DEBUG_SLOWDOWN = 1
 const DRAWER_STAGE_DURATION_MS = 260 * DRAWER_DEBUG_SLOWDOWN
 const DRAWER_ICON_STAGE_DURATION_MS = 180 * DRAWER_DEBUG_SLOWDOWN
@@ -93,19 +122,24 @@ const drawerDebugMotionStyle = {
 } as CSSProperties
 
 export function App() {
-  const [viewMode, setViewMode] = useState<PlaygroundViewMode>("report")
-  const [activeItemId, setActiveItemId] = useState("primitives")
-  const [activeNavigationItemId, setActiveNavigationItemId] =
-    useState("dashboard")
+  const [playgroundState, updatePlaygroundState] = useReducer(
+    playgroundReducer,
+    initialPlaygroundState
+  )
   const sidebar = useStagedDrawer({
     durationMs: DRAWER_STAGE_DURATION_MS,
     iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS,
   })
-  const [density, setDensity] = useState("comfortable")
-  const [confidence, setConfidence] = useState([72])
-  const [checked, setChecked] = useState(true)
-  const [enabled, setEnabled] = useState(true)
-  const [activeStepId, setActiveStepId] = useState("blocks")
+  const {
+    viewMode,
+    activeItemId,
+    activeNavigationItemId,
+    density,
+    confidence,
+    checked,
+    enabled,
+    activeStepId,
+  } = playgroundState
   const platformView = viewMode === "platform"
 
   return (
@@ -130,8 +164,14 @@ export function App() {
                   <span>Platform navigation</span>
                 </div>
               }
-              onCommand={() => setActiveNavigationItemId("campaigns")}
-              onSelectItem={(item) => setActiveNavigationItemId(item.id)}
+              onCommand={() =>
+                updatePlaygroundState({
+                  activeNavigationItemId: "campaigns",
+                })
+              }
+              onSelectItem={(item) =>
+                updatePlaygroundState({ activeNavigationItemId: item.id })
+              }
               onToggle={sidebar.toggleCollapsed}
             />
           ) : (
@@ -151,8 +191,10 @@ export function App() {
                   <span>@nextide/ui</span>
                 </div>
               }
-              onAction={() => setActiveItemId("blocks")}
-              onSelectItem={(item) => setActiveItemId(item.id)}
+              onAction={() => updatePlaygroundState({ activeItemId: "blocks" })}
+              onSelectItem={(item) =>
+                updatePlaygroundState({ activeItemId: item.id })
+              }
               onToggle={sidebar.toggleCollapsed}
             />
           )
@@ -174,7 +216,7 @@ export function App() {
                     ? "Platform shell preview"
                     : "Shared component package"}
                 </SurfaceDescription>
-                <h1 className="max-w-3xl text-3xl leading-tight font-bold tracking-normal">
+                <h1 className="max-w-3xl text-3xl leading-tight font-semibold tracking-normal">
                   {platformView
                     ? "Nextide platform shell and product blocks"
                     : "Nextide UI primitives and product blocks"}
@@ -193,7 +235,9 @@ export function App() {
             <WorkflowStepper
               steps={workflowSteps}
               activeStepId={activeStepId}
-              onStepChange={(step) => setActiveStepId(step.id)}
+              onStepChange={(step) =>
+                updatePlaygroundState({ activeStepId: step.id })
+              }
             />
           </Surface>
 
@@ -204,10 +248,18 @@ export function App() {
                 confidence={confidence}
                 checked={checked}
                 enabled={enabled}
-                onDensityChange={setDensity}
-                onConfidenceChange={setConfidence}
-                onCheckedChange={setChecked}
-                onEnabledChange={setEnabled}
+                onDensityChange={(nextDensity) =>
+                  updatePlaygroundState({ density: nextDensity })
+                }
+                onConfidenceChange={(nextConfidence) =>
+                  updatePlaygroundState({ confidence: nextConfidence })
+                }
+                onCheckedChange={(nextChecked) =>
+                  updatePlaygroundState({ checked: nextChecked })
+                }
+                onEnabledChange={(nextEnabled) =>
+                  updatePlaygroundState({ enabled: nextEnabled })
+                }
               />
               <BlockPreview />
             </div>
@@ -242,7 +294,12 @@ export function App() {
           </section>
         </div>
       </AppShell>
-      <ViewModeToggle mode={viewMode} onModeChange={setViewMode} />
+      <ViewModeToggle
+        mode={viewMode}
+        onModeChange={(nextMode) =>
+          updatePlaygroundState({ viewMode: nextMode })
+        }
+      />
     </>
   )
 }
@@ -377,8 +434,10 @@ function BlockPreview() {
     durationMs: DRAWER_STAGE_DURATION_MS,
     iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS,
   })
-  const [activeNavigationItemId, setActiveNavigationItemId] =
-    useState("dashboard")
+  const [activeNavigationItemId, updateActiveNavigationItemId] = useReducer(
+    (_current: string, nextItemId: string) => nextItemId,
+    "dashboard"
+  )
   const navigationLabels: Record<string, string> = {
     dashboard: "Dashboard",
     campaigns: "Campaigns",
@@ -469,8 +528,8 @@ function BlockPreview() {
                 <span>Shared staged drawer motion</span>
               </div>
             }
-            onCommand={() => setActiveNavigationItemId("campaigns")}
-            onSelectItem={(item) => setActiveNavigationItemId(item.id)}
+            onCommand={() => updateActiveNavigationItemId("campaigns")}
+            onSelectItem={(item) => updateActiveNavigationItemId(item.id)}
             onToggle={navigationDrawer.toggleCollapsed}
           />
         </div>

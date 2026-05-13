@@ -178,16 +178,28 @@ function StepNumber({
   active?: boolean
 }) {
   const previousValue = React.useRef(value)
-  const [displayValue, setDisplayValue] = React.useState(value)
-  const [flipping, setFlipping] = React.useState(false)
+  const [{ displayValue, flipping }, updateStepNumber] = React.useReducer(
+    stepNumberReducer,
+    value,
+    (initialValue) => ({
+      displayValue: initialValue,
+      flipping: false,
+    })
+  )
   const targetComplete = value === "check"
 
   React.useEffect(() => {
     if (previousValue.current === value) return
     previousValue.current = value
-    setFlipping(true)
-    const swapTimer = window.setTimeout(() => setDisplayValue(value), 180)
-    const finishTimer = window.setTimeout(() => setFlipping(false), 380)
+    updateStepNumber({ type: "start" })
+    const swapTimer = window.setTimeout(
+      () => updateStepNumber({ type: "swap", value }),
+      180
+    )
+    const finishTimer = window.setTimeout(
+      () => updateStepNumber({ type: "finish" }),
+      380
+    )
     return () => {
       window.clearTimeout(swapTimer)
       window.clearTimeout(finishTimer)
@@ -211,6 +223,30 @@ function StepNumber({
       {displayValue === "check" ? <Check className="size-3.5" /> : displayValue}
     </span>
   )
+}
+
+type StepNumberState = {
+  displayValue: number | "check"
+  flipping: boolean
+}
+
+type StepNumberAction =
+  | { type: "start" }
+  | { type: "swap"; value: number | "check" }
+  | { type: "finish" }
+
+function stepNumberReducer(
+  state: StepNumberState,
+  action: StepNumberAction
+): StepNumberState {
+  switch (action.type) {
+    case "start":
+      return { ...state, flipping: true }
+    case "swap":
+      return { ...state, displayValue: action.value }
+    case "finish":
+      return { ...state, flipping: false }
+  }
 }
 
 export { WorkflowStepper, type WorkflowStep }

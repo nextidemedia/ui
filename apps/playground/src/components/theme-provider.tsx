@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import * as React from "react"
 
 type Theme = "dark" | "light" | "system"
@@ -11,17 +10,8 @@ type ThemeProviderProps = {
   disableTransitionOnChange?: boolean
 }
 
-type ThemeProviderState = {
-  theme: Theme
-  setTheme: (theme: Theme) => void
-}
-
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)"
 const THEME_VALUES: Theme[] = ["dark", "light", "system"]
-
-const ThemeProviderContext = React.createContext<
-  ThemeProviderState | undefined
->(undefined)
 
 function isTheme(value: string | null): value is Theme {
   if (value === null) {
@@ -37,6 +27,15 @@ function getSystemTheme(): ResolvedTheme {
   }
 
   return "light"
+}
+
+function getStoredTheme(storageKey: string, defaultTheme: Theme) {
+  const storedTheme = localStorage.getItem(storageKey)
+  if (isTheme(storedTheme)) {
+    return storedTheme
+  }
+
+  return defaultTheme
 }
 
 function disableTransitionsTemporarily() {
@@ -82,24 +81,8 @@ export function ThemeProvider({
   defaultTheme = "system",
   storageKey = "theme",
   disableTransitionOnChange = true,
-  ...props
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = React.useState<Theme>(() => {
-    const storedTheme = localStorage.getItem(storageKey)
-    if (isTheme(storedTheme)) {
-      return storedTheme
-    }
-
-    return defaultTheme
-  })
-
-  const setTheme = React.useCallback(
-    (nextTheme: Theme) => {
-      localStorage.setItem(storageKey, nextTheme)
-      setThemeState(nextTheme)
-    },
-    [storageKey]
-  )
+  const themeRef = React.useRef<Theme>(getStoredTheme(storageKey, defaultTheme))
 
   const applyTheme = React.useCallback(
     (nextTheme: Theme) => {
@@ -119,17 +102,21 @@ export function ThemeProvider({
     },
     [disableTransitionOnChange]
   )
+  const applyThemeEvent = React.useEffectEvent((nextTheme: Theme) => {
+    applyTheme(nextTheme)
+  })
+  const applyCurrentThemeEvent = React.useEffectEvent(() => {
+    applyTheme(themeRef.current)
+  })
 
   React.useEffect(() => {
-    applyTheme(theme)
-
-    if (theme !== "system") {
-      return undefined
-    }
+    applyCurrentThemeEvent()
 
     const mediaQuery = window.matchMedia(COLOR_SCHEME_QUERY)
     const handleChange = () => {
-      applyTheme("system")
+      if (themeRef.current === "system") {
+        applyThemeEvent("system")
+      }
     }
 
     mediaQuery.addEventListener("change", handleChange)
@@ -137,7 +124,7 @@ export function ThemeProvider({
     return () => {
       mediaQuery.removeEventListener("change", handleChange)
     }
-  }, [theme, applyTheme])
+  }, [])
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -157,19 +144,19 @@ export function ThemeProvider({
         return
       }
 
-      setThemeState((currentTheme) => {
-        const nextTheme =
-          currentTheme === "dark"
-            ? "light"
-            : currentTheme === "light"
-              ? "dark"
-              : getSystemTheme() === "dark"
-                ? "light"
-                : "dark"
+      const currentTheme = themeRef.current
+      const nextTheme =
+        currentTheme === "dark"
+          ? "light"
+          : currentTheme === "light"
+            ? "dark"
+            : getSystemTheme() === "dark"
+              ? "light"
+              : "dark"
 
-        localStorage.setItem(storageKey, nextTheme)
-        return nextTheme
-      })
+      themeRef.current = nextTheme
+      localStorage.setItem(storageKey, nextTheme)
+      applyThemeEvent(nextTheme)
     }
 
     window.addEventListener("keydown", handleKeyDown)
@@ -189,12 +176,9 @@ export function ThemeProvider({
         return
       }
 
-      if (isTheme(event.newValue)) {
-        setThemeState(event.newValue)
-        return
-      }
-
-      setThemeState(defaultTheme)
+      const nextTheme = isTheme(event.newValue) ? event.newValue : defaultTheme
+      themeRef.current = nextTheme
+      applyThemeEvent(nextTheme)
     }
 
     window.addEventListener("storage", handleStorageChange)
@@ -204,27 +188,5 @@ export function ThemeProvider({
     }
   }, [defaultTheme, storageKey])
 
-  const value = React.useMemo(
-    () => ({
-      theme,
-      setTheme,
-    }),
-    [theme, setTheme]
-  )
-
-  return (
-    <ThemeProviderContext.Provider {...props} value={value}>
-      {children}
-    </ThemeProviderContext.Provider>
-  )
-}
-
-export const useTheme = () => {
-  const context = React.useContext(ThemeProviderContext)
-
-  if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider")
-  }
-
-  return context
+  return <>{children}</>
 }

@@ -57,13 +57,19 @@ function SurfaceHeader({
   )
 }
 
-function SurfaceTitle({ className, ...props }: React.ComponentProps<"h3">) {
+function SurfaceTitle({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"h3">) {
   return (
     <h3
       data-slot="surface-title"
       className={cn("text-sm font-bold tracking-normal", className)}
       {...props}
-    />
+    >
+      {children}
+    </h3>
   )
 }
 
