@@ -28,7 +28,6 @@
 
 @custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";
-@source "../../../components/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
 @theme inline {
@@ -172,9 +171,46 @@
   height: 0;
 }
 
+.nextide-contained-scroll {
+  overscroll-behavior: contain;
+}
+
+.nextide-scrollbar-none {
+  scrollbar-width: none;
+}
+
+.nextide-scrollbar-none::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 [data-slot="segmented-control"]::-webkit-scrollbar-track,
 [data-slot="sidebar"] nav::-webkit-scrollbar-track {
   margin: 0 18px;
+}
+
+@keyframes nextide-soft-reveal {
+  0% {
+    clip-path: inset(0 100% 0 0 round var(--radius-lg));
+    opacity: 0.72;
+  }
+
+  100% {
+    clip-path: inset(0 0 0 0 round var(--radius-lg));
+    opacity: 1;
+  }
+}
+
+.nextide-flip-open {
+  animation: nextide-soft-reveal 300ms var(--nextide-ease-out-quart) both;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="status-badge-dot"][data-pulse="true"] {
+    animation: nextide-status-dot-pulse 880ms var(--nextide-ease-out-quart) 3
+      both;
+  }
 }
 
 .dark {
@@ -255,5 +291,18 @@
 
   100% {
     transform: rotateY(0deg) scale(1);
+  }
+}
+
+@keyframes nextide-status-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  48% {
+    opacity: 0.58;
+    transform: scale(0.78);
   }
 }

@@ -110,7 +110,7 @@ function WorkflowStepper({
     <nav
       data-slot="workflow-stepper"
       className={cn(
-        "relative flex [scrollbar-width:none] gap-2 overflow-x-auto overscroll-contain rounded-xl border border-nextide-line bg-nextide-panel p-2 [&::-webkit-scrollbar]:hidden",
+        "nextide-contained-scroll nextide-scrollbar-none relative flex gap-2 overflow-x-auto rounded-xl border border-nextide-line bg-nextide-panel p-2",
         activeIndex < 0 && "[--workflow-outline-width:0px]",
         className
       )}

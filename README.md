@@ -25,9 +25,24 @@ This will place the ui components in the `packages/ui/src/components` directory.
 
 ## Using components
 
-To use the components in your app, import them from the `ui` package.
+Until `@nextide/ui` is published to a registry, consume this package directly from
+the GitHub repo. Install the `packages/ui` subdirectory, ideally pinned to a tag
+or commit SHA so consuming apps do not drift on every install:
+
+```bash
+pnpm add "github:Pimpmuckl/nextide-ui#<tag-or-sha>&path:/packages/ui"
+```
+
+For local development against a sibling checkout, use a file dependency instead:
+
+```bash
+pnpm add "@nextide/ui@file:../nextide-ui/packages/ui"
+```
+
+Then import from the public package exports:
 
 ```tsx
+import "@nextide/ui/globals.css"
 import { Button } from "@nextide/ui/components/button"
 import { AppShell } from "@nextide/ui/blocks/app-shell"
 import { NavigationPanel } from "@nextide/ui/blocks/navigation-panel"

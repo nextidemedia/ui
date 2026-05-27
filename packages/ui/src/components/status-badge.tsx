@@ -41,9 +41,11 @@ function StatusBadge({
       {...props}
     >
       <span
+        data-slot="status-badge-dot"
+        data-pulse={pulse ? "true" : undefined}
         className={cn(
           "size-1.5 rounded-full bg-current",
-          pulse && "animate-pulse"
+          pulse && "shadow-[0_0_10px_currentColor]"
         )}
         aria-hidden="true"
       />

@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 
 import { SidebarBrand, SidebarToggleButton } from "@nextide/ui/blocks/sidebar"
+import { Kbd } from "@nextide/ui/components/kbd"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
 import { Surface } from "@nextide/ui/components/surface"
 import { cn } from "@nextide/ui/lib/utils"
@@ -178,9 +179,9 @@ function NavigationPanelCommandRow({
             >
               <span className="min-w-0 truncate">{commandLabel}</span>
               {showCommandShortcut ? (
-                <kbd className="hidden shrink-0 rounded-md border border-nextide-line bg-background/40 px-1.5 py-0.5 text-[0.65rem] leading-none text-muted-foreground sm:inline-flex">
+                <Kbd className="hidden h-auto shrink-0 rounded-md border border-nextide-line bg-background/40 px-1.5 py-0.5 text-[0.65rem] leading-none sm:inline-flex">
                   {commandShortcutLabel}
-                </kbd>
+                </Kbd>
               ) : null}
             </span>
           </span>
