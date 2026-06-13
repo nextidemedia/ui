@@ -65,11 +65,12 @@ function ProgressiveSummaryRailSectionView({
       (hasNode(row.value) || hasNode(row.meta) || hasNode(row.badge))
   )
   const hasRows = rows.length > 0
+  const filled = hasRows || hasNode(section.summary)
 
   return (
     <section
       data-slot="progressive-summary-rail-section"
-      data-state={hasRows ? "filled" : "pending"}
+      data-state={filled ? "filled" : "pending"}
     >
       <h3>{section.title}</h3>
       {hasNode(section.summary) ? (
