@@ -9,3 +9,4 @@ This repo is the shared `@nextide/ui` package. The playground exists only as a l
 - Preserve the primitive/block separation: primitives belong under `packages/ui/src/components`, composed product patterns belong under `packages/ui/src/blocks`.
 - Keep React Doctor healthy from time to time with `npx react-doctor@latest`; treat warnings as cleanup candidates before they pile up.
 - Do not assume backwards compatibility. If compatibility expectations are unclear, ask before locking the direction.
+- Never write product decisions, implementation details, API routing, fallback mechanics, or other internal plumbing into user-facing or agent-facing text. UI copy, notices, docs, prompts, labels, and tool messages should describe the user goal, required action, or visible state, not how the system is internally wired.
