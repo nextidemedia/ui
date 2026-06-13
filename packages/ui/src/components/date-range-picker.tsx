@@ -162,6 +162,65 @@ function SingleCalendarDateRangePicker({
   )
 }
 
+function SingleDatePicker({
+  value,
+  onValueChange,
+  label = "Event date",
+  className,
+  ...props
+}: React.ComponentProps<"section"> & {
+  value: string
+  onValueChange: (value: string) => void
+  label?: React.ReactNode
+}) {
+  return (
+    <section
+      data-slot="single-date-picker"
+      className={cn(
+        "grid gap-3 rounded-lg border border-nextide-line bg-nextide-panel p-3",
+        className
+      )}
+      {...props}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="size-4 text-nextide-tide" />
+          <strong className="text-sm">{label}</strong>
+        </div>
+        <span className="rounded-full border border-nextide-line bg-background/25 px-2 py-1 text-xs font-medium text-muted-foreground">
+          {formatDisplayDate(value)}
+        </span>
+      </div>
+      <SingleDateCalendar
+        key={value}
+        value={value}
+        onValueChange={onValueChange}
+      />
+    </section>
+  )
+}
+
+function SingleDateCalendar({
+  value,
+  onValueChange,
+}: {
+  value: string
+  onValueChange: (value: string) => void
+}) {
+  const [month, setMonth] = React.useState(() => startOfMonth(parseDate(value)))
+
+  return (
+    <CalendarGrid
+      month={month}
+      value={{ start: value, end: value }}
+      activeEdge="start"
+      size="regular"
+      onMonthChange={setMonth}
+      onSelectDate={(date) => onValueChange(formatDateKey(date))}
+    />
+  )
+}
+
 function CalendarField({
   label,
   edge,
@@ -273,10 +332,8 @@ function CalendarGrid({
               aria-pressed={selected}
               onClick={() => onSelectDate(date)}
               className={cn(
-                "relative grid place-items-center rounded-lg border border-transparent font-medium outline-none transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-nextide-tide/35 hover:bg-nextide-tide/10 focus-visible:border-nextide-tide/60 focus-visible:ring-3 focus-visible:ring-nextide-tide/15",
-                size === "compact"
-                  ? "h-9 text-xs"
-                  : "h-11 text-sm sm:h-12",
+                "relative grid place-items-center rounded-lg border border-transparent font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-200 outline-none hover:-translate-y-0.5 hover:border-nextide-tide/35 hover:bg-nextide-tide/10 focus-visible:border-nextide-tide/60 focus-visible:ring-3 focus-visible:ring-nextide-tide/15",
+                size === "compact" ? "h-9 text-xs" : "h-11 text-sm sm:h-12",
                 !inMonth && "text-muted-foreground/35",
                 inRange && "bg-nextide-tide/8 text-foreground",
                 selected &&
@@ -383,5 +440,6 @@ const calendarIconButtonClassName =
 export {
   DualDateRangePicker,
   SingleCalendarDateRangePicker,
+  SingleDatePicker,
   type DateRange,
 }
