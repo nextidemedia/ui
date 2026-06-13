@@ -7,6 +7,8 @@ This repo is the shared `@nextide/ui` package. The playground exists only as a l
 - Do not treat the playground as a first-class product surface or build bespoke playground-only components when the change belongs in the package.
 - Playground code may own demo state, sample data, and layout wiring, but package components should remain the source of truth for shared behavior.
 - Preserve the primitive/block separation: primitives belong under `packages/ui/src/components`, composed product patterns belong under `packages/ui/src/blocks`.
+- Keep `docs/component-map.md` current when adding, renaming, or substantially changing shared components, blocks, or hooks.
+- Treat `@nextide/ui` as the reusable shadcn-based component pack for Nextide apps: polish shared components here first, and keep app-specific data/copy/state in consuming apps.
 - Keep React Doctor healthy from time to time with `npx react-doctor@latest`; treat warnings as cleanup candidates before they pile up.
 - Do not assume backwards compatibility. If compatibility expectations are unclear, ask before locking the direction.
 - Never write product decisions, implementation details, API routing, fallback mechanics, or other internal plumbing into user-facing or agent-facing text. UI copy, notices, docs, prompts, labels, and tool messages should describe the user goal, required action, or visible state, not how the system is internally wired.

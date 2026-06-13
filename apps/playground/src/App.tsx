@@ -42,6 +42,7 @@ import {
 import { IntroPlate } from "@nextide/ui/blocks/intro-plate"
 import { LiveguardCockpit } from "@nextide/ui/blocks/liveguard-cockpit"
 import { NavigationPanel } from "@nextide/ui/blocks/navigation-panel"
+import { ProgressiveSummaryRail } from "@nextide/ui/blocks/progressive-summary-rail"
 import {
   ReportContextBuilder,
   type ReportContextBucket,
@@ -1865,6 +1866,35 @@ function BlockPreview() {
           </p>
         </Surface>
       </div>
+
+      <ProgressiveSummaryRail
+        title="Progressive summary"
+        description="Section headers remain stable while filled rows enter as values become available."
+        sections={[
+          {
+            id: "report",
+            title: "Report",
+            summary: "Creator fit review",
+            rows: [{ id: "brand", label: "Brand", badge: "BR", value: "Daedalus" }],
+          },
+          {
+            id: "campaign",
+            title: "Campaign Shape",
+            emptyLabel: "Timing and goals pending",
+            rows: [],
+          },
+          {
+            id: "safety",
+            title: "Safety Gate",
+            summary: "0.72 minimum",
+            rows: [
+              { id: "qualified", label: "qualified creators", badge: "18" },
+              { id: "overrides", label: "category overrides", badge: "2" },
+            ],
+          },
+        ]}
+        className="rounded-xl border border-nextide-line bg-nextide-panel p-4"
+      />
 
       <div
         className={cn(

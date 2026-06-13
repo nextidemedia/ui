@@ -12,6 +12,9 @@ The implementation guide from `nextide-saas-meta` is copied into `docs/brand_ass
 - `packages/ui/src/blocks`: composed, prop-driven Nextide app patterns such as `AppShell`, `Sidebar`, `NavigationPanel`, and `WorkflowStepper`.
 - `packages/ui/src/hooks`: shared interaction hooks such as `useStagedDrawer` for collapse/expand drawer motion.
 - `apps/playground`: Vite consumer app for visual checks.
+- `docs/component-map.md`: quick lookup map for shared primitives, blocks, hooks, and the upstream workflow.
+
+Start with [docs/component-map.md](docs/component-map.md) when deciding whether a UI element should be imported from `@nextide/ui`, polished upstream, or created as a new shared component.
 
 ## Adding components
 
