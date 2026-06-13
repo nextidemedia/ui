@@ -83,7 +83,7 @@ function ProgressiveSummaryRailSectionView({
             <div
               key={row.id}
               data-slot="progressive-summary-rail-row"
-              className="nextide-flip-open"
+              className="nextide-flip-open transition-[opacity,transform] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none"
             >
               {hasNode(row.badge) ? <i>{row.badge}</i> : null}
               <span>{row.label}</span>

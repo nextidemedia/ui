@@ -1880,7 +1880,6 @@ function BlockPreview() {
           {
             id: "campaign",
             title: "Campaign Shape",
-            emptyLabel: "Timing and goals pending",
             rows: [],
           },
           {
