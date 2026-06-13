@@ -19,6 +19,29 @@ type ProgressiveSummaryRailSection = {
   emptyLabel?: React.ReactNode
 }
 
+type ProgressiveSummaryRailStep = {
+  id: string
+  label: React.ReactNode
+}
+
+type ProgressiveSummaryRailSectionOverride = Omit<
+  Partial<ProgressiveSummaryRailSection>,
+  "id"
+>
+
+function progressiveSummaryRailSectionsFromSteps<
+  Step extends ProgressiveSummaryRailStep,
+>(
+  steps: Step[],
+  overrides: Partial<Record<string, ProgressiveSummaryRailSectionOverride>>
+): ProgressiveSummaryRailSection[] {
+  return steps.map((step) => ({
+    id: step.id,
+    title: step.label,
+    ...overrides[step.id],
+  }))
+}
+
 function ProgressiveSummaryRail({
   title,
   description,
@@ -106,6 +129,9 @@ function hasNode(value: React.ReactNode) {
 
 export {
   ProgressiveSummaryRail,
+  progressiveSummaryRailSectionsFromSteps,
   type ProgressiveSummaryRailRow,
   type ProgressiveSummaryRailSection,
+  type ProgressiveSummaryRailSectionOverride,
+  type ProgressiveSummaryRailStep,
 }
