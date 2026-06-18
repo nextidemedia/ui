@@ -11,9 +11,9 @@
     "security:deps": "pnpm audit --audit-level moderate && node scripts/check-supply-chain.mjs"
   },
   "devDependencies": {
-    "prettier": "3.8.3",
+    "prettier": "3.8.4",
     "prettier-plugin-tailwindcss": "0.8.0",
-    "turbo": "2.9.12",
+    "turbo": "2.9.18",
     "typescript": "6.0.3"
   },
   "pnpm": {

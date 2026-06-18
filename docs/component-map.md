@@ -37,7 +37,7 @@ import { useStagedDrawer } from "@nextide/ui/hooks/use-staged-drawer"
 
 | Need | Start with |
 | --- | --- |
-| App frame and navigation | `blocks/app-shell`, `blocks/sidebar`, `blocks/navigation-panel`, `blocks/workflow-stepper`, `blocks/intro-plate` |
+| App frame and navigation | `blocks/app-shell`, `blocks/sidebar`, `blocks/navigation-panel`, `blocks/workflow-stepper`, `blocks/intro-plate`, `blocks/settings-modal` |
 | Report building and reading | `blocks/report-context-builder`, `blocks/progressive-summary-rail`, `blocks/report-reader`, `blocks/report-rail`, `blocks/export-workbench` |
 | Creator workflows | `blocks/creator-transfer`, `blocks/creator-scope-panel`, `blocks/campaign-schedule-matrix`, `blocks/pacing-configurator` |
 | Operations and dashboards | `blocks/dashboard-filter-bar`, `blocks/run-monitor-table`, `blocks/stream-selector`, `blocks/intelligence-progression-chart`, `blocks/evidence-drawer` |
