@@ -28,6 +28,7 @@ type SelectMenuProps = Omit<React.ComponentProps<"div">, "onChange"> & {
   contentClassName?: string
   contentAnchorRef?: React.RefObject<HTMLElement | null>
   contentWidthRef?: React.RefObject<HTMLElement | null>
+  contentPortalRef?: React.RefObject<HTMLElement | null>
   contentMinWidth?: number
   optionClassName?: string
   optionLabelClassName?: string
@@ -128,6 +129,7 @@ function AnchoredSelectMenu({
   contentClassName,
   contentAnchorRef,
   contentWidthRef,
+  contentPortalRef,
   contentMinWidth,
   optionClassName,
   optionLabelClassName,
@@ -325,7 +327,7 @@ function AnchoredSelectMenu({
       </button>
 
       {content && typeof document !== "undefined"
-        ? createPortal(content, document.body)
+        ? createPortal(content, contentPortalRef?.current ?? document.body)
         : null}
     </div>
   )

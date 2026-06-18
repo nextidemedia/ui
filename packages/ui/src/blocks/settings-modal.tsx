@@ -16,6 +16,7 @@ type SettingsModalProps = {
   overlayClassName?: string
   contentClassName?: string
   bodyClassName?: string
+  contentRef?: React.Ref<HTMLDivElement>
 }
 
 function SettingsModal({
@@ -27,6 +28,7 @@ function SettingsModal({
   className,
   closeLabel = "Close settings",
   contentClassName,
+  contentRef,
   description,
   kicker,
   overlayClassName,
@@ -42,6 +44,7 @@ function SettingsModal({
           )}
         />
         <DialogPrimitive.Content
+          ref={contentRef}
           data-slot="settings-modal"
           className={cn(
             "fixed top-1/2 left-1/2 z-50 grid max-h-[min(45rem,calc(100vh-2rem))] w-[min(32.5rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-xl border border-nextide-line bg-background text-foreground shadow-[0_30px_90px_rgb(0_0_0/0.55)] outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
