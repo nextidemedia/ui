@@ -200,19 +200,22 @@ function AnchoredSelectMenu({
       const anchorRect =
         contentAnchorRef?.current?.getBoundingClientRect() ?? rect
       const widthRect = contentWidthRef?.current?.getBoundingClientRect()
+      const portalRect = contentPortalRef?.current?.getBoundingClientRect()
+      const left = portalRect ? anchorRect.left - portalRect.left : anchorRect.left
+      const top = portalRect
+        ? anchorRect.bottom - portalRect.top + 8
+        : anchorRect.bottom + 8
       const resolvedWidth = Math.max(
         contentMinWidth ?? 0,
         widthRect?.width ?? anchorRect.width
       )
-      menu.style.setProperty("--nextide-select-left", `${anchorRect.left}px`)
-      menu.style.setProperty(
-        "--nextide-select-top",
-        `${anchorRect.bottom + 8}px`
-      )
+      menu.style.setProperty("--nextide-select-position", portalRect ? "absolute" : "fixed")
+      menu.style.setProperty("--nextide-select-left", `${left}px`)
+      menu.style.setProperty("--nextide-select-top", `${top}px`)
       menu.style.setProperty("--nextide-select-width", `${resolvedWidth}px`)
       menu.style.setProperty(
         "--nextide-select-max-width",
-        `${Math.max(0, window.innerWidth - anchorRect.left - 12)}px`
+        `${Math.max(0, (portalRect?.width ?? window.innerWidth) - left - 12)}px`
       )
     }
 
@@ -223,7 +226,7 @@ function AnchoredSelectMenu({
       window.removeEventListener("resize", updateMenuPosition)
       window.removeEventListener("scroll", updateMenuPosition, true)
     }
-  }, [contentAnchorRef, contentMinWidth, contentWidthRef, menuScrollRef, open])
+  }, [contentAnchorRef, contentMinWidth, contentPortalRef, contentWidthRef, menuScrollRef, open])
 
   const content = open ? (
     <div
@@ -233,6 +236,7 @@ function AnchoredSelectMenu({
       data-nextide-scroll-lock=""
       onWheel={onMenuWheel}
       style={{
+        position: "var(--nextide-select-position, fixed)" as React.CSSProperties["position"],
         top: "var(--nextide-select-top, 0px)",
         left: "var(--nextide-select-left, 0px)",
         width: "var(--nextide-select-width, auto)",
