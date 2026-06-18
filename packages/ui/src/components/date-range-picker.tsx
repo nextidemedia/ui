@@ -21,6 +21,7 @@ const monthFormatter = new Intl.DateTimeFormat("en-US", {
 const compactDateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
+  year: "numeric",
 })
 
 function DualDateRangePicker({
@@ -38,6 +39,7 @@ function DualDateRangePicker({
   const [endMonth, setEndMonth] = React.useState(() =>
     startOfMonth(parseDate(value.end))
   )
+  const today = new Date()
 
   return (
     <section
@@ -61,6 +63,7 @@ function DualDateRangePicker({
           edge="start"
           value={value}
           month={startMonth}
+          todayDate={today}
           onMonthChange={setStartMonth}
           onSelectDate={(date) => {
             const start = formatDateKey(date)
@@ -75,6 +78,15 @@ function DualDateRangePicker({
           edge="end"
           value={value}
           month={endMonth}
+          todayDate={today}
+          onTodayClick={() => {
+            const end = formatDateKey(today)
+            setEndMonth(startOfMonth(today))
+            onValueChange({
+              start: end < value.start ? end : value.start,
+              end,
+            })
+          }}
           onMonthChange={setEndMonth}
           onSelectDate={(date) => {
             const end = formatDateKey(date)
@@ -226,6 +238,8 @@ function CalendarField({
   edge,
   value,
   month,
+  todayDate,
+  onTodayClick,
   onMonthChange,
   onSelectDate,
 }: {
@@ -233,24 +247,38 @@ function CalendarField({
   edge: DateRangeEdge
   value: DateRange
   month: Date
+  todayDate?: Date
+  onTodayClick?: () => void
   onMonthChange: (date: Date) => void
   onSelectDate: (date: Date) => void
 }) {
   return (
-    <div className="grid gap-2 rounded-lg border border-nextide-line bg-background/20 p-2">
-      <div className="flex items-center justify-between gap-2 px-1">
+    <div className="grid min-w-0 gap-2 rounded-lg border border-nextide-line bg-background/20 p-2">
+      <div className="flex min-h-7 flex-wrap items-center justify-between gap-2 px-1">
         <span className="text-xs font-medium text-muted-foreground">
           {label}
         </span>
-        <strong className="text-sm">
-          {formatDisplayDate(edge === "start" ? value.start : value.end)}
-        </strong>
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+          {onTodayClick ? (
+            <button
+              type="button"
+              className="min-h-7 rounded-full border border-nextide-tide/35 bg-nextide-tide/10 px-2 py-1 text-[0.68rem] font-semibold text-nextide-tide transition-[background-color,border-color,color] hover:border-nextide-tide/60 hover:bg-nextide-tide/16 focus-visible:border-nextide-tide/70 focus-visible:ring-3 focus-visible:ring-nextide-tide/15"
+              onClick={onTodayClick}
+            >
+              Today
+            </button>
+          ) : null}
+          <strong className="whitespace-nowrap text-sm">
+            {formatDisplayDate(edge === "start" ? value.start : value.end)}
+          </strong>
+        </div>
       </div>
       <CalendarGrid
         month={month}
         value={value}
         activeEdge={edge}
         size="compact"
+        todayDate={todayDate}
         onMonthChange={onMonthChange}
         onSelectDate={onSelectDate}
       />
@@ -263,6 +291,7 @@ function CalendarGrid({
   value,
   activeEdge,
   size = "regular",
+  todayDate,
   onMonthChange,
   onSelectDate,
 }: {
@@ -270,6 +299,7 @@ function CalendarGrid({
   value: DateRange
   activeEdge: DateRangeEdge
   size?: CalendarGridSize
+  todayDate?: Date
   onMonthChange: (date: Date) => void
   onSelectDate: (date: Date) => void
 }) {
@@ -277,6 +307,7 @@ function CalendarGrid({
   const days = React.useMemo(() => buildCalendarDays(month), [month])
   const rangeStart = value.start <= value.end ? value.start : value.end
   const rangeEnd = value.start <= value.end ? value.end : value.start
+  const todayKey = formatDateKey(todayDate ?? new Date())
 
   return (
     <div
@@ -324,18 +355,22 @@ function CalendarGrid({
           const inRange = key >= rangeStart && key <= rangeEnd
           const selected = key === value.start || key === value.end
           const active = key === value[activeEdge]
+          const today = key === todayKey
 
           return (
             <button
               key={key}
               type="button"
               aria-pressed={selected}
+              aria-current={today ? "date" : undefined}
               onClick={() => onSelectDate(date)}
               className={cn(
                 "relative grid place-items-center rounded-lg border border-transparent font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-200 outline-none hover:-translate-y-0.5 hover:border-nextide-tide/35 hover:bg-nextide-tide/10 focus-visible:border-nextide-tide/60 focus-visible:ring-3 focus-visible:ring-nextide-tide/15",
                 size === "compact" ? "h-9 text-xs" : "h-11 text-sm sm:h-12",
                 !inMonth && "text-muted-foreground/35",
                 inRange && "bg-nextide-tide/8 text-foreground",
+                today &&
+                  "border-nextide-yellow/55 text-nextide-yellow ring-1 ring-nextide-yellow/25",
                 selected &&
                   "border-nextide-tide/65 bg-nextide-tide/18 text-nextide-tide shadow-[0_0_20px_rgb(30_228_188/0.12)]",
                 active && "ring-1 ring-nextide-tide/35"
