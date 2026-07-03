@@ -142,7 +142,24 @@ function AnchoredSelectMenu({
   const { ref: menuScrollRef, onWheel: onMenuWheel } =
     useContainedScroll<HTMLDivElement>({ axis: "y" })
   const [open, setOpen] = React.useState(false)
+  const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(
+    null
+  )
   const selectedOption = options.find((option) => option.value === value)
+
+  const closeMenu = React.useCallback(() => {
+    setOpen(false)
+    setPortalTarget(null)
+  }, [])
+
+  const openMenu = React.useCallback(() => {
+    setPortalTarget(
+      typeof document === "undefined"
+        ? null
+        : (contentPortalRef?.current ?? document.body)
+    )
+    setOpen(true)
+  }, [contentPortalRef])
 
   React.useEffect(() => {
     if (!open) return
@@ -153,13 +170,13 @@ function AnchoredSelectMenu({
         !rootRef.current?.contains(target) &&
         !menuScrollRef.current?.contains(target)
       ) {
-        setOpen(false)
+        closeMenu()
       }
     }
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false)
+        closeMenu()
       }
     }
 
@@ -169,7 +186,7 @@ function AnchoredSelectMenu({
       window.removeEventListener("pointerdown", onPointerDown)
       window.removeEventListener("keydown", onKeyDown)
     }
-  }, [menuScrollRef, open])
+  }, [closeMenu, menuScrollRef, open])
 
   const moveSelection = React.useCallback(
     (direction: 1 | -1) => {
@@ -201,7 +218,9 @@ function AnchoredSelectMenu({
         contentAnchorRef?.current?.getBoundingClientRect() ?? rect
       const widthRect = contentWidthRef?.current?.getBoundingClientRect()
       const portalRect = contentPortalRef?.current?.getBoundingClientRect()
-      const left = portalRect ? anchorRect.left - portalRect.left : anchorRect.left
+      const left = portalRect
+        ? anchorRect.left - portalRect.left
+        : anchorRect.left
       const top = portalRect
         ? anchorRect.bottom - portalRect.top + 8
         : anchorRect.bottom + 8
@@ -209,7 +228,10 @@ function AnchoredSelectMenu({
         contentMinWidth ?? 0,
         widthRect?.width ?? anchorRect.width
       )
-      menu.style.setProperty("--nextide-select-position", portalRect ? "absolute" : "fixed")
+      menu.style.setProperty(
+        "--nextide-select-position",
+        portalRect ? "absolute" : "fixed"
+      )
       menu.style.setProperty("--nextide-select-left", `${left}px`)
       menu.style.setProperty("--nextide-select-top", `${top}px`)
       menu.style.setProperty("--nextide-select-width", `${resolvedWidth}px`)
@@ -226,7 +248,14 @@ function AnchoredSelectMenu({
       window.removeEventListener("resize", updateMenuPosition)
       window.removeEventListener("scroll", updateMenuPosition, true)
     }
-  }, [contentAnchorRef, contentMinWidth, contentPortalRef, contentWidthRef, menuScrollRef, open])
+  }, [
+    contentAnchorRef,
+    contentMinWidth,
+    contentPortalRef,
+    contentWidthRef,
+    menuScrollRef,
+    open,
+  ])
 
   const content = open ? (
     <div
@@ -236,7 +265,8 @@ function AnchoredSelectMenu({
       data-nextide-scroll-lock=""
       onWheel={onMenuWheel}
       style={{
-        position: "var(--nextide-select-position, fixed)" as React.CSSProperties["position"],
+        position:
+          "var(--nextide-select-position, fixed)" as React.CSSProperties["position"],
         top: "var(--nextide-select-top, 0px)",
         left: "var(--nextide-select-left, 0px)",
         width: "var(--nextide-select-width, auto)",
@@ -263,7 +293,7 @@ function AnchoredSelectMenu({
             )}
             onClick={() => {
               onValueChange(option.value)
-              setOpen(false)
+              closeMenu()
             }}
           >
             <span className="grid size-4 place-items-center">
@@ -301,16 +331,22 @@ function AnchoredSelectMenu({
         aria-controls={`${id}-listbox`}
         aria-label={ariaLabel}
         disabled={disabled}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          if (open) {
+            closeMenu()
+          } else {
+            openMenu()
+          }
+        }}
         onKeyDown={(event) => {
           if (event.key === "ArrowDown") {
             event.preventDefault()
-            setOpen(true)
+            openMenu()
             moveSelection(1)
           }
           if (event.key === "ArrowUp") {
             event.preventDefault()
-            setOpen(true)
+            openMenu()
             moveSelection(-1)
           }
         }}
@@ -330,9 +366,7 @@ function AnchoredSelectMenu({
         />
       </button>
 
-      {content && typeof document !== "undefined"
-        ? createPortal(content, contentPortalRef?.current ?? document.body)
-        : null}
+      {content && portalTarget ? createPortal(content, portalTarget) : null}
     </div>
   )
 }
