@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { Users } from "lucide-react"
 
@@ -24,13 +22,8 @@ type FitLeaderboardItem = {
   fit?: number
   safety?: number
   sentiment?: number
-  mentions?: number
+  sentimentDetail?: React.ReactNode
 }
-
-const compactNumber = new Intl.NumberFormat("en", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-})
 
 function FitLeaderboard({
   items,
@@ -116,11 +109,7 @@ function FitLeaderboard({
             <SentimentMeter
               className="col-span-2 sm:col-span-1"
               value={item.sentiment}
-              detail={
-                item.mentions === undefined
-                  ? undefined
-                  : `${compactNumber.format(item.mentions)} mentions`
-              }
+              detail={item.sentimentDetail}
             />
           </li>
         ))}

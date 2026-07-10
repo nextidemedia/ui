@@ -43,6 +43,7 @@ function AutocompleteInput({
 function AutocompleteClear({
   className,
   children,
+  "aria-label": ariaLabel = "Clear",
   ...props
 }: AutocompletePrimitive.Clear.Props) {
   return (
@@ -53,6 +54,7 @@ function AutocompleteClear({
         className
       )}
       {...props}
+      aria-label={ariaLabel}
     >
       {children ?? <X />}
     </AutocompletePrimitive.Clear>
@@ -148,7 +150,7 @@ function AutocompleteStatus({
     <AutocompletePrimitive.Status
       data-slot="autocomplete-status"
       className={cn(
-        "px-3 py-2 text-xs text-muted-foreground empty:hidden",
+        "text-xs text-muted-foreground [&:not(:empty)]:px-3 [&:not(:empty)]:py-2",
         className
       )}
       {...props}

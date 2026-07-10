@@ -2,10 +2,11 @@ import * as React from "react"
 
 import { cn } from "@nextide/ui/lib/utils"
 
+const SENTIMENT_MIN = -5
+const SENTIMENT_MAX = 5
+
 function SentimentMeter({
   value,
-  min = -5,
-  max = 5,
   label = "Sentiment",
   valueLabel,
   detail,
@@ -18,19 +19,19 @@ function SentimentMeter({
   ...props
 }: Omit<React.ComponentProps<"div">, "children"> & {
   value?: number
-  min?: number
-  max?: number
   label?: string
   valueLabel?: React.ReactNode
   detail?: React.ReactNode
 }) {
-  const hasValue =
-    typeof value === "number" && Number.isFinite(value) && max > min
-  const normalizedValue = hasValue ? clamp(value, min, max) : undefined
+  const hasValue = typeof value === "number" && Number.isFinite(value)
+  const normalizedValue = hasValue
+    ? clamp(value, SENTIMENT_MIN, SENTIMENT_MAX)
+    : undefined
   const position =
     normalizedValue === undefined
       ? 50
-      : ((normalizedValue - min) / (max - min)) * 100
+      : ((normalizedValue - SENTIMENT_MIN) / (SENTIMENT_MAX - SENTIMENT_MIN)) *
+        100
   const fallbackValueLabel = formatSignedValue(normalizedValue)
   const accessibleValue =
     normalizedValue === undefined ? "Unavailable" : fallbackValueLabel
@@ -54,9 +55,9 @@ function SentimentMeter({
     >
       <meter
         className="sr-only"
-        min={min}
-        max={max}
-        value={normalizedValue ?? min}
+        min={SENTIMENT_MIN}
+        max={SENTIMENT_MAX}
+        value={normalizedValue ?? SENTIMENT_MIN}
         aria-label={ariaLabel ?? (ariaLabelledBy ? undefined : label)}
         aria-labelledby={ariaLabelledBy}
         aria-describedby={ariaDescribedBy}

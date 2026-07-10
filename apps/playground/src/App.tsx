@@ -578,7 +578,7 @@ const intelligenceFitRows = [
     fit: 4.8,
     safety: 4.6,
     sentiment: 3.9,
-    mentions: 28400,
+    sentimentDetail: "28.4K mentions",
   },
   {
     id: "fit-ren",
@@ -588,7 +588,7 @@ const intelligenceFitRows = [
     fit: 4.1,
     safety: 3.4,
     sentiment: 1.8,
-    mentions: 12700,
+    sentimentDetail: "12.7K mentions",
   },
   {
     id: "fit-ivy",
@@ -598,7 +598,7 @@ const intelligenceFitRows = [
     fit: 3.6,
     safety: 4.2,
     sentiment: -0.7,
-    mentions: 8100,
+    sentimentDetail: "8.1K mentions",
   },
 ]
 
