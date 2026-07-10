@@ -46,7 +46,7 @@ function FitLeaderboard({
     <section
       data-slot="fit-leaderboard"
       className={cn(
-        "grid min-w-0 gap-3 rounded-xl border border-nextide-line bg-nextide-panel p-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]",
+        "@container grid min-w-0 gap-3 rounded-xl border border-nextide-line bg-nextide-panel p-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]",
         className
       )}
       {...props}
@@ -56,7 +56,7 @@ function FitLeaderboard({
         <h3 className="truncate text-base leading-tight font-bold">{title}</h3>
       </header>
       <div
-        className="hidden grid-cols-[minmax(12rem,1fr)_4rem_4rem_minmax(9rem,0.8fr)] items-center gap-3 px-3 text-[0.65rem] font-bold text-muted-foreground uppercase sm:grid"
+        className="hidden grid-cols-[minmax(12rem,1fr)_4rem_4rem_minmax(9rem,0.8fr)] items-center gap-3 px-3 text-[0.65rem] font-bold text-muted-foreground uppercase @xl:grid"
         aria-hidden="true"
       >
         <span>{identityLabel}</span>
@@ -68,9 +68,9 @@ function FitLeaderboard({
         {items.map((item) => (
           <li
             key={item.id}
-            className="grid min-w-0 grid-cols-2 items-center gap-3 rounded-lg border border-nextide-line bg-background/25 p-3 sm:grid-cols-[minmax(12rem,1fr)_4rem_4rem_minmax(9rem,0.8fr)]"
+            className="grid min-w-0 grid-cols-2 items-center gap-3 rounded-lg border border-nextide-line bg-background/25 p-3 @xl:grid-cols-[minmax(12rem,1fr)_4rem_4rem_minmax(9rem,0.8fr)]"
           >
-            <span className="col-span-2 flex min-w-0 items-center gap-3 sm:col-span-1">
+            <span className="col-span-2 flex min-w-0 items-center gap-3 @xl:col-span-1">
               <Avatar size="lg" className="ring-1 ring-nextide-tide/20">
                 {item.avatarSrc ? (
                   <AvatarImage src={item.avatarSrc} alt="" />
@@ -107,7 +107,7 @@ function FitLeaderboard({
               tone={scoreTone(item.safety, maxScore)}
             />
             <SentimentMeter
-              className="col-span-2 sm:col-span-1"
+              className="col-span-2 @xl:col-span-1"
               value={item.sentiment}
               detail={item.sentimentDetail}
             />

@@ -36,8 +36,10 @@ function ScoreRing({
   tone?: ScoreRingTone
   size?: "sm" | "default" | "lg"
 }) {
+  const hasValidRange =
+    Number.isFinite(min) && Number.isFinite(max) && max > min
   const hasValue =
-    typeof value === "number" && Number.isFinite(value) && max > min
+    typeof value === "number" && Number.isFinite(value) && hasValidRange
   const normalizedValue = hasValue ? clamp(value, min, max) : undefined
   const progress =
     normalizedValue === undefined
@@ -46,6 +48,8 @@ function ScoreRing({
   const fallbackValueLabel = formatValue(normalizedValue)
   const accessibleValue =
     normalizedValue === undefined ? "Unavailable" : fallbackValueLabel
+  const meterMin = hasValidRange ? min : 0
+  const meterMax = hasValidRange ? max : 1
 
   return (
     <span
@@ -66,9 +70,9 @@ function ScoreRing({
     >
       <meter
         className="sr-only"
-        min={min}
-        max={max}
-        value={normalizedValue ?? min}
+        min={meterMin}
+        max={meterMax}
+        value={normalizedValue ?? meterMin}
         aria-label={ariaLabel ?? (ariaLabelledBy ? undefined : label)}
         aria-labelledby={ariaLabelledBy}
         aria-describedby={ariaDescribedBy}
