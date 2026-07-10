@@ -1,4 +1,5 @@
 import { type CSSProperties, type ReactNode, useReducer, useState } from "react"
+import { useRef } from "react"
 import {
   Activity,
   BarChart3,
@@ -129,6 +130,7 @@ import {
 } from "@nextide/ui/components/progress"
 import type { ScheduleControlValue } from "@nextide/ui/components/schedule-control"
 import { ScrollArea } from "@nextide/ui/components/scroll-area"
+import { SelectMenu } from "@nextide/ui/components/select-menu"
 import { SegmentedControl } from "@nextide/ui/components/segmented-control"
 import { Separator } from "@nextide/ui/components/separator"
 import { Slider } from "@nextide/ui/components/slider"
@@ -1024,6 +1026,9 @@ function formatCompactMetricValue(value: number) {
 
 export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsContentRef = useRef<HTMLDivElement>(null)
+  const settingsSelectAnchorRef = useRef<HTMLDivElement>(null)
+  const settingsSelectWidthRef = useRef<HTMLDivElement>(null)
   const [playgroundState, updatePlaygroundState] = useReducer(
     playgroundReducer,
     initialPlaygroundState,
@@ -1294,6 +1299,7 @@ export function App() {
         </div>
       </AppShell>
       <SettingsModal
+        contentRef={settingsContentRef}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         title="Preview settings"
@@ -1304,6 +1310,26 @@ export function App() {
           title="Runtime checks"
           description="Show enabled states across the preview."
         >
+          <div ref={settingsSelectWidthRef} className="w-44 sm:w-full">
+            <div ref={settingsSelectAnchorRef} className="w-full sm:w-56">
+              <SelectMenu
+                aria-label="Preview density"
+                contentAnchorRef={settingsSelectAnchorRef}
+                contentMinWidth={220}
+                contentPortalRef={settingsContentRef}
+                contentWidthRef={settingsSelectWidthRef}
+                onValueChange={(nextDensity) =>
+                  updatePlaygroundState({ density: nextDensity })
+                }
+                options={[
+                  { value: "compact", label: "Compact" },
+                  { value: "comfortable", label: "Comfort" },
+                  { value: "spacious", label: "Spacious", disabled: true },
+                ]}
+                value={density}
+              />
+            </div>
+          </div>
           <div className="flex items-center justify-between gap-4 rounded-lg border border-nextide-line bg-nextide-panel p-3">
             <span className="text-sm font-medium">Enable runtime checks</span>
             <Switch
