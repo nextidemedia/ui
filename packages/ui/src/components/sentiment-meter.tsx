@@ -35,10 +35,6 @@ function SentimentMeter({
   const fallbackValueLabel = formatSignedValue(normalizedValue)
   const accessibleValue =
     normalizedValue === undefined ? "Unavailable" : fallbackValueLabel
-  const accessibleDetail =
-    typeof detail === "string" || typeof detail === "number"
-      ? `, ${detail}`
-      : ""
 
   return (
     <div
@@ -61,9 +57,7 @@ function SentimentMeter({
         aria-label={ariaLabel ?? (ariaLabelledBy ? undefined : label)}
         aria-labelledby={ariaLabelledBy}
         aria-describedby={ariaDescribedBy}
-        aria-valuetext={
-          ariaValueText ?? `${accessibleValue}${accessibleDetail}`
-        }
+        aria-valuetext={ariaValueText ?? accessibleValue}
       />
       <span
         className="flex min-w-0 items-baseline justify-between gap-2"
@@ -82,11 +76,8 @@ function SentimentMeter({
       >
         <span className="absolute top-1/2 left-[var(--sentiment-meter-position)] size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background bg-[var(--sentiment-meter-color)] shadow-[0_0_12px_color-mix(in_srgb,var(--sentiment-meter-color)_52%,transparent)]" />
       </span>
-      {detail ? (
-        <small
-          className="truncate text-[0.65rem] text-muted-foreground"
-          aria-hidden="true"
-        >
+      {detail != null ? (
+        <small className="truncate text-[0.65rem] text-muted-foreground">
           {detail}
         </small>
       ) : null}
