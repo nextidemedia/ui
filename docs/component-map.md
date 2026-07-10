@@ -8,10 +8,19 @@ Use public subpath exports:
 
 ```tsx
 import { Button } from "@nextide/ui/components/button"
-import { DateWindowEditor } from "@nextide/ui/components/date-range-picker"
+import { DualDateRangePicker } from "@nextide/ui/components/date-range-picker"
 import { NavigationPanel } from "@nextide/ui/blocks/navigation-panel"
 import { ProgressiveSummaryRail } from "@nextide/ui/blocks/progressive-summary-rail"
 import { useStagedDrawer } from "@nextide/ui/hooks/use-staged-drawer"
+```
+
+When a trigger should look like an existing control, compose it with the
+`render` prop so the result stays a single interactive element:
+
+```tsx
+<PopoverTrigger render={<Button variant="outline" />}>
+  Open details
+</PopoverTrigger>
 ```
 
 ## Where To Look First
@@ -24,30 +33,30 @@ import { useStagedDrawer } from "@nextide/ui/hooks/use-staged-drawer"
 
 ## Components
 
-| Need | Start with |
-| --- | --- |
-| Actions and commands | `components/button`, `components/badge`, `components/status-badge` |
-| Forms and inputs | `components/input`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/token-list-editor` |
-| Choice controls | `components/segmented-control`, `components/tabs`, `components/collapsible`, `components/popover`, `components/tooltip` |
-| Date and schedule controls | `components/date-range-picker`, `components/schedule-control` |
-| Layout and surfaces | `components/surface`, `components/card`, `components/separator`, `components/scroll-area`, `components/table`, `components/alert`, `components/notice`, `components/metric`, `components/kbd` |
-| Data visualization | `components/donut-chart`, `components/line-graph`, `components/line-item-graph`, `components/trend-bar-chart`, `components/hourly-pacing-chart`, `components/score-threshold-meter`, `components/creator-flow-chart`, `components/data-ledger`, `components/platform-cluster` |
+| Need                       | Start with                                                                                                                                                                                                                                                                    |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Actions and commands       | `components/button`, `components/badge`, `components/status-badge`                                                                                                                                                                                                            |
+| Forms and inputs           | `components/input`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/token-list-editor`                                                                    |
+| Choice controls            | `components/segmented-control`, `components/tabs`, `components/collapsible`, `components/popover`, `components/tooltip`                                                                                                                                                       |
+| Date and schedule controls | `components/date-range-picker`, `components/schedule-control`                                                                                                                                                                                                                 |
+| Layout and surfaces        | `components/surface`, `components/card`, `components/separator`, `components/scroll-area`, `components/table`, `components/alert`, `components/notice`, `components/metric`, `components/kbd`                                                                                 |
+| Data visualization         | `components/donut-chart`, `components/line-graph`, `components/line-item-graph`, `components/trend-bar-chart`, `components/hourly-pacing-chart`, `components/score-threshold-meter`, `components/creator-flow-chart`, `components/data-ledger`, `components/platform-cluster` |
 
 ## Blocks
 
-| Need | Start with |
-| --- | --- |
-| App frame and navigation | `blocks/app-shell`, `blocks/sidebar`, `blocks/navigation-panel`, `blocks/workflow-stepper`, `blocks/intro-plate`, `blocks/settings-modal` |
-| Report building and reading | `blocks/report-context-builder`, `blocks/progressive-summary-rail`, `blocks/report-reader`, `blocks/report-rail`, `blocks/export-workbench` |
-| Creator workflows | `blocks/creator-transfer`, `blocks/creator-scope-panel`, `blocks/campaign-schedule-matrix`, `blocks/pacing-configurator` |
-| Operations and dashboards | `blocks/dashboard-filter-bar`, `blocks/run-monitor-table`, `blocks/stream-selector`, `blocks/intelligence-progression-chart`, `blocks/evidence-drawer` |
-| Live/event safety | `blocks/liveguard-cockpit`, `blocks/liveguard-incident-review`, `blocks/live-event-timeline`, `blocks/live-event-proof-modal` |
+| Need                        | Start with                                                                                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| App frame and navigation    | `blocks/app-shell`, `blocks/sidebar`, `blocks/navigation-panel`, `blocks/workflow-stepper`, `blocks/intro-plate`, `blocks/settings-modal`              |
+| Report building and reading | `blocks/report-context-builder`, `blocks/progressive-summary-rail`, `blocks/report-reader`, `blocks/report-rail`, `blocks/export-workbench`            |
+| Creator workflows           | `blocks/creator-transfer`, `blocks/creator-scope-panel`, `blocks/campaign-schedule-matrix`, `blocks/pacing-configurator`                               |
+| Operations and dashboards   | `blocks/dashboard-filter-bar`, `blocks/run-monitor-table`, `blocks/stream-selector`, `blocks/intelligence-progression-chart`, `blocks/evidence-drawer` |
+| Live/event safety           | `blocks/liveguard-cockpit`, `blocks/liveguard-incident-review`, `blocks/live-event-timeline`, `blocks/live-event-proof-modal`                          |
 
 ## Hooks
 
-| Need | Start with |
-| --- | --- |
-| Prevent nested scroll bleed | `hooks/use-contained-scroll` |
+| Need                             | Start with                                            |
+| -------------------------------- | ----------------------------------------------------- |
+| Prevent nested scroll bleed      | `hooks/use-contained-scroll`                          |
 | Staged collapse/expand animation | `hooks/use-staged-drawer`, `hooks/use-staged-sidebar` |
 
 ## Upstream Workflow
