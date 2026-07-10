@@ -49,6 +49,10 @@ import {
 } from "@nextide/ui/blocks/report-context-builder"
 import { Sidebar } from "@nextide/ui/blocks/sidebar"
 import {
+  SettingsModal,
+  SettingsModalSection,
+} from "@nextide/ui/blocks/settings-modal"
+import {
   StreamSelector,
   type StreamSelectorItem,
 } from "@nextide/ui/blocks/stream-selector"
@@ -83,7 +87,16 @@ import {
 } from "@nextide/ui/components/line-item-graph"
 import { Metric } from "@nextide/ui/components/metric"
 import { Notice } from "@nextide/ui/components/notice"
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@nextide/ui/components/popover"
 import type { ScheduleControlValue } from "@nextide/ui/components/schedule-control"
+import { ScrollArea } from "@nextide/ui/components/scroll-area"
 import { SegmentedControl } from "@nextide/ui/components/segmented-control"
 import { Separator } from "@nextide/ui/components/separator"
 import { Slider } from "@nextide/ui/components/slider"
@@ -96,6 +109,12 @@ import {
 } from "@nextide/ui/components/surface"
 import { Switch } from "@nextide/ui/components/switch"
 import { TrendBarChart } from "@nextide/ui/components/trend-bar-chart"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@nextide/ui/components/tooltip"
 import { useStagedDrawer } from "@nextide/ui/hooks/use-staged-drawer"
 import { cn } from "@nextide/ui/lib/utils"
 
@@ -931,6 +950,7 @@ function formatCompactMetricValue(value: number) {
 }
 
 export function App() {
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [playgroundState, updatePlaygroundState] = useReducer(
     playgroundReducer,
     initialPlaygroundState,
@@ -1061,7 +1081,13 @@ export function App() {
                   <Download />
                   Export
                 </Button>
-                <Button variant="outline" size="icon" aria-label="Settings">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label="Settings"
+                  onClick={() => setSettingsOpen(true)}
+                >
                   <Settings />
                 </Button>
               </div>
@@ -1194,6 +1220,28 @@ export function App() {
           )}
         </div>
       </AppShell>
+      <SettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        title="Preview settings"
+        description="Adjust the shared component preview."
+        kicker="Package"
+      >
+        <SettingsModalSection
+          title="Runtime checks"
+          description="Show enabled states across the preview."
+        >
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-nextide-line bg-nextide-panel p-3">
+            <span className="text-sm font-medium">Enable runtime checks</span>
+            <Switch
+              checked={enabled}
+              onCheckedChange={(nextEnabled) =>
+                updatePlaygroundState({ enabled: nextEnabled })
+              }
+            />
+          </div>
+        </SettingsModalSection>
+      </SettingsModal>
       <ViewModeToggle mode={viewMode} onModeChange={setViewMode} />
       {!inspectorVisible ? (
         <Button
@@ -1718,6 +1766,58 @@ function ComponentMatrix({
 
         <Card>
           <CardHeader>
+            <CardTitle>Overlays and scroll</CardTitle>
+            <CardDescription>
+              Focused details and compact overflow surfaces.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            <div className="flex flex-wrap gap-2">
+              <Popover>
+                <PopoverTrigger render={<Button variant="outline" />}>
+                  Open details
+                </PopoverTrigger>
+                <PopoverContent>
+                  <PopoverHeader>
+                    <PopoverTitle>Shared preview</PopoverTitle>
+                    <PopoverDescription>
+                      Review compact overlays without leaving the page.
+                    </PopoverDescription>
+                  </PopoverHeader>
+                </PopoverContent>
+              </Popover>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger render={<Button variant="outline" />}>
+                    Hover for status
+                  </TooltipTrigger>
+                  <TooltipContent>All checks are ready.</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <ScrollArea className="h-28 rounded-lg border border-nextide-line bg-background/25">
+              <div className="grid gap-2 p-3 text-sm">
+                {[
+                  "Campaign summary",
+                  "Creator confidence",
+                  "Safety review",
+                  "Export schedule",
+                  "Delivery status",
+                ].map((label) => (
+                  <div
+                    key={label}
+                    className="rounded-md bg-nextide-panel px-3 py-2"
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Inputs</CardTitle>
             <CardDescription>
               Compact form controls for dense app surfaces.
@@ -1875,7 +1975,9 @@ function BlockPreview() {
             id: "report",
             title: "Report",
             summary: "Creator fit review",
-            rows: [{ id: "brand", label: "Brand", badge: "BR", value: "Daedalus" }],
+            rows: [
+              { id: "brand", label: "Brand", badge: "BR", value: "Daedalus" },
+            ],
           },
           {
             id: "campaign",
