@@ -67,7 +67,14 @@ function ShadcnSelectMenu({
       className={cn("relative min-w-0", className)}
       {...props}
     >
-      <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+      <Select
+        items={options}
+        value={value ?? null}
+        onValueChange={(nextValue) => {
+          if (nextValue !== null) onValueChange(nextValue)
+        }}
+        disabled={disabled}
+      >
         <SelectTrigger
           aria-label={ariaLabel}
           className={cn(
@@ -80,7 +87,7 @@ function ShadcnSelectMenu({
           </span>
         </SelectTrigger>
         <SelectContent
-          position="popper"
+          alignItemWithTrigger={false}
           align="start"
           className={cn(
             "max-h-64 border border-nextide-line bg-background/96 p-1 shadow-[0_18px_60px_rgb(0_0_0/0.45)] backdrop-blur-xl",
@@ -94,7 +101,7 @@ function ShadcnSelectMenu({
                 value={option.value}
                 disabled={option.disabled}
                 className={cn(
-                  "py-2 focus:bg-nextide-tide/10 focus:text-foreground data-[state=checked]:text-nextide-tide",
+                  "py-2 focus:bg-nextide-tide/10 focus:text-foreground data-selected:text-nextide-tide",
                   optionClassName
                 )}
               >
