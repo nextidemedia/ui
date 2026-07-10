@@ -35,6 +35,7 @@ import {
   type DashboardFilterItem,
 } from "@nextide/ui/blocks/dashboard-filter-bar"
 import { ExportWorkbench } from "@nextide/ui/blocks/export-workbench"
+import { FitLeaderboard } from "@nextide/ui/blocks/fit-leaderboard"
 import {
   IntelligenceProgressionChart,
   type IntelligenceProgressionStage,
@@ -57,6 +58,25 @@ import {
   type StreamSelectorItem,
 } from "@nextide/ui/blocks/stream-selector"
 import { WorkflowStepper } from "@nextide/ui/blocks/workflow-stepper"
+import {
+  Autocomplete,
+  AutocompleteClear,
+  AutocompleteContent,
+  AutocompleteEmpty,
+  AutocompleteInput,
+  AutocompleteInputGroup,
+  AutocompleteItem,
+  AutocompleteList,
+  AutocompletePortal,
+  AutocompletePositioner,
+} from "@nextide/ui/components/autocomplete"
+import {
+  Avatar,
+  AvatarBadge,
+  AvatarFallback,
+  AvatarGroup,
+  AvatarGroupCount,
+} from "@nextide/ui/components/avatar"
 import { Badge } from "@nextide/ui/components/badge"
 import { Button } from "@nextide/ui/components/button"
 import {
@@ -77,6 +97,13 @@ import {
   type DateRange,
 } from "@nextide/ui/components/date-range-picker"
 import { DonutChart } from "@nextide/ui/components/donut-chart"
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@nextide/ui/components/empty"
 import { HourlyPacingChart } from "@nextide/ui/components/hourly-pacing-chart"
 import { Input } from "@nextide/ui/components/input"
 import { LineGraph } from "@nextide/ui/components/line-graph"
@@ -95,11 +122,18 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@nextide/ui/components/popover"
+import {
+  Progress,
+  ProgressLabel,
+  ProgressValue,
+} from "@nextide/ui/components/progress"
 import type { ScheduleControlValue } from "@nextide/ui/components/schedule-control"
 import { ScrollArea } from "@nextide/ui/components/scroll-area"
 import { SegmentedControl } from "@nextide/ui/components/segmented-control"
 import { Separator } from "@nextide/ui/components/separator"
 import { Slider } from "@nextide/ui/components/slider"
+import { Skeleton } from "@nextide/ui/components/skeleton"
+import { Spinner } from "@nextide/ui/components/spinner"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
 import {
   Surface,
@@ -534,6 +568,45 @@ const intelligenceCreators = [
     avatar: "IN",
   },
 ]
+
+const intelligenceFitRows = [
+  {
+    id: "fit-mina",
+    name: "Mina Vale",
+    meta: "Twitch · Lifestyle",
+    avatarFallback: "MV",
+    fit: 4.8,
+    safety: 4.6,
+    sentiment: 3.9,
+    mentions: 28400,
+  },
+  {
+    id: "fit-ren",
+    name: "Ren Kade",
+    meta: "Kick · Competitive",
+    avatarFallback: "RK",
+    fit: 4.1,
+    safety: 3.4,
+    sentiment: 1.8,
+    mentions: 12700,
+  },
+  {
+    id: "fit-ivy",
+    name: "Ivy North",
+    meta: "Twitch · Variety",
+    avatarFallback: "IN",
+    fit: 3.6,
+    safety: 4.2,
+    sentiment: -0.7,
+    mentions: 8100,
+  },
+]
+
+function autocompleteCreatorValue(
+  creator: (typeof intelligenceCreators)[number]
+) {
+  return creator.name
+}
 
 const intelligenceStreamRows: StreamSelectorItem[] = [
   {
@@ -1332,6 +1405,17 @@ function IntelligencePlayground({
 
       <Surface className="grid gap-4">
         <SurfaceHeader>
+          <SurfaceTitle>Creator fit</SurfaceTitle>
+          <SurfaceDescription>
+            Compare fit, safety, audience sentiment, and evidence volume in one
+            responsive ranking.
+          </SurfaceDescription>
+        </SurfaceHeader>
+        <FitLeaderboard items={intelligenceFitRows} />
+      </Surface>
+
+      <Surface className="grid gap-4">
+        <SurfaceHeader>
           <SurfaceTitle>Creator Select</SurfaceTitle>
           <SurfaceDescription>
             Individual searchable creator bars and the fused left-to-right
@@ -1735,6 +1819,8 @@ function ComponentMatrix({
   onCheckedChange: (value: boolean) => void
   onEnabledChange: (value: boolean) => void
 }) {
+  const [creatorQuery, setCreatorQuery] = useState("")
+
   return (
     <Surface className="grid gap-4">
       <SurfaceHeader>
@@ -1872,6 +1958,64 @@ function ComponentMatrix({
 
         <Card>
           <CardHeader>
+            <CardTitle>Autocomplete</CardTitle>
+            <CardDescription>
+              Free-form search with inline suggestions and keyboard selection.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Autocomplete
+              items={intelligenceCreators}
+              itemToStringValue={autocompleteCreatorValue}
+              mode="both"
+              openOnInputClick
+              value={creatorQuery}
+              onValueChange={setCreatorQuery}
+            >
+              <label
+                className="mb-1.5 block text-xs font-medium text-muted-foreground"
+                htmlFor="creator-autocomplete-preview"
+              >
+                Find a creator
+              </label>
+              <AutocompleteInputGroup>
+                <Search />
+                <AutocompleteInput
+                  id="creator-autocomplete-preview"
+                  placeholder="Search creators"
+                />
+                <AutocompleteClear aria-label="Clear creator search" />
+              </AutocompleteInputGroup>
+              <AutocompletePortal>
+                <AutocompletePositioner>
+                  <AutocompleteContent>
+                    <AutocompleteEmpty>No creators found.</AutocompleteEmpty>
+                    <AutocompleteList>
+                      {(creator: (typeof intelligenceCreators)[number]) => (
+                        <AutocompleteItem key={creator.id} value={creator}>
+                          <Avatar size="sm">
+                            <AvatarFallback>{creator.avatar}</AvatarFallback>
+                          </Avatar>
+                          <span className="grid min-w-0">
+                            <strong className="truncate font-medium">
+                              {creator.name}
+                            </strong>
+                            <small className="truncate text-muted-foreground">
+                              {creator.meta}
+                            </small>
+                          </span>
+                        </AutocompleteItem>
+                      )}
+                    </AutocompleteList>
+                  </AutocompleteContent>
+                </AutocompletePositioner>
+              </AutocompletePortal>
+            </Autocomplete>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Status</CardTitle>
             <CardDescription>
               Badges and notices for runtime state.
@@ -1890,6 +2034,52 @@ function ComponentMatrix({
             <Notice title="Projection cache warm" tone="info">
               Read model data is available for the current playground run.
             </Notice>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Identity and feedback</CardTitle>
+            <CardDescription>
+              Compact identity, progress, loading, and empty states.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <AvatarGroup>
+              {intelligenceCreators.slice(0, 3).map((creator, index) => (
+                <Avatar key={creator.id}>
+                  <AvatarFallback>{creator.avatar}</AvatarFallback>
+                  {index === 0 ? <AvatarBadge aria-hidden="true" /> : null}
+                </Avatar>
+              ))}
+              <AvatarGroupCount>+2</AvatarGroupCount>
+            </AvatarGroup>
+            <Progress value={72}>
+              <ProgressLabel>Profile readiness</ProgressLabel>
+              <ProgressValue />
+            </Progress>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Spinner />
+              Refreshing preview
+            </div>
+            <div className="flex items-center gap-3" aria-hidden="true">
+              <Skeleton className="size-9 rounded-full" />
+              <div className="grid flex-1 gap-2">
+                <Skeleton className="h-3 w-2/3" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            </div>
+            <Empty className="min-h-32 border border-nextide-line bg-background/20">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Search />
+                </EmptyMedia>
+                <EmptyTitle>No saved views</EmptyTitle>
+                <EmptyDescription>
+                  Saved views will appear here.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           </CardContent>
         </Card>
       </div>
