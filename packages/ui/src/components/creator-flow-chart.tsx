@@ -252,7 +252,7 @@ function clamp(value: number, min: number, max: number) {
 
 function dayKey(day: React.ReactNode, index: number) {
   if (typeof day === "string" || typeof day === "number") {
-    return day
+    return `${day}-${index}`
   }
 
   return `day-${index}`

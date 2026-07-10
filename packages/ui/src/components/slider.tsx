@@ -1,5 +1,4 @@
-import * as React from "react"
-import { Slider as SliderPrimitive } from "radix-ui"
+import { Slider as SliderPrimitive } from "@base-ui/react/slider"
 
 import { cn } from "@nextide/ui/lib/utils"
 
@@ -10,51 +9,46 @@ function Slider({
   min = 0,
   max = 100,
   ...props
-}: React.ComponentProps<typeof SliderPrimitive.Root>) {
-  const _values = React.useMemo(
-    () =>
-      Array.isArray(value)
-        ? value
-        : Array.isArray(defaultValue)
-          ? defaultValue
-          : [min, max],
-    [value, defaultValue, min, max]
-  )
-  const thumbKeys = React.useMemo(
-    () =>
-      Array.from({ length: _values.length }, (_, index) => `thumb-${index}`),
-    [_values.length]
-  )
+}: SliderPrimitive.Root.Props) {
+  const thumbCount = Array.isArray(value)
+    ? value.length
+    : value !== undefined
+      ? 1
+      : Array.isArray(defaultValue)
+        ? defaultValue.length
+        : defaultValue !== undefined
+          ? 1
+          : 1
 
   return (
     <SliderPrimitive.Root
+      className={cn("data-horizontal:w-full data-vertical:h-full", className)}
       data-slot="slider"
       defaultValue={defaultValue}
       value={value}
       min={min}
       max={max}
-      className={cn(
-        "relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col",
-        className
-      )}
+      thumbAlignment="edge"
       {...props}
     >
-      <SliderPrimitive.Track
-        data-slot="slider-track"
-        className="relative grow overflow-hidden rounded-full bg-muted data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1"
-      >
-        <SliderPrimitive.Range
-          data-slot="slider-range"
-          className="absolute bg-[linear-gradient(90deg,rgb(30_228_188),rgb(42_232_198),rgb(30_228_188))] select-none data-horizontal:h-full data-vertical:w-full"
-        />
-      </SliderPrimitive.Track>
-      {thumbKeys.map((thumbKey) => (
-        <SliderPrimitive.Thumb
-          data-slot="slider-thumb"
-          key={thumbKey}
-          className="relative block size-3 shrink-0 rounded-full border border-ring bg-white ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
-        />
-      ))}
+      <SliderPrimitive.Control className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">
+        <SliderPrimitive.Track
+          data-slot="slider-track"
+          className="relative grow overflow-hidden rounded-full bg-muted select-none data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1"
+        >
+          <SliderPrimitive.Indicator
+            data-slot="slider-range"
+            className="bg-[linear-gradient(90deg,rgb(30_228_188),rgb(42_232_198),rgb(30_228_188))] select-none data-horizontal:h-full data-vertical:w-full"
+          />
+        </SliderPrimitive.Track>
+        {Array.from({ length: thumbCount }, (_, index) => (
+          <SliderPrimitive.Thumb
+            data-slot="slider-thumb"
+            key={`thumb-${index}`}
+            className="relative block size-3 shrink-0 rounded-full border border-ring bg-white ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
+          />
+        ))}
+      </SliderPrimitive.Control>
     </SliderPrimitive.Root>
   )
 }
