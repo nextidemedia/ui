@@ -5,6 +5,7 @@
 ## Changed
 
 - `packages/ui/src/components/separator.tsx:3` replaces the Radix root with the callable Base UI Separator.
+- The wrapper preserves the package's decorative default with `role="none"`; callers can opt into separator semantics with `decorative={false}`.
 - `rg -n "radix-ui|@radix-ui" packages/ui/src/components/separator.tsx` returns no matches.
 
 ## Left alone
@@ -13,8 +14,6 @@
 
 ## Behavior changes
 
-- The removed `decorative` prop means the component now exposes separator semantics by default.
-
 ## Verify by hand
 
-- Inspect horizontal and vertical separators and confirm size, contrast, and accessibility-tree role.
+- Inspect horizontal and vertical separators and confirm size, contrast, and the decorative/semantic accessibility-tree roles.

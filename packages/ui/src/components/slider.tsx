@@ -18,7 +18,7 @@ function Slider({
         ? defaultValue.length
         : defaultValue !== undefined
           ? 1
-          : 2
+          : 1
 
   return (
     <SliderPrimitive.Root

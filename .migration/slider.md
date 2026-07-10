@@ -6,6 +6,7 @@
 
 - `packages/ui/src/components/slider.tsx:1` adopts Base UI Control, Track, Indicator, and Thumb anatomy while preserving the Nextide gradient and stable thumb keys.
 - `packages/ui/src/components/slider.tsx:31` uses edge thumb alignment and supports both scalar and range value shapes.
+- An omitted value renders one thumb because Base UI initializes the slider as a scalar at `min`; explicit arrays render one thumb per range value.
 - `rg -n "radix-ui|@radix-ui" packages/ui/src/components/slider.tsx` returns no matches.
 
 ## Left alone
