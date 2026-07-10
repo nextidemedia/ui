@@ -1861,7 +1861,11 @@ function ComponentMatrix({
               min={0}
               max={100}
               step={1}
-              onValueChange={onConfidenceChange}
+              onValueChange={(nextValue) =>
+                onConfidenceChange(
+                  Array.isArray(nextValue) ? [...nextValue] : [nextValue]
+                )
+              }
             />
           </CardContent>
         </Card>
