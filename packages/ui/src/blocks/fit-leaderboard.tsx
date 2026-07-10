@@ -40,7 +40,7 @@ function FitLeaderboard({
   className,
   ...props
 }: Omit<React.ComponentProps<"section">, "title"> & {
-  items: FitLeaderboardItem[]
+  items: readonly FitLeaderboardItem[]
   title?: React.ReactNode
   identityLabel?: React.ReactNode
   maxScore?: number
@@ -60,7 +60,7 @@ function FitLeaderboard({
     >
       <header className="flex min-w-0 items-center gap-2 px-1">
         <Users className="size-4 shrink-0 text-nextide-tide" />
-        <strong className="truncate text-base leading-tight">{title}</strong>
+        <h3 className="truncate text-base leading-tight font-bold">{title}</h3>
       </header>
       <div
         className="hidden grid-cols-[minmax(12rem,1fr)_4rem_4rem_minmax(9rem,0.8fr)] items-center gap-3 px-3 text-[0.65rem] font-bold text-muted-foreground uppercase sm:grid"

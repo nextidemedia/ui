@@ -147,7 +147,10 @@ function AutocompleteStatus({
   return (
     <AutocompletePrimitive.Status
       data-slot="autocomplete-status"
-      className={cn("px-3 py-2 text-xs text-muted-foreground", className)}
+      className={cn(
+        "px-3 py-2 text-xs text-muted-foreground empty:hidden",
+        className
+      )}
       {...props}
     />
   )
