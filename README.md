@@ -13,8 +13,11 @@ The implementation guide from `nextide-saas-meta` is copied into `docs/brand_ass
 - `packages/ui/src/hooks`: shared interaction hooks such as `useStagedDrawer` for collapse/expand drawer motion.
 - `apps/playground`: Vite consumer app for visual checks.
 - `docs/component-map.md`: quick lookup map for shared primitives, blocks, hooks, and the upstream workflow.
+- `docs/responsive-support.md`: required responsive acceptance widths and shared component behavior.
 
 Start with [docs/component-map.md](docs/component-map.md) when deciding whether a UI element should be imported from `@nextide/ui`, polished upstream, or created as a new shared component.
+Use [docs/responsive-support.md](docs/responsive-support.md) when changing layout,
+navigation, overflow, or responsive component behavior.
 
 ## Adding components
 
