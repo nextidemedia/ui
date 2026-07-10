@@ -51,66 +51,68 @@ function DataLedger({
     <Collapsible
       open={!resolvedCollapsed}
       onOpenChange={(open) => setCollapsed(!open)}
-      asChild
+      render={
+        <section
+          data-slot="data-ledger"
+          data-collapsed={resolvedCollapsed}
+          className={cn(
+            "grid gap-0 overflow-hidden rounded-xl border border-nextide-line bg-nextide-panel",
+            className
+          )}
+          {...props}
+        />
+      }
     >
-      <section
-        data-slot="data-ledger"
-        data-collapsed={resolvedCollapsed}
-        className={cn(
-          "grid gap-0 overflow-hidden rounded-xl border border-nextide-line bg-nextide-panel",
-          className
-        )}
-        {...props}
-      >
-        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-nextide-line p-3">
-          <div className="grid min-w-0 gap-1">
-            <h3 className="truncate text-sm font-semibold">{title}</h3>
-            {description ? (
-              <p className="text-xs text-muted-foreground">{description}</p>
-            ) : null}
-          </div>
-          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-            {search}
-            {actions}
-            <CollapsibleTrigger asChild>
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-nextide-line p-3">
+        <div className="grid min-w-0 gap-1">
+          <h3 className="truncate text-sm font-semibold">{title}</h3>
+          {description ? (
+            <p className="text-xs text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+          {search}
+          {actions}
+          <CollapsibleTrigger
+            render={
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 aria-expanded={!resolvedCollapsed}
-              >
-                {countLabel ? <span>{countLabel}</span> : null}
-                <ChevronDown
-                  className={cn(
-                    "transition-transform duration-200",
-                    resolvedCollapsed && "-rotate-90"
-                  )}
-                />
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-        </header>
-        <CollapsibleContent
-          forceMount
-          className={cn(
-            "grid transition-[grid-template-rows,opacity] duration-300 ease-[var(--nextide-ease-out-quart)]",
-            resolvedCollapsed
-              ? "grid-rows-[0fr] opacity-0"
-              : "nextide-flip-open grid-rows-[1fr] opacity-100"
-          )}
-        >
-          <div className="min-h-0 overflow-hidden">
-            <div
+              />
+            }
+          >
+            {countLabel ? <span>{countLabel}</span> : null}
+            <ChevronDown
               className={cn(
-                "nextide-contained-scroll nextide-scrollbar-none overflow-auto p-3",
-                bodyClassName
+                "transition-transform duration-200",
+                resolvedCollapsed && "-rotate-90"
               )}
-            >
-              {children}
-            </div>
+            />
+          </CollapsibleTrigger>
+        </div>
+      </header>
+      <CollapsibleContent
+        keepMounted
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-[var(--nextide-ease-out-quart)]",
+          resolvedCollapsed
+            ? "grid-rows-[0fr] opacity-0"
+            : "nextide-flip-open grid-rows-[1fr] opacity-100"
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div
+            className={cn(
+              "nextide-contained-scroll nextide-scrollbar-none overflow-auto p-3",
+              bodyClassName
+            )}
+          >
+            {children}
           </div>
-        </CollapsibleContent>
-      </section>
+        </div>
+      </CollapsibleContent>
     </Collapsible>
   )
 }
