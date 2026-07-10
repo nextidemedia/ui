@@ -99,7 +99,7 @@ function DataLedger({
           "grid transition-[grid-template-rows,opacity] duration-300 ease-[var(--nextide-ease-out-quart)]",
           resolvedCollapsed
             ? "grid-rows-[0fr] opacity-0"
-            : "nextide-flip-open grid-rows-[1fr] opacity-100"
+            : "grid-rows-[1fr] opacity-100"
         )}
       >
         <div className="min-h-0 overflow-hidden">
