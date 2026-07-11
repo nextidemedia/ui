@@ -51,6 +51,10 @@ function SelectMenu({
   ...props
 }: SelectMenuProps) {
   const triggerRef = React.useRef<HTMLButtonElement | null>(null)
+  const items = React.useMemo(
+    () => Object.fromEntries(options.map(({ value, label }) => [value, label])),
+    [options]
+  )
   const selectedOption = options.find((option) => option.value === value)
   const contentAnchor = React.useCallback(() => {
     const anchor = contentAnchorRef?.current ?? triggerRef.current
@@ -80,7 +84,7 @@ function SelectMenu({
       {...props}
     >
       <Select
-        items={options}
+        items={items}
         value={value ?? null}
         onValueChange={(nextValue) => {
           if (nextValue !== null) onValueChange(nextValue)
