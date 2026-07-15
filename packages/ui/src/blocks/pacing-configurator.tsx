@@ -7,6 +7,7 @@ import {
   type HourlyPacingBucket,
 } from "@nextide/ui/components/hourly-pacing-chart"
 import { Metric } from "@nextide/ui/components/metric"
+import { SegmentedControl } from "@nextide/ui/components/segmented-control"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
 import {
   Surface,
@@ -68,39 +69,32 @@ function PacingConfigurator({
       </SurfaceHeader>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div
-          className="nextide-contained-scroll nextide-scrollbar-none flex max-w-full gap-2 overflow-x-auto rounded-lg border border-nextide-line bg-background/20 p-1"
-          role="radiogroup"
-          aria-label="Pacing preset"
-        >
-          {presets.map((preset) => {
-            const active = preset.id === activePreset?.id
-
-            return (
-              <button
-                key={preset.id}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                className={cn(
-                  "grid min-h-10 min-w-28 content-center rounded-md px-3 text-left text-xs transition-[background-color,color,box-shadow] duration-200",
-                  active
-                    ? "bg-nextide-tide text-black shadow-[0_0_18px_rgb(30_228_188/0.18)]"
-                    : "text-muted-foreground hover:bg-nextide-panel hover:text-foreground"
-                )}
-                onClick={() => onPresetChange?.(preset)}
-              >
-                <strong className="truncate font-semibold">
-                  {preset.label}
-                </strong>
-                {preset.meta ? (
-                  <span className="truncate text-[0.68rem] opacity-75">
-                    {preset.meta}
-                  </span>
-                ) : null}
-              </button>
-            )
-          })}
+        <div className="nextide-contained-scroll nextide-scrollbar-none max-w-full overflow-x-auto">
+          <SegmentedControl
+            value={activePreset?.id ?? ""}
+            size="tall"
+            className="min-w-[30rem]"
+            aria-label="Pacing preset"
+            options={presets.map((preset) => ({
+              value: preset.id,
+              label: (
+                <span className="grid min-w-0 gap-0.5 text-left">
+                  <strong className="truncate font-medium">
+                    {preset.label}
+                  </strong>
+                  {preset.meta ? (
+                    <span className="truncate text-ui-caption opacity-75">
+                      {preset.meta}
+                    </span>
+                  ) : null}
+                </span>
+              ),
+            }))}
+            onValueChange={(presetId) => {
+              const preset = presets.find((item) => item.id === presetId)
+              if (preset) onPresetChange?.(preset)
+            }}
+          />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" onClick={onRevert}>
@@ -132,12 +126,12 @@ function PacingConfigurator({
         buckets={buckets}
         targetValue={targetValue}
         title="Per-hour pacing"
-        description="Ported as a reusable pacing bar grammar with stable bar sizing."
+        description="Compare each delivery hour against the campaign target."
       />
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <StatusBadge tone="success">Preset ready</StatusBadge>
-        <span>Configured presets stay outside campaign API wiring.</span>
+        <span>Review the delivery window, then save the pacing plan.</span>
       </div>
     </Surface>
   )

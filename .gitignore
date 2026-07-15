@@ -20,6 +20,9 @@ coverage
 .ask-pro
 .playwright-cli
 output
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+.impeccable/live/sessions/
 
 # Vercel
 .vercel

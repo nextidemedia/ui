@@ -43,7 +43,7 @@ function QualificationPage() {
     <main className="min-h-screen bg-background p-4 text-foreground sm:p-6">
       <div className="mx-auto grid w-full max-w-4xl gap-4">
         <header className="grid gap-1">
-          <h1 className="text-2xl font-bold">Workspace setup</h1>
+          <h1 className="text-2xl font-medium">Workspace setup</h1>
           <p className="text-sm text-muted-foreground">
             Add the details your team needs to begin.
           </p>

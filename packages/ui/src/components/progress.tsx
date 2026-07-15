@@ -43,7 +43,10 @@ function ProgressIndicator({
   return (
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
-      className={cn("h-full bg-primary motion-safe:transition-all", className)}
+      className={cn(
+        "h-full bg-primary transition-[width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none",
+        className
+      )}
       {...props}
     />
   )
@@ -72,8 +75,4 @@ function ProgressValue({ className, ...props }: ProgressPrimitive.Value.Props) {
   )
 }
 
-export {
-  Progress,
-  ProgressLabel,
-  ProgressValue,
-}
+export { Progress, ProgressLabel, ProgressValue }

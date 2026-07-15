@@ -65,11 +65,11 @@ function LiveEventProofModal({
       >
         <header className="flex min-w-0 items-center justify-between gap-4 border-b border-nextide-line px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-nextide-tide/25 bg-nextide-tide/10 text-xs font-bold text-nextide-tide">
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-nextide-tide/25 bg-nextide-tide/10 text-xs font-medium text-nextide-tide">
               {creatorMark ?? "LI"}
             </span>
             <span className="grid min-w-0 gap-0.5">
-              <small className="text-xs font-bold text-muted-foreground uppercase">
+              <small className="text-xs font-medium text-muted-foreground uppercase">
                 Live evidence
               </small>
               <strong className="truncate text-lg leading-none">
@@ -78,7 +78,7 @@ function LiveEventProofModal({
             </span>
             <span
               className={cn(
-                "inline-flex min-h-6 items-center gap-1.5 rounded-full border px-2 text-xs font-bold",
+                "inline-flex min-h-6 items-center gap-1.5 rounded-md border px-2 text-xs font-medium",
                 isFlagged
                   ? "border-nextide-red/30 bg-nextide-red/10 text-nextide-red"
                   : "border-nextide-tide/30 bg-nextide-tide/10 text-nextide-tide"
@@ -99,7 +99,7 @@ function LiveEventProofModal({
         </header>
         <div className="grid min-h-0 lg:grid-cols-[21rem_minmax(0,1fr)]">
           <aside className="min-h-0 overflow-y-auto border-b border-nextide-line bg-black/15 p-4 lg:border-r lg:border-b-0">
-            <h3 className="mb-3 text-xs font-bold tracking-wide uppercase">
+            <h3 className="mb-3 text-xs font-medium tracking-wide uppercase">
               Timeline
             </h3>
             <div className="grid">
@@ -115,10 +115,10 @@ function LiveEventProofModal({
           </aside>
           <main className="grid min-h-0 content-start gap-3 overflow-y-auto p-4">
             <div className="grid gap-1">
-              <span className="text-xs font-bold text-muted-foreground uppercase">
+              <span className="text-xs font-medium text-muted-foreground uppercase">
                 Incident proof
               </span>
-              <h2 className="text-2xl leading-none font-semibold">
+              <h2 className="text-2xl leading-none font-medium">
                 {incidentTitle}
               </h2>
               {incidentMeta ? (
@@ -161,7 +161,7 @@ function LiveEventProofModal({
                     className="min-w-0 rounded-lg border border-nextide-line bg-black/15 p-2"
                     key={index}
                   >
-                    <dt className="text-[0.65rem] font-bold text-muted-foreground uppercase">
+                    <dt className="text-ui-caption font-medium text-muted-foreground uppercase">
                       {field.label}
                     </dt>
                     <dd className="mt-1 truncate text-sm">{field.value}</dd>
@@ -254,7 +254,7 @@ function ProofPanel({
 }) {
   return (
     <section className="grid gap-3 rounded-lg border border-nextide-line bg-card/60 p-3">
-      <header className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
+      <header className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
         {title}
       </header>
       {children}

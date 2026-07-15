@@ -77,10 +77,6 @@ function DashboardFilterBar({
             label: group.label,
           }))}
           aria-label="Filter group"
-          triggerClassName="h-11 bg-nextide-panel-strong font-semibold"
-          contentClassName="max-h-52 min-w-60 p-2"
-          optionClassName="min-h-10"
-          optionLabelClassName="font-semibold"
         />
       </div>
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] overflow-hidden rounded-lg border border-nextide-line bg-background/20">
@@ -108,7 +104,7 @@ function DashboardFilterBar({
                     aria-pressed={selected}
                     onClick={() => onItemSelect(item)}
                     className={cn(
-                      "grid min-w-52 gap-1 rounded-lg border px-3 py-2 text-left transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:bg-nextide-panel-strong",
+                      "grid min-w-52 gap-1 rounded-lg border px-3 py-2 text-left transition-[background-color,border-color,box-shadow] duration-[var(--nextide-motion-state)] hover:bg-nextide-panel-strong",
                       selected
                         ? "border-nextide-tide/65 bg-nextide-tide/10 shadow-[0_0_28px_rgb(30_228_188/0.18)]"
                         : "border-nextide-line bg-nextide-panel"
@@ -123,8 +119,8 @@ function DashboardFilterBar({
                           tone={
                             item.tone ?? (item.live ? "success" : "neutral")
                           }
-                          pulse={item.live}
-                          className="px-1.5 py-0.5 text-[0.68rem]"
+                          indicator={item.live ? "pulse" : "none"}
+                          className="px-1.5 py-0.5 text-ui-caption"
                         >
                           {item.badge ?? "Live"}
                         </StatusBadge>

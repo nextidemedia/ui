@@ -52,8 +52,9 @@ function CreatorFlowChart({
 }) {
   const gridRef = React.useRef<HTMLDivElement | null>(null)
   const dragState = React.useRef<DragState | null>(null)
-  const { ref: scrollRef, onWheel } =
-    useContainedScroll<HTMLDivElement>({ axis: "x" })
+  const { ref: scrollRef, onWheel } = useContainedScroll<HTMLDivElement>({
+    axis: "x",
+  })
   const columnCount = Math.max(1, days.length)
 
   const updateSession = React.useCallback(
@@ -102,7 +103,11 @@ function CreatorFlowChart({
     )
     const span = drag.originalEnd - drag.originalStart
     if (drag.mode === "move") {
-      const nextStart = clamp(drag.originalStart + deltaColumns, 0, columnCount - span - 1)
+      const nextStart = clamp(
+        drag.originalStart + deltaColumns,
+        0,
+        columnCount - span - 1
+      )
       updateSession(drag.id, nextStart, nextStart + span)
       return
     }
@@ -117,7 +122,11 @@ function CreatorFlowChart({
     updateSession(
       drag.id,
       drag.originalStart,
-      clamp(drag.originalEnd + deltaColumns, drag.originalStart, columnCount - 1)
+      clamp(
+        drag.originalEnd + deltaColumns,
+        drag.originalStart,
+        columnCount - 1
+      )
     )
   }
 
@@ -160,7 +169,7 @@ function CreatorFlowChart({
               >
                 <strong className="truncate text-xs">{creator.name}</strong>
                 {creator.meta ? (
-                  <small className="truncate text-[0.68rem] text-muted-foreground">
+                  <small className="truncate text-ui-caption text-muted-foreground">
                     {creator.meta}
                   </small>
                 ) : null}
@@ -169,7 +178,7 @@ function CreatorFlowChart({
           </div>
           <div className="grid gap-0">
             <div
-              className="grid h-9 border-b border-nextide-line text-center text-[0.68rem] font-semibold text-muted-foreground"
+              className="grid h-9 border-b border-nextide-line text-center text-ui-caption font-medium text-muted-foreground"
               style={{
                 gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
               }}
@@ -197,8 +206,16 @@ function CreatorFlowChart({
                     }}
                   >
                     {creatorSessions.map((session) => {
-                      const start = clamp(session.startIndex, 0, columnCount - 1)
-                      const end = clamp(session.endIndex, start, columnCount - 1)
+                      const start = clamp(
+                        session.startIndex,
+                        0,
+                        columnCount - 1
+                      )
+                      const end = clamp(
+                        session.endIndex,
+                        start,
+                        columnCount - 1
+                      )
                       const left = (start / columnCount) * 100
                       const width = ((end - start + 1) / columnCount) * 100
 
@@ -207,12 +224,15 @@ function CreatorFlowChart({
                           key={session.id}
                           type="button"
                           className={cn(
-                            "absolute top-2 bottom-2 grid min-w-12 grid-cols-[0.75rem_minmax(0,1fr)_0.75rem] items-center rounded-lg border px-1 text-left text-xs font-semibold shadow-[0_0_24px_rgb(30_228_188/0.12)] transition-[filter] hover:brightness-110",
+                            "absolute top-2 bottom-2 grid min-w-12 grid-cols-[0.75rem_minmax(0,1fr)_0.75rem] items-center rounded-lg border px-1 text-left text-xs font-medium shadow-[0_0_24px_rgb(30_228_188/0.12)] transition-[filter] hover:brightness-110",
                             toneClasses[session.tone ?? "success"],
-                            onSessionsChange && "cursor-grab active:cursor-grabbing"
+                            onSessionsChange &&
+                              "cursor-grab active:cursor-grabbing"
                           )}
                           style={{ left: `${left}%`, width: `${width}%` }}
-                          onPointerDown={(event) => beginDrag(event, session, "move")}
+                          onPointerDown={(event) =>
+                            beginDrag(event, session, "move")
+                          }
                           onPointerMove={moveDrag}
                           onPointerUp={endDrag}
                           onPointerCancel={endDrag}

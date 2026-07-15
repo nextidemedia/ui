@@ -13,6 +13,11 @@ type ReportContextBucket = {
   suggestions: string[]
 }
 
+type ContextChipMotion = {
+  phase: "exit" | "enter"
+  direction: "select" | "remove"
+}
+
 function ReportContextBuilder({
   buckets,
   onBucketsChange,
@@ -77,8 +82,53 @@ function ContextBucketRow({
   onSelect: (value: string) => void
   onRemove: (value: string) => void
 }) {
+  const [chipMotions, setChipMotions] = React.useState<
+    Record<string, ContextChipMotion>
+  >({})
+  const motionTimers = React.useRef<Record<string, number[]>>({})
   const { ref: suggestionRef, onWheel: onSuggestionWheel } =
     useContainedScroll<HTMLDivElement>({ axis: "x" })
+
+  React.useEffect(
+    () => () => {
+      Object.values(motionTimers.current).forEach((timers) => {
+        timers.forEach((timer) => window.clearTimeout(timer))
+      })
+    },
+    []
+  )
+
+  const moveChip = (
+    value: string,
+    direction: ContextChipMotion["direction"],
+    commit: () => void
+  ) => {
+    motionTimers.current[value]?.forEach((timer) =>
+      window.clearTimeout(timer)
+    )
+    setChipMotions((current) => ({
+      ...current,
+      [value]: { phase: "exit", direction },
+    }))
+
+    const commitTimer = window.setTimeout(() => {
+      commit()
+      setChipMotions((current) => ({
+        ...current,
+        [value]: { phase: "enter", direction },
+      }))
+    }, 110)
+    const settleTimer = window.setTimeout(() => {
+      setChipMotions((current) => {
+        const next = { ...current }
+        delete next[value]
+        return next
+      })
+      delete motionTimers.current[value]
+    }, 300)
+
+    motionTimers.current[value] = [commitTimer, settleTimer]
+  }
   const { ref: selectedRef, onWheel: onSelectedWheel } =
     useContainedScroll<HTMLDivElement>({ axis: "x" })
 
@@ -106,8 +156,13 @@ function ContextBucketRow({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="shrink-0 border-nextide-tide/35 bg-nextide-tide/10 text-nextide-tide"
-                onClick={() => onRemove(item)}
+                className={cn(
+                  "shrink-0 border-nextide-tide/35 bg-nextide-tide/10 text-nextide-tide",
+                  chipMotionClass(chipMotions[item])
+                )}
+                onClick={() =>
+                  moveChip(item, "remove", () => onRemove(item))
+                }
               >
                 {item}
                 <X className="size-3.5" />
@@ -131,7 +186,7 @@ function ContextBucketRow({
             onWheel={onSuggestionWheel}
             className="nextide-contained-scroll nextide-scrollbar-none flex gap-1.5 overflow-x-auto pb-0.5"
           >
-            <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold text-nextide-purple">
+            <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-nextide-purple">
               <Sparkles className="size-3.5" />
               AI suggestions
             </span>
@@ -141,8 +196,10 @@ function ContextBucketRow({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="shrink-0"
-                onClick={() => onSelect(item)}
+                className={cn("shrink-0", chipMotionClass(chipMotions[item]))}
+                onClick={() =>
+                  moveChip(item, "select", () => onSelect(item))
+                }
               >
                 {item}
                 <Plus className="size-3.5" />
@@ -154,6 +211,18 @@ function ContextBucketRow({
       </div>
     </section>
   )
+}
+
+function chipMotionClass(motion?: ContextChipMotion) {
+  if (!motion) return undefined
+  if (motion.phase === "exit") {
+    return motion.direction === "select"
+      ? "nextide-context-exit-up"
+      : "nextide-context-exit-down"
+  }
+  return motion.direction === "select"
+    ? "nextide-context-enter-up"
+    : "nextide-context-enter-down"
 }
 
 export { ReportContextBuilder, type ReportContextBucket }

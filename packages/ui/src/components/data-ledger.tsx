@@ -2,11 +2,6 @@ import * as React from "react"
 import { ChevronDown } from "lucide-react"
 
 import { Button } from "@nextide/ui/components/button"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@nextide/ui/components/collapsible"
 import { cn } from "@nextide/ui/lib/utils"
 
 function DataLedger({
@@ -48,24 +43,18 @@ function DataLedger({
   )
 
   return (
-    <Collapsible
-      open={!resolvedCollapsed}
-      onOpenChange={(open) => setCollapsed(!open)}
-      render={
-        <section
-          data-slot="data-ledger"
-          data-collapsed={resolvedCollapsed}
-          className={cn(
-            "grid gap-0 overflow-hidden rounded-xl border border-nextide-line bg-nextide-panel",
-            className
-          )}
-          {...props}
-        />
-      }
+    <section
+      data-slot="data-ledger"
+      data-collapsed={resolvedCollapsed}
+      className={cn(
+        "grid gap-0 overflow-hidden rounded-xl border border-nextide-line bg-nextide-panel",
+        className
+      )}
+      {...props}
     >
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-nextide-line p-3">
         <div className="grid min-w-0 gap-1">
-          <h3 className="truncate text-sm font-semibold">{title}</h3>
+          <h3 className="truncate text-sm font-medium">{title}</h3>
           {description ? (
             <p className="text-xs text-muted-foreground">{description}</p>
           ) : null}
@@ -73,30 +62,28 @@ function DataLedger({
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
           {search}
           {actions}
-          <CollapsibleTrigger
-            render={
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-expanded={!resolvedCollapsed}
-              />
-            }
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-expanded={!resolvedCollapsed}
+            onClick={() => setCollapsed(!resolvedCollapsed)}
           >
             {countLabel ? <span>{countLabel}</span> : null}
             <ChevronDown
               className={cn(
-                "transition-transform duration-200",
+                "transition-transform duration-[var(--nextide-motion-state)]",
                 resolvedCollapsed && "-rotate-90"
               )}
             />
-          </CollapsibleTrigger>
+          </Button>
         </div>
       </header>
-      <CollapsibleContent
-        keepMounted
+      <div
+        aria-hidden={resolvedCollapsed}
+        inert={resolvedCollapsed ? true : undefined}
         className={cn(
-          "grid transition-[grid-template-rows,opacity] duration-300 ease-[var(--nextide-ease-out-quart)]",
+          "grid transition-[grid-template-rows,opacity] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
           resolvedCollapsed
             ? "grid-rows-[0fr] opacity-0"
             : "grid-rows-[1fr] opacity-100"
@@ -112,8 +99,8 @@ function DataLedger({
             {children}
           </div>
         </div>
-      </CollapsibleContent>
-    </Collapsible>
+      </div>
+    </section>
   )
 }
 

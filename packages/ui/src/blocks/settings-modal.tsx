@@ -61,7 +61,7 @@ function SettingsModal({
             {kicker ? (
               <span
                 data-slot="settings-modal-kicker"
-                className="inline-flex min-h-7 items-center rounded-full border border-nextide-tide/35 bg-nextide-tide/10 px-3 text-xs font-bold text-nextide-tide uppercase"
+                className="inline-flex min-h-7 items-center rounded-md border border-nextide-tide/35 bg-nextide-tide/10 px-3 text-xs font-medium text-nextide-tide uppercase"
               >
                 {kicker}
               </span>
@@ -69,7 +69,7 @@ function SettingsModal({
             <span data-slot="settings-modal-title-stack" className="grid gap-1">
               <DialogPrimitive.Title
                 data-slot="settings-modal-title"
-                className="text-xl leading-none font-bold"
+                className="text-xl leading-none font-medium"
               >
                 {title}
               </DialogPrimitive.Title>
@@ -86,7 +86,7 @@ function SettingsModal({
               type="button"
               aria-label={closeLabel}
               data-slot="settings-modal-close"
-              className="grid size-9 place-items-center rounded-full border border-nextide-line bg-card/60 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none [&_svg]:size-4"
+              className="grid size-9 place-items-center rounded-lg border border-nextide-line bg-card/60 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&_svg]:size-4"
             >
               <X aria-hidden="true" />
             </DialogPrimitive.Close>
@@ -130,14 +130,14 @@ function SettingsModalSection({
         {eyebrow ? (
           <span
             data-slot="settings-modal-section-eyebrow"
-            className="text-xs font-bold text-nextide-tide uppercase"
+            className="text-xs font-medium text-nextide-tide uppercase"
           >
             {eyebrow}
           </span>
         ) : null}
         <h3
           data-slot="settings-modal-section-title"
-          className="text-base font-bold"
+          className="text-base font-medium"
         >
           {title}
         </h3>
@@ -183,7 +183,7 @@ function SettingsProgressAction({
         disabled={disabled}
         onClick={onClick}
         className={cn(
-          "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-nextide-tide/40 bg-nextide-tide px-3 text-sm font-bold text-black transition-colors hover:bg-nextide-tide/85 disabled:pointer-events-none disabled:border-nextide-line disabled:bg-nextide-panel disabled:text-muted-foreground",
+          "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-nextide-tide/40 bg-nextide-tide px-3 text-sm font-medium text-black transition-colors hover:bg-nextide-tide/85 disabled:pointer-events-none disabled:border-nextide-line disabled:bg-nextide-panel disabled:text-muted-foreground",
           className
         )}
         {...props}
@@ -200,7 +200,7 @@ function SettingsProgressAction({
       </button>
       <div
         data-slot="settings-progress"
-        className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 pt-3 text-xs font-bold text-muted-foreground uppercase"
+        className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 pt-3 text-xs font-medium text-muted-foreground uppercase"
       >
         <span>{progressLabel}</span>
         <b>
@@ -212,7 +212,7 @@ function SettingsProgressAction({
           className="relative col-span-2 h-1.5 overflow-hidden rounded-full bg-nextide-line"
         >
           <i
-            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-nextide-tide to-nextide-yellow transition-[width] duration-200"
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-nextide-tide to-nextide-yellow transition-[width] duration-[var(--nextide-motion-state)]"
             style={{ width: `${clampedProgress}%` }}
           />
         </span>

@@ -18,7 +18,7 @@ import {
 import { EvidenceDrawer } from "@nextide/ui/blocks/evidence-drawer"
 import { ExportWorkbench } from "@nextide/ui/blocks/export-workbench"
 import { IntelligenceProgressionChart } from "@nextide/ui/blocks/intelligence-progression-chart"
-import { IntroPlate } from "@nextide/ui/blocks/intro-plate"
+import { SignalPlate } from "@nextide/ui/blocks/signal-plate"
 import { LiveguardIncidentReview } from "@nextide/ui/blocks/liveguard-incident-review"
 import { PacingConfigurator } from "@nextide/ui/blocks/pacing-configurator"
 import { ReportRail, type ReportRailItem } from "@nextide/ui/blocks/report-rail"
@@ -65,6 +65,7 @@ const scheduleBookings: CampaignScheduleBooking[] = [
     endIndex: 2,
     tone: "success",
     status: "Live",
+    statusIndicator: "pulse",
   },
   {
     id: "booking-2",
@@ -202,26 +203,28 @@ function WebMiningPage() {
   return (
     <section className="grid gap-4">
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
-        <IntroPlate
-          eyebrow="nextide-web"
-          title="Campaign operations candidates"
-          description="Schedule matrix, pacing controls, export console, and LiveGuard proof review split into package-owned blocks."
-          status="Mining target page"
+        <SignalPlate
+          eyebrow="Campaign operations"
+          title="Campaign command center"
+          description="Review schedules, pacing, exports, and LiveGuard proof without leaving the active campaign."
+          status="Operations ready"
+          statusTone="success"
           metrics={[
-            { label: "Blocks", value: "4", detail: "campaign surfaces" },
-            { label: "Source", value: "web", detail: "Nextide-ified" },
-            { label: "Scope", value: "P1", detail: "highest value" },
+            { label: "Campaigns", value: "4", detail: "in current scope" },
+            { label: "Delivery", value: "Live", detail: "signals current" },
+            { label: "Priority", value: "P1", detail: "highest value" },
           ]}
         />
-        <IntroPlate
-          eyebrow="Extraction rule"
-          title="Portable behavior only"
-          description="The page uses sample state; API calls, permissions, and campaign business rules stay behind in the source repo."
-          status="Clean seam"
+        <SignalPlate
+          eyebrow="Operational guardrails"
+          title="Clear ownership at every step"
+          description="Operators see only the campaign state, controls, and approvals needed for the decision in front of them."
+          status="Guardrails active"
+          statusTone="warning"
           metrics={[
-            { label: "API", value: "0", detail: "ported endpoints" },
-            { label: "State", value: "demo", detail: "playground only" },
-            { label: "Exports", value: "public", detail: "@nextide/ui" },
+            { label: "Approvals", value: "2", detail: "awaiting review" },
+            { label: "Delivery", value: "Live", detail: "current state" },
+            { label: "Exports", value: "3", detail: "ready now" },
           ]}
         />
       </div>
@@ -339,11 +342,12 @@ function KrakenMiningPage() {
   return (
     <section className="grid gap-4">
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
-        <IntroPlate
+        <SignalPlate
           eyebrow="Kraken"
           title="Operations monitor candidates"
           description="Run table, evidence drawer, and incident timeline patterns distilled out of the Kraken operations UI."
           status="Mining target page"
+          statusTone="processing"
           metrics={[
             {
               label: "Runs",
@@ -443,7 +447,7 @@ function KrakenMiningPage() {
                 key={`${time}-${label}`}
                 className="grid grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-sm"
               >
-                <span className="text-xs font-semibold text-nextide-tide">
+                <span className="text-xs font-medium text-nextide-tide">
                   {time}
                 </span>
                 <span className="grid gap-0.5">
@@ -570,7 +574,7 @@ function IntelligenceReportMiningPage() {
 
       <IntelligenceProgressionChart
         title="Report generation backbone"
-        description="The report reader page still shows the mined generation primitive as the upstream state model."
+        description="Follow source preparation, analysis, evidence fusion, and final report assembly."
         stages={[
           {
             id: "queue",

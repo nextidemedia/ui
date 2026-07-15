@@ -54,7 +54,7 @@ function CreatorScopePanel({
             className={scopeRowClass(activeId === creator.id)}
             onClick={() => onActiveIdChange?.(creator.id)}
           >
-            <span className="grid size-7 place-items-center rounded-full bg-nextide-tide/10 text-[0.68rem] font-bold text-nextide-tide">
+            <span className="grid size-7 place-items-center rounded-full bg-nextide-tide/10 text-ui-caption font-medium text-nextide-tide">
               {creator.avatar ?? initials(creator.name)}
             </span>
             <span className="grid min-w-0 gap-0.5 text-left">

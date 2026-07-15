@@ -147,14 +147,14 @@ function LineGraph({
       <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,4.25rem),1fr))] gap-2">
         {points.map((point) => (
           <div key={point.id} className="grid min-w-0 gap-0.5">
-            <span className="truncate text-[0.68rem] leading-tight font-medium text-muted-foreground">
+            <span className="truncate text-ui-caption leading-tight font-medium text-muted-foreground">
               {point.label}
             </span>
-            <strong className="truncate text-sm font-bold">
+            <strong className="truncate text-sm font-medium">
               {point.valueLabel ?? point.value}
             </strong>
             {point.meta ? (
-              <span className="truncate text-[0.62rem] leading-tight text-muted-foreground/70">
+              <span className="truncate text-ui-caption leading-tight text-muted-foreground/70">
                 {point.meta}
               </span>
             ) : null}

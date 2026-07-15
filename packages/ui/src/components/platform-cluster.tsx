@@ -45,10 +45,10 @@ function PlatformCluster({
           key={platform}
           title={platformLabel(platform)}
           className={cn(
-            "grid shrink-0 place-items-center rounded-full border font-bold shadow-[0_0_14px_rgb(30_228_188/0.08)]",
+            "grid shrink-0 place-items-center rounded-full border font-medium shadow-[0_0_14px_rgb(30_228_188/0.08)]",
             size === "sm"
-              ? "size-6 text-[0.62rem] [&_svg]:size-3"
-              : "size-8 text-[0.72rem] [&_svg]:size-3.5",
+              ? "size-6 text-ui-caption [&_svg]:size-3"
+              : "size-8 text-ui-caption [&_svg]:size-3.5",
             index > 0 && "-ml-2",
             platformToneClasses[platform] ?? platformToneClasses.unknown
           )}

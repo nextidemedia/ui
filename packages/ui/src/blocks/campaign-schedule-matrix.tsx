@@ -2,7 +2,10 @@ import * as React from "react"
 import { CalendarClock, Clock3 } from "lucide-react"
 
 import { Metric } from "@nextide/ui/components/metric"
-import { StatusBadge } from "@nextide/ui/components/status-badge"
+import {
+  StatusBadge,
+  type StatusBadgeIndicator,
+} from "@nextide/ui/components/status-badge"
 import {
   Surface,
   SurfaceDescription,
@@ -37,16 +40,18 @@ type CampaignScheduleBooking = {
   endIndex: number
   tone?: CampaignScheduleTone
   status?: React.ReactNode
+  statusIndicator?: StatusBadgeIndicator
 }
 
 const bookingToneClasses: Record<CampaignScheduleTone, string> = {
-  neutral: "border-nextide-line bg-muted/20 text-foreground",
+  neutral:
+    "border-nextide-line bg-background/70 text-foreground before:bg-muted-foreground",
   success:
-    "border-nextide-tide/45 bg-nextide-tide/12 text-foreground shadow-[0_0_22px_rgb(30_228_188/0.12)]",
+    "border-nextide-tide/35 bg-[linear-gradient(90deg,rgb(30_228_188/0.11),rgb(30_228_188/0.035))] text-foreground before:bg-nextide-tide",
   processing:
-    "border-nextide-purple/45 bg-nextide-purple/12 text-foreground shadow-[0_0_22px_rgb(175_46_255/0.12)]",
+    "border-nextide-purple/35 bg-[linear-gradient(90deg,rgb(175_46_255/0.11),rgb(175_46_255/0.035))] text-foreground before:bg-nextide-purple",
   warning:
-    "border-nextide-yellow/45 bg-nextide-yellow/12 text-foreground shadow-[0_0_22px_rgb(255_218_83/0.1)]",
+    "border-nextide-yellow/35 bg-[linear-gradient(90deg,rgb(255_218_83/0.11),rgb(255_218_83/0.035))] text-foreground before:bg-nextide-yellow",
 }
 
 function CampaignScheduleMatrix({
@@ -120,7 +125,7 @@ function CampaignScheduleMatrix({
             gridTemplateColumns: `10rem repeat(${boundedDays}, minmax(5.5rem, 1fr))`,
           }}
         >
-          <div className="sticky left-0 z-20 border-r border-b border-nextide-line bg-nextide-panel p-3 text-xs font-semibold text-muted-foreground">
+          <div className="sticky left-0 z-20 border-r border-b border-nextide-line bg-nextide-panel p-3 text-xs font-medium text-muted-foreground">
             Creator
           </div>
           {days.map((day) => (
@@ -131,9 +136,9 @@ function CampaignScheduleMatrix({
                 day.today && "bg-nextide-tide/8 text-nextide-tide"
               )}
             >
-              <div className="font-semibold text-foreground">{day.label}</div>
+              <div className="font-medium text-foreground">{day.label}</div>
               {day.meta ? (
-                <div className="mt-1 text-[0.68rem] text-muted-foreground">
+                <div className="mt-1 text-ui-caption text-muted-foreground">
                   {day.meta}
                 </div>
               ) : null}
@@ -148,7 +153,7 @@ function CampaignScheduleMatrix({
             return (
               <React.Fragment key={creator.id}>
                 <div className="sticky left-0 z-10 flex min-w-0 items-center gap-2 border-r border-b border-nextide-line bg-nextide-panel p-3">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-nextide-line bg-background/35 text-xs font-semibold text-nextide-tide">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-nextide-line bg-background/35 text-xs font-medium text-nextide-tide">
                     {creator.avatar ?? initialsFromNode(creator.name)}
                   </span>
                   <span className="grid min-w-0 gap-0.5">
@@ -188,10 +193,10 @@ function CampaignScheduleMatrix({
                         key={booking.id}
                         type="button"
                         className={cn(
-                          "absolute top-2 bottom-2 grid min-w-0 content-center gap-1 rounded-lg border px-3 text-left transition-[background-color,border-color,box-shadow,transform] duration-300 ease-[var(--nextide-ease-out-quart)] hover:-translate-y-0.5 focus-visible:outline-none",
+                          "absolute top-2 bottom-2 flex min-w-0 items-center rounded-lg border py-2 pr-16 pl-4 text-left shadow-[inset_0_1px_0_rgb(255_255_255/0.04)] transition-[background-color,border-color,box-shadow] duration-[var(--nextide-motion-state)] before:absolute before:inset-y-2 before:left-1.5 before:w-0.5 before:rounded-sm focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                           bookingToneClasses[booking.tone ?? "success"],
                           active &&
-                            "border-nextide-tide shadow-[0_0_0_1px_rgb(30_228_188/0.5),0_0_30px_rgb(30_228_188/0.18)]"
+                            "border-nextide-tide bg-nextide-tide/12 shadow-[0_0_0_1px_rgb(30_228_188/0.38),0_0_24px_rgb(30_228_188/0.14)]"
                         )}
                         style={{
                           left: `${(start / boundedDays) * 100}%`,
@@ -199,19 +204,26 @@ function CampaignScheduleMatrix({
                         }}
                         onClick={() => onBookingSelect?.(booking)}
                       >
-                        <span className="truncate text-xs font-semibold">
-                          {booking.title}
-                        </span>
-                        <span className="flex min-w-0 items-center gap-2 text-[0.68rem] text-muted-foreground">
-                          {booking.status ? (
-                            <StatusBadge tone={booking.tone ?? "success"}>
-                              {booking.status}
-                            </StatusBadge>
-                          ) : null}
+                        <span className="grid min-w-0 gap-0.5 self-center">
+                          <span className="truncate text-sm leading-tight font-medium">
+                            {booking.title}
+                          </span>
                           {booking.meta ? (
-                            <span className="truncate">{booking.meta}</span>
+                            <span className="truncate text-ui-caption text-muted-foreground">
+                              {booking.meta}
+                            </span>
                           ) : null}
                         </span>
+                        {booking.status ? (
+                          <StatusBadge
+                            tone={booking.tone ?? "success"}
+                            size="compact"
+                            indicator={booking.statusIndicator ?? "none"}
+                            className="absolute top-1.5 right-2 uppercase"
+                          >
+                            {booking.status}
+                          </StatusBadge>
+                        ) : null}
                       </button>
                     )
                   })}

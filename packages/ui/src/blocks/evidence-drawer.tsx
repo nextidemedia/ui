@@ -3,6 +3,7 @@ import { FileText, GitBranch, ReceiptText } from "lucide-react"
 
 import { DataLedger } from "@nextide/ui/components/data-ledger"
 import { Metric } from "@nextide/ui/components/metric"
+import { SegmentedControl } from "@nextide/ui/components/segmented-control"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
 import {
   Surface,
@@ -10,12 +11,6 @@ import {
   SurfaceHeader,
   SurfaceTitle,
 } from "@nextide/ui/components/surface"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@nextide/ui/components/tabs"
 import { cn } from "@nextide/ui/lib/utils"
 
 type EvidenceDrawerTone =
@@ -72,6 +67,35 @@ function EvidenceDrawer({
     (_current: string, nextTab: string) => nextTab,
     "decisions"
   )
+  const [leavingTab, setLeavingTab] = React.useState<string | null>(null)
+  const [swapDirection, setSwapDirection] = React.useState<
+    "forward" | "backward"
+  >("forward")
+  const swapTimerRef = React.useRef<number | null>(null)
+  const tabOrder = ["decisions", "sources", "costs"]
+
+  React.useEffect(
+    () => () => {
+      if (swapTimerRef.current) window.clearTimeout(swapTimerRef.current)
+    },
+    []
+  )
+
+  const changeTab = (nextTab: string) => {
+    if (nextTab === activeTab) return
+    if (swapTimerRef.current) window.clearTimeout(swapTimerRef.current)
+    setSwapDirection(
+      tabOrder.indexOf(nextTab) > tabOrder.indexOf(activeTab)
+        ? "forward"
+        : "backward"
+    )
+    setLeavingTab(activeTab)
+    setActiveTab(nextTab)
+    swapTimerRef.current = window.setTimeout(() => {
+      setLeavingTab(null)
+      swapTimerRef.current = null
+    }, 220)
+  }
 
   return (
     <Surface
@@ -105,73 +129,108 @@ function EvidenceDrawer({
         ))}
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid h-auto w-full grid-cols-3 rounded-lg border border-nextide-line bg-background/20 p-1">
-          <EvidenceTab value="decisions" icon={<GitBranch />}>
-            Decisions
-          </EvidenceTab>
-          <EvidenceTab value="sources" icon={<FileText />}>
-            Sources
-          </EvidenceTab>
-          <EvidenceTab value="costs" icon={<ReceiptText />}>
-            Costs
-          </EvidenceTab>
-        </TabsList>
+      <SegmentedControl
+        value={activeTab}
+        onValueChange={changeTab}
+        aria-label="Evidence view"
+        options={[
+          {
+            value: "decisions",
+            label: <EvidenceChoice icon={<GitBranch />} label="Decisions" />,
+          },
+          {
+            value: "sources",
+            label: <EvidenceChoice icon={<FileText />} label="Sources" />,
+          },
+          {
+            value: "costs",
+            label: <EvidenceChoice icon={<ReceiptText />} label="Costs" />,
+          },
+        ]}
+      />
 
-        <TabsContent value="decisions" className="mt-0">
-          <EvidenceEventList events={events} />
-        </TabsContent>
-        <TabsContent value="sources" className="mt-0">
-          <EvidenceEventList events={events} />
-        </TabsContent>
-        <TabsContent value="costs" className="mt-0">
-          <DataLedger
-            title="Cost ledger"
-            description="Reusable cost rows without Kraken-specific payloads."
-            countLabel={`${costs.length} rows`}
+      <div className="grid min-w-0 overflow-hidden [&>*]:[grid-area:1/1]">
+        {leavingTab ? (
+          <div
+            aria-hidden="true"
+            inert
+            className={cn(
+              "pointer-events-none min-w-0",
+              swapDirection === "forward"
+                ? "nextide-panel-exit-left"
+                : "nextide-panel-exit-right"
+            )}
           >
-            <div className="grid min-w-[30rem] gap-2">
-              {costs.map((cost) => (
-                <div
-                  key={cost.id}
-                  className="grid grid-cols-[1fr_auto] gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-sm"
-                >
-                  <span className="grid min-w-0 gap-0.5">
-                    <strong className="truncate">{cost.label}</strong>
-                    {cost.detail ? (
-                      <span className="truncate text-xs text-muted-foreground">
-                        {cost.detail}
-                      </span>
-                    ) : null}
-                  </span>
-                  <strong>{cost.amount}</strong>
-                </div>
-              ))}
-            </div>
-          </DataLedger>
-        </TabsContent>
-      </Tabs>
+            <EvidencePanel tab={leavingTab} events={events} costs={costs} />
+          </div>
+        ) : null}
+        <div
+          key={activeTab}
+          className={cn(
+            "min-w-0",
+            swapDirection === "forward"
+              ? "nextide-panel-enter-right"
+              : "nextide-panel-enter-left"
+          )}
+        >
+          <EvidencePanel tab={activeTab} events={events} costs={costs} />
+        </div>
+      </div>
     </Surface>
   )
 }
 
-function EvidenceTab({
-  value,
+function EvidenceChoice({
   icon,
-  children,
+  label,
 }: {
-  value: string
   icon: React.ReactNode
-  children: React.ReactNode
+  label: React.ReactNode
 }) {
   return (
-    <TabsTrigger
-      value={value}
-      className="h-8 min-w-0 gap-1.5 data-active:bg-nextide-tide data-active:text-black data-active:shadow-[0_0_18px_rgb(30_228_188/0.2)]"
-    >
+    <span className="flex min-w-0 items-center justify-center gap-1.5 max-[24rem]:[&_svg]:hidden [&_svg]:size-3.5">
       {icon}
-      {children}
-    </TabsTrigger>
+      <span className="min-w-0 truncate">{label}</span>
+    </span>
+  )
+}
+
+function EvidencePanel({
+  tab,
+  events,
+  costs,
+}: {
+  tab: string
+  events: EvidenceDrawerEvent[]
+  costs: EvidenceDrawerCost[]
+}) {
+  if (tab !== "costs") return <EvidenceEventList events={events} />
+
+  return (
+    <DataLedger
+      title="Cost ledger"
+      description="Reusable cost rows without Kraken-specific payloads."
+      countLabel={`${costs.length} rows`}
+    >
+      <div className="grid min-w-0 gap-2">
+        {costs.map((cost) => (
+          <div
+            key={cost.id}
+            className="grid grid-cols-[1fr_auto] gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-sm"
+          >
+            <span className="grid min-w-0 gap-0.5">
+              <strong className="truncate">{cost.label}</strong>
+              {cost.detail ? (
+                <span className="truncate text-xs text-muted-foreground">
+                  {cost.detail}
+                </span>
+              ) : null}
+            </span>
+            <strong>{cost.amount}</strong>
+          </div>
+        ))}
+      </div>
+    </DataLedger>
   )
 }
 
@@ -181,9 +240,9 @@ function EvidenceEventList({ events }: { events: EvidenceDrawerEvent[] }) {
       {events.map((event) => (
         <div
           key={event.id}
-          className="grid grid-cols-[4rem_minmax(0,1fr)_auto] items-start gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-sm"
+          className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-start gap-2 rounded-lg border border-nextide-line bg-background/25 p-3 text-sm sm:grid-cols-[4rem_minmax(0,1fr)_auto] sm:gap-3"
         >
-          <span className="text-xs font-semibold text-nextide-tide">
+          <span className="text-xs font-medium text-nextide-tide">
             {event.time}
           </span>
           <span className="grid min-w-0 gap-0.5">
@@ -194,7 +253,10 @@ function EvidenceEventList({ events }: { events: EvidenceDrawerEvent[] }) {
               </span>
             ) : null}
           </span>
-          <StatusBadge tone={event.tone ?? "neutral"}>
+          <StatusBadge
+            tone={event.tone ?? "neutral"}
+            className="col-start-2 w-fit sm:col-start-auto"
+          >
             {event.tone ?? "note"}
           </StatusBadge>
         </div>

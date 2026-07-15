@@ -1,6 +1,6 @@
 {
   "name": "@nextide/ui",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Shared Nextide React components and product interface patterns.",
   "type": "module",
   "license": "UNLICENSED",
@@ -58,6 +58,7 @@
     "typescript-eslint": "8.61.1"
   },
   "exports": {
+    "./display-font.css": "./dist/styles/display-font.css",
     "./globals.css": "./dist/styles/globals.css",
     "./lib/*": {
       "types": "./dist/lib/*.d.ts",

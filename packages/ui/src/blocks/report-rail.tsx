@@ -54,6 +54,7 @@ function ReportRail({
   return (
     <Surface
       data-slot="report-rail"
+      data-selection="outline"
       className={cn("grid content-start gap-4", className)}
       {...props}
     >
@@ -71,23 +72,23 @@ function ReportRail({
             <button
               key={item.id}
               type="button"
+              aria-pressed={active}
               className={cn(
-                "grid grid-cols-[2rem_minmax(0,1fr)] gap-2 rounded-lg border border-transparent p-2 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:bg-nextide-panel-strong",
-                active &&
-                  "border-nextide-tide/60 bg-nextide-tide/10 shadow-[0_0_24px_rgb(30_228_188/0.14)]"
+                "relative grid grid-cols-[2rem_minmax(0,1fr)] gap-2 overflow-hidden rounded-lg border border-transparent p-2 text-left transition-[background-color,border-color] duration-[var(--nextide-motion-state)] hover:bg-nextide-panel-strong",
+                active && "border-nextide-tide/45 bg-nextide-tide/[0.08]"
               )}
               onClick={() => onItemSelect?.(item)}
             >
               <span
                 className={cn(
                   "grid size-8 place-items-center rounded-lg bg-nextide-panel text-nextide-tide [&_svg]:size-4",
-                  active && "shadow-[0_0_20px_rgb(30_228_188/0.16)]"
+                  active && "bg-nextide-panel-strong"
                 )}
               >
                 {statusIcon(item.status)}
               </span>
               <span className="grid min-w-0 gap-1">
-                <span className="truncate text-sm font-semibold">
+                <span className="truncate text-sm font-medium">
                   {item.title}
                 </span>
                 <span className="flex min-w-0 flex-wrap items-center gap-2">

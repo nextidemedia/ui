@@ -8,10 +8,20 @@ type SegmentedControlOption = {
   disabled?: boolean
 }
 
+type SegmentedControlVariant = "fill" | "quiet" | "underline"
+type SegmentedControlSize = "default" | "tall"
+
+const segmentedIndicatorStyle = {
+  width: "calc((100% - 0.5rem) / var(--segmented-count))",
+  transform: "translateX(calc(var(--segmented-index) * 100%))",
+} satisfies React.CSSProperties
+
 function SegmentedControl({
   value,
   options,
   onValueChange,
+  variant = "fill",
+  size = "default",
   className,
   style,
   "aria-label": ariaLabel = "Segmented control",
@@ -20,16 +30,14 @@ function SegmentedControl({
   value: string
   options: SegmentedControlOption[]
   onValueChange: (value: string) => void
+  variant?: SegmentedControlVariant
+  size?: SegmentedControlSize
 }) {
   const activeIndex = Math.max(
     0,
     options.findIndex((option) => option.value === value)
   )
   const count = Math.max(options.length, 1)
-  const indicatorStyle = {
-    width: "calc((100% - 0.5rem) / var(--segmented-count))",
-    transform: "translateX(calc(var(--segmented-index) * 100%))",
-  }
 
   return (
     <div
@@ -44,6 +52,7 @@ function SegmentedControl({
         {
           "--segmented-count": count,
           "--segmented-index": activeIndex,
+          gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))`,
           ...style,
         } as React.CSSProperties
       }
@@ -52,58 +61,47 @@ function SegmentedControl({
       {options.length > 0 ? (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-1 left-1 z-10 rounded-md bg-nextide-tide shadow-[0_0_18px_rgb(30_228_188/0.2)] transition-transform duration-[520ms] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
-          style={indicatorStyle}
+          className={cn(
+            "pointer-events-none absolute inset-y-1 left-1 z-10 transition-transform duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
+            variant === "fill" && "rounded-md bg-nextide-tide",
+            variant === "quiet" &&
+              "rounded-md bg-nextide-tide/[0.09] outline outline-1 -outline-offset-1 outline-nextide-tide/20",
+            variant === "underline" &&
+              "border-b-2 border-nextide-tide bg-nextide-tide/[0.04]"
+          )}
+          style={segmentedIndicatorStyle}
         />
       ) : null}
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          role="radio"
-          aria-checked={option.value === value}
-          disabled={option.disabled}
-          className={cn(
-            "relative z-10 h-7 min-w-0 truncate rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors duration-[220ms] outline-none",
-            "focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40"
-          )}
-          onClick={() => onValueChange(option.value)}
-        >
-          {option.label}
-        </button>
-      ))}
-      {options.length > 0 ? (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-1 left-1 z-20 overflow-hidden rounded-md transition-transform duration-[520ms] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
-          style={indicatorStyle}
-        >
-          <span
-            className="grid h-full grid-flow-col transition-transform duration-[520ms] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
-            style={{
-              width: "calc(var(--segmented-count) * 100%)",
-              gridTemplateColumns:
-                "repeat(var(--segmented-count), minmax(0, 1fr))",
-              transform:
-                "translateX(calc(var(--segmented-index) * -100% / var(--segmented-count)))",
-            }}
+      {options.map((option) => {
+        const active = option.value === value
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            disabled={option.disabled}
+            className={cn(
+              "relative z-10 min-w-0 truncate rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors duration-[var(--nextide-motion-state)] outline-none",
+              size === "tall" ? "min-h-12 py-1.5" : "h-7",
+              active && variant === "fill" && "text-black",
+              active && variant !== "fill" && "text-foreground",
+              "focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
+            )}
+            onClick={() => onValueChange(option.value)}
           >
-            {options.map((option) => (
-              <span
-                key={option.value}
-                className={cn(
-                  "grid h-7 min-w-0 place-items-center truncate px-2 text-xs font-medium text-black",
-                  option.disabled && "opacity-40"
-                )}
-              >
-                {option.label}
-              </span>
-            ))}
-          </span>
-        </span>
-      ) : null}
+            {option.label}
+          </button>
+        )
+      })}
     </div>
   )
 }
 
-export { SegmentedControl, type SegmentedControlOption }
+export {
+  SegmentedControl,
+  type SegmentedControlOption,
+  type SegmentedControlSize,
+  type SegmentedControlVariant,
+}

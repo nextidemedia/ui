@@ -91,16 +91,6 @@ type SidebarFooterProps = {
   footer?: React.ReactNode
 }
 
-const brandTitleGlow: React.CSSProperties = {
-  textShadow:
-    "0 0 1px rgba(255,255,255,0.9), 0 0 14px rgba(30,228,188,0.72), 0 0 28px rgba(30,228,188,0.32)",
-}
-
-const brandTextGlowFilter: React.CSSProperties = {
-  filter:
-    "drop-shadow(0 0 10px rgb(30 228 188 / 0.46)) drop-shadow(0 0 22px rgb(30 228 188 / 0.22))",
-}
-
 function SidebarToggleButton({
   drawerCollapsed = false,
   onToggle,
@@ -115,7 +105,7 @@ function SidebarToggleButton({
       size="icon"
       data-slot="sidebar-toggle"
       className={cn(
-        "relative z-30 overflow-visible transition-[right,rotate,opacity,box-shadow,background-color] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] before:absolute before:-inset-1 before:content-[''] active:translate-y-0 motion-reduce:transition-none",
+        "relative z-30 overflow-visible transition-[right,rotate,opacity,color,box-shadow,background-color,border-color] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] before:absolute before:-inset-1 before:content-[''] active:translate-y-0 motion-reduce:transition-none",
         className
       )}
       aria-label={drawerCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -138,6 +128,7 @@ function SidebarToggleButton({
       }}
     >
       <ChevronLeft
+        data-icon="inline-start"
         className={cn(
           "transition-[rotate] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
           drawerCollapsed && "rotate-180"
@@ -171,9 +162,10 @@ function SidebarBrand({
     <span className="relative z-30 grid size-16 shrink-0 place-items-center overflow-visible transition-[width,height] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none">
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-2.5 rounded-[24px] bg-[linear-gradient(135deg,rgb(30_228_188/0.55),rgb(30_228_188/0.04))] opacity-85 blur-xl"
+        data-slot="sidebar-brand-glow"
+        className="absolute -inset-5 rounded-xl bg-[radial-gradient(circle,color-mix(in_srgb,var(--nextide-tide)_58%,transparent)_0%,color-mix(in_srgb,var(--nextide-tide)_18%,transparent)_38%,transparent_72%)] blur-2xl"
       />
-      <span className="relative grid size-full place-items-center overflow-hidden rounded-[18px] border border-nextide-line bg-[#08080b] shadow-[inset_0_1px_1px_rgb(255_255_255/0.06)] transition-[border-radius] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none">
+      <span className="relative grid size-full place-items-center overflow-hidden rounded-xl border border-nextide-tide/20 bg-background shadow-[inset_0_1px_1px_rgb(255_255_255/0.08),0_0_24px_rgb(30_228_188/0.12)] transition-[border-radius] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none">
         {logo ?? (
           <img
             src={defaultLogoUrl}
@@ -190,7 +182,7 @@ function SidebarBrand({
       src={defaultBylineLogoUrl}
       alt={byline}
       draggable={false}
-      className="h-5 w-auto object-contain object-left drop-shadow-[0_0_10px_rgb(30_228_188/0.45)]"
+      className="h-5 w-auto object-contain object-left"
     />
   )
 
@@ -200,62 +192,47 @@ function SidebarBrand({
       data-collapsed={collapsed}
       data-drawer-collapsed={drawerCollapsed}
       className={cn(
-        "relative z-30 grid w-full overflow-visible transition-[gap,min-height,padding] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+        "relative z-30 grid w-full grid-cols-[4rem_minmax(0,1fr)_auto] items-center overflow-visible transition-[grid-template-columns,gap,min-height,padding] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
         collapsed
-          ? "grid-cols-[4rem] items-center py-1 pr-0 pl-1"
-          : "grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-0 py-1 pr-2 pl-1",
+          ? "grid-cols-[4rem_0fr_0fr] gap-x-0 py-1 pr-0 pl-1"
+          : "gap-x-0 py-1 pr-2 pl-1",
         className
       )}
     >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "pointer-events-none absolute z-0 rounded-[30px] bg-[linear-gradient(90deg,rgb(30_228_188/0.10),transparent)] blur-[22px]",
-          collapsed
-            ? "inset-x-0 top-9 bottom-0 opacity-65"
-            : "-inset-y-3 right-10 -left-2 opacity-100"
-        )}
-      />
-      {collapsed ? toggleButton : null}
       {brandMark}
-      {!collapsed ? (
+      <span
+        data-slot="sidebar-brand-text"
+        aria-hidden={collapsed}
+        className={cn(
+          "relative z-10 -my-3 min-w-0 py-3 pr-3 pl-3 whitespace-nowrap transition-[max-width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+          drawerCollapsed ? "max-w-0 opacity-0" : "max-w-56 opacity-100",
+          clipBrandText ? "overflow-hidden" : "overflow-visible"
+        )}
+      >
         <span
-          data-slot="sidebar-brand-text"
+          data-slot="sidebar-brand-text-inner"
           className={cn(
-            "relative z-10 -my-3 min-w-0 py-3 pr-3 pl-3 whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-            drawerCollapsed ? "max-w-0" : "max-w-56",
-            clipBrandText ? "overflow-hidden" : "overflow-visible"
+            "grid gap-0.5 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            drawerCollapsed ? "-translate-x-56" : "translate-x-0"
           )}
-          style={brandTextGlowFilter}
         >
-          <span
-            data-slot="sidebar-brand-text-inner"
-            className={cn(
-              "grid gap-0.5 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-              drawerCollapsed ? "-translate-x-56" : "translate-x-0"
-            )}
-          >
-            <strong
-              className="text-lg leading-none font-bold"
-              style={brandTitleGlow}
-            >
-              {brand}
-            </strong>
-            <small className="truncate text-xs leading-none font-bold text-nextide-tide uppercase">
-              {eyebrow}
-            </small>
-            <span className="mt-1 flex items-start gap-1.5 leading-none uppercase">
-              <b className="-translate-y-[0.24rem] text-[0.6rem] leading-none font-bold text-muted-foreground">
-                By
-              </b>
-              <span className="grid h-5 min-w-0 place-items-start overflow-visible">
-                {bylineMark}
-              </span>
+          <strong className="font-display text-ui-brand font-bold [text-shadow:0_0_1px_rgb(255_255_255/0.72),0_0_18px_rgb(30_228_188/0.34)]">
+            {brand}
+          </strong>
+          <small className="truncate text-ui-caption font-semibold text-nextide-tide uppercase">
+            {eyebrow}
+          </small>
+          <span className="mt-1 flex items-center gap-1.5 uppercase">
+            <b className="text-ui-caption font-semibold text-muted-foreground">
+              By
+            </b>
+            <span className="grid h-5 min-w-0 place-items-start overflow-visible">
+              {bylineMark}
             </span>
           </span>
         </span>
-      ) : null}
-      {!collapsed ? toggleButton : null}
+      </span>
+      {toggleButton}
     </header>
   )
 }
@@ -298,25 +275,24 @@ function SidebarActionRow({
           >
             <Plus />
           </span>
-          {!collapsed ? (
+          <span
+            aria-hidden={collapsed}
+            className={cn(
+              "col-start-2 min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              drawerCollapsed
+                ? "max-w-0 opacity-0"
+                : "max-w-32 opacity-100 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
+            )}
+          >
             <span
               className={cn(
-                "col-start-2 min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                drawerCollapsed
-                  ? "max-w-0"
-                  : "max-w-32 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
+                "block transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                drawerCollapsed ? "-translate-x-6" : "translate-x-0"
               )}
             >
-              <span
-                className={cn(
-                  "block transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                  drawerCollapsed ? "-translate-x-6" : "translate-x-0"
-                )}
-              >
-                {actionLabel}
-              </span>
+              {actionLabel}
             </span>
-          ) : null}
+          </span>
         </Button>
       ) : null}
       {onToggle ? (
@@ -462,7 +438,7 @@ function SidebarNav({
           "pointer-events-none absolute z-0 rounded-lg border border-nextide-tide/55 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
           drawerTransitioning
             ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
-            : "transition-[top,height,left,width,opacity] duration-[220ms]",
+            : "transition-[top,height,left,width,opacity] duration-[var(--nextide-motion-state)]",
           activeIndex < 0 || collapsed || drawerCollapsed
             ? "opacity-0 duration-[var(--nextide-drawer-icon-duration)]"
             : "opacity-100",
@@ -482,7 +458,7 @@ function SidebarNav({
           "pointer-events-none absolute z-0 rounded-full bg-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.45)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
           drawerTransitioning
             ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
-            : "transition-[top,height,opacity] duration-[220ms]",
+            : "transition-[top,height,opacity] duration-[var(--nextide-motion-state)]",
           activeIndex >= 0 && railActive ? "opacity-100" : "opacity-0"
         )}
         style={{
@@ -521,48 +497,47 @@ function SidebarNav({
             <span
               data-slot="sidebar-item-icon"
               className={cn(
-                "grid size-7 place-items-center justify-self-center rounded-full bg-nextide-panel leading-none text-nextide-tide [&_svg]:block [&_svg]:size-4",
+                "grid size-7 place-items-center justify-self-center rounded-md bg-nextide-panel leading-none text-nextide-tide [&_svg]:block [&_svg]:size-4",
                 collapsed && "[&_svg]:translate-y-px"
               )}
             >
               {item.icon ?? item.label.slice(0, 1)}
             </span>
-            {!collapsed ? (
+            <span
+              aria-hidden={collapsed}
+              className={cn(
+                "min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                drawerCollapsed
+                  ? "max-w-0 opacity-0"
+                  : "max-w-52 opacity-100 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
+              )}
+            >
               <span
                 className={cn(
-                  "min-w-0 overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                  drawerCollapsed
-                    ? "max-w-0"
-                    : "max-w-52 [mask-image:linear-gradient(to_right,black_0,black_100%)]"
+                  "grid min-w-0 gap-1 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                  drawerCollapsed ? "-translate-x-12" : "translate-x-0"
                 )}
               >
-                <span
-                  className={cn(
-                    "grid min-w-0 gap-1 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                    drawerCollapsed ? "-translate-x-12" : "translate-x-0"
-                  )}
-                >
-                  <span className="truncate text-sm font-medium">
-                    {item.label}
-                  </span>
-                  <span className="flex min-w-0 items-center gap-2">
-                    {item.status ? (
-                      <StatusBadge
-                        tone={item.tone ?? "neutral"}
-                        className="relative z-20"
-                      >
-                        {item.status}
-                      </StatusBadge>
-                    ) : null}
-                    {item.meta ? (
-                      <small className="truncate text-xs text-muted-foreground">
-                        {item.meta}
-                      </small>
-                    ) : null}
-                  </span>
+                <span className="truncate text-sm font-medium">
+                  {item.label}
+                </span>
+                <span className="flex min-w-0 items-center gap-2">
+                  {item.status ? (
+                    <StatusBadge
+                      tone={item.tone ?? "neutral"}
+                      className="relative z-20"
+                    >
+                      {item.status}
+                    </StatusBadge>
+                  ) : null}
+                  {item.meta ? (
+                    <small className="truncate text-xs text-muted-foreground">
+                      {item.meta}
+                    </small>
+                  ) : null}
                 </span>
               </span>
-            ) : null}
+            </span>
           </button>
         )
       })}

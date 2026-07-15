@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@nextide/ui/lib/utils"
 
 const statusBadgeVariants = cva(
-  "inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium whitespace-nowrap",
+  "inline-flex w-fit shrink-0 items-center rounded-md border font-medium whitespace-nowrap",
   {
     variants: {
       tone: {
@@ -16,42 +16,65 @@ const statusBadgeVariants = cva(
           "border-nextide-yellow/45 bg-nextide-yellow/10 text-nextide-yellow",
         danger: "border-nextide-red/45 bg-nextide-red/10 text-nextide-red",
       },
+      size: {
+        default: "gap-1.5 px-2 py-1 text-xs",
+        compact: "gap-1 px-1.5 py-0.5 text-ui-micro",
+      },
     },
     defaultVariants: {
       tone: "neutral",
+      size: "default",
     },
   }
 )
 
+type StatusBadgeTone = NonNullable<
+  VariantProps<typeof statusBadgeVariants>["tone"]
+>
+type StatusBadgeIndicator = "none" | "dot" | "pulse"
+
 function StatusBadge({
   className,
   tone,
+  size,
   children,
-  pulse = false,
+  indicator = "dot",
   ...props
 }: React.ComponentProps<"span"> &
   VariantProps<typeof statusBadgeVariants> & {
-    pulse?: boolean
+    indicator?: StatusBadgeIndicator
   }) {
+  const pulse = indicator === "pulse"
+
   return (
     <span
       data-slot="status-badge"
       data-tone={tone}
-      className={cn(statusBadgeVariants({ tone }), className)}
+      data-size={size ?? "default"}
+      data-indicator={indicator}
+      className={cn(statusBadgeVariants({ tone, size }), className)}
       {...props}
     >
-      <span
-        data-slot="status-badge-dot"
-        data-pulse={pulse ? "true" : undefined}
-        className={cn(
-          "size-1.5 rounded-full bg-current",
-          pulse && "shadow-[0_0_10px_currentColor]"
-        )}
-        aria-hidden="true"
-      />
+      {indicator !== "none" ? (
+        <span
+          data-slot="status-badge-dot"
+          data-pulse={pulse ? "true" : undefined}
+          className={cn(
+            "rounded-full bg-current",
+            size === "compact" ? "size-1" : "size-1.5",
+            pulse && "shadow-[0_0_10px_currentColor]"
+          )}
+          aria-hidden="true"
+        />
+      ) : null}
       {children}
     </span>
   )
 }
 
-export { StatusBadge, statusBadgeVariants }
+export {
+  StatusBadge,
+  statusBadgeVariants,
+  type StatusBadgeIndicator,
+  type StatusBadgeTone,
+}

@@ -95,7 +95,7 @@ function SelectMenu({
           ref={triggerRef}
           aria-label={ariaLabel}
           className={cn(
-            "h-9 w-full border-nextide-line bg-nextide-panel px-3 text-left font-medium hover:bg-nextide-panel-strong focus-visible:border-nextide-tide/50 focus-visible:ring-nextide-tide/15",
+            "w-full border-nextide-line bg-nextide-panel px-3 text-left font-medium hover:bg-nextide-panel-strong",
             triggerClassName
           )}
         >
@@ -116,7 +116,7 @@ function SelectMenu({
             } as React.CSSProperties
           }
           className={cn(
-            "nextide-contained-scroll max-h-64 border border-nextide-line bg-background/96 p-1 shadow-[0_18px_60px_rgb(0_0_0/0.45)] backdrop-blur-xl",
+            "nextide-contained-scroll max-h-64 p-1",
             contentClassName
           )}
         >
@@ -127,7 +127,7 @@ function SelectMenu({
                 value={option.value}
                 disabled={option.disabled}
                 className={cn(
-                  "py-2 focus:bg-nextide-tide/10 focus:text-foreground data-selected:text-nextide-tide",
+                  "py-2 data-selected:text-nextide-tide",
                   optionClassName
                 )}
               >

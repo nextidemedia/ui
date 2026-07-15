@@ -108,7 +108,7 @@ function LiveguardIncidentReview({
                   eventToneClasses[event.tone ?? "neutral"]
                 )}
               >
-                <span className="text-xs font-semibold text-nextide-tide">
+                <span className="text-xs font-medium text-nextide-tide">
                   {event.time}
                 </span>
                 <span className="grid min-w-0 gap-1">
