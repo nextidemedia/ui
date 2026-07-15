@@ -8,10 +8,15 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "turbo format",
+    "qualify": "pnpm run test:package && pnpm --filter playground build && playwright test",
     "typecheck": "turbo typecheck",
-    "security:watchlist": "node scripts/check-supply-chain.mjs"
+    "security:watchlist": "node scripts/check-supply-chain.mjs",
+    "test:e2e": "pnpm run build && playwright test",
+    "test:package": "node scripts/check-packed-consumer.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
+    "@playwright/test": "1.61.1",
     "prettier": "3.8.4",
     "prettier-plugin-tailwindcss": "0.8.0",
     "turbo": "2.9.18",

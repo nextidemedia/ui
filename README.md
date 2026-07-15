@@ -96,18 +96,22 @@ pnpm add "@nextide/ui@file:../nextide-ui/packages/ui"
 
 ```bash
 pnpm run check
+pnpm exec playwright install chromium
+pnpm run qualify
 cd packages/ui
 npm pack --dry-run --access public
 ```
 
-`pnpm run check` is the canonical local and release-workflow gate: lint,
-typecheck, build, and the targeted supply-chain watchlist. Direct dependencies
-are pinned exactly. The workspace also enforces pnpm release-age and build-script
-guardrails.
+`pnpm run check` remains the canonical lint, typecheck, build, and targeted
+supply-chain release gate. Install Chromium once, then run the explicit,
+headless `pnpm run qualify` gate for packed-package consumer resolution and
+representative Chromium interaction, accessibility, and responsive checks.
+Direct dependencies are pinned exactly. The workspace also enforces pnpm
+release-age and build-script guardrails.
 
 ## Releasing
 
 1. Update `packages/ui/package.json` and the install examples in both READMEs.
-2. Run `pnpm run check` and the package dry run above.
+2. Run `pnpm run check`, `pnpm run qualify`, and the package dry run above.
 3. Merge the release commit and create a matching `v<version>` tag on that merge.
 4. Run **Publish @nextide/ui** manually with the exact tag.
