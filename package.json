@@ -8,10 +8,10 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "turbo format",
-    "qualify": "pnpm run test:package && playwright test",
+    "qualify": "pnpm run test:package && pnpm --filter playground build && playwright test",
     "typecheck": "turbo typecheck",
     "security:watchlist": "node scripts/check-supply-chain.mjs",
-    "test:e2e": "pnpm --filter @nextide/ui build && playwright test",
+    "test:e2e": "pnpm run build && playwright test",
     "test:package": "node scripts/check-packed-consumer.mjs"
   },
   "devDependencies": {
