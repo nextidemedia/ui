@@ -31,12 +31,11 @@ This will place the ui components in the `packages/ui/src/components` directory.
 
 ## Using components
 
-Until `@nextide/ui` is published to a registry, consume this package directly from
-the GitHub repo. Install the `packages/ui` subdirectory, ideally pinned to a tag
-or commit SHA so consuming apps do not drift on every install:
+Install the published package at an explicit version so consuming apps upgrade
+deliberately:
 
 ```bash
-pnpm add "github:Pimpmuckl/nextide-ui#<tag-or-sha>&path:/packages/ui"
+pnpm add @nextide/ui@1.0.0
 ```
 
 For local development against a sibling checkout, use a file dependency instead:
@@ -62,6 +61,15 @@ pnpm run typecheck
 pnpm run lint
 pnpm run build
 pnpm run security:deps
+cd packages/ui
+npm pack --dry-run --access public
 ```
 
 Direct dependencies are pinned exactly. The workspace also uses pnpm release-age and build-script guardrails, plus `scripts/check-supply-chain.mjs` for the current Mini Shai-Hulud/TanStack/SAP/Intercom/Axios watchlist.
+
+## Releasing
+
+Update `packages/ui/package.json`, merge the release commit, and create a matching
+`v<version>` tag. Run the **Publish @nextide/ui** workflow manually with that tag.
+The workflow verifies the tag and package version, rebuilds and checks the packed
+artifact, then publishes through npm Trusted Publishing.

@@ -1,0 +1,55 @@
+name: Publish @nextide/ui
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag, for example v1.0.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Install pnpm
+        run: npm install --global pnpm@10.33.2
+
+      - name: Verify release tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          package_version="$(node -p "require('./packages/ui/package.json').version")"
+          test "$RELEASE_TAG" = "v$package_version"
+          git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"
+          test "$(git rev-parse HEAD)" = "$(git rev-list -n 1 "$RELEASE_TAG")"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm run build
+      - run: pnpm run typecheck
+      - run: node scripts/check-supply-chain.mjs
+
+      - name: Check package contents
+        working-directory: packages/ui
+        run: npm pack --dry-run --access public
+
+      - name: Publish
+        working-directory: packages/ui
+        run: npm publish --access public
