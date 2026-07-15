@@ -36,6 +36,7 @@ consumer upgrades deliberately:
 
 ```bash
 pnpm add --save-exact @nextide/ui@1.0.0
+pnpm add --save-dev --save-exact tailwindcss@4.3.1 @tailwindcss/vite@4.3.1
 ```
 
 Vite consumers need the Tailwind CSS Vite plugin. Import the shared stylesheet

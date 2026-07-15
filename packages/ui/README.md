@@ -9,6 +9,7 @@ Pin an exact release so upgrades remain deliberate:
 
 ```bash
 pnpm add --save-exact @nextide/ui@1.0.0
+pnpm add --save-dev --save-exact tailwindcss@4.3.1 @tailwindcss/vite@4.3.1
 ```
 
 The consumer must provide React 19, React DOM 19, and Tailwind CSS 4. In a Vite
