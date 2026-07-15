@@ -111,7 +111,3 @@ guardrails.
 2. Run `pnpm run check` and the package dry run above.
 3. Merge the release commit and create a matching `v<version>` tag on that merge.
 4. Run **Publish @nextide/ui** manually with the exact tag.
-
-No pull request or push starts hosted validation. The manual workflow verifies
-that the selected tag and package version match, runs the same local gate, checks
-the packed artifact, and publishes through npm Trusted Publishing.
