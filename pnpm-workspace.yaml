@@ -2,9 +2,15 @@ packages:
   - "apps/*"
   - "packages/*"
 
+overrides:
+  brace-expansion: 5.0.6
+  flatted: 3.4.2
+  postcss: 8.5.14
+
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
 blockExoticSubdeps: true
 strictDepBuilds: true
 strictPeerDependencies: true
-allowBuilds: {}
+allowBuilds:
+  esbuild: true
