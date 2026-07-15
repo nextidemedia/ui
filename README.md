@@ -29,47 +29,85 @@ pnpm dlx shadcn@latest add button -c packages/ui
 
 This will place the ui components in the `packages/ui/src/components` directory.
 
-## Using components
+## Consuming `@nextide/ui`
 
-Install the published package at an explicit version so consuming apps upgrade
-deliberately:
+The package expects React 19 and Tailwind CSS 4. Install an exact release so a
+consumer upgrades deliberately:
 
 ```bash
-pnpm add @nextide/ui@1.0.0
+pnpm add --save-exact @nextide/ui@1.0.0
+pnpm add --save-dev --save-exact tailwindcss@4.3.1 @tailwindcss/vite@4.3.1
 ```
 
-For local development against a sibling checkout, use a file dependency instead:
+Vite consumers need the Tailwind CSS Vite plugin. Import the shared stylesheet
+once in the application entry point, before app-specific styles:
+
+```ts
+// vite.config.ts
+import tailwindcss from "@tailwindcss/vite"
+import react from "@vitejs/plugin-react"
+import { defineConfig } from "vite"
+
+export default defineConfig({ plugins: [react(), tailwindcss()] })
+```
+
+```tsx
+// src/main.tsx
+import "@nextide/ui/globals.css"
+import "./app.css"
+```
+
+Import only through the package's public subpaths:
+
+```tsx
+import { AppShell } from "@nextide/ui/blocks/app-shell"
+import { NavigationPanel } from "@nextide/ui/blocks/navigation-panel"
+import { Button } from "@nextide/ui/components/button"
+import { PopoverTrigger } from "@nextide/ui/components/popover"
+import { useStagedDrawer } from "@nextide/ui/hooks/use-staged-drawer"
+```
+
+The primitives use Base UI. When a Base UI trigger must adopt an existing
+control, compose it with `render`; do not use Radix's `asChild` convention:
+
+```tsx
+function DetailsTrigger() {
+  return (
+    <PopoverTrigger render={<Button variant="outline" />}>
+      Open details
+    </PopoverTrigger>
+  )
+}
+```
+
+Do not import from `src` or `dist`, and do not copy shared components into a
+consumer. Fix reusable behavior here, publish a release, then update the
+consumer's exact package version. See [packages/ui/README.md](packages/ui/README.md)
+for the npm-facing quick start and [docs/component-map.md](docs/component-map.md)
+for the complete component map.
+
+For local development against a sibling checkout, use a file dependency:
 
 ```bash
 pnpm add "@nextide/ui@file:../nextide-ui/packages/ui"
 ```
 
-Then import from the public package exports:
-
-```tsx
-import "@nextide/ui/globals.css"
-import { Button } from "@nextide/ui/components/button"
-import { AppShell } from "@nextide/ui/blocks/app-shell"
-import { NavigationPanel } from "@nextide/ui/blocks/navigation-panel"
-import { useStagedDrawer } from "@nextide/ui/hooks/use-staged-drawer"
-```
-
 ## Checks
 
 ```bash
-pnpm run typecheck
-pnpm run lint
-pnpm run build
-pnpm run security:deps
+pnpm run check
 cd packages/ui
 npm pack --dry-run --access public
 ```
 
-Direct dependencies are pinned exactly. The workspace also uses pnpm release-age and build-script guardrails, plus `scripts/check-supply-chain.mjs` for the current Mini Shai-Hulud/TanStack/SAP/Intercom/Axios watchlist.
+`pnpm run check` is the canonical local and release-workflow gate: lint,
+typecheck, build, and the targeted supply-chain watchlist. Direct dependencies
+are pinned exactly. The workspace also enforces pnpm release-age and build-script
+guardrails.
 
 ## Releasing
 
-Update `packages/ui/package.json`, merge the release commit, and create a matching
-`v<version>` tag. Run the **Publish @nextide/ui** workflow manually with that tag.
-The workflow verifies the tag and package version, rebuilds and checks the packed
-artifact, then publishes through npm Trusted Publishing.
+1. Update `packages/ui/package.json` and the install examples in both READMEs.
+2. Run `pnpm run check` and the package dry run above.
+3. Merge the release commit and create a matching `v<version>` tag on that merge.
+4. Run **Publish @nextide/ui** manually with the exact tag.
