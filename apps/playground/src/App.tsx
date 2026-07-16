@@ -100,6 +100,10 @@ import {
 } from "@nextide/ui/components/date-range-picker"
 import { DonutChart } from "@nextide/ui/components/donut-chart"
 import {
+  DurationPicker,
+  type DurationValue,
+} from "@nextide/ui/components/duration-picker"
+import {
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -1589,6 +1593,10 @@ function DaedalusPlayground({
   onExportScheduleChange: (value: ScheduleControlValue) => void
   onWatchlistTokensChange: (tokens: string[]) => void
 }) {
+  const [reportDuration, setReportDuration] = useState<DurationValue>({
+    hours: 2,
+    minutes: 33,
+  })
   const selectedFilter =
     daedalusFilterItems.find((item) => item.id === selectedFilterId) ?? null
 
@@ -1669,11 +1677,22 @@ function DaedalusPlayground({
             One calendar keeps export and report windows in a single context.
           </SurfaceDescription>
         </SurfaceHeader>
-        <div>
+        <div className="grid gap-4">
           <SingleCalendarDateRangePicker
             value={dateRange}
             onValueChange={onDateRangeChange}
           />
+          <Surface
+            variant="plain"
+            padding="sm"
+            className="grid w-fit max-w-full justify-items-start gap-2"
+          >
+            <strong className="text-ui-label">Report duration</strong>
+            <DurationPicker
+              value={reportDuration}
+              onValueChange={setReportDuration}
+            />
+          </Surface>
         </div>
       </Surface>
 
@@ -2197,6 +2216,11 @@ function ComponentMatrix({
   onEnabledChange: (value: boolean) => void
 }) {
   const [creatorQuery, setCreatorQuery] = useState("")
+  const [duration, setDuration] = useState<DurationValue>({
+    days: 2,
+    hours: 2,
+    minutes: 33,
+  })
 
   return (
     <Surface className="grid gap-4">
@@ -2288,6 +2312,22 @@ function ComponentMatrix({
           </CardHeader>
           <CardContent className="grid gap-3">
             <Input defaultValue="Sponsored report" aria-label="Report name" />
+            <div className="flex flex-wrap items-center gap-3">
+              <DurationPicker
+                showDays
+                maxDays={365}
+                value={duration}
+                onValueChange={setDuration}
+              />
+              <output
+                data-slot="duration-picker-output"
+                className="text-ui-caption text-muted-foreground"
+                aria-live="polite"
+              >
+                {duration.days ?? 0} d {duration.hours} hr {duration.minutes}{" "}
+                min
+              </output>
+            </div>
             <div className="flex items-center gap-3">
               <Checkbox
                 checked={checked}

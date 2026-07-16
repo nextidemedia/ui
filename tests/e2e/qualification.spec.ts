@@ -13,8 +13,13 @@ async function expectVisibleFocus(locator: Locator) {
     .toBe(true)
 }
 
-async function expectNoSeriousAxeViolations(page: Page, state: string) {
-  const results = await new AxeBuilder({ page }).analyze()
+async function expectNoSeriousAxeViolations(
+  page: Page,
+  state: string,
+  include?: string
+) {
+  const builder = new AxeBuilder({ page })
+  const results = await (include ? builder.include(include) : builder).analyze()
   const violations = results.violations.filter(
     ({ impact }) => impact === "serious" || impact === "critical"
   )
@@ -334,6 +339,68 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
     )
   })
   expect(stagedDurations).toEqual(["0.3s", "0.3s", "0.3s", "0.16s"])
+})
+
+test("duration picker optionally supports days and confirms on blur or Enter", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.goto("/?view=report")
+  await page.getByRole("button", { name: /Primitives/ }).click()
+
+  const picker = page.locator('[data-slot="duration-picker"]')
+  const edit = picker.getByRole("button", { name: "Edit duration" })
+  await edit.scrollIntoViewIfNeeded()
+  const reportName = page.getByRole("textbox", { name: "Report name" })
+  const days = picker.getByRole("textbox", { name: "Days" })
+  const hours = picker.getByRole("textbox", { name: "Hours" })
+  const minutes = picker.getByRole("textbox", { name: "Minutes" })
+
+  await picker.locator('[data-slot="duration-picker-field"]').first().click()
+  await expect(picker).toHaveAttribute("data-editing", "true")
+  await expect(days).toBeFocused()
+  await expect(picker).toHaveAttribute("data-edit-settled", "false")
+  await expect(days.locator("..")).toHaveCSS("box-shadow", "none")
+  await expect(picker).toHaveAttribute("data-edit-settled", "true")
+  await expect(days.locator("..")).not.toHaveCSS("box-shadow", "none")
+  await days.fill("4")
+  await reportName.click()
+  await expect(picker).toHaveAttribute("data-editing", "false")
+  await expect(reportName).toBeFocused()
+  await expect(page.locator('[data-slot="duration-picker-output"]')).toHaveText(
+    "4 d 2 hr 33 min"
+  )
+
+  await page.keyboard.press("Tab")
+  await expectVisibleFocus(edit)
+  await edit.press("Enter")
+
+  await expect(picker).toHaveAttribute("data-editing", "true")
+  await expect(days).toBeFocused()
+  await days.fill("999")
+  await expect(days).toHaveValue("365")
+  await days.press("Tab")
+  await expect(hours.locator("..")).not.toHaveCSS("box-shadow", "none")
+  await hours.fill("4")
+  await hours.press("Tab")
+  await expect(minutes).toBeFocused()
+  await expect(minutes.locator("..")).not.toHaveCSS("box-shadow", "none")
+  await minutes.fill("61")
+  await expect(minutes).toHaveValue("59")
+  await minutes.press("Enter")
+
+  await expect(picker).toHaveAttribute("data-editing", "false")
+  await expectVisibleFocus(
+    picker.getByRole("button", { name: "Edit duration" })
+  )
+  await expect(page.locator('[data-slot="duration-picker-output"]')).toHaveText(
+    "365 d 4 hr 59 min"
+  )
+  await expectNoSeriousAxeViolations(
+    page,
+    "confirmed duration",
+    '[data-slot="duration-picker"]'
+  )
 })
 
 test("playground session reports reverse cleanly and Kraken evidence tabs reflow", async ({
