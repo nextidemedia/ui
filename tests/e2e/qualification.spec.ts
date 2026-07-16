@@ -364,6 +364,137 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   expect(stagedDurations).toEqual(["0.3s", "0s", "0.16s", "0.16s"])
 })
 
+test("playground shows exact public names beside component examples", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/?view=report")
+
+  const expectComponentReferences = async (names: readonly string[]) => {
+    for (const name of names) {
+      await expect(
+        page.locator(`[data-component-name="${name}"]`).first()
+      ).toBeVisible()
+    }
+  }
+
+  await page.getByRole("button", { name: /Primitives/ }).click()
+  await expectComponentReferences([
+    "AppShell",
+    "NavigationPanel",
+    "Surface",
+    "Card",
+    "Button",
+    "Popover",
+    "Tooltip",
+    "ScrollArea",
+    "Input",
+    "DurationPicker",
+    "Checkbox",
+    "Switch",
+    "SegmentedControl",
+    "Slider",
+    "Autocomplete",
+    "StatusBadge",
+    "Badge",
+    "Notice",
+    "ProcessingText",
+    "Avatar",
+    "AvatarGroup",
+    "Progress",
+    "Spinner",
+    "Skeleton",
+    "Empty",
+    "Metric",
+  ])
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 1000 })
+    const overflow = await page.evaluate(
+      () =>
+        Math.max(
+          document.documentElement.scrollWidth,
+          document.body.scrollWidth
+        ) - window.innerWidth
+    )
+    expect(overflow).toBeLessThanOrEqual(1)
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 })
+
+  await page.getByRole("button", { name: /Patterns/ }).click()
+  await expectComponentReferences([
+    "AppShell",
+    "NavigationPanel",
+    "NavigationUserMenu",
+    "Surface",
+    "ProgressiveSummaryRail",
+    "WorkflowStepper",
+    "Metric",
+    "Separator",
+  ])
+
+  await page.getByRole("button", { name: /Daedalus/ }).click()
+  await expectComponentReferences([
+    "SignalPlate",
+    "DashboardFilterBar",
+    "Metric",
+    "SingleCalendarDateRangePicker",
+    "DurationPicker",
+    "TrendBarChart",
+    "HourlyPacingChart",
+    "SignalRidgeChart",
+    "LineItemGraph",
+    "LineGraph",
+    "DonutChart",
+    "ExportWorkbench",
+    "LiveguardCockpit",
+  ])
+
+  await page.getByRole("button", { name: /Creator workflow/ }).click()
+  await expectComponentReferences([
+    "SignalPlate",
+    "FitLeaderboard",
+    "CreatorTransfer",
+    "CreatorScopePanel",
+    "SingleCalendarDateRangePicker",
+    "CreatorFlowChart",
+    "StreamSelector",
+    "ReportContextBuilder",
+    "IntelligenceProgressionChart",
+  ])
+
+  await page.getByRole("button", { name: /Campaign tools/ }).click()
+  await expectComponentReferences([
+    "SignalPlate",
+    "CampaignScheduleMatrix",
+    "PacingConfigurator",
+    "ExportWorkbench",
+    "LiveguardIncidentReview",
+  ])
+
+  await page.getByRole("button", { name: /Kraken operations/ }).click()
+  await expectComponentReferences([
+    "SignalPlate",
+    "Metric",
+    "RunMonitorTable",
+    "EvidenceDrawer",
+    "DataLedger",
+  ])
+
+  await page.getByRole("button", { name: /Report reader/ }).click()
+  await expectComponentReferences([
+    "ReportRail",
+    "ReportReader",
+    "IntelligenceProgressionChart",
+  ])
+
+  await page.getByRole("button", { name: "Settings", exact: true }).click()
+  await expectComponentReferences([
+    "SettingsModal",
+    "SettingsModalSection",
+    "SelectMenu",
+  ])
+})
+
 test("duration picker optionally supports days and confirms on blur or Enter", async ({
   page,
 }) => {
@@ -375,7 +506,9 @@ test("duration picker optionally supports days and confirms on blur or Enter", a
   const output = page.locator('[data-slot="duration-picker-output"]')
   const edit = picker.getByRole("button", { name: "Edit duration" })
   await edit.scrollIntoViewIfNeeded()
-  await expect(page.getByText("Duration picker", { exact: true })).toBeVisible()
+  await expect(
+    page.locator('[data-component-name="DurationPicker"]').first()
+  ).toBeVisible()
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 800 })
     const pickerBox = await picker.boundingBox()
@@ -452,7 +585,7 @@ test("processing text follows progress state and reduced-motion preference", asy
 
   for (const [variant, label, copy] of examples) {
     await expect(
-      page.getByText(`Processing text · ${label}`, { exact: true })
+      page.getByText(`ProcessingText · ${label}`, { exact: true })
     ).toBeVisible()
     const example = page.getByText(copy, { exact: true })
     await expect(example).toHaveAttribute("data-slot", "processing-text")

@@ -32,6 +32,11 @@ When a trigger should look like an existing control, compose it with the
 - `packages/ui/src/styles/typeset.css`: shadcn Typeset flow adapted to Nextide typography and radius tokens.
 - `apps/playground`: visual harness for exercising exported package components.
 
+Playground examples show the exact public export name in turquoise monospace
+above the rendered component. Use that identifier in requests and handoffs:
+`DurationPicker`, `LineItemGraph`, or `ProgressiveSummaryRail`, rather than a
+description of where the component happens to appear.
+
 ## Components
 
 | Need                       | Start with                                                                                                                                                                                                                                                                                                                                                                                        |

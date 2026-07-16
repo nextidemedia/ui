@@ -38,6 +38,8 @@ import {
   SurfaceTitle,
 } from "@nextide/ui/components/surface"
 
+import { ComponentReference } from "./component-reference"
+
 const scheduleCreators = [
   { id: "mina", name: "Mina Vale", meta: "Twitch / YouTube", avatar: "MV" },
   { id: "ren", name: "Ren Kade", meta: "Kick", avatar: "RK" },
@@ -203,135 +205,155 @@ function WebMiningPage() {
 
   return (
     <section className="grid gap-4">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
-        <SignalPlate
-          eyebrow="Campaign operations"
-          title="Campaign command center"
-          description="Review schedules, pacing, exports, and LiveGuard proof without leaving the active campaign."
-          status="Operations ready"
-          statusTone="success"
-          metrics={[
-            { label: "Campaigns", value: "4", detail: "in current scope" },
-            { label: "Delivery", value: "Live", detail: "signals current" },
-            { label: "Priority", value: "P1", detail: "highest value" },
-          ]}
+      <div className="grid gap-2">
+        <ComponentReference names="SignalPlate" />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
+          <SignalPlate
+            eyebrow="Campaign operations"
+            title="Campaign command center"
+            description="Review schedules, pacing, exports, and LiveGuard proof without leaving the active campaign."
+            status="Operations ready"
+            statusTone="success"
+            metrics={[
+              { label: "Campaigns", value: "4", detail: "in current scope" },
+              { label: "Delivery", value: "Live", detail: "signals current" },
+              { label: "Priority", value: "P1", detail: "highest value" },
+            ]}
+          />
+          <SignalPlate
+            eyebrow="Operational guardrails"
+            title="Clear ownership at every step"
+            description="Operators see only the campaign state, controls, and approvals needed for the decision in front of them."
+            status="Guardrails active"
+            statusTone="warning"
+            metrics={[
+              { label: "Approvals", value: "2", detail: "awaiting review" },
+              { label: "Delivery", value: "Live", detail: "current state" },
+              { label: "Exports", value: "3", detail: "ready now" },
+            ]}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-2">
+        <ComponentReference names="CampaignScheduleMatrix" />
+        <CampaignScheduleMatrix
+          creators={scheduleCreators}
+          days={scheduleDays}
+          bookings={scheduleBookings}
+          activeBookingId={activeBookingId}
+          onBookingSelect={(booking) => setActiveBookingId(booking.id)}
         />
-        <SignalPlate
-          eyebrow="Operational guardrails"
-          title="Clear ownership at every step"
-          description="Operators see only the campaign state, controls, and approvals needed for the decision in front of them."
-          status="Guardrails active"
-          statusTone="warning"
-          metrics={[
-            { label: "Approvals", value: "2", detail: "awaiting review" },
-            { label: "Delivery", value: "Live", detail: "current state" },
-            { label: "Exports", value: "3", detail: "ready now" },
+      </div>
+
+      <div className="grid gap-2">
+        <ComponentReference names="PacingConfigurator" />
+        <PacingConfigurator
+          presets={[
+            { id: "today", label: "Today", meta: "Live window" },
+            { id: "7d", label: "7 days", meta: "Default pacing" },
+            { id: "14d", label: "14 days", meta: "Campaign range" },
+            { id: "custom", label: "Custom", meta: "Pinned viewport" },
+          ]}
+          activePresetId={activePresetId}
+          buckets={pacingBuckets}
+          rangeLabel="7 days"
+          targetLabel="100%"
+          actualLabel="118%"
+          onPresetChange={(preset) => setActivePresetId(preset.id)}
+        />
+      </div>
+
+      <div className="grid gap-2">
+        <ComponentReference names="ExportWorkbench" />
+        <ExportWorkbench
+          schedule={schedule}
+          onScheduleChange={setSchedule}
+          workbookState="current"
+          nextRun="Mon 09:00"
+          workbookName="Starforge weekly workbook"
+          generatedUntil="Generated through May 12"
+          sessions={[
+            {
+              id: "session-1",
+              creator: "Mina Vale",
+              window: "May 12, 18:00-20:00",
+              metric: "74k",
+              status: <StatusBadge tone="success">Reported</StatusBadge>,
+            },
+            {
+              id: "session-2",
+              creator: "Ren Kade",
+              window: "May 13, live",
+              metric: "31k",
+              status: <StatusBadge tone="processing">Live</StatusBadge>,
+            },
+            {
+              id: "session-3",
+              creator: "Taro",
+              window: "May 14, scheduled",
+              metric: "Pending",
+              status: <StatusBadge tone="warning">Final</StatusBadge>,
+            },
           ]}
         />
       </div>
 
-      <CampaignScheduleMatrix
-        creators={scheduleCreators}
-        days={scheduleDays}
-        bookings={scheduleBookings}
-        activeBookingId={activeBookingId}
-        onBookingSelect={(booking) => setActiveBookingId(booking.id)}
-      />
-
-      <PacingConfigurator
-        presets={[
-          { id: "today", label: "Today", meta: "Live window" },
-          { id: "7d", label: "7 days", meta: "Default pacing" },
-          { id: "14d", label: "14 days", meta: "Campaign range" },
-          { id: "custom", label: "Custom", meta: "Pinned viewport" },
-        ]}
-        activePresetId={activePresetId}
-        buckets={pacingBuckets}
-        rangeLabel="7 days"
-        targetLabel="100%"
-        actualLabel="118%"
-        onPresetChange={(preset) => setActivePresetId(preset.id)}
-      />
-
-      <ExportWorkbench
-        schedule={schedule}
-        onScheduleChange={setSchedule}
-        workbookState="current"
-        nextRun="Mon 09:00"
-        workbookName="Starforge weekly workbook"
-        generatedUntil="Generated through May 12"
-        sessions={[
-          {
-            id: "session-1",
-            creator: "Mina Vale",
-            window: "May 12, 18:00-20:00",
-            metric: "74k",
-            status: <StatusBadge tone="success">Reported</StatusBadge>,
-          },
-          {
-            id: "session-2",
-            creator: "Ren Kade",
-            window: "May 13, live",
-            metric: "31k",
-            status: <StatusBadge tone="processing">Live</StatusBadge>,
-          },
-          {
-            id: "session-3",
-            creator: "Taro",
-            window: "May 14, scheduled",
-            metric: "Pending",
-            status: <StatusBadge tone="warning">Final</StatusBadge>,
-          },
-        ]}
-      />
-
-      <LiveguardIncidentReview
-        creator="Ren Kade"
-        incidentLabel="Competitor mention under threshold"
-        outcome="No escalation"
-        score={0.62}
-        threshold={0.82}
-        events={[
-          {
-            id: "event-1",
-            time: "18:42",
-            label: "Mention detected",
-            detail: "Transcript matcher found a competitor reference.",
-            tone: "warning",
-          },
-          {
-            id: "event-2",
-            time: "18:43",
-            label: "Policy context matched",
-            detail: "Reference happened during a creator comparison segment.",
-            tone: "neutral",
-          },
-          {
-            id: "event-3",
-            time: "18:44",
-            label: "Below escalation threshold",
-            detail: "No suppression or client alert required.",
-            tone: "success",
-          },
-        ]}
-        proofRows={[
-          { id: "score", label: "Risk score", value: "0.62", tone: "success" },
-          {
-            id: "confidence",
-            label: "Confidence",
-            value: "74%",
-            tone: "warning",
-          },
-          { id: "window", label: "Window", value: "42s", tone: "neutral" },
-          {
-            id: "source",
-            label: "Source",
-            value: "Transcript",
-            tone: "success",
-          },
-        ]}
-        transcript="Ren compared the sponsored read against another tool, then immediately returned to the Starforge talking points. The segment stayed below the configured escalation threshold."
-      />
+      <div className="grid gap-2">
+        <ComponentReference names="LiveguardIncidentReview" />
+        <LiveguardIncidentReview
+          creator="Ren Kade"
+          incidentLabel="Competitor mention under threshold"
+          outcome="No escalation"
+          score={0.62}
+          threshold={0.82}
+          events={[
+            {
+              id: "event-1",
+              time: "18:42",
+              label: "Mention detected",
+              detail: "Transcript matcher found a competitor reference.",
+              tone: "warning",
+            },
+            {
+              id: "event-2",
+              time: "18:43",
+              label: "Policy context matched",
+              detail: "Reference happened during a creator comparison segment.",
+              tone: "neutral",
+            },
+            {
+              id: "event-3",
+              time: "18:44",
+              label: "Below escalation threshold",
+              detail: "No suppression or client alert required.",
+              tone: "success",
+            },
+          ]}
+          proofRows={[
+            {
+              id: "score",
+              label: "Risk score",
+              value: "0.62",
+              tone: "success",
+            },
+            {
+              id: "confidence",
+              label: "Confidence",
+              value: "74%",
+              tone: "warning",
+            },
+            { id: "window", label: "Window", value: "42s", tone: "neutral" },
+            {
+              id: "source",
+              label: "Source",
+              value: "Transcript",
+              tone: "success",
+            },
+          ]}
+          transcript="Ren compared the sponsored read against another tool, then immediately returned to the Starforge talking points. The segment stayed below the configured escalation threshold."
+        />
+      </div>
     </section>
   )
 }
@@ -342,125 +364,137 @@ function KrakenMiningPage() {
 
   return (
     <section className="grid gap-4">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
-        <SignalPlate
-          eyebrow="Kraken"
-          title="Operations monitor candidates"
-          description="Run table, evidence drawer, and incident timeline patterns distilled out of the Kraken operations UI."
-          status="Mining target page"
-          statusTone="processing"
-          metrics={[
-            {
-              label: "Runs",
-              value: runRows.length.toString(),
-              detail: "sample rows",
-            },
-            { label: "Stages", value: "4", detail: "monitor rail" },
-            { label: "Blocks", value: "3", detail: "ops surfaces" },
-          ]}
-        />
-        <Surface className="grid gap-3">
-          <SurfaceHeader>
-            <SurfaceTitle>Queue pulse</SurfaceTitle>
-          </SurfaceHeader>
-          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            <Metric icon={<Activity />} value="2" label="Active lanes" />
-            <Metric icon={<Database />} value="14" label="Queued jobs" />
-            <Metric icon={<DollarSign />} value="$12.42" label="Run cost" />
-          </div>
-        </Surface>
+      <div className="grid gap-2">
+        <ComponentReference names={["SignalPlate", "Metric"]} />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
+          <SignalPlate
+            eyebrow="Kraken"
+            title="Operations monitor candidates"
+            description="Run table, evidence drawer, and incident timeline patterns distilled out of the Kraken operations UI."
+            status="Mining target page"
+            statusTone="processing"
+            metrics={[
+              {
+                label: "Runs",
+                value: runRows.length.toString(),
+                detail: "sample rows",
+              },
+              { label: "Stages", value: "4", detail: "monitor rail" },
+              { label: "Blocks", value: "3", detail: "ops surfaces" },
+            ]}
+          />
+          <Surface className="grid gap-3">
+            <SurfaceHeader>
+              <SurfaceTitle>Queue pulse</SurfaceTitle>
+            </SurfaceHeader>
+            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <Metric icon={<Activity />} value="2" label="Active lanes" />
+              <Metric icon={<Database />} value="14" label="Queued jobs" />
+              <Metric icon={<DollarSign />} value="$12.42" label="Run cost" />
+            </div>
+          </Surface>
+        </div>
       </div>
 
-      <RunMonitorTable
-        rows={runRows}
-        activeRowId={activeRunId}
-        onRowSelect={(row) => setActiveRunId(row.id)}
-      />
+      <div className="grid gap-2">
+        <ComponentReference names="RunMonitorTable" />
+        <RunMonitorTable
+          rows={runRows}
+          activeRowId={activeRunId}
+          onRowSelect={(row) => setActiveRunId(row.id)}
+        />
+      </div>
 
       <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(20rem,0.72fr)]">
-        <EvidenceDrawer
-          subject={activeRun.title}
-          status={activeRun.status}
-          tone={activeRun.tone}
-          facts={[
-            { id: "owner", label: "Owner", value: activeRun.owner ?? "-" },
-            { id: "source", label: "Source", value: activeRun.source ?? "-" },
-            { id: "cost", label: "Cost", value: activeRun.cost ?? "$4.12" },
-          ]}
-          events={[
-            {
-              id: "decision-1",
-              time: "19:14",
-              title: "Monitor cache warmed",
-              detail: "Stage projection was loaded before the row updated.",
-              tone: "success",
-            },
-            {
-              id: "decision-2",
-              time: "19:18",
-              title: "Chat evidence deferred",
-              detail: "Processing continues without blocking VOD analysis.",
-              tone: "processing",
-            },
-            {
-              id: "decision-3",
-              time: "19:23",
-              title: "Report assembly waiting",
-              detail: "Fuse stage owns the next state transition.",
-              tone: "warning",
-            },
-          ]}
-          costs={[
-            {
-              id: "vod",
-              label: "VOD analysis",
-              amount: "$2.88",
-              detail: "Gemini batch",
-            },
-            {
-              id: "chat",
-              label: "Chat analysis",
-              amount: "$0.91",
-              detail: "Transcript map",
-            },
-            {
-              id: "fuse",
-              label: "Evidence fuse",
-              amount: "$0.33",
-              detail: "Report context",
-            },
-          ]}
-        />
+        <div className="grid content-start gap-2">
+          <ComponentReference names="EvidenceDrawer" />
+          <EvidenceDrawer
+            subject={activeRun.title}
+            status={activeRun.status}
+            tone={activeRun.tone}
+            facts={[
+              { id: "owner", label: "Owner", value: activeRun.owner ?? "-" },
+              { id: "source", label: "Source", value: activeRun.source ?? "-" },
+              { id: "cost", label: "Cost", value: activeRun.cost ?? "$4.12" },
+            ]}
+            events={[
+              {
+                id: "decision-1",
+                time: "19:14",
+                title: "Monitor cache warmed",
+                detail: "Stage projection was loaded before the row updated.",
+                tone: "success",
+              },
+              {
+                id: "decision-2",
+                time: "19:18",
+                title: "Chat evidence deferred",
+                detail: "Processing continues without blocking VOD analysis.",
+                tone: "processing",
+              },
+              {
+                id: "decision-3",
+                time: "19:23",
+                title: "Report assembly waiting",
+                detail: "Fuse stage owns the next state transition.",
+                tone: "warning",
+              },
+            ]}
+            costs={[
+              {
+                id: "vod",
+                label: "VOD analysis",
+                amount: "$2.88",
+                detail: "Gemini batch",
+              },
+              {
+                id: "chat",
+                label: "Chat analysis",
+                amount: "$0.91",
+                detail: "Transcript map",
+              },
+              {
+                id: "fuse",
+                label: "Evidence fuse",
+                amount: "$0.33",
+                detail: "Report context",
+              },
+            ]}
+          />
+        </div>
 
-        <DataLedger
-          title="Incident timeline"
-          description="Reusable event sequence without Kraken payload coupling."
-          countLabel="4 events"
-        >
-          <div className="grid min-w-[24rem] gap-2">
-            {[
-              ["19:12", "Run accepted", "Queue lane selected"],
-              ["19:14", "Audio extracted", "VOD stage complete"],
-              ["19:18", "Chat lagged", "Retry window opened"],
-              ["19:23", "Fuse pending", "Awaiting context"],
-            ].map(([time, label, detail]) => (
-              <div
-                key={`${time}-${label}`}
-                className="grid grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-sm"
-              >
-                <span className="text-xs font-medium text-nextide-tide">
-                  {time}
-                </span>
-                <span className="grid gap-0.5">
-                  <strong>{label}</strong>
-                  <span className="text-xs text-muted-foreground">
-                    {detail}
+        <div className="grid content-start gap-2">
+          <ComponentReference names="DataLedger" />
+          <DataLedger
+            title="Incident timeline"
+            description="Reusable event sequence without Kraken payload coupling."
+            countLabel="4 events"
+          >
+            <div className="grid min-w-[24rem] gap-2">
+              {[
+                ["19:12", "Run accepted", "Queue lane selected"],
+                ["19:14", "Audio extracted", "VOD stage complete"],
+                ["19:18", "Chat lagged", "Retry window opened"],
+                ["19:23", "Fuse pending", "Awaiting context"],
+              ].map(([time, label, detail]) => (
+                <div
+                  key={`${time}-${label}`}
+                  className="grid grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-sm"
+                >
+                  <span className="text-xs font-medium text-nextide-tide">
+                    {time}
                   </span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </DataLedger>
+                  <span className="grid gap-0.5">
+                    <strong>{label}</strong>
+                    <span className="text-xs text-muted-foreground">
+                      {detail}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </DataLedger>
+        </div>
       </div>
     </section>
   )
@@ -472,162 +506,172 @@ function IntelligenceReportMiningPage() {
   return (
     <section className="grid gap-4">
       <div className="grid gap-4 2xl:grid-cols-[17rem_minmax(0,1fr)]">
-        <ReportRail
-          items={reportHistory}
-          activeItemId={activeReportId}
-          onItemSelect={(item) => setActiveReportId(item.id)}
-        />
-        <ReportReader
-          title="Starforge weekly intelligence report"
-          description="Document-style report surface for source-separated mentions, warning calls, metrics, and evidence rows."
-          status="Ready"
-          metrics={[
+        <div className="grid content-start gap-2">
+          <ComponentReference names="ReportRail" />
+          <ReportRail
+            items={reportHistory}
+            activeItemId={activeReportId}
+            onItemSelect={(item) => setActiveReportId(item.id)}
+          />
+        </div>
+        <div className="grid content-start gap-2">
+          <ComponentReference names="ReportReader" />
+          <ReportReader
+            title="Starforge weekly intelligence report"
+            description="Document-style report surface for source-separated mentions, warning calls, metrics, and evidence rows."
+            status="Ready"
+            metrics={[
+              {
+                id: "mentions",
+                label: "Mentions",
+                value: "128",
+                detail: "source separated",
+              },
+              {
+                id: "risk",
+                label: "Risk windows",
+                value: "3",
+                detail: "all below threshold",
+              },
+              {
+                id: "confidence",
+                label: "Confidence",
+                value: "82%",
+                detail: "evidence backed",
+              },
+            ]}
+            warnings={[
+              "Ren Kade has one competitor comparison that needs human review.",
+              "Taro's late recap is scheduled but not yet ingested.",
+            ]}
+            sections={[
+              {
+                id: "summary",
+                title: "Executive summary",
+                body: "The campaign read landed cleanly across the selected creator set. Twitch carried the strongest reach, while YouTube added durable replay value with lower safety pressure.",
+                evidence: [
+                  {
+                    id: "summary-1",
+                    source: "Mina Vale / Twitch",
+                    title: "Launch read delivered in the first hour.",
+                    detail:
+                      "Transcript and chat evidence agree on brand recall.",
+                    tone: "success",
+                  },
+                  {
+                    id: "summary-2",
+                    source: "Ren Kade / Kick",
+                    title: "Comparison segment stayed under threshold.",
+                    detail: "No client escalation recommended.",
+                    tone: "warning",
+                  },
+                ],
+              },
+              {
+                id: "mentions",
+                title: "Source-separated mentions",
+                body: "Mentions are grouped by stream source so reviewers can inspect what came from host speech, chat, and structured campaign metadata independently.",
+                evidence: [
+                  {
+                    id: "mention-1",
+                    source: "Transcript",
+                    title: "42 direct mentions",
+                    detail: "High-confidence speech-to-text snippets.",
+                    tone: "success",
+                  },
+                  {
+                    id: "mention-2",
+                    source: "Chat",
+                    title: "86 chat mentions",
+                    detail: "Mostly positive sentiment around launch timing.",
+                    tone: "success",
+                  },
+                ],
+              },
+              {
+                id: "safety",
+                title: "Safety and compliance",
+                body: "The safety section keeps human review cues close to the evidence instead of hiding them behind a separate export step.",
+                evidence: [
+                  {
+                    id: "safety-1",
+                    source: "LiveGuard",
+                    title: "3 soft-warning windows",
+                    detail: "All remained below configured threshold.",
+                    tone: "warning",
+                  },
+                  {
+                    id: "safety-2",
+                    source: "Policy",
+                    title: "0 required escalations",
+                    detail: "No failed reads or blocked phrases found.",
+                    tone: "success",
+                  },
+                ],
+              },
+            ]}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-2">
+        <ComponentReference names="IntelligenceProgressionChart" />
+        <IntelligenceProgressionChart
+          title="Report generation backbone"
+          description="Follow source preparation, analysis, evidence fusion, and final report assembly."
+          stages={[
             {
-              id: "mentions",
-              label: "Mentions",
-              value: "128",
-              detail: "source separated",
+              id: "queue",
+              label: "Queue",
+              detail: "Report selected",
+              status: "completed",
+              icon: <Check />,
             },
             {
-              id: "risk",
-              label: "Risk windows",
-              value: "3",
-              detail: "all below threshold",
+              id: "vod-ingest",
+              label: "Ingest",
+              detail: "Sources ready",
+              status: "completed",
+              icon: <AudioLines />,
             },
             {
-              id: "confidence",
-              label: "Confidence",
-              value: "82%",
-              detail: "evidence backed",
-            },
-          ]}
-          warnings={[
-            "Ren Kade has one competitor comparison that needs human review.",
-            "Taro's late recap is scheduled but not yet ingested.",
-          ]}
-          sections={[
-            {
-              id: "summary",
-              title: "Executive summary",
-              body: "The campaign read landed cleanly across the selected creator set. Twitch carried the strongest reach, while YouTube added durable replay value with lower safety pressure.",
-              evidence: [
-                {
-                  id: "summary-1",
-                  source: "Mina Vale / Twitch",
-                  title: "Launch read delivered in the first hour.",
-                  detail: "Transcript and chat evidence agree on brand recall.",
-                  tone: "success",
-                },
-                {
-                  id: "summary-2",
-                  source: "Ren Kade / Kick",
-                  title: "Comparison segment stayed under threshold.",
-                  detail: "No client escalation recommended.",
-                  tone: "warning",
-                },
-              ],
+              id: "vod-analyze",
+              label: "Analyze",
+              detail: "Evidence mapped",
+              status: "completed",
+              icon: <Sparkles />,
             },
             {
-              id: "mentions",
-              title: "Source-separated mentions",
-              body: "Mentions are grouped by stream source so reviewers can inspect what came from host speech, chat, and structured campaign metadata independently.",
-              evidence: [
-                {
-                  id: "mention-1",
-                  source: "Transcript",
-                  title: "42 direct mentions",
-                  detail: "High-confidence speech-to-text snippets.",
-                  tone: "success",
-                },
-                {
-                  id: "mention-2",
-                  source: "Chat",
-                  title: "86 chat mentions",
-                  detail: "Mostly positive sentiment around launch timing.",
-                  tone: "success",
-                },
-              ],
+              id: "chat-ingest",
+              label: "Review",
+              detail: "Human pass",
+              status: "processing",
+              icon: <ShieldAlert />,
             },
             {
-              id: "safety",
-              title: "Safety and compliance",
-              body: "The safety section keeps human review cues close to the evidence instead of hiding them behind a separate export step.",
-              evidence: [
-                {
-                  id: "safety-1",
-                  source: "LiveGuard",
-                  title: "3 soft-warning windows",
-                  detail: "All remained below configured threshold.",
-                  tone: "warning",
-                },
-                {
-                  id: "safety-2",
-                  source: "Policy",
-                  title: "0 required escalations",
-                  detail: "No failed reads or blocked phrases found.",
-                  tone: "success",
-                },
-              ],
+              id: "chat-analyze",
+              label: "Confirm",
+              detail: "Decision pending",
+              status: "queued",
+              icon: <Check />,
+            },
+            {
+              id: "fuse",
+              label: "Fuse",
+              detail: "Report context",
+              status: "queued",
+              icon: <Clock3 />,
+            },
+            {
+              id: "assemble",
+              label: "Export",
+              detail: "Workbook pending",
+              status: "queued",
+              icon: <CalendarClock />,
             },
           ]}
         />
       </div>
-
-      <IntelligenceProgressionChart
-        title="Report generation backbone"
-        description="Follow source preparation, analysis, evidence fusion, and final report assembly."
-        stages={[
-          {
-            id: "queue",
-            label: "Queue",
-            detail: "Report selected",
-            status: "completed",
-            icon: <Check />,
-          },
-          {
-            id: "vod-ingest",
-            label: "Ingest",
-            detail: "Sources ready",
-            status: "completed",
-            icon: <AudioLines />,
-          },
-          {
-            id: "vod-analyze",
-            label: "Analyze",
-            detail: "Evidence mapped",
-            status: "completed",
-            icon: <Sparkles />,
-          },
-          {
-            id: "chat-ingest",
-            label: "Review",
-            detail: "Human pass",
-            status: "processing",
-            icon: <ShieldAlert />,
-          },
-          {
-            id: "chat-analyze",
-            label: "Confirm",
-            detail: "Decision pending",
-            status: "queued",
-            icon: <Check />,
-          },
-          {
-            id: "fuse",
-            label: "Fuse",
-            detail: "Report context",
-            status: "queued",
-            icon: <Clock3 />,
-          },
-          {
-            id: "assemble",
-            label: "Export",
-            detail: "Workbook pending",
-            status: "queued",
-            icon: <CalendarClock />,
-          },
-        ]}
-      />
     </section>
   )
 }

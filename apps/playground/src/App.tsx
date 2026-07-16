@@ -167,6 +167,7 @@ import {
   KrakenMiningPage,
   WebMiningPage,
 } from "./mining-pages"
+import { ComponentReference } from "./component-reference"
 
 const daedalusFilterGroups = [
   { id: "campaign", label: "Campaigns" },
@@ -1153,6 +1154,7 @@ export function App() {
           <Surface variant="strong" className="grid gap-4 overflow-hidden">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <SurfaceHeader>
+                <ComponentReference names={["AppShell", "NavigationPanel"]} />
                 <SurfaceDescription>{viewCopy.eyebrow}</SurfaceDescription>
                 <h1
                   className={cn(
@@ -1284,6 +1286,7 @@ export function App() {
               </div>
               <Surface className="grid content-start gap-4 self-start">
                 <SurfaceHeader>
+                  <ComponentReference names="Metric" />
                   <SurfaceTitle>Signals</SurfaceTitle>
                   <SurfaceDescription>
                     Operational states from the mined intelligence UI.
@@ -1326,6 +1329,9 @@ export function App() {
           title="Runtime checks"
           description="Show enabled states across the preview."
         >
+          <ComponentReference
+            names={["SettingsModal", "SettingsModalSection", "SelectMenu"]}
+          />
           <div ref={settingsSelectWidthRef} className="w-44 sm:w-full">
             <div ref={settingsSelectAnchorRef} className="w-full sm:w-56">
               <SelectMenu
@@ -1408,47 +1414,51 @@ function IntelligencePlayground({
 
   return (
     <section className="grid gap-4">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
-        <SignalPlate
-          eyebrow="Creator select"
-          title="Report workflow shell"
-          description="Move from creator selection through dates, streams, context, and generation with progress always visible."
-          status="Workflow ready"
-          statusTone="success"
-          metrics={[
-            {
-              label: "Creators",
-              value: selectedCreatorIds.length.toString(),
-              detail: "selected right now",
-            },
-            {
-              label: "Streams",
-              value: selectedStreamIds.length.toString(),
-              detail: "selected for report",
-            },
-            {
-              label: "Stages",
-              value: "7",
-              detail: "generation pipeline",
-            },
-          ]}
-        />
-        <SignalPlate
-          eyebrow="Workflow coverage"
-          title="Report preparation"
-          description="Choose creators, narrow evidence, set the reporting context, and confirm the final source set."
-          status="Ready"
-          statusTone="processing"
-          metrics={[
-            { label: "Transfer", value: "FLIP", detail: "row handoff" },
-            { label: "Streams", value: "FLIP", detail: "filter motion" },
-            { label: "Dates", value: "Gantt", detail: "creator flow" },
-          ]}
-        />
+      <div className="grid gap-2">
+        <ComponentReference names="SignalPlate" />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
+          <SignalPlate
+            eyebrow="Creator select"
+            title="Report workflow shell"
+            description="Move from creator selection through dates, streams, context, and generation with progress always visible."
+            status="Workflow ready"
+            statusTone="success"
+            metrics={[
+              {
+                label: "Creators",
+                value: selectedCreatorIds.length.toString(),
+                detail: "selected right now",
+              },
+              {
+                label: "Streams",
+                value: selectedStreamIds.length.toString(),
+                detail: "selected for report",
+              },
+              {
+                label: "Stages",
+                value: "7",
+                detail: "generation pipeline",
+              },
+            ]}
+          />
+          <SignalPlate
+            eyebrow="Workflow coverage"
+            title="Report preparation"
+            description="Choose creators, narrow evidence, set the reporting context, and confirm the final source set."
+            status="Ready"
+            statusTone="processing"
+            metrics={[
+              { label: "Transfer", value: "FLIP", detail: "row handoff" },
+              { label: "Streams", value: "FLIP", detail: "filter motion" },
+              { label: "Dates", value: "Gantt", detail: "creator flow" },
+            ]}
+          />
+        </div>
       </div>
 
       <Surface className="grid gap-4">
         <SurfaceHeader>
+          <ComponentReference names="FitLeaderboard" />
           <SurfaceTitle>Creator fit</SurfaceTitle>
           <SurfaceDescription>
             Compare fit, safety, audience sentiment, and evidence volume in one
@@ -1460,6 +1470,7 @@ function IntelligencePlayground({
 
       <Surface className="grid gap-4">
         <SurfaceHeader>
+          <ComponentReference names="CreatorTransfer" />
           <SurfaceTitle>Creator Select</SurfaceTitle>
           <SurfaceDescription>
             Individual searchable creator bars and the fused left-to-right
@@ -1482,56 +1493,66 @@ function IntelligencePlayground({
           </SurfaceDescription>
         </SurfaceHeader>
         <div className="grid gap-4 xl:grid-cols-[16rem_minmax(0,1fr)]">
-          <CreatorScopePanel
-            creators={selectedCreators}
-            activeId={activeDateScope}
-            onActiveIdChange={setActiveDateScope}
-            getAction={(creator) => (
-              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span>Override</span>
-                <Checkbox
-                  aria-label={`Override ${creator.name}`}
-                  checked={activeDateScope === creator.id}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setActiveDateScope(creator.id)
-                    }
-                  }}
-                />
-              </span>
-            )}
-          />
+          <div className="grid content-start gap-2">
+            <ComponentReference names="CreatorScopePanel" />
+            <CreatorScopePanel
+              creators={selectedCreators}
+              activeId={activeDateScope}
+              onActiveIdChange={setActiveDateScope}
+              getAction={(creator) => (
+                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span>Override</span>
+                  <Checkbox
+                    aria-label={`Override ${creator.name}`}
+                    checked={activeDateScope === creator.id}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setActiveDateScope(creator.id)
+                      }
+                    }}
+                  />
+                </span>
+              )}
+            />
+          </div>
           <div className="grid gap-4">
-            <SingleCalendarDateRangePicker
-              value={dateRange}
-              onValueChange={onDateRangeChange}
-            />
-            <CreatorFlowChart
-              creators={intelligenceCreators.map((creator) => ({
-                id: creator.id,
-                name: creator.name,
-                meta: creator.meta,
-              }))}
-              days={[
-                "Mon",
-                "Tue",
-                "Wed",
-                "Thu",
-                "Fri",
-                "Sat",
-                "Sun",
-                "Mon",
-                "Tue",
-              ]}
-              sessions={flowSessions}
-              onSessionsChange={onFlowSessionsChange}
-            />
+            <div className="grid gap-2">
+              <ComponentReference names="SingleCalendarDateRangePicker" />
+              <SingleCalendarDateRangePicker
+                value={dateRange}
+                onValueChange={onDateRangeChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="CreatorFlowChart" />
+              <CreatorFlowChart
+                creators={intelligenceCreators.map((creator) => ({
+                  id: creator.id,
+                  name: creator.name,
+                  meta: creator.meta,
+                }))}
+                days={[
+                  "Mon",
+                  "Tue",
+                  "Wed",
+                  "Thu",
+                  "Fri",
+                  "Sat",
+                  "Sun",
+                  "Mon",
+                  "Tue",
+                ]}
+                sessions={flowSessions}
+                onSessionsChange={onFlowSessionsChange}
+              />
+            </div>
           </div>
         </div>
       </Surface>
 
       <Surface className="grid gap-4">
         <SurfaceHeader>
+          <ComponentReference names="StreamSelector" />
           <SurfaceTitle>Stream Select</SurfaceTitle>
           <SurfaceDescription>
             Per-creator filtering with the same exit, reflow, and enter motion
@@ -1548,6 +1569,7 @@ function IntelligencePlayground({
 
       <Surface className="grid gap-4">
         <SurfaceHeader>
+          <ComponentReference names="ReportContextBuilder" />
           <SurfaceTitle>Report Context</SurfaceTitle>
           <SurfaceDescription>
             Required and optional context rows with selected chips, suggestion
@@ -1560,11 +1582,14 @@ function IntelligencePlayground({
         />
       </Surface>
 
-      <IntelligenceProgressionChart
-        stages={intelligenceProgressionStages}
-        title="Generate"
-        description="Reusable generation progression map for sponsored content reports."
-      />
+      <div className="grid gap-2">
+        <ComponentReference names="IntelligenceProgressionChart" />
+        <IntelligenceProgressionChart
+          stages={intelligenceProgressionStages}
+          title="Generate"
+          description="Reusable generation progression map for sponsored content reports."
+        />
+      </div>
     </section>
   )
 }
@@ -1603,72 +1628,81 @@ function DaedalusPlayground({
 
   return (
     <section className="grid gap-4">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
-        <SignalPlate
-          eyebrow="Campaign surface"
-          title="Daedalus command"
-          description="Coordinate campaign filters, delivery signals, workbook output, and safety proof from one operational view."
-          status="Live data ready"
-          statusTone="success"
-          metrics={[
-            { label: "Creators", value: "42", detail: "6 live now" },
-            { label: "Reports", value: "18", detail: "Weekly scope" },
-            {
-              label: "Export health",
-              value: "96%",
-              detail: "Workbook current",
-            },
-          ]}
-        />
-        <SignalPlate
-          eyebrow="LiveGuard"
-          title="Cockpit proof"
-          description="Track safety rules, thresholds, creator state, and incidents without losing campaign context."
-          status="Nominal"
-          statusTone="success"
-          metrics={[
-            { label: "Rules", value: "12", detail: "Brand plus safety" },
-            { label: "Incidents", value: "2", detail: "Below threshold" },
-            { label: "Cooldown", value: "8m", detail: "Delivery window" },
-          ]}
+      <div className="grid gap-2">
+        <ComponentReference names="SignalPlate" />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
+          <SignalPlate
+            eyebrow="Campaign surface"
+            title="Daedalus command"
+            description="Coordinate campaign filters, delivery signals, workbook output, and safety proof from one operational view."
+            status="Live data ready"
+            statusTone="success"
+            metrics={[
+              { label: "Creators", value: "42", detail: "6 live now" },
+              { label: "Reports", value: "18", detail: "Weekly scope" },
+              {
+                label: "Export health",
+                value: "96%",
+                detail: "Workbook current",
+              },
+            ]}
+          />
+          <SignalPlate
+            eyebrow="LiveGuard"
+            title="Cockpit proof"
+            description="Track safety rules, thresholds, creator state, and incidents without losing campaign context."
+            status="Nominal"
+            statusTone="success"
+            metrics={[
+              { label: "Rules", value: "12", detail: "Brand plus safety" },
+              { label: "Incidents", value: "2", detail: "Below threshold" },
+              { label: "Cooldown", value: "8m", detail: "Delivery window" },
+            ]}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-2">
+        <ComponentReference names="DashboardFilterBar" />
+        <DashboardFilterBar
+          groups={daedalusFilterGroups}
+          items={daedalusFilterItems}
+          activeGroupId={filterGroupId}
+          selectedItemId={selectedFilterId}
+          onGroupChange={onFilterGroupChange}
+          onItemSelect={onFilterSelect}
+          onClear={onFilterClear}
         />
       </div>
 
-      <DashboardFilterBar
-        groups={daedalusFilterGroups}
-        items={daedalusFilterItems}
-        activeGroupId={filterGroupId}
-        selectedItemId={selectedFilterId}
-        onGroupChange={onFilterGroupChange}
-        onItemSelect={onFilterSelect}
-        onClear={onFilterClear}
-      />
-
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <Metric
-          icon={<Filter />}
-          value={selectedFilter?.badge ?? "Scoped"}
-          label="Active filter"
-          detail={selectedFilter?.title ?? "No campaign selected"}
-        />
-        <Metric
-          icon={<CalendarClock />}
-          value="Mon 09:00"
-          label="Export cadence"
-          detail="Campaign workbook"
-        />
-        <Metric
-          icon={<Gauge />}
-          value="0.71"
-          label="Latest safety score"
-          detail="Under threshold"
-        />
-        <Metric
-          icon={<RadioTower />}
-          value="3"
-          label="Live channels"
-          detail="Runtime watchlist"
-        />
+      <div className="grid gap-2">
+        <ComponentReference names="Metric" />
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <Metric
+            icon={<Filter />}
+            value={selectedFilter?.badge ?? "Scoped"}
+            label="Active filter"
+            detail={selectedFilter?.title ?? "No campaign selected"}
+          />
+          <Metric
+            icon={<CalendarClock />}
+            value="Mon 09:00"
+            label="Export cadence"
+            detail="Campaign workbook"
+          />
+          <Metric
+            icon={<Gauge />}
+            value="0.71"
+            label="Latest safety score"
+            detail="Under threshold"
+          />
+          <Metric
+            icon={<RadioTower />}
+            value="3"
+            label="Live channels"
+            detail="Runtime watchlist"
+          />
+        </div>
       </div>
 
       <Surface className="grid gap-4">
@@ -1679,16 +1713,19 @@ function DaedalusPlayground({
           </SurfaceDescription>
         </SurfaceHeader>
         <div className="grid gap-4">
-          <SingleCalendarDateRangePicker
-            value={dateRange}
-            onValueChange={onDateRangeChange}
-          />
+          <div className="grid gap-2">
+            <ComponentReference names="SingleCalendarDateRangePicker" />
+            <SingleCalendarDateRangePicker
+              value={dateRange}
+              onValueChange={onDateRangeChange}
+            />
+          </div>
           <Surface
             variant="plain"
             padding="sm"
             className="grid w-fit max-w-full justify-items-start gap-2"
           >
-            <strong className="text-ui-label">Report duration</strong>
+            <ComponentReference names="DurationPicker" />
             <DurationPicker
               value={reportDuration}
               onValueChange={setReportDuration}
@@ -1712,21 +1749,33 @@ function DaedalusPlayground({
               <StatusBadge tone="neutral">7 directions</StatusBadge>
             </div>
             <div className="grid gap-3 lg:grid-cols-2">
-              <ChartDirection title="Rail" badge="+18%">
+              <ChartDirection
+                componentName="TrendBarChart"
+                title="Rail"
+                badge="+18%"
+              >
                 <TrendBarChart
                   rows={weeklyTrendRows}
                   variant="rail"
                   valueFormatter={(value) => `${Math.round(value)}k`}
                 />
               </ChartDirection>
-              <ChartDirection title="Block" badge="Dense">
+              <ChartDirection
+                componentName="TrendBarChart"
+                title="Block"
+                badge="Dense"
+              >
                 <TrendBarChart
                   rows={weeklyTrendRows}
                   variant="block"
                   valueFormatter={(value) => `${Math.round(value)}k`}
                 />
               </ChartDirection>
-              <ChartDirection title="Signal" badge="Live">
+              <ChartDirection
+                componentName="TrendBarChart"
+                title="Signal"
+                badge="Live"
+              >
                 <TrendBarChart
                   rows={weeklyTrendRows}
                   variant="signal"
@@ -1734,6 +1783,7 @@ function DaedalusPlayground({
                 />
               </ChartDirection>
               <ChartDirection
+                componentName="HourlyPacingChart"
                 title="Pacing bars"
                 badge="Target line"
                 className="lg:col-span-2"
@@ -1746,6 +1796,7 @@ function DaedalusPlayground({
                 />
               </ChartDirection>
               <ChartDirection
+                componentName="SignalRidgeChart"
                 title="Signal ridge"
                 badge="Trajectory"
                 className="lg:col-span-2"
@@ -1759,28 +1810,33 @@ function DaedalusPlayground({
               </ChartDirection>
             </div>
           </Surface>
-          <LineItemGraph
-            className="xl:col-span-2"
-            title="Weekly total impressions"
-            rangeLabel="Last 7 days"
-            days={weeklyImpressionDays}
-            series={weeklyImpressionSeries}
-            axisLabelMode="weekday-day"
-            valueFormatter={formatLargeMetricValue}
-            tickFormatter={formatCompactMetricValue}
-          />
-          <LineItemGraph
-            className="xl:col-span-2"
-            title="Banner impressions"
-            rangeLabel="Last 30 days"
-            days={bannerImpressionDays}
-            series={bannerImpressionSeries}
-            totalLine={{ label: "Total" }}
-            axisLabelMode="angled-day"
-            valueFormatter={formatLargeMetricValue}
-            tickFormatter={formatCompactMetricValue}
-          />
+          <div className="grid gap-2 xl:col-span-2">
+            <ComponentReference names="LineItemGraph" />
+            <LineItemGraph
+              title="Weekly total impressions"
+              rangeLabel="Last 7 days"
+              days={weeklyImpressionDays}
+              series={weeklyImpressionSeries}
+              axisLabelMode="weekday-day"
+              valueFormatter={formatLargeMetricValue}
+              tickFormatter={formatCompactMetricValue}
+            />
+          </div>
+          <div className="grid gap-2 xl:col-span-2">
+            <ComponentReference names="LineItemGraph" />
+            <LineItemGraph
+              title="Banner impressions"
+              rangeLabel="Last 30 days"
+              days={bannerImpressionDays}
+              series={bannerImpressionSeries}
+              totalLine={{ label: "Total" }}
+              axisLabelMode="angled-day"
+              valueFormatter={formatLargeMetricValue}
+              tickFormatter={formatCompactMetricValue}
+            />
+          </div>
           <Surface variant="plain" className="grid gap-3">
+            <ComponentReference names="LineGraph" />
             <div className="flex items-center justify-between gap-3">
               <strong className="text-sm">Reach trajectory</strong>
               <StatusBadge tone="success">Climbing</StatusBadge>
@@ -1788,6 +1844,7 @@ function DaedalusPlayground({
             <LineGraph points={campaignLinePoints} />
           </Surface>
           <Surface variant="plain" className="grid gap-3">
+            <ComponentReference names="DonutChart" />
             <div className="flex items-center justify-between gap-3">
               <strong className="text-sm">Channel mix</strong>
               <StatusBadge tone="neutral">Current</StatusBadge>
@@ -1801,38 +1858,46 @@ function DaedalusPlayground({
         </div>
       </Surface>
 
-      <ExportWorkbench
-        schedule={exportSchedule}
-        onScheduleChange={onExportScheduleChange}
-        workbookState="current"
-        nextRun="Mon 09:00"
-        workbookName="Starforge weekly workbook"
-        generatedUntil="Generated through May 12"
-        sessions={exportSessionRows}
-      />
+      <div className="grid gap-2">
+        <ComponentReference names="ExportWorkbench" />
+        <ExportWorkbench
+          schedule={exportSchedule}
+          onScheduleChange={onExportScheduleChange}
+          workbookState="current"
+          nextRun="Mon 09:00"
+          workbookName="Starforge weekly workbook"
+          generatedUntil="Generated through May 12"
+          sessions={exportSessionRows}
+        />
+      </div>
 
-      <LiveguardCockpit
-        enabled
-        activeRules={12}
-        scheduledCreators={liveguardCreators.length}
-        cooldown="8m"
-        creators={liveguardCreators}
-        incidents={liveguardIncidents}
-        watchlistTokens={watchlistTokens}
-        onWatchlistTokensChange={onWatchlistTokensChange}
-        score={0.71}
-        threshold={0.82}
-      />
+      <div className="grid gap-2">
+        <ComponentReference names="LiveguardCockpit" />
+        <LiveguardCockpit
+          enabled
+          activeRules={12}
+          scheduledCreators={liveguardCreators.length}
+          cooldown="8m"
+          creators={liveguardCreators}
+          incidents={liveguardIncidents}
+          watchlistTokens={watchlistTokens}
+          onWatchlistTokensChange={onWatchlistTokensChange}
+          score={0.71}
+          threshold={0.82}
+        />
+      </div>
     </section>
   )
 }
 
 function ChartDirection({
+  componentName,
   title,
   badge,
   children,
   className,
 }: {
+  componentName: string
   title: ReactNode
   badge: ReactNode
   children: ReactNode
@@ -1845,6 +1910,7 @@ function ChartDirection({
         className
       )}
     >
+      <ComponentReference names={componentName} />
       <div className="flex items-center justify-between gap-3 px-1">
         <strong className="text-sm">{title}</strong>
         <StatusBadge tone="success">{badge}</StatusBadge>
@@ -2226,6 +2292,7 @@ function ComponentMatrix({
   return (
     <Surface className="grid gap-4">
       <SurfaceHeader>
+        <ComponentReference names={["Surface", "Card"]} />
         <SurfaceTitle>Primitives</SurfaceTitle>
         <SurfaceDescription>
           Buttons, controls, badges, metrics, and notices.
@@ -2235,6 +2302,7 @@ function ComponentMatrix({
       <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-4">
         <Card>
           <CardHeader>
+            <ComponentReference names="Button" />
             <CardTitle>Buttons</CardTitle>
             <CardDescription>
               Default shadcn variants with Nextide tokens available.
@@ -2259,48 +2327,54 @@ function ComponentMatrix({
               Focused details and compact overflow surfaces.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3">
-            <div className="flex flex-wrap gap-2">
-              <Popover>
-                <PopoverTrigger render={<Button variant="outline" />}>
-                  Open details
-                </PopoverTrigger>
-                <PopoverContent>
-                  <PopoverHeader>
-                    <PopoverTitle>Shared preview</PopoverTitle>
-                    <PopoverDescription>
-                      Review compact overlays without leaving the page.
-                    </PopoverDescription>
-                  </PopoverHeader>
-                </PopoverContent>
-              </Popover>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger render={<Button variant="outline" />}>
-                    Hover for status
-                  </TooltipTrigger>
-                  <TooltipContent>All checks are ready.</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <ScrollArea className="h-28 rounded-lg border border-nextide-line bg-background/25">
-              <div className="grid gap-2 p-3 text-sm">
-                {[
-                  "Campaign summary",
-                  "Creator confidence",
-                  "Safety review",
-                  "Export schedule",
-                  "Delivery status",
-                ].map((label) => (
-                  <div
-                    key={label}
-                    className="rounded-md bg-nextide-panel px-3 py-2"
-                  >
-                    {label}
-                  </div>
-                ))}
+          <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <ComponentReference names={["Popover", "Tooltip"]} />
+              <div className="flex flex-wrap gap-2">
+                <Popover>
+                  <PopoverTrigger render={<Button variant="outline" />}>
+                    Open details
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <PopoverHeader>
+                      <PopoverTitle>Shared preview</PopoverTitle>
+                      <PopoverDescription>
+                        Review compact overlays without leaving the page.
+                      </PopoverDescription>
+                    </PopoverHeader>
+                  </PopoverContent>
+                </Popover>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger render={<Button variant="outline" />}>
+                      Hover for status
+                    </TooltipTrigger>
+                    <TooltipContent>All checks are ready.</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
-            </ScrollArea>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="ScrollArea" />
+              <ScrollArea className="h-28 rounded-lg border border-nextide-line bg-background/25">
+                <div className="grid gap-2 p-3 text-sm">
+                  {[
+                    "Campaign summary",
+                    "Creator confidence",
+                    "Safety review",
+                    "Export schedule",
+                    "Delivery status",
+                  ].map((label) => (
+                    <div
+                      key={label}
+                      className="rounded-md bg-nextide-panel px-3 py-2"
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
           </CardContent>
         </Card>
 
@@ -2311,10 +2385,13 @@ function ComponentMatrix({
               Compact form controls for dense app surfaces.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3">
-            <Input defaultValue="Sponsored report" aria-label="Report name" />
+          <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <p className="text-ui-caption font-medium">Duration picker</p>
+              <ComponentReference names="Input" />
+              <Input defaultValue="Sponsored report" aria-label="Report name" />
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="DurationPicker" />
               <DurationPicker
                 showDays
                 maxDays={365}
@@ -2330,16 +2407,22 @@ function ComponentMatrix({
                 min
               </output>
             </div>
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={checked}
-                onCheckedChange={(value) => onCheckedChange(value === true)}
-              />
-              <span className="text-sm">Include degraded runs</span>
+            <div className="grid gap-2">
+              <ComponentReference names="Checkbox" />
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={checked}
+                  onCheckedChange={(value) => onCheckedChange(value === true)}
+                />
+                <span className="text-sm">Include degraded runs</span>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Switch checked={enabled} onCheckedChange={onEnabledChange} />
-              <span className="text-sm">Runtime checks</span>
+            <div className="grid gap-2">
+              <ComponentReference names="Switch" />
+              <div className="flex items-center gap-3">
+                <Switch checked={enabled} onCheckedChange={onEnabledChange} />
+                <span className="text-sm">Runtime checks</span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -2352,31 +2435,38 @@ function ComponentMatrix({
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <SegmentedControl
-              value={density}
-              options={[
-                { value: "compact", label: "Compact" },
-                { value: "comfortable", label: "Comfort" },
-                { value: "spacious", label: "Spacious" },
-              ]}
-              onValueChange={onDensityChange}
-            />
-            <Slider
-              value={confidence}
-              min={0}
-              max={100}
-              step={1}
-              onValueChange={(nextValue) =>
-                onConfidenceChange(
-                  Array.isArray(nextValue) ? [...nextValue] : [nextValue]
-                )
-              }
-            />
+            <div className="grid gap-2">
+              <ComponentReference names="SegmentedControl" />
+              <SegmentedControl
+                value={density}
+                options={[
+                  { value: "compact", label: "Compact" },
+                  { value: "comfortable", label: "Comfort" },
+                  { value: "spacious", label: "Spacious" },
+                ]}
+                onValueChange={onDensityChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Slider" />
+              <Slider
+                value={confidence}
+                min={0}
+                max={100}
+                step={1}
+                onValueChange={(nextValue) =>
+                  onConfidenceChange(
+                    Array.isArray(nextValue) ? [...nextValue] : [nextValue]
+                  )
+                }
+              />
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
+            <ComponentReference names="Autocomplete" />
             <CardTitle>Autocomplete</CardTitle>
             <CardDescription>
               Free-form search with inline suggestions and keyboard selection.
@@ -2441,23 +2531,30 @@ function ComponentMatrix({
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
-            <div className="flex flex-wrap gap-2">
-              <StatusBadge tone="success">Ready</StatusBadge>
-              <StatusBadge tone="processing" indicator="pulse">
-                Processing
-              </StatusBadge>
-              <StatusBadge tone="warning">Degraded</StatusBadge>
-              <StatusBadge tone="danger">Failed</StatusBadge>
-              <Badge variant="outline">Outline</Badge>
+            <div className="grid gap-2">
+              <ComponentReference names={["StatusBadge", "Badge"]} />
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge tone="success">Ready</StatusBadge>
+                <StatusBadge tone="processing" indicator="pulse">
+                  Processing
+                </StatusBadge>
+                <StatusBadge tone="warning">Degraded</StatusBadge>
+                <StatusBadge tone="danger">Failed</StatusBadge>
+                <Badge variant="outline">Outline</Badge>
+              </div>
             </div>
-            <Notice title="Projection cache warm" tone="info">
-              Read model data is available for the current playground run.
-            </Notice>
+            <div className="grid gap-2">
+              <ComponentReference names="Notice" />
+              <Notice title="Projection cache warm" tone="info">
+                Read model data is available for the current playground run.
+              </Notice>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
+            <ComponentReference names="ProcessingText" />
             <CardTitle>Processing text</CardTitle>
             <CardDescription>
               Three named styles moving at the same travel speed across any text
@@ -2487,7 +2584,7 @@ function ComponentMatrix({
                 className="grid gap-1.5 rounded-lg border border-nextide-line bg-background/25 p-3"
               >
                 <strong className="text-ui-caption text-muted-foreground">
-                  Processing text · {example.label}
+                  ProcessingText · {example.label}
                 </strong>
                 <p className="text-ui-title font-medium">
                   <ProcessingText variant={example.variant}>
@@ -2507,41 +2604,56 @@ function ComponentMatrix({
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <AvatarGroup>
-              {intelligenceCreators.slice(0, 3).map((creator, index) => (
-                <Avatar key={creator.id}>
-                  <AvatarFallback>{creator.avatar}</AvatarFallback>
-                  {index === 0 ? <AvatarBadge aria-hidden="true" /> : null}
-                </Avatar>
-              ))}
-              <AvatarGroupCount>+2</AvatarGroupCount>
-            </AvatarGroup>
-            <Progress value={72}>
-              <ProgressLabel>Profile readiness</ProgressLabel>
-              <ProgressValue />
-            </Progress>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Spinner />
-              Refreshing preview
+            <div className="grid gap-2">
+              <ComponentReference names={["Avatar", "AvatarGroup"]} />
+              <AvatarGroup>
+                {intelligenceCreators.slice(0, 3).map((creator, index) => (
+                  <Avatar key={creator.id}>
+                    <AvatarFallback>{creator.avatar}</AvatarFallback>
+                    {index === 0 ? <AvatarBadge aria-hidden="true" /> : null}
+                  </Avatar>
+                ))}
+                <AvatarGroupCount>+2</AvatarGroupCount>
+              </AvatarGroup>
             </div>
-            <div className="flex items-center gap-3" aria-hidden="true">
-              <Skeleton className="size-9 rounded-full" />
-              <div className="grid flex-1 gap-2">
-                <Skeleton className="h-3 w-2/3" />
-                <Skeleton className="h-3 w-1/2" />
+            <div className="grid gap-2">
+              <ComponentReference names="Progress" />
+              <Progress value={72}>
+                <ProgressLabel>Profile readiness</ProgressLabel>
+                <ProgressValue />
+              </Progress>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Spinner" />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Spinner />
+                Refreshing preview
               </div>
             </div>
-            <Empty className="min-h-32 border border-nextide-line bg-background/20">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <Search />
-                </EmptyMedia>
-                <EmptyTitle>No saved views</EmptyTitle>
-                <EmptyDescription>
-                  Saved views will appear here.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <div className="grid gap-2">
+              <ComponentReference names="Skeleton" />
+              <div className="flex items-center gap-3" aria-hidden="true">
+                <Skeleton className="size-9 rounded-full" />
+                <div className="grid flex-1 gap-2">
+                  <Skeleton className="h-3 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Empty" />
+              <Empty className="min-h-32 border border-nextide-line bg-background/20">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <Search />
+                  </EmptyMedia>
+                  <EmptyTitle>No saved views</EmptyTitle>
+                  <EmptyDescription>
+                    Saved views will appear here.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -2564,6 +2676,7 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
   return (
     <Surface className="grid gap-4">
       <SurfaceHeader>
+        <ComponentReference names="Surface" />
         <SurfaceTitle>Blocks</SurfaceTitle>
         <SurfaceDescription>
           Composed app patterns that stay outside primitive components.
@@ -2581,22 +2694,22 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
           {[
             {
               icon: Database,
-              title: "App shell",
+              title: "AppShell",
               detail: "Sidebar, workspace, and inspector",
             },
             {
               icon: Layers3,
-              title: "Progressive summary",
+              title: "ProgressiveSummaryRail",
               detail: "Stable sections with live values",
             },
             {
               icon: PanelLeft,
-              title: "Navigation panel",
+              title: "NavigationPanel",
               detail: "Workspace and system wayfinding",
             },
             {
               icon: Check,
-              title: "Workflow stepper",
+              title: "WorkflowStepper",
               detail: "Active and completed decisions",
             },
           ].map((pattern) => (
@@ -2608,9 +2721,7 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
                 <pattern.icon className="size-3.5" />
               </span>
               <span className="grid min-w-0 gap-0.5">
-                <strong className="truncate text-ui-label font-medium">
-                  {pattern.title}
-                </strong>
+                <ComponentReference names={pattern.title} />
                 <span className="truncate text-ui-caption text-muted-foreground">
                   {pattern.detail}
                 </span>
@@ -2619,43 +2730,49 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
           ))}
         </Surface>
 
-        <ProgressiveSummaryRail
-          title="Progressive summary"
-          description="Section headers remain stable while confirmed values enter the review."
-          sections={[
-            {
-              id: "report",
-              title: "Report",
-              summary: "Creator fit review",
-              rows: [
-                {
-                  id: "brand",
-                  label: "Brand",
-                  badge: "BR",
-                  value: "Daedalus",
-                },
-              ],
-            },
-            {
-              id: "campaign",
-              title: "Campaign shape",
-              rows: [],
-              emptyLabel: "Waiting for campaign input",
-            },
-            {
-              id: "safety",
-              title: "Safety gate",
-              summary: "0.72 minimum",
-              rows: [
-                { id: "qualified", label: "qualified creators", badge: "18" },
-                { id: "overrides", label: "category overrides", badge: "2" },
-              ],
-            },
-          ]}
-          className="rounded-xl border border-nextide-line bg-nextide-panel p-4"
-        />
+        <div className="grid gap-2">
+          <ComponentReference names="ProgressiveSummaryRail" />
+          <ProgressiveSummaryRail
+            title="Progressive summary"
+            description="Section headers remain stable while confirmed values enter the review."
+            sections={[
+              {
+                id: "report",
+                title: "Report",
+                summary: "Creator fit review",
+                rows: [
+                  {
+                    id: "brand",
+                    label: "Brand",
+                    badge: "BR",
+                    value: "Daedalus",
+                  },
+                ],
+              },
+              {
+                id: "campaign",
+                title: "Campaign shape",
+                rows: [],
+                emptyLabel: "Waiting for campaign input",
+              },
+              {
+                id: "safety",
+                title: "Safety gate",
+                summary: "0.72 minimum",
+                rows: [
+                  { id: "qualified", label: "qualified creators", badge: "18" },
+                  { id: "overrides", label: "category overrides", badge: "2" },
+                ],
+              },
+            ]}
+            className="rounded-xl border border-nextide-line bg-nextide-panel p-4"
+          />
+        </div>
       </div>
 
+      <ComponentReference
+        names={["NavigationPanel", "NavigationUserMenu", "Metric", "Separator"]}
+      />
       <div
         className={cn(
           "grid min-h-[34rem] grid-cols-1 items-start gap-3 overflow-hidden rounded-xl border border-nextide-line bg-black/20 p-3 transition-[grid-template-columns] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
