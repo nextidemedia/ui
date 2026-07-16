@@ -161,6 +161,7 @@ function SignalRidgeChart({
             onMouseMove={(event) =>
               showPointTooltip(points[index], position, event.clientY)
             }
+            onMouseLeave={() => setHover(null)}
           >
             <circle cx={position.x} cy={position.y} r="16" fill="transparent" />
             <circle

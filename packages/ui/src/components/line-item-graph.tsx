@@ -679,13 +679,7 @@ function LineItemGraph({
               const x = dayX.get(day.id) ?? plotLeft
               const label = renderAxisLabel(day, axisLabelMode)
               const labelY = plotBottom + (shouldAngleLabels ? 32 : 25)
-              const textAnchor = shouldAngleLabels
-                ? "end"
-                : index === 0
-                  ? "start"
-                  : index === visibleDays.length - 1
-                    ? "end"
-                    : "middle"
+              const textAnchor = shouldAngleLabels ? "end" : "middle"
 
               return (
                 <text
