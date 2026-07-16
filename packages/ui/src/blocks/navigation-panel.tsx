@@ -269,12 +269,12 @@ function NavigationPanelCommandRow({
         <AutocompleteInputGroup
           data-slot="navigation-panel-command-control"
           className={cn(
-            "absolute top-0 left-0 grid h-11 min-w-0 items-center gap-0 overflow-hidden rounded-lg border px-0 text-left text-sm text-muted-foreground/65 transition-[top,width,grid-template-columns,padding,color,background-color,border-color,box-shadow] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] hover:bg-nextide-panel-strong motion-reduce:transition-none max-lg:static max-lg:w-full",
+            "absolute top-0 left-0 flex h-11 min-w-0 items-center gap-0 overflow-hidden rounded-lg border px-0 text-left text-sm text-muted-foreground/65 transition-[top,width,padding,color,background-color,border-color,box-shadow] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] hover:bg-nextide-panel-strong motion-reduce:transition-none max-lg:static max-lg:w-full",
             compactSearchOpen
-              ? "z-50 w-[min(18rem,calc(100vw-6rem))] grid-cols-[2.75rem_minmax(0,1fr)_0fr] border-nextide-line bg-popover shadow-md focus-within:border-nextide-tide/55 focus-within:ring-0"
+              ? "z-50 w-[min(18rem,calc(100vw-6rem))] border-nextide-line bg-popover shadow-md focus-within:border-nextide-tide/55 focus-within:ring-0"
               : collapsed
-                ? "z-30 w-11 grid-cols-[2.75rem_0fr_0fr]"
-                : "w-[calc(100%-3.25rem)] grid-cols-[2.75rem_minmax(0,1fr)_auto]",
+                ? "z-30 w-11"
+                : "w-[calc(100%-3.25rem)]",
             !compactSearchOpen && drawerCollapsed
               ? "border-transparent bg-transparent shadow-none ring-0 focus-within:border-transparent focus-within:ring-0 hover:bg-nextide-panel-strong/70 dark:border-transparent dark:bg-transparent"
               : !compactSearchOpen && "border-nextide-line bg-nextide-panel",
@@ -290,44 +290,42 @@ function NavigationPanelCommandRow({
           <span
             aria-hidden="true"
             data-slot="navigation-panel-command-icon"
-            className="grid size-11 place-items-center justify-self-center text-nextide-tide [&_svg]:size-4"
+            className="relative z-10 grid size-11 shrink-0 place-items-center text-nextide-tide [&_svg]:size-4"
           >
             <Search />
           </span>
-          <AutocompleteInput
-            ref={inputRef}
-            aria-label={commandLabel}
-            autoComplete="off"
-            placeholder={commandLabel}
-            spellCheck={false}
+          <span
+            data-slot="navigation-panel-command-copy"
             className={cn(
-              "h-11 w-full min-w-0 px-0 text-sm text-muted-foreground/80 transition-[opacity,transform] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] placeholder:text-muted-foreground/55 motion-reduce:transition-none",
+              "absolute inset-y-0 left-11 flex w-[calc(100%-2.75rem)] min-w-[10.25rem] items-center transition-[opacity,translate] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
               commandFieldVisible
                 ? "translate-x-0 opacity-100"
-                : "pointer-events-none -translate-x-10 opacity-0"
+                : "pointer-events-none -translate-x-[calc(100%+2.75rem)] opacity-0"
             )}
-            onFocus={() => {
-              setSearchFocused(true)
-            }}
-            onKeyDown={(event) => {
-              if (event.key !== "Escape") return
+          >
+            <AutocompleteInput
+              ref={inputRef}
+              aria-label={commandLabel}
+              autoComplete="off"
+              placeholder={commandLabel}
+              spellCheck={false}
+              className="h-11 min-w-0 px-0 text-sm text-muted-foreground/80 placeholder:text-muted-foreground/55"
+              onFocus={() => {
+                setSearchFocused(true)
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== "Escape") return
 
-              event.preventDefault()
-              clearSearch()
-            }}
-          />
-          {showCommandShortcut ? (
-            <Kbd
-              className={cn(
-                "mr-2.5 hidden h-auto shrink-0 rounded-md border border-nextide-line bg-background/40 px-1.5 py-0.5 text-ui-caption leading-none transition-[opacity,transform] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none sm:inline-flex",
-                drawerCollapsed
-                  ? "pointer-events-none -translate-x-10 opacity-0"
-                  : "translate-x-0 opacity-100"
-              )}
-            >
-              {commandShortcutLabel}
-            </Kbd>
-          ) : null}
+                event.preventDefault()
+                clearSearch()
+              }}
+            />
+            {showCommandShortcut && !compactSearchOpen ? (
+              <Kbd className="mr-2.5 hidden h-auto shrink-0 rounded-md border border-nextide-line bg-background/40 px-1.5 py-0.5 text-ui-caption leading-none sm:inline-flex">
+                {commandShortcutLabel}
+              </Kbd>
+            ) : null}
+          </span>
         </AutocompleteInputGroup>
         {onToggle ? (
           <SidebarToggleButton

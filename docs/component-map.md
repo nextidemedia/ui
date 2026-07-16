@@ -97,6 +97,8 @@ final positions are measured before the layout changes so every control follows
 one direct path instead of inheriting competing row, heading, and gap reflows.
 The horizontal text-and-shell motion starts first; compact icon geometry joins
 only for the final icon-duration window so both stages land together.
+The search label and shortcut move as one stable-width track behind the search
+icon, so neither element reflows or stretches while the drawer changes width.
 
 Desktop navigation retracts its text and shell while each icon moves directly
 to its measured compact position. Expansion uses the same measured path in

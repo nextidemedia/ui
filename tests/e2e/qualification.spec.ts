@@ -229,11 +229,13 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   await expect(toggle).toHaveAccessibleName("Collapse sidebar")
   const shortcut = search.getByText("CTRL K", { exact: true })
   const searchBox = await search.boundingBox()
+  const searchInputBox = await searchInput.boundingBox()
   const toggleBox = await toggle.boundingBox()
   const shortcutBox = await shortcut.boundingBox()
   const commandRowBox = await commandRow.boundingBox()
 
   expect(searchBox).not.toBeNull()
+  expect(searchInputBox).not.toBeNull()
   expect(toggleBox).not.toBeNull()
   expect(shortcutBox).not.toBeNull()
   expect(commandRowBox).not.toBeNull()
@@ -293,6 +295,16 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
     const searchControl = element.querySelector(
       '[data-slot="navigation-panel-command-control"]'
     )
+    const commandCopy = element.querySelector(
+      '[data-slot="navigation-panel-command-copy"]'
+    )
+    const commandIcon = element.querySelector(
+      '[data-slot="navigation-panel-command-icon"]'
+    )
+    const searchInput = element.querySelector(
+      'input[aria-label="Search library"]'
+    )
+    const shortcut = searchControl?.querySelector("kbd")
     const toggleButton = element.querySelector(
       'button[aria-label="Expand sidebar"]'
     )
@@ -307,6 +319,11 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
       rowHeight: row?.getBoundingClientRect().height ?? 0,
       searchY: searchControl?.getBoundingClientRect().y ?? 0,
       toggleY: toggleButton?.getBoundingClientRect().y ?? 0,
+      commandCopyX: commandCopy?.getBoundingClientRect().x ?? 0,
+      commandIconX: commandIcon?.getBoundingClientRect().x ?? 0,
+      searchInputWidth: searchInput?.getBoundingClientRect().width ?? 0,
+      shortcutWidth: shortcut?.getBoundingClientRect().width ?? 0,
+      shortcutHeight: shortcut?.getBoundingClientRect().height ?? 0,
       activeItemHeight: activeItem?.getBoundingClientRect().height ?? 0,
     }
   })
@@ -315,6 +332,10 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   expect(stageOne.rowHeight).toBeGreaterThan(44)
   expect(stageOne.rowHeight).toBeLessThan(96)
   expect(Math.abs(stageOne.searchY - stageOne.toggleY)).toBeLessThanOrEqual(2)
+  expect(stageOne.commandCopyX).toBeLessThan(stageOne.commandIconX)
+  expect(stageOne.searchInputWidth).toBeCloseTo(searchInputBox!.width, 0)
+  expect(stageOne.shortcutWidth).toBeCloseTo(shortcutBox!.width, 0)
+  expect(stageOne.shortcutHeight).toBeCloseTo(shortcutBox!.height, 0)
   expect(stageOne.activeItemHeight).toBeCloseTo(44, 0)
 
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "true")
@@ -341,7 +362,19 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   expect(collapsedRowBox!.height).toBe(94)
   await expect(expand).toBeFocused()
 
-  await expand.click()
+  const expandingShortcutSize = await mainSidebar.evaluate(async (element) => {
+    const expandButton = element.querySelector<HTMLButtonElement>(
+      'button[aria-label="Expand sidebar"]'
+    )
+    expandButton?.click()
+    await new Promise(requestAnimationFrame)
+
+    const shortcut = element.querySelector("kbd")
+    const box = shortcut?.getBoundingClientRect()
+    return { width: box?.width ?? 0, height: box?.height ?? 0 }
+  })
+  expect(expandingShortcutSize.width).toBeCloseTo(shortcutBox!.width, 0)
+  expect(expandingShortcutSize.height).toBeCloseTo(shortcutBox!.height, 0)
   expect(
     await mainSidebar.evaluate((element) => ({
       collapsed: element.getAttribute("data-collapsed"),
