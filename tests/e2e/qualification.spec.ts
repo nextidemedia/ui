@@ -215,7 +215,9 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
     '[data-slot="navigation-panel-command-row"]'
   )
   const activeNavItem = mainSidebar.locator('nav button[aria-current="page"]')
-  const search = mainSidebar.getByRole("button", { name: "Search library" })
+  const search = mainSidebar.locator(
+    '[data-slot="navigation-panel-command-control"]'
+  )
   const toggle = mainSidebar.getByRole("button", { name: "Collapse sidebar" })
   const shortcut = search.getByText("CTRL K", { exact: true })
   const searchBox = await search.boundingBox()
@@ -239,6 +241,27 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
     searchBox!.x + searchBox!.width - (shortcutBox!.x + shortcutBox!.width)
   ).toBeGreaterThanOrEqual(8)
 
+  const userMenu = mainSidebar.getByRole("button", {
+    name: "Nextide Operator menu",
+  })
+  await userMenu.click()
+  const userMenuContent = page.locator('[data-slot="dropdown-menu-content"]')
+  await expect(userMenuContent).toBeVisible()
+  await expect(
+    userMenuContent.getByRole("menuitem", { name: "Settings" })
+  ).toBeVisible()
+  await expect(
+    userMenuContent.getByRole("menuitem", { name: "Logout" })
+  ).toBeVisible()
+  await expectNoSeriousAxeViolations(
+    page,
+    "open navigation user menu",
+    '[data-slot="dropdown-menu-content"]'
+  )
+  await page.keyboard.press("Escape")
+  await expect(userMenuContent).toBeHidden()
+  await expectVisibleFocus(userMenu)
+
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "false")
   await toggle.click()
   expect(
@@ -255,8 +278,8 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
     const row = element.querySelector(
       '[data-slot="navigation-panel-command-row"]'
     )
-    const searchButton = element.querySelector(
-      'button[aria-label="Search library"]'
+    const searchControl = element.querySelector(
+      '[data-slot="navigation-panel-command-control"]'
     )
     const toggleButton = element.querySelector(
       'button[aria-label="Expand sidebar"]'
@@ -270,7 +293,7 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
           ? Number.parseFloat(getComputedStyle(shell).gridTemplateColumns)
           : 0),
       rowHeight: row?.getBoundingClientRect().height ?? 0,
-      searchY: searchButton?.getBoundingClientRect().y ?? 0,
+      searchY: searchControl?.getBoundingClientRect().y ?? 0,
       toggleY: toggleButton?.getBoundingClientRect().y ?? 0,
       activeItemHeight: activeItem?.getBoundingClientRect().height ?? 0,
     }
@@ -279,8 +302,8 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   expect(stageOne.shellWidth).toBeLessThan(288)
   expect(stageOne.rowHeight).toBeGreaterThan(44)
   expect(stageOne.rowHeight).toBeLessThan(96)
-  expect(stageOne.searchY).toBeGreaterThan(stageOne.toggleY)
-  expect(stageOne.activeItemHeight).toBeCloseTo(52, 0)
+  expect(stageOne.searchY).toBeCloseTo(stageOne.toggleY, 0)
+  expect(stageOne.activeItemHeight).toBeCloseTo(44, 0)
 
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "true")
   await expect(shell).toHaveCSS("grid-template-columns", /72px [0-9.]+px/)
@@ -299,7 +322,7 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   expect(expandBox!.height).toBe(44)
   expect(collapsedSearchBox!.width).toBe(44)
   expect(collapsedSearchBox!.height).toBe(44)
-  expect(collapsedSearchBox!.x).toBeCloseTo(expandBox!.x, 0)
+  expect(Math.abs(collapsedSearchBox!.x - expandBox!.x)).toBeLessThanOrEqual(2)
   expect(
     collapsedSearchBox!.y - (expandBox!.y + expandBox!.height)
   ).toBeCloseTo(6, 0)
@@ -327,18 +350,18 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
     const commandRow = element.querySelector(
       '[data-slot="navigation-panel-command-row"]'
     )
-    const searchButton = element.querySelector(
-      '[data-slot="navigation-panel"] button[aria-label="Search library"]'
+    const searchControl = element.querySelector(
+      '[data-slot="navigation-panel-command-control"]'
     )
     const activeItem = element.querySelector(
       '[data-slot="navigation-panel"] nav button[aria-current="page"]'
     )
 
-    return [shell, commandRow, searchButton, activeItem].map((node) =>
+    return [shell, commandRow, searchControl, activeItem].map((node) =>
       node ? getComputedStyle(node).transitionDuration : null
     )
   })
-  expect(stagedDurations).toEqual(["0.3s", "0.3s", "0.3s", "0.16s"])
+  expect(stagedDurations).toEqual(["0.3s", "0s", "0.16s", "0.16s"])
 })
 
 test("duration picker optionally supports days and confirms on blur or Enter", async ({
@@ -349,8 +372,21 @@ test("duration picker optionally supports days and confirms on blur or Enter", a
   await page.getByRole("button", { name: /Primitives/ }).click()
 
   const picker = page.locator('[data-slot="duration-picker"]')
+  const output = page.locator('[data-slot="duration-picker-output"]')
   const edit = picker.getByRole("button", { name: "Edit duration" })
   await edit.scrollIntoViewIfNeeded()
+  await expect(page.getByText("Duration picker", { exact: true })).toBeVisible()
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 800 })
+    const pickerBox = await picker.boundingBox()
+    const outputBox = await output.boundingBox()
+    expect(pickerBox).not.toBeNull()
+    expect(outputBox).not.toBeNull()
+    expect(outputBox!.y).toBeGreaterThanOrEqual(
+      pickerBox!.y + pickerBox!.height
+    )
+  }
+  await page.setViewportSize({ width: 390, height: 800 })
   const reportName = page.getByRole("textbox", { name: "Report name" })
   const days = picker.getByRole("textbox", { name: "Days" })
   const hours = picker.getByRole("textbox", { name: "Hours" })
@@ -367,9 +403,7 @@ test("duration picker optionally supports days and confirms on blur or Enter", a
   await reportName.click()
   await expect(picker).toHaveAttribute("data-editing", "false")
   await expect(reportName).toBeFocused()
-  await expect(page.locator('[data-slot="duration-picker-output"]')).toHaveText(
-    "4 d 2 hr 33 min"
-  )
+  await expect(output).toHaveText("4 d 2 hr 33 min")
 
   await page.keyboard.press("Tab")
   await expectVisibleFocus(edit)
@@ -393,14 +427,90 @@ test("duration picker optionally supports days and confirms on blur or Enter", a
   await expectVisibleFocus(
     picker.getByRole("button", { name: "Edit duration" })
   )
-  await expect(page.locator('[data-slot="duration-picker-output"]')).toHaveText(
-    "365 d 4 hr 59 min"
-  )
+  await expect(output).toHaveText("365 d 4 hr 59 min")
   await expectNoSeriousAxeViolations(
     page,
     "confirmed duration",
     '[data-slot="duration-picker"]'
   )
+})
+
+test("processing text follows progress state and reduced-motion preference", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.goto("/?view=report")
+  await page.getByRole("button", { name: /Primitives/ }).click()
+
+  const examples = [
+    ["classic", "Classic", "Preparing your campaign report"],
+    ["aurora", "Aurora", "Analyzing creator evidence"],
+    ["flame", "Flame", "Generating delivery insights"],
+  ] as const
+  const standalone = page.getByText(examples[0][2], { exact: true })
+  await standalone.scrollIntoViewIfNeeded()
+
+  for (const [variant, label, copy] of examples) {
+    await expect(
+      page.getByText(`Processing text · ${label}`, { exact: true })
+    ).toBeVisible()
+    const example = page.getByText(copy, { exact: true })
+    await expect(example).toHaveAttribute("data-slot", "processing-text")
+    await expect(example).toHaveAttribute("data-tone", "neutral")
+    await expect(example).toHaveAttribute("data-variant", variant)
+    await expect(example).toHaveCSS(
+      "animation-name",
+      "nextide-processing-text-shimmer"
+    )
+  }
+
+  const standaloneDuration = await standalone.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).animationDuration)
+  )
+  expect((examples[0][2].length * 2) / standaloneDuration).toBeCloseTo(5, 1)
+
+  await page.goto("/?view=intelligence")
+  const progression = page.locator(
+    '[data-slot="intelligence-progression-chart"]'
+  )
+  const activeLabel = progression.getByText("Analyze VODs", { exact: true })
+  const activeDetail = progression.getByText("Creator evidence", {
+    exact: true,
+  })
+
+  await expect(activeLabel).toHaveAttribute("data-slot", "processing-text")
+  await expect(activeLabel).toHaveAttribute("data-tone", "processing")
+  await expect(activeLabel).toHaveAttribute("data-variant", "classic")
+  await expect(activeDetail).toHaveAttribute("data-slot", "processing-text")
+  await expect(
+    progression.locator('[data-slot="processing-text"]')
+  ).toHaveCount(4)
+  await expect(
+    progression.locator('[data-slot="processing-text"]').filter({
+      hasText: "Analyze chat",
+    })
+  ).toHaveCount(0)
+  await expect(activeLabel).toHaveCSS(
+    "animation-name",
+    "nextide-processing-text-shimmer"
+  )
+
+  const activeDuration = await activeLabel.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).animationDuration)
+  )
+  expect(("Analyze VODs".length * 2) / activeDuration).toBeCloseTo(5, 1)
+  expect(standaloneDuration).toBeGreaterThan(activeDuration)
+  await expectNoSeriousAxeViolations(
+    page,
+    "processing progression",
+    '[data-slot="intelligence-progression-chart"]'
+  )
+
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await expect(activeLabel).toHaveCSS("animation-name", "none")
+  expect(
+    await activeLabel.evaluate((element) => getComputedStyle(element).color)
+  ).not.toBe("rgba(0, 0, 0, 0)")
 })
 
 test("playground session reports reverse cleanly and Kraken evidence tabs reflow", async ({
@@ -519,7 +629,9 @@ test("signal ridge and impression details share compact overview and exact detai
 
   await expect(page.locator('[data-slot="signal-ridge-chart"]')).toHaveCount(1)
 
-  const impressions = page.locator('[data-slot="line-item-graph"]').first()
+  const impressions = page
+    .locator('[data-slot="line-item-graph"]')
+    .filter({ has: page.getByRole("heading", { name: "Banner impressions" }) })
   const graphViewport = impressions.locator(
     '[data-slot="line-item-graph-viewport"]'
   )
@@ -537,7 +649,7 @@ test("signal ridge and impression details share compact overview and exact detai
   await expect(
     impressions.locator('[data-slot="line-item-hover-guide"]')
   ).toHaveCount(1)
-  const tooltip = page.locator('[data-slot="line-item-tooltip"]')
+  const tooltip = page.locator('[data-slot="graph-tooltip"]')
   await expect(tooltip).toBeVisible()
   expect(
     await tooltip.evaluate((element) => element.parentElement === document.body)

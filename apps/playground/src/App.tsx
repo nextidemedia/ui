@@ -133,6 +133,7 @@ import {
   ProgressLabel,
   ProgressValue,
 } from "@nextide/ui/components/progress"
+import { ProcessingText } from "@nextide/ui/components/processing-text"
 import type { ScheduleControlValue } from "@nextide/ui/components/schedule-control"
 import { ScrollArea } from "@nextide/ui/components/scroll-area"
 import { SelectMenu } from "@nextide/ui/components/select-menu"
@@ -2312,7 +2313,8 @@ function ComponentMatrix({
           </CardHeader>
           <CardContent className="grid gap-3">
             <Input defaultValue="Sponsored report" aria-label="Report name" />
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="grid gap-2">
+              <p className="text-ui-caption font-medium">Duration picker</p>
               <DurationPicker
                 showDays
                 maxDays={365}
@@ -2451,6 +2453,49 @@ function ComponentMatrix({
             <Notice title="Projection cache warm" tone="info">
               Read model data is available for the current playground run.
             </Notice>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Processing text</CardTitle>
+            <CardDescription>
+              Three named styles moving at the same travel speed across any text
+              length.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {[
+              {
+                label: "Classic",
+                variant: "classic" as const,
+                copy: "Preparing your campaign report",
+              },
+              {
+                label: "Aurora",
+                variant: "aurora" as const,
+                copy: "Analyzing creator evidence",
+              },
+              {
+                label: "Flame",
+                variant: "flame" as const,
+                copy: "Generating delivery insights",
+              },
+            ].map((example) => (
+              <div
+                key={example.variant}
+                className="grid gap-1.5 rounded-lg border border-nextide-line bg-background/25 p-3"
+              >
+                <strong className="text-ui-caption text-muted-foreground">
+                  Processing text · {example.label}
+                </strong>
+                <p className="text-ui-title font-medium">
+                  <ProcessingText variant={example.variant}>
+                    {example.copy}
+                  </ProcessingText>
+                </p>
+              </div>
+            ))}
           </CardContent>
         </Card>
 

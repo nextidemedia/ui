@@ -34,25 +34,25 @@ When a trigger should look like an existing control, compose it with the
 
 ## Components
 
-| Need                       | Start with                                                                                                                                                                                                                                                                                                                                                            |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Actions and commands       | `components/button`, `components/badge`, `components/status-badge`                                                                                                                                                                                                                                                                                                    |
-| Forms and inputs           | `components/input`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/autocomplete`, `components/token-list-editor`                                                                                                                                 |
-| Choice controls            | `components/segmented-control`, `components/tabs`, `components/collapsible`, `components/dropdown-menu`, `components/popover`, `components/tooltip`                                                                                                                                                                                                                    |
-| Date and schedule controls | `components/date-range-picker`, `components/duration-picker`, `components/schedule-control`                                                                                                                                                                                                                                                                           |
-| Layout and surfaces        | `components/surface`, `components/card`, `components/separator`, `components/scroll-area`, `components/table`, `components/alert`, `components/notice`, `components/metric`, `components/kbd`                                                                                                                                                                         |
-| Identity and feedback      | `components/avatar`, `components/empty`, `components/progress`, `components/spinner`, `components/skeleton`                                                                                                                                                                                                                                                           |
+| Need                       | Start with                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Actions and commands       | `components/button`, `components/badge`, `components/status-badge`                                                                                                                                                                                                                                                                                                                                |
+| Forms and inputs           | `components/input`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/autocomplete`, `components/token-list-editor`                                                                                                                                                             |
+| Choice controls            | `components/segmented-control`, `components/tabs`, `components/collapsible`, `components/dropdown-menu`, `components/popover`, `components/tooltip`                                                                                                                                                                                                                                               |
+| Date and schedule controls | `components/date-range-picker`, `components/duration-picker`, `components/schedule-control`                                                                                                                                                                                                                                                                                                       |
+| Layout and surfaces        | `components/surface`, `components/card`, `components/separator`, `components/scroll-area`, `components/table`, `components/alert`, `components/notice`, `components/metric`, `components/kbd`                                                                                                                                                                                                     |
+| Identity and feedback      | `components/avatar`, `components/empty`, `components/progress`, `components/processing-text`, `components/spinner`, `components/skeleton`                                                                                                                                                                                                                                                         |
 | Data visualization         | `components/graph-tooltip`, `components/donut-chart`, `components/line-graph`, `components/line-item-graph`, `components/trend-bar-chart`, `components/signal-ridge-chart`, `components/hourly-pacing-chart`, `components/score-threshold-meter`, `components/score-ring`, `components/sentiment-meter`, `components/creator-flow-chart`, `components/data-ledger`, `components/platform-cluster` |
 
 ## Blocks
 
-| Need                        | Start with                                                                                                                                             |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Need                        | Start with                                                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | App frame and navigation    | `blocks/app-shell`, `blocks/sidebar`, `blocks/navigation-panel`, `blocks/navigation-user-menu`, `blocks/workflow-stepper`, `blocks/signal-plate`, `blocks/settings-modal` |
-| Report building and reading | `blocks/report-context-builder`, `blocks/progressive-summary-rail`, `blocks/report-reader`, `blocks/report-rail`, `blocks/export-workbench`            |
-| Creator workflows           | `blocks/creator-transfer`, `blocks/creator-scope-panel`, `blocks/campaign-schedule-matrix`, `blocks/pacing-configurator`, `blocks/fit-leaderboard`     |
-| Operations and dashboards   | `blocks/dashboard-filter-bar`, `blocks/run-monitor-table`, `blocks/stream-selector`, `blocks/intelligence-progression-chart`, `blocks/evidence-drawer` |
-| Live/event safety           | `blocks/liveguard-cockpit`, `blocks/liveguard-incident-review`, `blocks/live-event-timeline`, `blocks/live-event-proof-modal`                          |
+| Report building and reading | `blocks/report-context-builder`, `blocks/progressive-summary-rail`, `blocks/report-reader`, `blocks/report-rail`, `blocks/export-workbench`                               |
+| Creator workflows           | `blocks/creator-transfer`, `blocks/creator-scope-panel`, `blocks/campaign-schedule-matrix`, `blocks/pacing-configurator`, `blocks/fit-leaderboard`                        |
+| Operations and dashboards   | `blocks/dashboard-filter-bar`, `blocks/run-monitor-table`, `blocks/stream-selector`, `blocks/intelligence-progression-chart`, `blocks/evidence-drawer`                    |
+| Live/event safety           | `blocks/liveguard-cockpit`, `blocks/liveguard-incident-review`, `blocks/live-event-timeline`, `blocks/live-event-proof-modal`                                             |
 
 ## Hooks
 
@@ -109,6 +109,13 @@ feedback where the motion communicates the inspected value.
 `components/status-badge` owns status tone, compact sizing, and optional
 indicators. Use `indicator="pulse"` only for a currently live or running state;
 use `indicator="none"` for categorical labels such as Review or Queued.
+
+`components/processing-text` adds a length-aware shimmer to concise progress
+copy. Choose `variant="classic"`, `variant="aurora"`, or `variant="flame"`;
+use the neutral tone for ordinary work in progress and `tone="processing"` for
+the shared purple active state. `travelSpeed` sets the approximate characters
+crossed per second and defaults to `5`, so text length changes duration rather
+than perceived speed. Reduced-motion and forced-color modes render static text.
 
 `blocks/campaign-schedule-matrix` derives day/week/month/quarter headers from
 each slot's ISO `date`. It opens at week scale and, when a `today` slot exists,

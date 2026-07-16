@@ -53,10 +53,7 @@ function NavigationUserMenu({
           />
         }
       >
-        <UserAvatar
-          avatarSrc={avatarSrc}
-          initials={initials}
-        />
+        <UserAvatar avatarSrc={avatarSrc} initials={initials} />
         {!collapsed ? (
           <span
             className={cn(
@@ -93,26 +90,22 @@ function NavigationUserMenu({
         sideOffset={8}
         className="w-64 rounded-lg"
       >
-        <DropdownMenuLabel className="p-1.5 font-normal">
-          <span className="grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-2">
-            <UserAvatar
-              avatarSrc={avatarSrc}
-              initials={initials}
-            />
-            <span className="grid min-w-0 gap-0.5">
-              <strong className="truncate text-ui-label font-medium text-foreground">
-                {name}
-              </strong>
-              {email ? (
-                <small className="truncate text-ui-micro text-muted-foreground">
-                  {email}
-                </small>
-              ) : null}
-            </span>
-          </span>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <DropdownMenuLabel className="p-1.5 font-normal">
+            <span className="grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-2">
+              <UserAvatar avatarSrc={avatarSrc} initials={initials} />
+              <span className="grid min-w-0 gap-0.5">
+                <strong className="truncate text-ui-label font-medium text-foreground">
+                  {name}
+                </strong>
+                {email ? (
+                  <small className="truncate text-ui-micro text-muted-foreground">
+                    {email}
+                  </small>
+                ) : null}
+              </span>
+            </span>
+          </DropdownMenuLabel>
           <DropdownMenuItem onClick={onSettings}>
             <Settings />
             Settings

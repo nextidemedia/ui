@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Check, CircleAlert } from "lucide-react"
 
+import { ProcessingText } from "@nextide/ui/components/processing-text"
 import { cn } from "@nextide/ui/lib/utils"
 
 type IntelligenceStageStatus =
@@ -92,13 +93,10 @@ function IntelligenceProgressionChart({
   const chartRef = React.useRef<HTMLDivElement | null>(null)
   const nodeRefs = React.useRef(new Map<string, HTMLSpanElement>())
   const [compact, setCompact] = React.useState(false)
-  const [geometry, setGeometry] =
-    React.useState<ChartGeometry>(initialGeometry)
+  const [geometry, setGeometry] = React.useState<ChartGeometry>(initialGeometry)
   const rawId = React.useId().replace(/:/g, "")
   const maskId = `${rawId}-node-mask`
-  const stagePositions = compact
-    ? compactStagePositions
-    : desktopStagePositions
+  const stagePositions = compact ? compactStagePositions : desktopStagePositions
   const statusByStage = React.useMemo(
     () => new Map(stages.map((stage) => [stage.id, stage.status])),
     [stages]
@@ -110,11 +108,7 @@ function IntelligenceProgressionChart({
         const target = geometry.nodes[edge.to]
         if (!source || !target) return []
 
-        const connection = connectNodeEdges(
-          source,
-          target,
-          geometry.width / 2
-        )
+        const connection = connectNodeEdges(source, target, geometry.width / 2)
         return [{ ...edge, ...connection }]
       }),
     [geometry]
@@ -128,9 +122,7 @@ function IntelligenceProgressionChart({
     const measure = () => {
       const chartRect = chart.getBoundingClientRect()
       const nextCompact = chartRect.width < 640
-      setCompact((current) =>
-        current === nextCompact ? current : nextCompact
-      )
+      setCompact((current) => (current === nextCompact ? current : nextCompact))
 
       const nodes: Record<string, NodeGeometry> = {}
       for (const stage of stages) {
@@ -196,9 +188,7 @@ function IntelligenceProgressionChart({
         data-layout={compact ? "compact" : "wide"}
         className={cn(
           "relative isolate w-full",
-          compact
-            ? "min-h-[48rem]"
-            : "min-h-[clamp(20rem,32vw,28rem)]"
+          compact ? "min-h-[48rem]" : "min-h-[clamp(20rem,32vw,28rem)]"
         )}
       >
         <svg
@@ -315,9 +305,25 @@ function IntelligenceProgressionChart({
                   (stage.icon ?? <Check className="size-7" />)
                 )}
               </span>
-              <strong className="text-xs leading-tight">{stage.label}</strong>
+              <strong className="text-xs leading-tight">
+                {stage.status === "processing" &&
+                typeof stage.label === "string" ? (
+                  <ProcessingText tone="processing">
+                    {stage.label}
+                  </ProcessingText>
+                ) : (
+                  stage.label
+                )}
+              </strong>
               <small className="max-w-24 text-ui-caption leading-tight text-muted-foreground">
-                {stage.detail}
+                {stage.status === "processing" &&
+                typeof stage.detail === "string" ? (
+                  <ProcessingText tone="processing">
+                    {stage.detail}
+                  </ProcessingText>
+                ) : (
+                  stage.detail
+                )}
               </small>
               <span className="sr-only">Step {index + 1}</span>
             </div>
@@ -345,9 +351,7 @@ function connectNodeEdges(
     y: source.y,
   }
   const end = {
-    x:
-      target.x +
-      target.radiusX * (verticallyAligned ? direction : -direction),
+    x: target.x + target.radiusX * (verticallyAligned ? direction : -direction),
     y: target.y,
   }
   const deltaX = end.x - start.x
