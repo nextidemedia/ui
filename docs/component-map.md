@@ -122,6 +122,10 @@ the shared purple active state. `travelSpeed` sets the approximate characters
 crossed per second and defaults to `5`, so text length changes duration rather
 than perceived speed. Reduced-motion and forced-color modes render static text.
 
+The `components/segmented-control` fill variant changes label contrast exactly
+where its moving selection indicator overlaps the label. The quiet and
+underline variants keep their simpler state-color transition.
+
 `blocks/campaign-schedule-matrix` derives day/week/month/quarter headers from
 each slot's ISO `date`. It opens at week scale and, when a `today` slot exists,
 positions that week after one visible week of history. Its wheel interaction
@@ -136,6 +140,9 @@ can bend between branches, but they always leave and enter at cardinal side
 points. Below 640 pixels it switches to a taller two-branch composition;
 consumers keep the same seven canonical stage ids without supplying
 viewport-specific geometry.
+
+Give each `blocks/live-event-proof-modal` `evidenceFields` entry a stable `id`
+so evidence rows preserve their identity when the list changes.
 
 `components/graph-tooltip` owns graph tooltip portaling, viewport clamping,
 right-first placement with edge flipping, and the shared series-row treatment.

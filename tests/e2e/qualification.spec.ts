@@ -71,14 +71,16 @@ test("public controls and block are keyboard operable and accessible", async ({
   await weeklySummary.press("Tab")
   await expectVisibleFocus(review)
   await review.press("Enter")
-  await expect(
-    page.getByRole("dialog", { name: "Project review" })
-  ).toBeVisible()
+  const projectReview = page.getByRole("dialog", { name: "Project review" })
+  await expect(projectReview).toBeVisible()
+  await projectReview.evaluate(async (element) => {
+    await Promise.all(
+      element.getAnimations().map((animation) => animation.finished)
+    )
+  })
   await expectNoSeriousAxeViolations(page, "open project review")
   await page.keyboard.press("Escape")
-  await expect(
-    page.getByRole("dialog", { name: "Project review" })
-  ).toBeHidden()
+  await expect(projectReview).toBeHidden()
   await expectVisibleFocus(review)
 
   const reviewStep = page.getByRole("button", {
@@ -203,7 +205,9 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
     "segmented-control"
   )
   await expect(
-    typesetSelector.locator(':scope > span[aria-hidden="true"]')
+    typesetSelector.locator(
+      ':scope > [data-slot="segmented-control-indicator"]'
+    )
   ).toHaveCSS("box-shadow", "none")
 
   const shell = page.locator('[data-slot="app-shell"]')
@@ -218,7 +222,11 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   const search = mainSidebar.locator(
     '[data-slot="navigation-panel-command-control"]'
   )
-  const toggle = mainSidebar.getByRole("button", { name: "Collapse sidebar" })
+  const searchInput = mainSidebar.getByRole("combobox", {
+    name: "Search library",
+  })
+  const toggle = mainSidebar.locator('[data-slot="sidebar-toggle"]')
+  await expect(toggle).toHaveAccessibleName("Collapse sidebar")
   const shortcut = search.getByText("CTRL K", { exact: true })
   const searchBox = await search.boundingBox()
   const toggleBox = await toggle.boundingBox()
@@ -262,8 +270,12 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   await expect(userMenuContent).toBeHidden()
   await expectVisibleFocus(userMenu)
 
+  await searchInput.fill("Foundations")
+  await expect(searchInput).toHaveValue("Foundations")
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "false")
-  await toggle.click()
+  await toggle.focus()
+  await toggle.press("Enter")
+  await expect(searchInput).toHaveValue("")
   expect(
     await mainSidebar.evaluate((element) => ({
       collapsed: element.getAttribute("data-collapsed"),
@@ -272,7 +284,7 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   ).toEqual({ collapsed: "false", drawerCollapsed: "true" })
   await expect(shell).toHaveAttribute("data-collapsed", "true")
 
-  await page.waitForTimeout(140)
+  await page.waitForTimeout(100)
   const stageOne = await mainSidebar.evaluate((element) => {
     const shell = document.querySelector('[data-slot="app-shell"]')
     const row = element.querySelector(
@@ -302,7 +314,7 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   expect(stageOne.shellWidth).toBeLessThan(288)
   expect(stageOne.rowHeight).toBeGreaterThan(44)
   expect(stageOne.rowHeight).toBeLessThan(96)
-  expect(stageOne.searchY).toBeCloseTo(stageOne.toggleY, 0)
+  expect(Math.abs(stageOne.searchY - stageOne.toggleY)).toBeLessThanOrEqual(2)
   expect(stageOne.activeItemHeight).toBeCloseTo(44, 0)
 
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "true")

@@ -186,8 +186,7 @@ function NavigationPanelCommandRow({
       ),
     [sections]
   )
-  const showSearchResults =
-    searchFocused && searchValue.trim().length > 0
+  const showSearchResults = searchFocused && searchValue.trim().length > 0
 
   const clearSearch = React.useCallback(() => {
     setSearchFocused(false)
@@ -202,10 +201,6 @@ function NavigationPanelCommandRow({
       inputRef.current?.select()
     })
   }, [])
-
-  React.useEffect(() => {
-    if (drawerCollapsed) clearSearch()
-  }, [clearSearch, drawerCollapsed])
 
   React.useEffect(() => {
     if (!searchFocused) return
@@ -281,9 +276,8 @@ function NavigationPanelCommandRow({
                 ? "z-30 w-11 grid-cols-[2.75rem_0fr_0fr]"
                 : "w-[calc(100%-3.25rem)] grid-cols-[2.75rem_minmax(0,1fr)_auto]",
             !compactSearchOpen && drawerCollapsed
-              ? "border-transparent bg-transparent shadow-none ring-0 hover:bg-nextide-panel-strong/70 focus-within:border-transparent focus-within:ring-0 dark:border-transparent dark:bg-transparent"
-              : !compactSearchOpen &&
-                  "border-nextide-line bg-nextide-panel",
+              ? "border-transparent bg-transparent shadow-none ring-0 focus-within:border-transparent focus-within:ring-0 hover:bg-nextide-panel-strong/70 dark:border-transparent dark:bg-transparent"
+              : !compactSearchOpen && "border-nextide-line bg-nextide-panel",
             collapsed ? "top-[3.125rem] p-0" : "top-0 p-0"
           )}
           onPointerDown={(event) => {
@@ -338,7 +332,10 @@ function NavigationPanelCommandRow({
         {onToggle ? (
           <SidebarToggleButton
             drawerCollapsed={drawerCollapsed}
-            onToggle={onToggle}
+            onToggle={() => {
+              clearSearch()
+              onToggle()
+            }}
             className={cn(
               "absolute top-0 right-0 size-11 rounded-lg text-nextide-tide max-lg:hidden",
               drawerCollapsed
@@ -493,9 +490,7 @@ function NavigationPanelNav({
         styles.getPropertyValue("--nextide-drawer-icon-duration"),
         160
       )
-      const activeElement = activeItemId
-        ? itemRefs.current[activeItemId]
-        : null
+      const activeElement = activeItemId ? itemRefs.current[activeItemId] : null
       const previousRailTop = Number.parseFloat(
         nav.style.getPropertyValue("--navigation-rail-top")
       )
@@ -577,13 +572,7 @@ function NavigationPanelNav({
       railAnimationRef.current?.cancel()
       railAnimationRef.current = null
     }
-  }, [
-    activeItemId,
-    collapsed,
-    measureOutline,
-    navRef,
-    sections,
-  ])
+  }, [activeItemId, collapsed, measureOutline, navRef, sections])
 
   React.useLayoutEffect(() => {
     const nav = navRef.current
@@ -703,9 +692,7 @@ function NavigationPanelNav({
                 <span
                   className={cn(
                     "block px-2 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                    drawerCollapsed
-                      ? "w-52 -translate-x-72"
-                      : "translate-x-0"
+                    drawerCollapsed ? "w-52 -translate-x-72" : "translate-x-0"
                   )}
                 >
                   {section.label}
@@ -754,8 +741,7 @@ function NavigationPanelNav({
                         data-slot="navigation-panel-item-glyph"
                         className={cn(
                           "grid size-7 place-items-center justify-self-center text-nextide-tide transition-[color,filter] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] [&_svg]:block [&_svg]:size-4",
-                          active &&
-                            "drop-shadow-[0_0_8px_rgb(30_228_188/0.24)]"
+                          active && "drop-shadow-[0_0_8px_rgb(30_228_188/0.24)]"
                         )}
                       >
                         {item.icon ?? item.label.slice(0, 1)}
@@ -901,9 +887,7 @@ function NavigationPanel({
         padding="none"
         className={cn(
           "flex min-h-0 flex-1 flex-col gap-3 overflow-visible transition-[padding,border-radius,box-shadow,background-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:flex-none",
-          collapsed
-            ? "items-center gap-1.5 overflow-visible p-3"
-            : "p-3"
+          collapsed ? "items-center gap-1.5 overflow-visible p-3" : "p-3"
         )}
         {...props}
       >

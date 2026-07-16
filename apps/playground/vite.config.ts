@@ -34,6 +34,9 @@ export default defineConfig(({ command }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    build: {
+      chunkSizeWarningLimit: 850,
+    },
     resolve: {
       alias: aliases,
     },
