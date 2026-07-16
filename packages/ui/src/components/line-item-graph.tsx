@@ -1,6 +1,9 @@
 import * as React from "react"
-import { createPortal } from "react-dom"
 
+import {
+  GraphTooltip,
+  GraphTooltipRow,
+} from "@nextide/ui/components/graph-tooltip"
 import { formatCompactNumber } from "@nextide/ui/lib/format-number"
 import { cn } from "@nextide/ui/lib/utils"
 
@@ -702,25 +705,22 @@ function LineItemGraph({
               )
             })}
           </svg>
-          {hover && hoveredDay && typeof document !== "undefined"
-            ? createPortal(
-                <LineItemTooltip
-                  hover={hover}
-                  day={hoveredDay}
-                  series={seriesPlots}
-                  hoveredSeries={hoveredSeries}
-                  totalLabel={totalPlot?.label}
-                  totalValue={
-                    totalPlot?.plottedPoints.find(
-                      (point) => point.dayId === hover.dayId
-                    )?.value
-                  }
-                  valueFormatter={valueFormatter}
-                  pointMaps={pointMaps}
-                />,
-                document.body
-              )
-            : null}
+          {hover && hoveredDay ? (
+            <LineItemTooltip
+              hover={hover}
+              day={hoveredDay}
+              series={seriesPlots}
+              hoveredSeries={hoveredSeries}
+              totalLabel={totalPlot?.label}
+              totalValue={
+                totalPlot?.plottedPoints.find(
+                  (point) => point.dayId === hover.dayId
+                )?.value
+              }
+              valueFormatter={valueFormatter}
+              pointMaps={pointMaps}
+            />
+          ) : null}
         </div>
       </div>
     </section>
@@ -767,45 +767,10 @@ function LineItemTooltip({
   valueFormatter: (value: number) => React.ReactNode
   pointMaps: Map<string, Map<string, LineItemGraphPoint>>
 }) {
-  const tooltipRef = React.useRef<HTMLDivElement | null>(null)
-  const [position, setPosition] = React.useState({
-    left: hover.viewportX + 14,
-    top: hover.viewportY - 36,
-  })
-
-  React.useLayoutEffect(() => {
-    const node = tooltipRef.current
-    if (!node) return
-
-    const gutter = 8
-    const offset = 14
-    const width = node.offsetWidth
-    const height = node.offsetHeight
-    const preferredLeft = hover.viewportX + offset
-    const left =
-      preferredLeft + width + gutter <= window.innerWidth
-        ? preferredLeft
-        : hover.viewportX - width - offset
-    const top = hover.viewportY - Math.min(42, height * 0.28)
-
-    setPosition({
-      left: Math.max(
-        gutter,
-        Math.min(left, window.innerWidth - width - gutter)
-      ),
-      top: Math.max(
-        gutter,
-        Math.min(top, window.innerHeight - height - gutter)
-      ),
-    })
-  }, [hover])
-
   return (
-    <div
-      ref={tooltipRef}
-      data-slot="line-item-tooltip"
-      className="pointer-events-none fixed z-[1100] w-64 rounded-lg border border-nextide-line bg-background/95 p-3 text-xs shadow-[0_18px_60px_rgb(0_0_0/0.42)] backdrop-blur-xl sm:w-72"
-      style={position}
+    <GraphTooltip
+      anchor={{ x: hover.viewportX, y: hover.viewportY }}
+      data-chart="line-item"
     >
       <div className="grid gap-1">
         <span className="text-ui-caption font-medium text-muted-foreground">
@@ -829,7 +794,7 @@ function LineItemTooltip({
       </div>
       <div className="mt-2 grid gap-1.5">
         {hover.kind === "point" && hoveredSeries ? (
-          <TooltipRow
+          <GraphTooltipRow
             color={hoveredSeries.color}
             label={hoveredSeries.label}
             value={
@@ -844,7 +809,7 @@ function LineItemTooltip({
             const point = pointMaps.get(item.id)?.get(hover.dayId)
 
             return (
-              <TooltipRow
+              <GraphTooltipRow
                 key={item.id}
                 color={item.color}
                 label={item.label}
@@ -854,7 +819,7 @@ function LineItemTooltip({
           })
         )}
         {totalLabel && totalValue !== undefined ? (
-          <TooltipRow
+          <GraphTooltipRow
             color="rgb(210 214 222)"
             label={totalLabel}
             value={valueFormatter(totalValue)}
@@ -862,35 +827,7 @@ function LineItemTooltip({
           />
         ) : null}
       </div>
-    </div>
-  )
-}
-
-function TooltipRow({
-  color,
-  label,
-  value,
-  dashed,
-}: {
-  color: string
-  label: React.ReactNode
-  value: React.ReactNode
-  dashed?: boolean
-}) {
-  return (
-    <span className="grid grid-cols-[0.75rem_minmax(0,1fr)_auto] items-start gap-2">
-      <span
-        className={cn("mt-1.5 h-0.5 w-3 rounded-full", dashed && "border-t")}
-        style={{
-          backgroundColor: dashed ? "transparent" : color,
-          borderColor: color,
-        }}
-      />
-      <span className="min-w-0 leading-tight text-muted-foreground">
-        {label}
-      </span>
-      <strong className="font-medium text-foreground">{value}</strong>
-    </span>
+    </GraphTooltip>
   )
 }
 

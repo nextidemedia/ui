@@ -1,5 +1,9 @@
 import * as React from "react"
 
+import {
+  GraphTooltip,
+  GraphTooltipRow,
+} from "@nextide/ui/components/graph-tooltip"
 import { formatCompactNumber } from "@nextide/ui/lib/format-number"
 import { cn } from "@nextide/ui/lib/utils"
 
@@ -19,6 +23,12 @@ function SignalRidgeChart({
   points: SignalRidgeChartPoint[]
   valueFormatter?: (value: number) => React.ReactNode
 }) {
+  const svgRef = React.useRef<SVGSVGElement | null>(null)
+  const [hover, setHover] = React.useState<{
+    pointId: string
+    viewportX: number
+    viewportY: number
+  } | null>(null)
   const rawId = React.useId().replace(/:/g, "")
   const gradientId = `nextide-ridge-${rawId}`
 
@@ -45,18 +55,41 @@ function SignalRidgeChart({
   const area = `${line} L ${positions.at(-1)?.x ?? 0} 152 L ${
     positions[0]?.x ?? 0
   } 152 Z`
+  const hoveredIndex = hover
+    ? points.findIndex((point) => point.id === hover.pointId)
+    : -1
+  const hoveredPoint = hoveredIndex >= 0 ? points[hoveredIndex] : undefined
+  const hoveredPosition =
+    hoveredIndex >= 0 ? positions[hoveredIndex] : undefined
+
+  const showPointTooltip = (
+    point: SignalRidgeChartPoint,
+    position: { x: number; y: number },
+    viewportY?: number
+  ) => {
+    const rect = svgRef.current?.getBoundingClientRect()
+    setHover({
+      pointId: point.id,
+      viewportX: (rect?.left ?? 0) + (position.x / 600) * (rect?.width ?? 600),
+      viewportY:
+        viewportY ??
+        (rect?.top ?? 0) + (position.y / 190) * (rect?.height ?? 190),
+    })
+  }
 
   return (
     <div
       data-slot="signal-ridge-chart"
-      className={cn("min-w-0", className)}
+      className={cn("relative min-w-0", className)}
       {...props}
     >
       <svg
+        ref={svgRef}
         viewBox="0 0 600 190"
         role="img"
         aria-label="Signal ridge trend"
         className="h-auto min-h-48 w-full overflow-visible"
+        onMouseLeave={() => setHover(null)}
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -97,8 +130,39 @@ function SignalRidgeChart({
           strokeWidth="2.5"
           vectorEffect="non-scaling-stroke"
         />
+        {hoveredPosition ? (
+          <line
+            x1={hoveredPosition.x}
+            x2={hoveredPosition.x}
+            y1="40"
+            y2="152"
+            stroke="var(--nextide-tide)"
+            strokeDasharray="2 3"
+            strokeOpacity="0.42"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+            pointerEvents="none"
+          />
+        ) : null}
         {positions.map((position, index) => (
-          <g key={points[index].id}>
+          <g
+            key={points[index].id}
+            role="button"
+            tabIndex={0}
+            aria-label={`${stringifyNode(points[index].label)}: ${stringifyNode(
+              points[index].valueLabel ?? valueFormatter(points[index].value)
+            )}`}
+            className="cursor-pointer outline-none"
+            onFocus={() => showPointTooltip(points[index], position)}
+            onBlur={() => setHover(null)}
+            onMouseEnter={(event) =>
+              showPointTooltip(points[index], position, event.clientY)
+            }
+            onMouseMove={(event) =>
+              showPointTooltip(points[index], position, event.clientY)
+            }
+          >
+            <circle cx={position.x} cy={position.y} r="16" fill="transparent" />
             <circle
               cx={position.x}
               cy={position.y}
@@ -129,6 +193,30 @@ function SignalRidgeChart({
           </g>
         ))}
       </svg>
+      {hover && hoveredPoint ? (
+        <GraphTooltip
+          anchor={{ x: hover.viewportX, y: hover.viewportY }}
+          data-chart="signal-ridge"
+        >
+          <div className="grid gap-1">
+            <span className="text-ui-caption font-medium text-muted-foreground">
+              Signal ridge
+            </span>
+            <strong className="text-sm leading-tight text-foreground">
+              {hoveredPoint.label}
+            </strong>
+          </div>
+          <div className="mt-2 grid gap-1.5">
+            <GraphTooltipRow
+              color="var(--nextide-tide)"
+              label={hoveredPoint.label}
+              value={
+                hoveredPoint.valueLabel ?? valueFormatter(hoveredPoint.value)
+              }
+            />
+          </div>
+        </GraphTooltip>
+      ) : null}
       <span className="sr-only">
         {points
           .map(

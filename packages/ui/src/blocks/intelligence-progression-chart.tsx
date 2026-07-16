@@ -17,20 +17,33 @@ type IntelligenceProgressionStage = {
   icon?: React.ReactNode
 }
 
-const stagePositions = [
-  { id: "queue", x: 9, y: 50, className: "top-1/2 left-[9%]" },
-  { id: "vod-ingest", x: 30.5, y: 24, className: "top-[24%] left-[30.5%]" },
-  { id: "vod-analyze", x: 47.5, y: 24, className: "top-[24%] left-[47.5%]" },
-  { id: "chat-ingest", x: 30.5, y: 76, className: "top-[76%] left-[30.5%]" },
-  { id: "chat-analyze", x: 47.5, y: 76, className: "top-[76%] left-[47.5%]" },
-  { id: "fuse", x: 70, y: 50, className: "top-1/2 left-[70%]" },
-  { id: "assemble", x: 88, y: 50, className: "top-1/2 left-[88%]" },
-] as const
+type StagePosition = { x: number; y: number }
+type NodeGeometry = StagePosition & { radiusX: number; radiusY: number }
+type ChartGeometry = {
+  width: number
+  height: number
+  nodes: Record<string, NodeGeometry>
+}
 
-const stagePositionById = new Map<string, (typeof stagePositions)[number]>(
-  stagePositions.map((position) => [position.id, position])
-)
-const nodeRadii = { x: 5.4, y: 13.5 }
+const desktopStagePositions: Record<string, StagePosition> = {
+  queue: { x: 9, y: 50 },
+  "vod-ingest": { x: 30.5, y: 24 },
+  "vod-analyze": { x: 47.5, y: 24 },
+  "chat-ingest": { x: 30.5, y: 76 },
+  "chat-analyze": { x: 47.5, y: 76 },
+  fuse: { x: 70, y: 50 },
+  assemble: { x: 88, y: 50 },
+}
+
+const compactStagePositions: Record<string, StagePosition> = {
+  queue: { x: 50, y: 7 },
+  "vod-ingest": { x: 25, y: 27 },
+  "vod-analyze": { x: 25, y: 50 },
+  "chat-ingest": { x: 75, y: 27 },
+  "chat-analyze": { x: 75, y: 50 },
+  fuse: { x: 50, y: 70 },
+  assemble: { x: 50, y: 88 },
+}
 
 const statusClasses: Record<IntelligenceStageStatus, string> = {
   completed:
@@ -49,6 +62,22 @@ const statusColors: Record<IntelligenceStageStatus, string> = {
   degraded: "rgb(255 218 83)",
 }
 
+const progressionEdges = [
+  { id: "queue-vod-ingest", from: "queue", to: "vod-ingest" },
+  { id: "queue-chat-ingest", from: "queue", to: "chat-ingest" },
+  { id: "vod-ingest-analyze", from: "vod-ingest", to: "vod-analyze" },
+  {
+    id: "chat-ingest-analyze",
+    from: "chat-ingest",
+    to: "chat-analyze",
+  },
+  { id: "vod-analyze-fuse", from: "vod-analyze", to: "fuse" },
+  { id: "chat-analyze-fuse", from: "chat-analyze", to: "fuse" },
+  { id: "fuse-assemble", from: "fuse", to: "assemble" },
+] as const
+
+const initialGeometry: ChartGeometry = { width: 1, height: 1, nodes: {} }
+
 function IntelligenceProgressionChart({
   stages,
   title = "Intelligence progression",
@@ -60,29 +89,92 @@ function IntelligenceProgressionChart({
   title?: React.ReactNode
   description?: React.ReactNode
 }) {
+  const chartRef = React.useRef<HTMLDivElement | null>(null)
+  const nodeRefs = React.useRef(new Map<string, HTMLSpanElement>())
+  const [compact, setCompact] = React.useState(false)
+  const [geometry, setGeometry] =
+    React.useState<ChartGeometry>(initialGeometry)
   const rawId = React.useId().replace(/:/g, "")
   const maskId = `${rawId}-node-mask`
+  const stagePositions = compact
+    ? compactStagePositions
+    : desktopStagePositions
   const statusByStage = React.useMemo(
     () => new Map(stages.map((stage) => [stage.id, stage.status])),
     [stages]
   )
-  const renderedEdges = progressionEdges
-    .map((edge) => {
-      const source = stagePositionById.get(edge.from)
-      const target = stagePositionById.get(edge.to)
-      if (!source || !target) return null
+  const renderedEdges = React.useMemo(
+    () =>
+      progressionEdges.flatMap((edge) => {
+        const source = geometry.nodes[edge.from]
+        const target = geometry.nodes[edge.to]
+        if (!source || !target) return []
 
-      const start = pointOnEllipse(source, edge.controlOne, nodeRadii)
-      const end = pointOnEllipse(target, edge.controlTwo, nodeRadii)
+        const connection = connectNodeEdges(
+          source,
+          target,
+          geometry.width / 2
+        )
+        return [{ ...edge, ...connection }]
+      }),
+    [geometry]
+  )
 
-      return {
-        ...edge,
-        start,
-        end,
-        path: `M ${start.x} ${start.y} C ${edge.controlOne.x} ${edge.controlOne.y}, ${edge.controlTwo.x} ${edge.controlTwo.y}, ${end.x} ${end.y}`,
+  React.useLayoutEffect(() => {
+    const chart = chartRef.current
+    if (!chart) return
+
+    let frame = 0
+    const measure = () => {
+      const chartRect = chart.getBoundingClientRect()
+      const nextCompact = chartRect.width < 640
+      setCompact((current) =>
+        current === nextCompact ? current : nextCompact
+      )
+
+      const nodes: Record<string, NodeGeometry> = {}
+      for (const stage of stages) {
+        const node = nodeRefs.current.get(stage.id)
+        if (!node) continue
+
+        const nodeRect = node.getBoundingClientRect()
+        nodes[stage.id] = {
+          x: nodeRect.left - chartRect.left + nodeRect.width / 2,
+          y: nodeRect.top - chartRect.top + nodeRect.height / 2,
+          radiusX: nodeRect.width / 2,
+          radiusY: nodeRect.height / 2,
+        }
       }
-    })
-    .filter((edge): edge is NonNullable<typeof edge> => edge !== null)
+
+      const nextGeometry = {
+        width: Math.max(chartRect.width, 1),
+        height: Math.max(chartRect.height, 1),
+        nodes,
+      }
+      setGeometry((current) =>
+        geometryMatches(current, nextGeometry) ? current : nextGeometry
+      )
+    }
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(measure)
+    }
+
+    scheduleMeasure()
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(scheduleMeasure)
+    resizeObserver?.observe(chart)
+    nodeRefs.current.forEach((node) => resizeObserver?.observe(node))
+    window.addEventListener("resize", scheduleMeasure)
+
+    return () => {
+      cancelAnimationFrame(frame)
+      resizeObserver?.disconnect()
+      window.removeEventListener("resize", scheduleMeasure)
+    }
+  }, [compact, stages])
 
   return (
     <section
@@ -99,10 +191,19 @@ function IntelligenceProgressionChart({
           <span className="text-xs text-muted-foreground">{description}</span>
         ) : null}
       </div>
-      <div className="relative isolate min-h-[clamp(20rem,32vw,28rem)] w-full">
+      <div
+        ref={chartRef}
+        data-layout={compact ? "compact" : "wide"}
+        className={cn(
+          "relative isolate w-full",
+          compact
+            ? "min-h-[48rem]"
+            : "min-h-[clamp(20rem,32vw,28rem)]"
+        )}
+      >
         <svg
           className="absolute inset-0 z-0 h-full w-full overflow-visible"
-          viewBox="0 0 100 100"
+          viewBox={`0 0 ${geometry.width} ${geometry.height}`}
           preserveAspectRatio="none"
           aria-hidden="true"
         >
@@ -131,25 +232,24 @@ function IntelligenceProgressionChart({
               maskUnits="userSpaceOnUse"
               x="0"
               y="0"
-              width="100"
-              height="100"
+              width={geometry.width}
+              height={geometry.height}
             >
-              <rect width="100" height="100" fill="white" />
-              {stages.map((stage) => {
-                const position = stagePositionById.get(stage.id)
-                if (!position) return null
-
-                return (
-                  <ellipse
-                    key={stage.id}
-                    cx={position.x}
-                    cy={position.y}
-                    rx={nodeRadii.x}
-                    ry={nodeRadii.y}
-                    fill="black"
-                  />
-                )
-              })}
+              <rect
+                width={geometry.width}
+                height={geometry.height}
+                fill="white"
+              />
+              {Object.entries(geometry.nodes).map(([id, node]) => (
+                <ellipse
+                  key={id}
+                  cx={node.x}
+                  cy={node.y}
+                  rx={Math.max(node.radiusX - 1, 0)}
+                  ry={Math.max(node.radiusY - 1, 0)}
+                  fill="black"
+                />
+              ))}
             </mask>
           </defs>
           <g
@@ -184,20 +284,28 @@ function IntelligenceProgressionChart({
           </g>
         </svg>
         {stages.map((stage, index) => {
-          const position = stagePositionById.get(stage.id)
+          const position = stagePositions[stage.id] ?? { x: 50, y: 50 }
 
           return (
             <div
               key={stage.id}
               className={cn(
-                "absolute z-20 grid w-36 -translate-x-1/2 translate-y-[calc(var(--orbit-size,5.5rem)/-2)] justify-items-center gap-2 text-center",
-                position?.className ?? "top-1/2 left-1/2",
+                "absolute z-20 grid -translate-x-1/2 translate-y-[calc(var(--orbit-size)/-2)] justify-items-center gap-2 text-center",
+                compact
+                  ? "w-28 [--orbit-size:4.75rem]"
+                  : "w-36 [--orbit-size:5.5rem]",
                 stage.status === "queued" && "text-muted-foreground/60"
               )}
+              style={{ left: `${position.x}%`, top: `${position.y}%` }}
             >
               <span
+                ref={(node) => {
+                  if (node) nodeRefs.current.set(stage.id, node)
+                  else nodeRefs.current.delete(stage.id)
+                }}
+                data-stage-id={stage.id}
                 className={cn(
-                  "relative isolate grid size-[var(--orbit-size,5.5rem)] place-items-center overflow-hidden rounded-full border-2 bg-[#050508]",
+                  "relative isolate grid size-[var(--orbit-size)] place-items-center overflow-hidden rounded-full border-2 bg-[#050508]",
                   statusClasses[stage.status]
                 )}
               >
@@ -220,76 +328,73 @@ function IntelligenceProgressionChart({
   )
 }
 
-const progressionEdges = [
-  {
-    id: "queue-vod-ingest",
-    from: "queue",
-    to: "vod-ingest",
-    controlOne: { x: 19, y: 50 },
-    controlTwo: { x: 20.5, y: 24 },
-  },
-  {
-    id: "queue-chat-ingest",
-    from: "queue",
-    to: "chat-ingest",
-    controlOne: { x: 19, y: 50 },
-    controlTwo: { x: 20.5, y: 76 },
-  },
-  {
-    id: "vod-ingest-analyze",
-    from: "vod-ingest",
-    to: "vod-analyze",
-    controlOne: { x: 36, y: 24 },
-    controlTwo: { x: 42, y: 24 },
-  },
-  {
-    id: "chat-ingest-analyze",
-    from: "chat-ingest",
-    to: "chat-analyze",
-    controlOne: { x: 36, y: 76 },
-    controlTwo: { x: 42, y: 76 },
-  },
-  {
-    id: "vod-analyze-fuse",
-    from: "vod-analyze",
-    to: "fuse",
-    controlOne: { x: 59, y: 24 },
-    controlTwo: { x: 58.5, y: 50 },
-  },
-  {
-    id: "chat-analyze-fuse",
-    from: "chat-analyze",
-    to: "fuse",
-    controlOne: { x: 59, y: 76 },
-    controlTwo: { x: 58.5, y: 50 },
-  },
-  {
-    id: "fuse-assemble",
-    from: "fuse",
-    to: "assemble",
-    controlOne: { x: 76, y: 50 },
-    controlTwo: { x: 82, y: 50 },
-  },
-]
-
-function pointOnEllipse(
-  center: { x: number; y: number },
-  toward: { x: number; y: number },
-  radii: { x: number; y: number }
+function connectNodeEdges(
+  source: NodeGeometry,
+  target: NodeGeometry,
+  chartCenterX: number
 ) {
-  const deltaX = toward.x - center.x
-  const deltaY = toward.y - center.y
-  const scale =
-    1 /
-    Math.sqrt(
-      (deltaX * deltaX) / (radii.x * radii.x) +
-        (deltaY * deltaY) / (radii.y * radii.y)
-    )
+  const centerDeltaX = target.x - source.x
+  const verticallyAligned = Math.abs(centerDeltaX) < 1
+  const direction = verticallyAligned
+    ? source.x < chartCenterX
+      ? -1
+      : 1
+    : Math.sign(centerDeltaX)
+  const start = {
+    x: source.x + source.radiusX * direction,
+    y: source.y,
+  }
+  const end = {
+    x:
+      target.x +
+      target.radiusX * (verticallyAligned ? direction : -direction),
+    y: target.y,
+  }
+  const deltaX = end.x - start.x
+  const deltaY = end.y - start.y
+  const handle = verticallyAligned
+    ? Math.max(24, Math.abs(deltaY) * 0.28)
+    : Math.max(24, Math.abs(deltaX) * 0.46)
+  const controlOne = {
+    x: start.x + direction * handle,
+    y: start.y,
+  }
+  const controlTwo = {
+    x: end.x - (verticallyAligned ? -direction : direction) * handle,
+    y: end.y,
+  }
 
   return {
-    x: center.x + deltaX * scale,
-    y: center.y + deltaY * scale,
+    start,
+    end,
+    path: `M ${start.x} ${start.y} C ${controlOne.x} ${controlOne.y}, ${controlTwo.x} ${controlTwo.y}, ${end.x} ${end.y}`,
   }
+}
+
+function geometryMatches(current: ChartGeometry, next: ChartGeometry) {
+  if (
+    Math.abs(current.width - next.width) > 0.25 ||
+    Math.abs(current.height - next.height) > 0.25
+  ) {
+    return false
+  }
+
+  const currentIds = Object.keys(current.nodes)
+  const nextIds = Object.keys(next.nodes)
+  if (currentIds.length !== nextIds.length) return false
+
+  return nextIds.every((id) => {
+    const currentNode = current.nodes[id]
+    const nextNode = next.nodes[id]
+    return (
+      currentNode &&
+      nextNode &&
+      Math.abs(currentNode.x - nextNode.x) <= 0.25 &&
+      Math.abs(currentNode.y - nextNode.y) <= 0.25 &&
+      Math.abs(currentNode.radiusX - nextNode.radiusX) <= 0.25 &&
+      Math.abs(currentNode.radiusY - nextNode.radiusY) <= 0.25
+    )
+  })
 }
 
 export {

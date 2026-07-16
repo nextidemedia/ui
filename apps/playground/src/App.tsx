@@ -1,4 +1,10 @@
-import { type CSSProperties, type ReactNode, useReducer, useState } from "react"
+import {
+  type CSSProperties,
+  type ReactNode,
+  useEffect,
+  useReducer,
+  useState,
+} from "react"
 import { useRef } from "react"
 import {
   Activity,
@@ -868,6 +874,7 @@ type PlaygroundState = {
   confidence: number[]
   checked: boolean
   enabled: boolean
+  slowAnimations: boolean
 }
 
 const initialPlaygroundState: PlaygroundState = {
@@ -900,6 +907,7 @@ const initialPlaygroundState: PlaygroundState = {
   confidence: [72],
   checked: true,
   enabled: true,
+  slowAnimations: false,
 }
 
 function createInitialPlaygroundState(state: PlaygroundState) {
@@ -930,15 +938,19 @@ function playgroundReducer(
   return { ...state, ...patch }
 }
 
-const DRAWER_DEBUG_SLOWDOWN = 1
-const DRAWER_STAGE_DURATION_MS = 300 * DRAWER_DEBUG_SLOWDOWN
-const DRAWER_ICON_STAGE_DURATION_MS = 160 * DRAWER_DEBUG_SLOWDOWN
-const DRAWER_OUTLINE_DURATION_MS = 300 * DRAWER_DEBUG_SLOWDOWN
-const drawerDebugMotionStyle = {
-  "--nextide-drawer-duration": `${DRAWER_STAGE_DURATION_MS}ms`,
-  "--nextide-drawer-icon-duration": `${DRAWER_ICON_STAGE_DURATION_MS}ms`,
-  "--nextide-drawer-outline-duration": `${DRAWER_OUTLINE_DURATION_MS}ms`,
-} as CSSProperties
+const DRAWER_STAGE_DURATION_MS = 300
+const DRAWER_ICON_STAGE_DURATION_MS = 160
+const PLAYGROUND_MOTION_DURATIONS = {
+  "--nextide-motion-instant": 120,
+  "--nextide-motion-control": 160,
+  "--nextide-motion-state": 220,
+  "--nextide-motion-layout": 300,
+  "--nextide-motion-context-exit": 110,
+  "--nextide-motion-context-enter": 190,
+  "--nextide-motion-flow-dash": 700,
+  "--nextide-motion-status-pulse": 880,
+  "--nextide-motion-brand-glow": 6000,
+} as const
 
 const playgroundViewCopy: Record<
   PlaygroundViewMode,
@@ -1004,6 +1016,7 @@ const formatCompactMetricValue = formatCompactNumber
 
 export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [playgroundSessionActive, setPlaygroundSessionActive] = useState(true)
   const settingsContentRef = useRef<HTMLDivElement>(null)
   const settingsSelectAnchorRef = useRef<HTMLDivElement>(null)
   const settingsSelectWidthRef = useRef<HTMLDivElement>(null)
@@ -1012,9 +1025,10 @@ export function App() {
     initialPlaygroundState,
     createInitialPlaygroundState
   )
+  const motionScale = playgroundState.slowAnimations ? 10 : 1
   const sidebar = useStagedDrawer({
-    durationMs: DRAWER_STAGE_DURATION_MS,
-    iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS,
+    durationMs: DRAWER_STAGE_DURATION_MS * motionScale,
+    iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS * motionScale,
   })
   const {
     viewMode,
@@ -1034,7 +1048,34 @@ export function App() {
     confidence,
     checked,
     enabled,
+    slowAnimations,
   } = playgroundState
+
+  useEffect(() => {
+    const root = document.documentElement
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+
+    if (!slowAnimations || reducedMotion) {
+      for (const property of Object.keys(PLAYGROUND_MOTION_DURATIONS)) {
+        root.style.removeProperty(property)
+      }
+      return
+    }
+
+    for (const [property, duration] of Object.entries(
+      PLAYGROUND_MOTION_DURATIONS
+    )) {
+      root.style.setProperty(property, `${duration * 10}ms`)
+    }
+
+    return () => {
+      for (const property of Object.keys(PLAYGROUND_MOTION_DURATIONS)) {
+        root.style.removeProperty(property)
+      }
+    }
+  }, [slowAnimations])
   const daedalusView = viewMode === "daedalus"
   const intelligenceView = viewMode === "intelligence"
   const webMiningView = viewMode === "web-mining"
@@ -1064,7 +1105,6 @@ export function App() {
   return (
     <>
       <AppShell
-        style={drawerDebugMotionStyle}
         collapsed={sidebar.collapsed}
         drawerCollapsed={sidebar.drawerCollapsed}
         sidebarTransitioning={sidebar.transitioning}
@@ -1078,13 +1118,16 @@ export function App() {
             drawerTransitioning={sidebar.transitioning}
             sections={workbenchNavigationSections}
             commandLabel="Search library"
-            footer={
-              <div className="grid gap-1 text-ui-caption text-muted-foreground">
-                <strong className="text-ui-label text-foreground">
-                  v2 foundation
-                </strong>
-                <span>Shared package workbench</span>
-              </div>
+            userMenu={
+              playgroundSessionActive
+                ? {
+                    name: "Nextide Operator",
+                    email: "operator@nextide.media",
+                    initials: "NO",
+                    onSettings: () => setSettingsOpen(true),
+                    onLogout: () => setPlaygroundSessionActive(false),
+                  }
+                : undefined
             }
             onSelectItem={(item) => selectWorkbenchItem(item.id)}
             onToggle={sidebar.toggleCollapsed}
@@ -1211,7 +1254,7 @@ export function App() {
           ) : activeItemId === "theme" ? (
             <FoundationsPreview />
           ) : activeItemId === "blocks" ? (
-            <BlockPreview />
+            <BlockPreview motionScale={motionScale} />
           ) : (
             <section className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_20rem]">
               <div className="grid gap-4">
@@ -1304,6 +1347,20 @@ export function App() {
               checked={enabled}
               onCheckedChange={(nextEnabled) =>
                 updatePlaygroundState({ enabled: nextEnabled })
+              }
+            />
+          </div>
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-nextide-line bg-nextide-panel p-3">
+            <span className="grid gap-0.5">
+              <span className="text-sm font-medium">Slow motion</span>
+              <small className="text-xs text-muted-foreground">
+                Run interface animations at 10× duration.
+              </small>
+            </span>
+            <Switch
+              checked={slowAnimations}
+              onCheckedChange={(nextSlowAnimations) =>
+                updatePlaygroundState({ slowAnimations: nextSlowAnimations })
               }
             />
           </div>
@@ -2407,10 +2464,10 @@ function ComponentMatrix({
   )
 }
 
-function BlockPreview() {
+function BlockPreview({ motionScale }: { motionScale: number }) {
   const navigationDrawer = useStagedDrawer({
-    durationMs: DRAWER_STAGE_DURATION_MS,
-    iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS,
+    durationMs: DRAWER_STAGE_DURATION_MS * motionScale,
+    iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS * motionScale,
   })
   const [activeNavigationItemId, updateActiveNavigationItemId] = useReducer(
     (_current: string, nextItemId: string) => nextItemId,

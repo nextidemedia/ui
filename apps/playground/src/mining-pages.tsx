@@ -45,24 +45,25 @@ const scheduleCreators = [
   { id: "ivy", name: "Ivy North", meta: "Twitch partner", avatar: "IN" },
 ]
 
-const scheduleDays = [
-  { id: "mon", label: "Mon", meta: "May 11" },
-  { id: "tue", label: "Tue", meta: "May 12" },
-  { id: "wed", label: "Wed", meta: "May 13", today: true },
-  { id: "thu", label: "Thu", meta: "May 14" },
-  { id: "fri", label: "Fri", meta: "May 15" },
-  { id: "sat", label: "Sat", meta: "May 16" },
-  { id: "sun", label: "Sun", meta: "May 17" },
-]
+const scheduleDays = Array.from({ length: 91 }, (_, index) => {
+  const date = new Date(Date.UTC(2026, 4, 11 + index))
+  const dateKey = date.toISOString().slice(0, 10)
+
+  return {
+    id: dateKey,
+    date: dateKey,
+    today: index === 23,
+  }
+})
 
 const scheduleBookings: CampaignScheduleBooking[] = [
   {
     id: "booking-1",
     creatorId: "mina",
     title: "Launch read",
-    meta: "2h sponsored slot",
+    meta: "Primary launch flight",
     startIndex: 0,
-    endIndex: 2,
+    endIndex: 18,
     tone: "success",
     status: "Live",
     statusIndicator: "pulse",
@@ -71,9 +72,9 @@ const scheduleBookings: CampaignScheduleBooking[] = [
     id: "booking-2",
     creatorId: "ren",
     title: "Challenge stream",
-    meta: "Guarded watch",
-    startIndex: 2,
-    endIndex: 3,
+    meta: "Guarded creator flight",
+    startIndex: 21,
+    endIndex: 42,
     tone: "warning",
     status: "Review",
   },
@@ -81,9 +82,9 @@ const scheduleBookings: CampaignScheduleBooking[] = [
     id: "booking-3",
     creatorId: "taro",
     title: "Late recap",
-    meta: "Workbook pending",
-    startIndex: 4,
-    endIndex: 5,
+    meta: "Workbook and VOD follow-up",
+    startIndex: 45,
+    endIndex: 66,
     tone: "processing",
     status: "Queued",
   },
@@ -91,9 +92,9 @@ const scheduleBookings: CampaignScheduleBooking[] = [
     id: "booking-4",
     creatorId: "ivy",
     title: "Co-stream proof",
-    meta: "2 campaign tags",
-    startIndex: 1,
-    endIndex: 1,
+    meta: "Cross-channel proof window",
+    startIndex: 63,
+    endIndex: 84,
     tone: "success",
     status: "Ready",
   },
@@ -603,6 +604,13 @@ function IntelligenceReportMiningPage() {
             detail: "Human pass",
             status: "processing",
             icon: <ShieldAlert />,
+          },
+          {
+            id: "chat-analyze",
+            label: "Confirm",
+            detail: "Decision pending",
+            status: "queued",
+            icon: <Check />,
           },
           {
             id: "fuse",

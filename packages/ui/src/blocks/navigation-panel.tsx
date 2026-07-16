@@ -11,6 +11,10 @@ import {
 
 import { SidebarBrand, SidebarToggleButton } from "@nextide/ui/blocks/sidebar"
 import {
+  NavigationUserMenu,
+  type NavigationUserMenuProps,
+} from "@nextide/ui/blocks/navigation-user-menu"
+import {
   Autocomplete,
   AutocompleteContent,
   AutocompleteEmpty,
@@ -52,6 +56,11 @@ type NavigationPanelSection = {
 type NavigationPanelSearchItem = NavigationPanelItem & {
   sectionLabel?: string
 }
+
+type NavigationPanelUserMenu = Omit<
+  NavigationUserMenuProps,
+  "collapsed" | "drawerCollapsed"
+>
 
 const defaultNavigationPanelSections: NavigationPanelSection[] = [
   {
@@ -121,6 +130,7 @@ type NavigationPanelProps = React.ComponentProps<typeof Surface> & {
   onToggle?: () => void
   onSelectItem?: (item: NavigationPanelItem) => void
   footer?: React.ReactNode
+  userMenu?: NavigationPanelUserMenu
 }
 
 type NavigationPanelCommandRowProps = {
@@ -146,6 +156,7 @@ type NavigationPanelFooterProps = {
   collapsed: boolean
   drawerCollapsed: boolean
   footer?: React.ReactNode
+  userMenu?: NavigationPanelUserMenu
 }
 
 function NavigationPanelCommandRow({
@@ -159,10 +170,12 @@ function NavigationPanelCommandRow({
 }: NavigationPanelCommandRowProps) {
   const [searchFocused, setSearchFocused] = React.useState(false)
   const [searchValue, setSearchValue] = React.useState("")
+  const commandRowRef = React.useRef<HTMLDivElement | null>(null)
   const inputRef = React.useRef<HTMLInputElement | null>(null)
-  const pendingSearchFocusRef = React.useRef(false)
   const commandShortcutLabel = commandShortcut ?? getDefaultCommandShortcut()
   const showCommandShortcut = commandShortcutLabel.length > 0
+  const compactSearchOpen = collapsed && searchFocused
+  const commandFieldVisible = !drawerCollapsed || compactSearchOpen
   const searchItems = React.useMemo(
     () =>
       sections.flatMap((section) =>
@@ -183,37 +196,34 @@ function NavigationPanelCommandRow({
   }, [])
 
   const focusSearchInput = React.useCallback(() => {
-    if ((collapsed || drawerCollapsed) && onToggle) {
-      pendingSearchFocusRef.current = true
-      onToggle()
-      return
-    }
-
     setSearchFocused(true)
-    inputRef.current?.focus({ preventScroll: true })
-    inputRef.current?.select()
-  }, [collapsed, drawerCollapsed, onToggle])
-
-  React.useEffect(() => {
-    if (
-      !pendingSearchFocusRef.current ||
-      collapsed ||
-      drawerCollapsed
-    ) {
-      return
-    }
-
-    pendingSearchFocusRef.current = false
     window.requestAnimationFrame(() => {
       inputRef.current?.focus({ preventScroll: true })
       inputRef.current?.select()
-      setSearchFocused(true)
     })
-  }, [collapsed, drawerCollapsed])
+  }, [])
 
   React.useEffect(() => {
     if (drawerCollapsed) clearSearch()
   }, [clearSearch, drawerCollapsed])
+
+  React.useEffect(() => {
+    if (!searchFocused) return
+
+    const handleOutsidePointerDown = (event: PointerEvent) => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      if (commandRowRef.current?.contains(target)) return
+      if (target.closest("[data-slot='autocomplete-content']")) return
+
+      clearSearch()
+    }
+
+    document.addEventListener("pointerdown", handleOutsidePointerDown)
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsidePointerDown)
+    }
+  }, [clearSearch, searchFocused])
 
   React.useEffect(() => {
     if (!showCommandShortcut) return
@@ -245,7 +255,7 @@ function NavigationPanelCommandRow({
       autoHighlight="always"
       open={showSearchResults}
       onOpenChange={(open) => {
-        if (!open) clearSearch()
+        if (!open && searchValue.trim().length > 0) clearSearch()
       }}
       value={searchValue}
       onValueChange={(value) => {
@@ -254,23 +264,27 @@ function NavigationPanelCommandRow({
       }}
     >
       <div
+        ref={commandRowRef}
         data-slot="navigation-panel-command-row"
         className={cn(
-          "relative h-11 w-full max-w-full self-center overflow-visible transition-[max-width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-          drawerCollapsed && "max-w-11",
-          drawerCollapsed && "h-[5.875rem]"
+          "relative h-11 w-full self-start overflow-visible",
+          collapsed && "h-[5.875rem]"
         )}
       >
         <AutocompleteInputGroup
           data-slot="navigation-panel-command-control"
           className={cn(
-            "absolute top-0 left-0 grid h-11 min-w-0 items-center gap-0 overflow-hidden rounded-lg border px-0 text-left text-sm text-muted-foreground/65 transition-[top,width,grid-template-columns,padding,color,background-color,border-color,box-shadow] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] hover:bg-nextide-panel-strong motion-reduce:transition-none max-lg:static max-lg:w-full",
-            drawerCollapsed
-              ? "w-11 border-transparent bg-transparent shadow-none"
-              : "w-[calc(100%-3.25rem)] border-nextide-line bg-nextide-panel",
-            drawerCollapsed
-              ? "top-[3.125rem] grid-cols-[2.75rem_0fr_0fr] p-0"
-              : "top-0 grid-cols-[2.75rem_minmax(0,1fr)_auto] p-0"
+            "absolute top-0 left-0 grid h-11 min-w-0 items-center gap-0 overflow-hidden rounded-lg border px-0 text-left text-sm text-muted-foreground/65 transition-[top,width,grid-template-columns,padding,color,background-color,border-color,box-shadow] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] hover:bg-nextide-panel-strong motion-reduce:transition-none max-lg:static max-lg:w-full",
+            compactSearchOpen
+              ? "z-50 w-[min(18rem,calc(100vw-6rem))] grid-cols-[2.75rem_minmax(0,1fr)_0fr] border-nextide-line bg-popover shadow-md focus-within:border-nextide-tide/55 focus-within:ring-0"
+              : collapsed
+                ? "z-30 w-11 grid-cols-[2.75rem_0fr_0fr]"
+                : "w-[calc(100%-3.25rem)] grid-cols-[2.75rem_minmax(0,1fr)_auto]",
+            !compactSearchOpen && drawerCollapsed
+              ? "border-transparent bg-transparent shadow-none ring-0 hover:bg-nextide-panel-strong/70 focus-within:border-transparent focus-within:ring-0 dark:border-transparent dark:bg-transparent"
+              : !compactSearchOpen &&
+                  "border-nextide-line bg-nextide-panel",
+            collapsed ? "top-[3.125rem] p-0" : "top-0 p-0"
           )}
           onPointerDown={(event) => {
             if (event.button !== 0 || event.target === inputRef.current) return
@@ -294,15 +308,11 @@ function NavigationPanelCommandRow({
             spellCheck={false}
             className={cn(
               "h-11 w-full min-w-0 px-0 text-sm text-muted-foreground/80 transition-[opacity,transform] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] placeholder:text-muted-foreground/55 motion-reduce:transition-none",
-              drawerCollapsed ? "-translate-x-10 opacity-0" : "translate-x-0 opacity-100"
+              commandFieldVisible
+                ? "translate-x-0 opacity-100"
+                : "pointer-events-none -translate-x-10 opacity-0"
             )}
             onFocus={() => {
-              if ((collapsed || drawerCollapsed) && onToggle) {
-                pendingSearchFocusRef.current = true
-                onToggle()
-                return
-              }
-
               setSearchFocused(true)
             }}
             onKeyDown={(event) => {
@@ -317,7 +327,7 @@ function NavigationPanelCommandRow({
               className={cn(
                 "mr-2.5 hidden h-auto shrink-0 rounded-md border border-nextide-line bg-background/40 px-1.5 py-0.5 text-ui-caption leading-none transition-[opacity,transform] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none sm:inline-flex",
                 drawerCollapsed
-                  ? "-translate-x-10 opacity-0"
+                  ? "pointer-events-none -translate-x-10 opacity-0"
                   : "translate-x-0 opacity-100"
               )}
             >
@@ -394,7 +404,9 @@ function NavigationPanelNav({
   const itemRefs = React.useRef<Record<string, HTMLButtonElement | null>>({})
   const itemRectsRef = React.useRef<Record<string, DOMRect>>({})
   const itemAnimationsRef = React.useRef<Record<string, Animation>>({})
-  const previousDrawerCollapsedRef = React.useRef(drawerCollapsed)
+  const railRef = React.useRef<HTMLSpanElement | null>(null)
+  const railAnimationRef = React.useRef<Animation | null>(null)
+  const previousCollapsedRef = React.useRef(collapsed)
   const writeOutlineVars = React.useCallback(
     (
       top: number,
@@ -424,7 +436,7 @@ function NavigationPanelNav({
 
       const itemRect = item.getBoundingClientRect()
       const navRect = nav.getBoundingClientRect()
-      const compactOutline = drawerCollapsed
+      const compactOutline = collapsed
       const compactWidth = Math.min(itemRect.width, 44)
       const left = itemRect.left - navRect.left + nav.scrollLeft
       const top = itemRect.top - navRect.top + nav.scrollTop
@@ -448,7 +460,7 @@ function NavigationPanelNav({
         railHeight
       )
     },
-    [drawerCollapsed, navRef, writeOutlineVars]
+    [collapsed, navRef, writeOutlineVars]
   )
 
   React.useLayoutEffect(() => {
@@ -459,13 +471,12 @@ function NavigationPanelNav({
     for (const section of sections) {
       for (const item of section.items) {
         const element = itemRefs.current[item.id]
-        if (element) nextRects[item.id] = element.getBoundingClientRect()
+        if (element) nextRects[item.id] = readNavigationItemMotionRect(element)
       }
     }
 
     const previousRects = itemRectsRef.current
-    const stateChanged =
-      previousDrawerCollapsedRef.current !== drawerCollapsed
+    const stateChanged = previousCollapsedRef.current !== collapsed
     const reducedMotion =
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
 
@@ -473,12 +484,25 @@ function NavigationPanelNav({
       animation.cancel()
     }
     itemAnimationsRef.current = {}
+    railAnimationRef.current?.cancel()
+    railAnimationRef.current = null
 
     if (stateChanged && !reducedMotion && typeof nav.animate === "function") {
       const styles = window.getComputedStyle(nav)
       const duration = readCssTime(
         styles.getPropertyValue("--nextide-drawer-icon-duration"),
         160
+      )
+      const activeElement = activeItemId
+        ? itemRefs.current[activeItemId]
+        : null
+      const previousRailTop = Number.parseFloat(
+        nav.style.getPropertyValue("--navigation-rail-top")
+      )
+
+      if (activeElement) measureOutline(activeElement)
+      const nextRailTop = Number.parseFloat(
+        nav.style.getPropertyValue("--navigation-rail-top")
       )
 
       for (const section of sections) {
@@ -498,9 +522,7 @@ function NavigationPanelNav({
             ],
             {
               duration,
-              delay: drawerCollapsed ? 40 : 0,
               easing: "cubic-bezier(0.25, 1, 0.5, 1)",
-              fill: "both",
             }
           )
 
@@ -508,8 +530,36 @@ function NavigationPanelNav({
           void animation.finished
             .then(() => {
               if (itemAnimationsRef.current[item.id] !== animation) return
-              animation.cancel()
               delete itemAnimationsRef.current[item.id]
+            })
+            .catch(() => undefined)
+        }
+      }
+
+      if (
+        railRef.current &&
+        Number.isFinite(previousRailTop) &&
+        Number.isFinite(nextRailTop)
+      ) {
+        const deltaY = previousRailTop - nextRailTop
+        if (Math.abs(deltaY) >= 0.5) {
+          const animation = railRef.current.animate(
+            [
+              { transform: `translate3d(0, ${deltaY}px, 0)` },
+              { transform: "translate3d(0, 0, 0)" },
+            ],
+            {
+              duration,
+              easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+            }
+          )
+
+          railAnimationRef.current = animation
+          void animation.finished
+            .then(() => {
+              if (railAnimationRef.current === animation) {
+                railAnimationRef.current = null
+              }
             })
             .catch(() => undefined)
         }
@@ -517,15 +567,23 @@ function NavigationPanelNav({
     }
 
     itemRectsRef.current = nextRects
-    previousDrawerCollapsedRef.current = drawerCollapsed
+    previousCollapsedRef.current = collapsed
 
     return () => {
       for (const animation of Object.values(itemAnimationsRef.current)) {
         animation.cancel()
       }
       itemAnimationsRef.current = {}
+      railAnimationRef.current?.cancel()
+      railAnimationRef.current = null
     }
-  }, [drawerCollapsed, navRef, sections])
+  }, [
+    activeItemId,
+    collapsed,
+    measureOutline,
+    navRef,
+    sections,
+  ])
 
   React.useLayoutEffect(() => {
     const nav = navRef.current
@@ -607,6 +665,7 @@ function NavigationPanelNav({
         }}
       />
       <span
+        ref={railRef}
         aria-hidden="true"
         data-slot="navigation-panel-rail"
         className={cn(
@@ -614,9 +673,7 @@ function NavigationPanelNav({
           drawerTransitioning
             ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
             : "transition-[top,height,opacity] duration-[var(--nextide-motion-state)]",
-          activeItemId && !drawerTransitioning
-            ? "opacity-100"
-            : "opacity-0"
+          activeItemId ? "opacity-100" : "opacity-0"
         )}
         style={{
           top: "var(--navigation-rail-top, 0px)",
@@ -629,9 +686,8 @@ function NavigationPanelNav({
         <React.Fragment key={section.id}>
           <section
             className={cn(
-              "relative z-10 grid gap-2 max-lg:shrink-0",
-              drawerCollapsed &&
-                "before:absolute before:-top-2 before:left-1/2 before:h-px before:w-8 before:-translate-x-1/2 before:rounded-full before:bg-nextide-line"
+              "relative z-10 grid gap-2 before:absolute before:-top-2 before:left-1/2 before:h-px before:w-8 before:-translate-x-1/2 before:rounded-full before:bg-nextide-line before:transition-opacity before:duration-[var(--nextide-drawer-icon-duration)] before:ease-[var(--nextide-drawer-ease)] max-lg:shrink-0 max-lg:before:hidden",
+              collapsed ? "before:opacity-100" : "before:opacity-0"
             )}
           >
             {section.label ? (
@@ -639,8 +695,9 @@ function NavigationPanelNav({
                 aria-hidden={collapsed || drawerCollapsed}
                 className={cn(
                   "text-ui-caption font-medium tracking-[0.08em] text-muted-foreground uppercase max-lg:hidden",
-                  drawerCollapsed ? "max-h-0" : "max-h-6",
-                  drawerTransitioning ? "overflow-visible" : "overflow-hidden"
+                  collapsed
+                    ? "max-h-0 overflow-visible"
+                    : "max-h-6 overflow-hidden"
                 )}
               >
                 <span
@@ -668,9 +725,9 @@ function NavigationPanelNav({
                     }}
                     className={cn(
                       "group relative grid min-h-11 w-full items-center gap-2 rounded-lg border border-transparent text-left transition-[color,background-color] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none max-lg:h-11 max-lg:w-auto max-lg:min-w-max max-lg:grid-cols-[2rem_minmax(0,1fr)] max-lg:pr-3",
-                      drawerCollapsed ? "h-11" : "h-[3.25rem]",
+                      collapsed ? "h-11" : "h-[3.25rem]",
                       collapsed
-                        ? "mx-auto w-11 grid-cols-[2.75rem_0fr] gap-0 p-0"
+                        ? "mr-auto w-11 grid-cols-[2.75rem_0fr] gap-0 p-0"
                         : "grid-cols-[2.75rem_minmax(0,1fr)] p-0",
                       active
                         ? "text-foreground max-lg:bg-nextide-tide/[0.07]"
@@ -707,13 +764,10 @@ function NavigationPanelNav({
                     <span
                       aria-hidden={collapsed || drawerCollapsed}
                       className={cn(
-                        "min-w-0 [mask-image:linear-gradient(to_right,transparent_0,black_5px,black_100%)] whitespace-nowrap transition-[max-width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                        drawerTransitioning
-                          ? "overflow-visible [mask-image:none]"
-                          : "overflow-hidden",
+                        "min-w-0 whitespace-nowrap transition-[max-width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
                         drawerCollapsed
-                          ? "max-w-0 opacity-0"
-                          : "max-w-52 [mask-image:linear-gradient(to_right,black_0,black_100%)] opacity-100"
+                          ? "max-w-0 overflow-visible opacity-0"
+                          : "max-w-52 overflow-hidden opacity-100"
                       )}
                     >
                       <span
@@ -761,29 +815,40 @@ function NavigationPanelFooter({
   collapsed,
   drawerCollapsed,
   footer,
+  userMenu,
 }: NavigationPanelFooterProps) {
-  if (!footer) {
+  if (!footer && !userMenu) {
     return null
   }
 
   return (
     <footer
-      aria-hidden={collapsed || drawerCollapsed}
       className={cn(
-        "w-full overflow-hidden border-t border-nextide-line transition-[max-height,padding] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
-        collapsed ? "max-h-0 pt-0" : "max-h-24 pt-3"
+        "grid w-full overflow-hidden border-t border-nextide-line transition-[max-height,padding] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
+        collapsed && !userMenu ? "max-h-0 pt-0" : "max-h-40 pt-3",
+        footer && userMenu && !drawerCollapsed ? "gap-2" : "gap-0"
       )}
     >
-      <div
-        className={cn(
-          "transition-[opacity,transform] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-          drawerCollapsed
-            ? "-translate-x-10 opacity-0"
-            : "translate-x-0 opacity-100"
-        )}
-      >
-        {footer}
-      </div>
+      {footer ? (
+        <div
+          aria-hidden={collapsed || drawerCollapsed}
+          className={cn(
+            "overflow-hidden transition-[max-height,opacity,transform] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            drawerCollapsed
+              ? "max-h-0 -translate-x-10 opacity-0"
+              : "max-h-24 translate-x-0 opacity-100"
+          )}
+        >
+          {footer}
+        </div>
+      ) : null}
+      {userMenu ? (
+        <NavigationUserMenu
+          {...userMenu}
+          collapsed={collapsed}
+          drawerCollapsed={drawerCollapsed}
+        />
+      ) : null}
     </footer>
   )
 }
@@ -804,6 +869,7 @@ function NavigationPanel({
   onToggle,
   onSelectItem,
   footer,
+  userMenu,
   className,
   ...props
 }: NavigationPanelProps) {
@@ -835,7 +901,7 @@ function NavigationPanel({
         padding="none"
         className={cn(
           "flex min-h-0 flex-1 flex-col gap-3 overflow-visible transition-[padding,border-radius,box-shadow,background-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:flex-none",
-          drawerCollapsed
+          collapsed
             ? "items-center gap-1.5 overflow-visible p-3"
             : "p-3"
         )}
@@ -862,6 +928,7 @@ function NavigationPanel({
           collapsed={collapsed}
           drawerCollapsed={drawerCollapsed}
           footer={footer}
+          userMenu={userMenu}
         />
       </Surface>
     </div>
@@ -884,22 +951,18 @@ function matchesNavigationPanelSearch(
   const terms = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
   if (terms.length === 0) return true
 
-  const searchable = [item.label, item.meta, item.status, item.sectionLabel]
-    .filter(Boolean)
-    .join(" ")
-    .toLocaleLowerCase()
+  const searchableFields = [
+    item.label,
+    item.meta,
+    item.status,
+    item.sectionLabel,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.toLocaleLowerCase())
 
-  return terms.every((term) => {
-    let searchFrom = 0
-
-    for (const character of term) {
-      const nextIndex = searchable.indexOf(character, searchFrom)
-      if (nextIndex === -1) return false
-      searchFrom = nextIndex + 1
-    }
-
-    return true
-  })
+  return terms.every((term) =>
+    searchableFields.some((field) => field.includes(term))
+  )
 }
 
 function readCssTime(value: string, fallback: number) {
@@ -910,10 +973,19 @@ function readCssTime(value: string, fallback: number) {
     : parsed
 }
 
+function readNavigationItemMotionRect(item: HTMLButtonElement) {
+  return (
+    item
+      .querySelector<HTMLElement>("[data-slot='navigation-panel-item-icon']")
+      ?.getBoundingClientRect() ?? item.getBoundingClientRect()
+  )
+}
+
 export {
   NavigationPanel,
   defaultNavigationPanelSections,
   type NavigationPanelItem,
   type NavigationPanelSection,
   type NavigationPanelStatusTone,
+  type NavigationPanelUserMenu,
 }

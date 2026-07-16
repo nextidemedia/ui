@@ -67,35 +67,6 @@ function EvidenceDrawer({
     (_current: string, nextTab: string) => nextTab,
     "decisions"
   )
-  const [leavingTab, setLeavingTab] = React.useState<string | null>(null)
-  const [swapDirection, setSwapDirection] = React.useState<
-    "forward" | "backward"
-  >("forward")
-  const swapTimerRef = React.useRef<number | null>(null)
-  const tabOrder = ["decisions", "sources", "costs"]
-
-  React.useEffect(
-    () => () => {
-      if (swapTimerRef.current) window.clearTimeout(swapTimerRef.current)
-    },
-    []
-  )
-
-  const changeTab = (nextTab: string) => {
-    if (nextTab === activeTab) return
-    if (swapTimerRef.current) window.clearTimeout(swapTimerRef.current)
-    setSwapDirection(
-      tabOrder.indexOf(nextTab) > tabOrder.indexOf(activeTab)
-        ? "forward"
-        : "backward"
-    )
-    setLeavingTab(activeTab)
-    setActiveTab(nextTab)
-    swapTimerRef.current = window.setTimeout(() => {
-      setLeavingTab(null)
-      swapTimerRef.current = null
-    }, 220)
-  }
 
   return (
     <Surface
@@ -131,7 +102,7 @@ function EvidenceDrawer({
 
       <SegmentedControl
         value={activeTab}
-        onValueChange={changeTab}
+        onValueChange={setActiveTab}
         aria-label="Evidence view"
         options={[
           {
@@ -149,32 +120,8 @@ function EvidenceDrawer({
         ]}
       />
 
-      <div className="grid min-w-0 overflow-hidden [&>*]:[grid-area:1/1]">
-        {leavingTab ? (
-          <div
-            aria-hidden="true"
-            inert
-            className={cn(
-              "pointer-events-none min-w-0",
-              swapDirection === "forward"
-                ? "nextide-panel-exit-left"
-                : "nextide-panel-exit-right"
-            )}
-          >
-            <EvidencePanel tab={leavingTab} events={events} costs={costs} />
-          </div>
-        ) : null}
-        <div
-          key={activeTab}
-          className={cn(
-            "min-w-0",
-            swapDirection === "forward"
-              ? "nextide-panel-enter-right"
-              : "nextide-panel-enter-left"
-          )}
-        >
-          <EvidencePanel tab={activeTab} events={events} costs={costs} />
-        </div>
+      <div className="min-w-0">
+        <EvidencePanel tab={activeTab} events={events} costs={costs} />
       </div>
     </Surface>
   )

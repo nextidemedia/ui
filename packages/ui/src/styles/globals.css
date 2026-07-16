@@ -190,6 +190,11 @@
   --nextide-motion-control: 160ms;
   --nextide-motion-state: 220ms;
   --nextide-motion-layout: 300ms;
+  --nextide-motion-context-exit: 110ms;
+  --nextide-motion-context-enter: 190ms;
+  --nextide-motion-flow-dash: 700ms;
+  --nextide-motion-status-pulse: 880ms;
+  --nextide-motion-brand-glow: 6s;
   --nextide-ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --nextide-ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
   --nextide-drawer-ease: var(--nextide-ease-in-out-quart);
@@ -294,71 +299,79 @@
 }
 
 .nextide-context-exit-up {
-  animation: nextide-context-exit-up 110ms var(--nextide-ease-out-quart) both;
+  animation: nextide-context-exit-up var(--nextide-motion-context-exit)
+    var(--nextide-ease-out-quart) both;
 }
 
 .nextide-context-exit-down {
-  animation: nextide-context-exit-down 110ms var(--nextide-ease-out-quart) both;
+  animation: nextide-context-exit-down var(--nextide-motion-context-exit)
+    var(--nextide-ease-out-quart) both;
 }
 
 .nextide-context-enter-up {
-  animation: nextide-context-enter-up 190ms var(--nextide-ease-out-quart) both;
+  animation: nextide-context-enter-up var(--nextide-motion-context-enter)
+    var(--nextide-ease-out-quart) both;
 }
 
 .nextide-context-enter-down {
-  animation: nextide-context-enter-down 190ms var(--nextide-ease-out-quart) both;
+  animation: nextide-context-enter-down var(--nextide-motion-context-enter)
+    var(--nextide-ease-out-quart) both;
 }
 
-@keyframes nextide-panel-enter-right {
+@keyframes nextide-schedule-layer-enter-out {
   from {
-    opacity: 0;
-    transform: translateX(16px);
+    opacity: 0.35;
+    filter: blur(2px);
+    transform: translateY(-100%);
   }
 }
 
-@keyframes nextide-panel-enter-left {
+@keyframes nextide-schedule-layer-exit-out {
+  to {
+    opacity: 0.25;
+    filter: blur(2px);
+    transform: translateY(100%);
+  }
+}
+
+@keyframes nextide-schedule-layer-enter-in {
   from {
-    opacity: 0;
-    transform: translateX(-16px);
+    opacity: 0.35;
+    filter: blur(2px);
+    transform: translateY(100%);
   }
 }
 
-@keyframes nextide-panel-exit-left {
+@keyframes nextide-schedule-layer-exit-in {
   to {
-    opacity: 0;
-    transform: translateX(-12px);
+    opacity: 0.25;
+    filter: blur(2px);
+    transform: translateY(-100%);
   }
 }
 
-@keyframes nextide-panel-exit-right {
-  to {
-    opacity: 0;
-    transform: translateX(12px);
-  }
+.nextide-schedule-layer-enter-out {
+  animation: nextide-schedule-layer-enter-out var(--nextide-motion-layout)
+    var(--nextide-ease-in-out-quart) both;
 }
 
-.nextide-panel-enter-right {
-  animation: nextide-panel-enter-right var(--nextide-motion-state)
-    var(--nextide-ease-out-quart) both;
+.nextide-schedule-layer-exit-out {
+  animation: nextide-schedule-layer-exit-out var(--nextide-motion-layout)
+    var(--nextide-ease-in-out-quart) both;
 }
 
-.nextide-panel-enter-left {
-  animation: nextide-panel-enter-left var(--nextide-motion-state)
-    var(--nextide-ease-out-quart) both;
+.nextide-schedule-layer-enter-in {
+  animation: nextide-schedule-layer-enter-in var(--nextide-motion-layout)
+    var(--nextide-ease-in-out-quart) both;
 }
 
-.nextide-panel-exit-left {
-  animation: nextide-panel-exit-left var(--nextide-motion-state)
-    var(--nextide-ease-out-quart) both;
-}
-
-.nextide-panel-exit-right {
-  animation: nextide-panel-exit-right var(--nextide-motion-state)
-    var(--nextide-ease-out-quart) both;
+.nextide-schedule-layer-exit-in {
+  animation: nextide-schedule-layer-exit-in var(--nextide-motion-layout)
+    var(--nextide-ease-in-out-quart) both;
 }
 
 .nextide-flow-line {
-  animation: nextide-flow-dash 700ms linear infinite;
+  animation: nextide-flow-dash var(--nextide-motion-flow-dash) linear infinite;
 }
 
 .nextide-line-draw {
@@ -379,22 +392,23 @@
   .nextide-context-exit-down,
   .nextide-context-enter-up,
   .nextide-context-enter-down,
-  .nextide-panel-enter-right,
-  .nextide-panel-enter-left,
-  .nextide-panel-exit-left,
-  .nextide-panel-exit-right {
+  .nextide-schedule-layer-enter-out,
+  .nextide-schedule-layer-exit-out,
+  .nextide-schedule-layer-enter-in,
+  .nextide-schedule-layer-exit-in {
     animation: none;
   }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   [data-slot="status-badge-dot"][data-pulse="true"] {
-    animation: nextide-status-dot-pulse 880ms var(--nextide-ease-out-quart) 3
-      both;
+    animation: nextide-status-dot-pulse var(--nextide-motion-status-pulse)
+      var(--nextide-ease-out-quart) 3 both;
   }
 
   [data-slot="sidebar-brand-glow"] {
-    animation: nextide-brand-glow 6s var(--nextide-ease-in-out-quart) infinite;
+    animation: nextide-brand-glow var(--nextide-motion-brand-glow)
+      var(--nextide-ease-in-out-quart) infinite;
   }
 }
 

@@ -38,17 +38,17 @@ When a trigger should look like an existing control, compose it with the
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Actions and commands       | `components/button`, `components/badge`, `components/status-badge`                                                                                                                                                                                                                                                                                                    |
 | Forms and inputs           | `components/input`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/autocomplete`, `components/token-list-editor`                                                                                                                                 |
-| Choice controls            | `components/segmented-control`, `components/tabs`, `components/collapsible`, `components/popover`, `components/tooltip`                                                                                                                                                                                                                                               |
+| Choice controls            | `components/segmented-control`, `components/tabs`, `components/collapsible`, `components/dropdown-menu`, `components/popover`, `components/tooltip`                                                                                                                                                                                                                    |
 | Date and schedule controls | `components/date-range-picker`, `components/schedule-control`                                                                                                                                                                                                                                                                                                         |
 | Layout and surfaces        | `components/surface`, `components/card`, `components/separator`, `components/scroll-area`, `components/table`, `components/alert`, `components/notice`, `components/metric`, `components/kbd`                                                                                                                                                                         |
 | Identity and feedback      | `components/avatar`, `components/empty`, `components/progress`, `components/spinner`, `components/skeleton`                                                                                                                                                                                                                                                           |
-| Data visualization         | `components/donut-chart`, `components/line-graph`, `components/line-item-graph`, `components/trend-bar-chart`, `components/signal-ridge-chart`, `components/hourly-pacing-chart`, `components/score-threshold-meter`, `components/score-ring`, `components/sentiment-meter`, `components/creator-flow-chart`, `components/data-ledger`, `components/platform-cluster` |
+| Data visualization         | `components/graph-tooltip`, `components/donut-chart`, `components/line-graph`, `components/line-item-graph`, `components/trend-bar-chart`, `components/signal-ridge-chart`, `components/hourly-pacing-chart`, `components/score-threshold-meter`, `components/score-ring`, `components/sentiment-meter`, `components/creator-flow-chart`, `components/data-ledger`, `components/platform-cluster` |
 
 ## Blocks
 
 | Need                        | Start with                                                                                                                                             |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| App frame and navigation    | `blocks/app-shell`, `blocks/sidebar`, `blocks/navigation-panel`, `blocks/workflow-stepper`, `blocks/signal-plate`, `blocks/settings-modal`             |
+| App frame and navigation    | `blocks/app-shell`, `blocks/sidebar`, `blocks/navigation-panel`, `blocks/navigation-user-menu`, `blocks/workflow-stepper`, `blocks/signal-plate`, `blocks/settings-modal` |
 | Report building and reading | `blocks/report-context-builder`, `blocks/progressive-summary-rail`, `blocks/report-reader`, `blocks/report-rail`, `blocks/export-workbench`            |
 | Creator workflows           | `blocks/creator-transfer`, `blocks/creator-scope-panel`, `blocks/campaign-schedule-matrix`, `blocks/pacing-configurator`, `blocks/fit-leaderboard`     |
 | Operations and dashboards   | `blocks/dashboard-filter-bar`, `blocks/run-monitor-table`, `blocks/stream-selector`, `blocks/intelligence-progression-chart`, `blocks/evidence-drawer` |
@@ -77,20 +77,30 @@ work areas, forms, and operational containers; those stay visually plain.
 Navigation uses the quiet active rail. Report history uses a contained outline
 so navigation and record selection remain visually distinct.
 
-`blocks/navigation-panel` includes section-aware fuzzy search through the shared
+`blocks/navigation-panel` includes section-aware search through the shared
 autocomplete surface. The Search field is the input itself; focusing it or
 pressing Command/Ctrl+K filters navigation results directly beneath the field.
-Selection navigates through `onSelectItem`, while Escape and outside clicks clear
-the query. Pass an empty `commandShortcut` when a secondary panel must not
+In compact mode the icon opens that same field beside the rail without expanding
+the full sidebar. Matching is deliberately conservative and requires direct text
+matches across labels and their visible context. Selection navigates through
+`onSelectItem`, while Escape and outside clicks clear the query. Pass an empty
+`commandShortcut` when a secondary panel must not
 register the global shortcut.
 
 Collapsed navigation controls use the same 44px icon track and hit area. Their
 final positions are measured before the layout changes so every control follows
 one direct path instead of inheriting competing row, heading, and gap reflows.
+The horizontal text-and-shell motion starts first; compact icon geometry joins
+only for the final icon-duration window so both stages land together.
 
 Desktop navigation retracts its text and shell while each icon moves directly
 to its measured compact position. Expansion uses the same measured path in
 reverse.
+
+Pass `userMenu` to `blocks/navigation-panel` for the shadcn-style sidebar footer:
+the shared block owns the Avatar trigger, up/down glyph, compact avatar state,
+and Base UI dropdown containing Settings and Logout. Consumers provide identity
+copy and the two product callbacks only.
 
 Clickable hover feedback changes color, border, glow, or emphasis without
 moving the control. Reserve hover translation or scaling for non-clickable data
@@ -99,6 +109,30 @@ feedback where the motion communicates the inspected value.
 `components/status-badge` owns status tone, compact sizing, and optional
 indicators. Use `indicator="pulse"` only for a currently live or running state;
 use `indicator="none"` for categorical labels such as Review or Queued.
+
+`blocks/campaign-schedule-matrix` derives day/week/month/quarter headers from
+each slot's ISO `date`. It opens at week scale and, when a `today` slot exists,
+positions that week after one visible week of history. Its wheel interaction
+steps between day, week, and month zoom only while another level is available,
+then hands scrolling back to the page. Pointer users can drag the timeline
+horizontally; a drag suppresses the booking click while an ordinary click still
+selects it.
+
+`blocks/intelligence-progression-chart` measures each rendered node and attaches
+its SVG connectors to the horizontal equator of the actual circle edges. Curves
+can bend between branches, but they always leave and enter at cardinal side
+points. Below 640 pixels it switches to a taller two-branch composition;
+consumers keep the same seven canonical stage ids without supplying
+viewport-specific geometry.
+
+`components/graph-tooltip` owns graph tooltip portaling, viewport clamping,
+right-first placement with edge flipping, and the shared series-row treatment.
+Charts continue to own hit testing, guide geometry, labels, and value content.
+
+`blocks/app-shell` is viewport-bound. Its sidebar stays within the available
+height while the main workspace and optional inspector own their vertical
+scroll independently; consumers should not restore document-level scrolling
+around the shell.
 
 Long-form report and evidence content can use `.typeset`. Tune only
 `--typeset-size`, `--typeset-leading`, and `--typeset-flow`; the shared CSS owns

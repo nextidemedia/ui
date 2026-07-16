@@ -71,14 +71,17 @@ function useStagedDrawer({
       setCollapsedState(true)
       setDrawerCollapsed(true)
 
+      const totalDuration = Math.max(drawerDuration, iconDuration)
+      const iconStageStart = Math.max(0, totalDuration - iconDuration)
+
       stageTimeoutRef.current = setTimeout(() => {
         setIconsCollapsed(true)
         stageTimeoutRef.current = null
         settleTimeoutRef.current = setTimeout(() => {
           setTransitioning(false)
           settleTimeoutRef.current = null
-        }, iconDuration)
-      }, drawerDuration)
+        }, totalDuration - iconStageStart)
+      }, iconStageStart)
     },
     [clearTimers, durationMs, iconDurationMs]
   )
