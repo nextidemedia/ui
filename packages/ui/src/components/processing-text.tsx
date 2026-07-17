@@ -7,6 +7,7 @@ type ProcessingTextVariant = "classic" | "aurora" | "flame"
 
 type ProcessingTextProps = Omit<React.ComponentProps<"span">, "children"> & {
   children: string
+  syncLength?: number
   tone?: ProcessingTextTone
   travelSpeed?: number
   variant?: ProcessingTextVariant
@@ -16,6 +17,7 @@ const processingTextTravelRatio = 0.8
 
 function ProcessingText({
   children,
+  syncLength,
   tone = "neutral",
   travelSpeed = 5,
   variant = "classic",
@@ -25,8 +27,14 @@ function ProcessingText({
 }: ProcessingTextProps) {
   const resolvedTravelSpeed =
     Number.isFinite(travelSpeed) && travelSpeed > 0 ? travelSpeed : 5
+  const resolvedSyncLength =
+    typeof syncLength === "number" &&
+    Number.isFinite(syncLength) &&
+    syncLength > 0
+      ? syncLength
+      : undefined
   const duration =
-    (Math.max(children.trim().length, 1) /
+    (Math.max(resolvedSyncLength ?? children.trim().length, 1) /
       resolvedTravelSpeed /
       processingTextTravelRatio) *
     1000
@@ -34,6 +42,7 @@ function ProcessingText({
   return (
     <span
       data-slot="processing-text"
+      data-sync-length={resolvedSyncLength}
       data-tone={tone}
       data-travel-speed={resolvedTravelSpeed}
       data-variant={variant}

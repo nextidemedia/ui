@@ -113,6 +113,11 @@ Clickable hover feedback changes color, border, glow, or emphasis without
 moving the control. Reserve hover translation or scaling for non-clickable data
 feedback where the motion communicates the inspected value.
 
+Apply `nextide-effect-layer` to a glow or shine that must paint above adjacent
+surfaces. When a scroll viewport would clip the effect, render its
+non-interactive effect layer outside that viewport while keeping the content
+inside it.
+
 `components/status-badge` owns status tone, compact sizing, and optional
 indicators. Use `indicator="pulse"` only for a currently live or running state;
 use `indicator="none"` for categorical labels such as Review or Queued.
@@ -122,7 +127,9 @@ copy. Choose `variant="classic"`, `variant="aurora"`, or `variant="flame"`;
 use the neutral tone for ordinary work in progress and `tone="processing"` for
 the shared purple active state. `travelSpeed` sets the approximate characters
 crossed per second and defaults to `5`, so text length changes duration rather
-than perceived speed. Reduced-motion and forced-color modes render static text.
+than perceived speed. Give related lines the same `syncLength` to keep their
+shimmer cycles aligned; use the longest line's character count. Reduced-motion
+and forced-color modes render static text.
 
 The `components/segmented-control` fill variant changes label contrast exactly
 where its moving selection indicator overlaps the label. The quiet and

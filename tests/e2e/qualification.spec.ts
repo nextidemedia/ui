@@ -655,6 +655,64 @@ test("duration picker optionally supports days and confirms on blur or Enter", a
   )
 })
 
+test("autocomplete empty state reuses a result row footprint", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/?view=report")
+  await page.getByRole("button", { name: /Primitives/ }).click()
+
+  const input = page.getByRole("combobox", { name: "Find a creator" })
+  const popup = page.locator('[data-slot="autocomplete-content"]')
+  const list = popup.locator('[data-slot="autocomplete-list"]')
+  await input.click()
+
+  const item = popup.locator('[data-slot="autocomplete-item"]').first()
+  await expect(item).toBeVisible()
+  const itemBox = await item.boundingBox()
+  const itemMetrics = await item.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return {
+      minHeight: style.minHeight,
+      padding: style.padding,
+    }
+  })
+  const listPadding = await list.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return (
+      Number.parseFloat(style.paddingTop) +
+      Number.parseFloat(style.paddingBottom)
+    )
+  })
+
+  await input.fill("no-such-creator")
+  const empty = popup.locator('[data-slot="autocomplete-empty"]')
+  await expect(empty).toBeVisible()
+  await expect(list).toBeHidden()
+
+  const emptyBox = await empty.boundingBox()
+  const emptyPopupBox = await popup.boundingBox()
+  const emptyMetrics = await empty.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return {
+      minHeight: style.minHeight,
+      padding: style.padding,
+    }
+  })
+  expect(itemBox).not.toBeNull()
+  expect(emptyBox).not.toBeNull()
+  expect(emptyPopupBox).not.toBeNull()
+  expect(emptyMetrics).toEqual(itemMetrics)
+  expect(emptyPopupBox!.height).toBeLessThanOrEqual(
+    itemBox!.height + listPadding
+  )
+  await expectNoSeriousAxeViolations(
+    page,
+    "autocomplete empty state",
+    '[data-slot="autocomplete-content"]'
+  )
+})
+
 test("processing text follows progress state and reduced-motion preference", async ({
   page,
 }) => {
@@ -702,6 +760,8 @@ test("processing text follows progress state and reduced-motion preference", asy
   await expect(activeLabel).toHaveAttribute("data-tone", "processing")
   await expect(activeLabel).toHaveAttribute("data-variant", "classic")
   await expect(activeDetail).toHaveAttribute("data-slot", "processing-text")
+  await expect(activeLabel).toHaveAttribute("data-sync-length", "16")
+  await expect(activeDetail).toHaveAttribute("data-sync-length", "16")
   await expect(
     progression.locator('[data-slot="processing-text"]')
   ).toHaveCount(4)
@@ -718,7 +778,24 @@ test("processing text follows progress state and reduced-motion preference", asy
   const activeDuration = await activeLabel.evaluate((element) =>
     Number.parseFloat(getComputedStyle(element).animationDuration)
   )
-  expect("Analyze VODs".length / (activeDuration * 0.8)).toBeCloseTo(5, 1)
+  const activeDetailDuration = await activeDetail.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).animationDuration)
+  )
+  const activePhases = await activeLabel
+    .locator("..")
+    .locator("..")
+    .locator('[data-slot="processing-text"]')
+    .evaluateAll((elements) =>
+      elements.map((element) => {
+        const animation = element.getAnimations()[0]
+        const duration = Number(animation.effect?.getTiming().duration)
+        return (Number(animation.currentTime) % duration) / duration
+      })
+    )
+  expect(activeDetailDuration).toBe(activeDuration)
+  expect(activePhases).toHaveLength(2)
+  expect(Math.abs(activePhases[0] - activePhases[1])).toBeLessThan(0.01)
+  expect("Creator evidence".length / (activeDuration * 0.8)).toBeCloseTo(5, 1)
   expect(standaloneDuration).toBeGreaterThan(activeDuration)
   await expectNoSeriousAxeViolations(
     page,
@@ -848,7 +925,15 @@ test("dashboard filter bar scrolls campaigns and disables clear without a select
   await page.goto("/?view=daedalus")
 
   const filterBar = page.locator('[data-slot="dashboard-filter-bar"]')
+  const carousel = filterBar.locator('[data-slot="dashboard-filter-carousel"]')
+  const scopeAction = filterBar.locator(
+    '[data-slot="dashboard-filter-scope-action"]'
+  )
+  const slider = filterBar.locator('[data-slot="dashboard-filter-slider"]')
   const scroller = filterBar.locator('[data-slot="dashboard-filter-scroll"]')
+  const effectLayer = filterBar.locator(
+    '[data-slot="dashboard-filter-effect-layer"]'
+  )
   const fade = filterBar.locator('[data-slot="dashboard-filter-fade"]')
   const startFade = filterBar.locator(
     '[data-slot="dashboard-filter-fade-start"]'
@@ -876,9 +961,18 @@ test("dashboard filter bar scrolls campaigns and disables clear without a select
   }
 
   const scopeBox = await scope.boundingBox()
+  const scopeIconBox = await scope.locator("svg").first().boundingBox()
   const clearFilterBox = await clearFilter.boundingBox()
   expect(scopeBox).not.toBeNull()
+  expect(scopeIconBox).not.toBeNull()
   expect(clearFilterBox).not.toBeNull()
+  expect(
+    Math.abs(
+      scopeIconBox!.x +
+        scopeIconBox!.width / 2 -
+        (scopeBox!.x + scopeBox!.width / 2)
+    )
+  ).toBeLessThanOrEqual(0.5)
   expect(
     Math.abs(scopeBox!.height - clearFilterBox!.height)
   ).toBeLessThanOrEqual(1)
@@ -887,6 +981,38 @@ test("dashboard filter bar scrolls campaigns and disables clear without a select
   )
 
   await expect(scroller.getByRole("button")).toHaveCount(10)
+  await expect(carousel).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
+  await expect(scopeAction).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
+  await expect(scope).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
+  await expect(scope).toHaveCSS("border-color", "rgba(255, 255, 255, 0.15)")
+  await expect(scope).toHaveCSS("color", "rgb(250, 250, 250)")
+  const selectedCampaign = scroller.getByRole("button").first()
+  const nextCampaign = scroller.getByRole("button").nth(1)
+  await expect(effectLayer).toBeVisible()
+  await expect(effectLayer).toHaveClass(/nextide-effect-layer/)
+  await expect(effectLayer).toHaveCSS("position", "absolute")
+  await expect(effectLayer).toHaveCSS("z-index", "1")
+  expect(
+    await effectLayer.evaluate((element) => getComputedStyle(element).boxShadow)
+  ).toContain("rgba(30, 228, 188, 0.18) 0px 0px 28px 0px")
+  await expect(nextCampaign).toHaveCSS("z-index", "auto")
+  await expect(slider).toHaveCSS("overflow", "visible")
+
+  const selectedCampaignBox = await selectedCampaign.boundingBox()
+  const effectLayerBox = await effectLayer.boundingBox()
+  const sliderBox = await slider.boundingBox()
+  expect(selectedCampaignBox).not.toBeNull()
+  expect(effectLayerBox).not.toBeNull()
+  expect(sliderBox).not.toBeNull()
+  expect(Math.abs(effectLayerBox!.x - selectedCampaignBox!.x)).toBeLessThan(1)
+  expect(Math.abs(effectLayerBox!.y - selectedCampaignBox!.y)).toBeLessThan(1)
+  expect(
+    Math.abs(effectLayerBox!.width - selectedCampaignBox!.width)
+  ).toBeLessThan(1)
+  expect(
+    Math.abs(effectLayerBox!.height - selectedCampaignBox!.height)
+  ).toBeLessThan(1)
+  expect(effectLayerBox!.x - sliderBox!.x).toBeLessThan(28)
   await expect(startFade).toHaveCSS("opacity", "0")
   await expect(fade).toHaveCSS("opacity", "1")
 
@@ -920,6 +1046,7 @@ test("dashboard filter bar scrolls campaigns and disables clear without a select
 
   await clearFilter.click()
   await expect(clearFilter).toBeDisabled()
+  await expect(effectLayer).toBeHidden()
   await expectNoSeriousAxeViolations(
     page,
     "dashboard filter bar without a selection",

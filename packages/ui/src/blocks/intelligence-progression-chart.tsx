@@ -275,6 +275,17 @@ function IntelligenceProgressionChart({
         </svg>
         {stages.map((stage, index) => {
           const position = stagePositions[stage.id] ?? { x: 50, y: 50 }
+          const processingTextSyncLength =
+            stage.status === "processing"
+              ? Math.max(
+                  typeof stage.label === "string"
+                    ? stage.label.trim().length
+                    : 0,
+                  typeof stage.detail === "string"
+                    ? stage.detail.trim().length
+                    : 0
+                ) || undefined
+              : undefined
 
           return (
             <div
@@ -308,7 +319,10 @@ function IntelligenceProgressionChart({
               <strong className="text-xs leading-tight">
                 {stage.status === "processing" &&
                 typeof stage.label === "string" ? (
-                  <ProcessingText tone="processing">
+                  <ProcessingText
+                    syncLength={processingTextSyncLength}
+                    tone="processing"
+                  >
                     {stage.label}
                   </ProcessingText>
                 ) : (
@@ -318,7 +332,10 @@ function IntelligenceProgressionChart({
               <small className="max-w-24 text-ui-caption leading-tight text-muted-foreground">
                 {stage.status === "processing" &&
                 typeof stage.detail === "string" ? (
-                  <ProcessingText tone="processing">
+                  <ProcessingText
+                    syncLength={processingTextSyncLength}
+                    tone="processing"
+                  >
                     {stage.detail}
                   </ProcessingText>
                 ) : (

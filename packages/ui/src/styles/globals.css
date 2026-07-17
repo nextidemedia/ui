@@ -251,6 +251,10 @@
   height: 0;
 }
 
+.nextide-effect-layer {
+  z-index: 1;
+}
+
 [data-slot="segmented-control"]::-webkit-scrollbar-track,
 [data-slot="sidebar"] nav::-webkit-scrollbar-track {
   margin: 0 18px;

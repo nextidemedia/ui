@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Filter, X } from "lucide-react"
 
-import { Button, buttonVariants } from "@nextide/ui/components/button"
+import { Button } from "@nextide/ui/components/button"
 import { SelectMenu } from "@nextide/ui/components/select-menu"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
 import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
@@ -51,6 +51,8 @@ function DashboardFilterBar({
   const { ref: scrollerRef, onWheel } = useContainedScroll<HTMLDivElement>({
     axis: "x",
   })
+  const sliderRef = React.useRef<HTMLDivElement>(null)
+  const effectLayerRef = React.useRef<HTMLDivElement>(null)
   const visibleItems = items.filter((item) => item.groupId === activeGroupId)
   const visibleItemCount = visibleItems.length
   const activeGroup = groups.find((group) => group.id === activeGroupId)
@@ -69,22 +71,53 @@ function DashboardFilterBar({
     )
   }, [scrollerRef])
 
+  const updateEffectLayer = React.useCallback(() => {
+    const scroller = scrollerRef.current
+    const slider = sliderRef.current
+    const effectLayer = effectLayerRef.current
+    const selectedItem = scroller?.querySelector<HTMLElement>(
+      '[aria-pressed="true"]'
+    )
+
+    if (!slider || !effectLayer || !selectedItem) {
+      if (effectLayer) effectLayer.hidden = true
+      return
+    }
+
+    const sliderRect = slider.getBoundingClientRect()
+    const selectedItemRect = selectedItem.getBoundingClientRect()
+
+    effectLayer.style.width = `${selectedItemRect.width}px`
+    effectLayer.style.height = `${selectedItemRect.height}px`
+    effectLayer.style.transform = `translate3d(${selectedItemRect.left - sliderRect.left}px, ${selectedItemRect.top - sliderRect.top}px, 0)`
+    effectLayer.hidden = false
+  }, [scrollerRef])
+
+  const updateLayout = React.useCallback(() => {
+    updateScrollState()
+    updateEffectLayer()
+  }, [updateEffectLayer, updateScrollState])
+
   React.useEffect(() => {
     scrollerRef.current?.scrollTo({ left: 0, behavior: "smooth" })
   }, [activeGroupId, scrollerRef])
+
+  React.useLayoutEffect(() => {
+    updateEffectLayer()
+  }, [activeGroupId, selectedItemId, updateEffectLayer, visibleItemCount])
 
   React.useEffect(() => {
     const scroller = scrollerRef.current
 
     if (!scroller) return
 
-    updateScrollState()
+    updateLayout()
 
-    const resizeObserver = new ResizeObserver(updateScrollState)
+    const resizeObserver = new ResizeObserver(updateLayout)
     resizeObserver.observe(scroller)
 
     return () => resizeObserver.disconnect()
-  }, [activeGroupId, scrollerRef, updateScrollState, visibleItemCount])
+  }, [activeGroupId, scrollerRef, updateLayout, visibleItemCount])
 
   return (
     <section
@@ -97,7 +130,7 @@ function DashboardFilterBar({
     >
       <div
         data-slot="dashboard-filter-carousel"
-        className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-lg border border-nextide-line bg-nextide-panel"
+        className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-lg border border-nextide-line"
       >
         <div
           data-slot="dashboard-filter-scope-action"
@@ -112,21 +145,19 @@ function DashboardFilterBar({
               description: `${items.filter((item) => item.groupId === group.id).length} available`,
             }))}
             triggerContent={<Filter aria-hidden="true" />}
-            triggerClassName={cn(
-              buttonVariants({ variant: "secondary", size: "icon-sm" }),
-              "size-9! border-transparent! bg-secondary! p-0! text-secondary-foreground! hover:bg-secondary/80! data-popup-open:bg-nextide-tide! data-popup-open:text-black! data-popup-open:hover:bg-nextide-tide! [&_svg:last-child]:hidden"
-            )}
+            triggerClassName="size-9! justify-center! border-input! bg-transparent! p-0! text-foreground! hover:bg-nextide-panel-strong! data-popup-open:border-nextide-tide! data-popup-open:bg-nextide-tide! data-popup-open:text-black! data-popup-open:hover:bg-nextide-tide! [&_svg:last-child]:hidden"
             aria-label={`Scope: ${activeGroup?.label ?? "Select"}`}
           />
         </div>
         <div
+          ref={sliderRef}
           data-slot="dashboard-filter-slider"
-          className="relative min-w-0 overflow-hidden"
+          className="relative min-w-0"
         >
           <div
             ref={scrollerRef}
             onWheel={onWheel}
-            onScroll={updateScrollState}
+            onScroll={updateLayout}
             data-slot="dashboard-filter-scroll"
             className="nextide-contained-scroll nextide-scrollbar-none flex min-h-11 gap-2 overflow-x-auto p-2"
           >
@@ -146,7 +177,7 @@ function DashboardFilterBar({
                     className={cn(
                       "grid min-w-52 gap-1 rounded-lg border px-3 py-2 text-left transition-[background-color,border-color,box-shadow] duration-[var(--nextide-motion-state)] hover:bg-nextide-panel-strong",
                       selected
-                        ? "border-nextide-tide/65 bg-nextide-tide/10 shadow-[0_0_28px_rgb(30_228_188/0.18)]"
+                        ? "border-nextide-tide/65 bg-nextide-tide/10"
                         : "border-nextide-line bg-nextide-panel"
                     )}
                   >
@@ -176,6 +207,13 @@ function DashboardFilterBar({
               })
             )}
           </div>
+          <div
+            ref={effectLayerRef}
+            aria-hidden="true"
+            hidden
+            data-slot="dashboard-filter-effect-layer"
+            className="nextide-effect-layer pointer-events-none absolute top-0 left-0 rounded-lg shadow-[0_0_28px_rgb(30_228_188/0.18)]"
+          />
           <div
             aria-hidden="true"
             data-slot="dashboard-filter-fade-start"

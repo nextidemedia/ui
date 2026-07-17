@@ -7,6 +7,8 @@ import { cn } from "@nextide/ui/lib/utils"
 
 const Autocomplete = AutocompletePrimitive.Root
 const AutocompletePortal = AutocompletePrimitive.Portal
+const autocompleteRowClassName =
+  "relative flex min-h-8 items-center gap-2 rounded-md px-2 py-1.5 text-sm"
 
 function AutocompleteInputGroup({
   className,
@@ -102,7 +104,7 @@ function AutocompleteList({
     <AutocompletePrimitive.List
       data-slot="autocomplete-list"
       className={cn(
-        "max-h-[min(20rem,var(--available-height))] overflow-y-auto p-1",
+        "max-h-[min(20rem,var(--available-height))] overflow-y-auto p-1 data-empty:hidden",
         className
       )}
       {...props}
@@ -118,7 +120,8 @@ function AutocompleteItem({
     <AutocompletePrimitive.Item
       data-slot="autocomplete-item"
       className={cn(
-        "relative flex min-h-8 cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        autocompleteRowClassName,
+        "cursor-default outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
         className
       )}
       {...props}
@@ -134,7 +137,8 @@ function AutocompleteEmpty({
     <AutocompletePrimitive.Empty
       data-slot="autocomplete-empty"
       className={cn(
-        "px-3 py-6 text-center text-sm text-muted-foreground empty:hidden",
+        autocompleteRowClassName,
+        "m-1 justify-center text-center text-muted-foreground empty:hidden",
         className
       )}
       {...props}
