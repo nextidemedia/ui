@@ -194,7 +194,7 @@
   --nextide-motion-context-enter: 190ms;
   --nextide-motion-flow-dash: 700ms;
   --nextide-motion-status-pulse: 880ms;
-  --nextide-motion-processing-text: 4.8s;
+  --nextide-motion-processing-text: 3s;
   --nextide-motion-brand-glow: 6s;
   --nextide-ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --nextide-ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
@@ -276,7 +276,7 @@
     background-position: 100% 0;
   }
 
-  50%,
+  80%,
   100% {
     background-position: 0 0;
   }

@@ -97,7 +97,7 @@ function SegmentedControl({
             aria-checked={active}
             disabled={option.disabled}
             className={cn(
-              "relative z-10 min-w-0 truncate rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors duration-[var(--nextide-motion-state)] outline-none",
+              "relative z-10 grid min-w-0 place-items-center truncate rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors duration-[var(--nextide-motion-state)] outline-none",
               size === "tall" ? "min-h-12 py-1.5" : "h-7",
               active && variant !== "fill" && "text-foreground",
               "focus-visible:z-30 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
@@ -109,6 +109,8 @@ function SegmentedControl({
         )
       })}
       {options.length > 0 && variant === "fill" ? (
+        // Intentionally duplicate the labels in a clipped overlay: the moving
+        // selection fill acts as a mask that flips only the covered text color.
         <span
           aria-hidden="true"
           data-slot="segmented-control-label-overlay"
@@ -119,7 +121,7 @@ function SegmentedControl({
             <span
               key={option.value}
               className={cn(
-                "grid min-w-0 place-items-center truncate rounded-md px-2 text-xs font-medium text-black",
+                "grid min-w-0 place-items-center truncate rounded-md px-2 text-xs font-medium text-primary-foreground",
                 size === "tall" ? "min-h-12 py-1.5" : "h-7",
                 option.disabled && "opacity-40"
               )}

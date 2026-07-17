@@ -74,6 +74,11 @@ import {
   AutocompletePositioner,
 } from "@nextide/ui/components/autocomplete"
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@nextide/ui/components/alert"
+import {
   Avatar,
   AvatarBadge,
   AvatarFallback,
@@ -81,7 +86,7 @@ import {
   AvatarGroupCount,
 } from "@nextide/ui/components/avatar"
 import { Badge } from "@nextide/ui/components/badge"
-import { Button } from "@nextide/ui/components/button"
+import { Button, buttonVariants } from "@nextide/ui/components/button"
 import {
   Card,
   CardContent,
@@ -89,7 +94,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@nextide/ui/components/card"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@nextide/ui/components/carousel"
 import { Checkbox } from "@nextide/ui/components/checkbox"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@nextide/ui/components/collapsible"
 import {
   CreatorFlowChart,
   type CreatorFlowSession,
@@ -99,6 +116,14 @@ import {
   type DateRange,
 } from "@nextide/ui/components/date-range-picker"
 import { DonutChart } from "@nextide/ui/components/donut-chart"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@nextide/ui/components/dropdown-menu"
 import {
   DurationPicker,
   type DurationValue,
@@ -110,8 +135,14 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@nextide/ui/components/empty"
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from "@nextide/ui/components/field"
 import { HourlyPacingChart } from "@nextide/ui/components/hourly-pacing-chart"
 import { Input } from "@nextide/ui/components/input"
+import { Kbd, KbdGroup } from "@nextide/ui/components/kbd"
 import { LineGraph } from "@nextide/ui/components/line-graph"
 import {
   LineItemGraph,
@@ -150,6 +181,20 @@ import {
   SurfaceTitle,
 } from "@nextide/ui/components/surface"
 import { Switch } from "@nextide/ui/components/switch"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@nextide/ui/components/table"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@nextide/ui/components/tabs"
 import { TrendBarChart } from "@nextide/ui/components/trend-bar-chart"
 import { SignalRidgeChart } from "@nextide/ui/components/signal-ridge-chart"
 import {
@@ -199,6 +244,62 @@ const daedalusFilterItems: DashboardFilterItem[] = [
     title: "Daedalus Pilot",
     subtitle: "LiveGuard warmup",
     badge: "Guarded",
+    tone: "warning",
+  },
+  {
+    id: "campaign-helix",
+    groupId: "campaign",
+    title: "Helix Launch Week",
+    subtitle: "12 creators · starts Monday",
+    badge: "Ready",
+    tone: "success",
+  },
+  {
+    id: "campaign-neon",
+    groupId: "campaign",
+    title: "Neon Arena Series",
+    subtitle: "4 live · 2 awaiting proof",
+    badge: "Watch",
+    tone: "warning",
+  },
+  {
+    id: "campaign-atlas",
+    groupId: "campaign",
+    title: "Atlas Creator Sprint",
+    subtitle: "Daily report at 18:00",
+    badge: "Export",
+    tone: "processing",
+  },
+  {
+    id: "campaign-ember",
+    groupId: "campaign",
+    title: "Ember Winter Drop",
+    subtitle: "Creative review in progress",
+    badge: "Review",
+    tone: "neutral",
+  },
+  {
+    id: "campaign-vanguard",
+    groupId: "campaign",
+    title: "Vanguard Finals",
+    subtitle: "8 creators · all approved",
+    badge: "Ready",
+    tone: "success",
+  },
+  {
+    id: "campaign-lumen",
+    groupId: "campaign",
+    title: "Lumen Partner Flight",
+    subtitle: "Partner evidence attached",
+    badge: "Scoped",
+    tone: "success",
+  },
+  {
+    id: "campaign-afterglow",
+    groupId: "campaign",
+    title: "Afterglow Retargeting",
+    subtitle: "Pacing 6% above plan",
+    badge: "Pacing",
     tone: "warning",
   },
   {
@@ -2283,6 +2384,7 @@ function ComponentMatrix({
   onEnabledChange: (value: boolean) => void
 }) {
   const [creatorQuery, setCreatorQuery] = useState("")
+  const [primitiveScope, setPrimitiveScope] = useState("campaigns")
   const [duration, setDuration] = useState<DurationValue>({
     days: 2,
     hours: 2,
@@ -2329,8 +2431,23 @@ function ComponentMatrix({
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <ComponentReference names={["Popover", "Tooltip"]} />
+              <ComponentReference
+                names={["DropdownMenu", "Popover", "Tooltip"]}
+              />
               <div className="flex flex-wrap gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger render={<Button variant="outline" />}>
+                    Open menu
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Switch view</DropdownMenuLabel>
+                      <DropdownMenuItem>Campaigns</DropdownMenuItem>
+                      <DropdownMenuItem>Creators</DropdownMenuItem>
+                      <DropdownMenuItem>Partners</DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Popover>
                   <PopoverTrigger render={<Button variant="outline" />}>
                     Open details
@@ -2367,13 +2484,27 @@ function ComponentMatrix({
                   ].map((label) => (
                     <div
                       key={label}
-                      className="rounded-md bg-nextide-panel px-3 py-2"
+                      className="rounded-md border border-input bg-input/30 px-3 py-2"
                     >
                       {label}
                     </div>
                   ))}
                 </div>
               </ScrollArea>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Collapsible" />
+              <Collapsible defaultOpen>
+                <CollapsibleTrigger
+                  render={<Button variant="outline" size="sm" />}
+                >
+                  Campaign details
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2 text-sm text-muted-foreground">
+                  Delivery and evidence controls stay available without opening
+                  another surface.
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </CardContent>
         </Card>
@@ -2382,13 +2513,37 @@ function ComponentMatrix({
           <CardHeader>
             <CardTitle>Inputs</CardTitle>
             <CardDescription>
-              Compact form controls for dense app surfaces.
+              Labeled fields and compact controls for dense app surfaces.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <ComponentReference names="Input" />
-              <Input defaultValue="Sponsored report" aria-label="Report name" />
+              <ComponentReference names={["Field", "FieldLabel", "Input"]} />
+              <Field>
+                <FieldLabel htmlFor="primitive-report-name">
+                  Report name
+                </FieldLabel>
+                <Input
+                  id="primitive-report-name"
+                  defaultValue="Sponsored report"
+                />
+                <FieldDescription>
+                  Used for saved reports and exported evidence.
+                </FieldDescription>
+              </Field>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="SelectMenu" />
+              <SelectMenu
+                value={primitiveScope}
+                onValueChange={setPrimitiveScope}
+                options={[
+                  { value: "campaigns", label: "Campaigns" },
+                  { value: "creators", label: "Creators" },
+                  { value: "partners", label: "Partners" },
+                ]}
+                aria-label="Report scope"
+              />
             </div>
             <div className="grid gap-2">
               <ComponentReference names="DurationPicker" />
@@ -2461,6 +2616,27 @@ function ComponentMatrix({
                 }
               />
             </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Tabs" />
+              <Tabs defaultValue="overview">
+                <TabsList>
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="evidence">Evidence</TabsTrigger>
+                </TabsList>
+                <TabsContent
+                  value="overview"
+                  className="rounded-md bg-input/30 p-3 text-muted-foreground"
+                >
+                  Campaign-level delivery signals.
+                </TabsContent>
+                <TabsContent
+                  value="evidence"
+                  className="rounded-md bg-input/30 p-3 text-muted-foreground"
+                >
+                  Creator proof and review state.
+                </TabsContent>
+              </Tabs>
+            </div>
           </CardContent>
         </Card>
 
@@ -2525,6 +2701,86 @@ function ComponentMatrix({
 
         <Card>
           <CardHeader>
+            <CardTitle>Structure</CardTitle>
+            <CardDescription>
+              Keyboard hints, compact data, and paged content.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <ComponentReference names={["Kbd", "Separator"]} />
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span>Open command palette</span>
+                <KbdGroup>
+                  <Kbd>Ctrl</Kbd>
+                  <span>+</span>
+                  <Kbd>K</Kbd>
+                </KbdGroup>
+              </div>
+              <Separator />
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Table" />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Campaign</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell>Starforge</TableCell>
+                    <TableCell>Live</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Orbit</TableCell>
+                    <TableCell>Ready</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Carousel" />
+              <Carousel>
+                <CarouselContent>
+                  {[
+                    "Campaign delivery",
+                    "Creator evidence",
+                    "Safety review",
+                  ].map((label) => (
+                    <CarouselItem key={label}>
+                      <div className="grid min-h-24 place-items-center rounded-lg border border-nextide-line bg-input/30 px-12 text-sm font-medium">
+                        {label}
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious
+                  className={cn(
+                    buttonVariants({
+                      variant: "outline",
+                      size: "icon-sm",
+                    }),
+                    "active:not-aria-[haspopup]:-translate-y-1/2"
+                  )}
+                />
+                <CarouselNext
+                  className={cn(
+                    buttonVariants({
+                      variant: "outline",
+                      size: "icon-sm",
+                    }),
+                    "active:not-aria-[haspopup]:-translate-y-1/2"
+                  )}
+                />
+              </Carousel>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Status</CardTitle>
             <CardDescription>
               Badges and notices for runtime state.
@@ -2542,6 +2798,16 @@ function ComponentMatrix({
                 <StatusBadge tone="danger">Failed</StatusBadge>
                 <Badge variant="outline">Outline</Badge>
               </div>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Alert" />
+              <Alert>
+                <ShieldAlert />
+                <AlertTitle>Evidence review ready</AlertTitle>
+                <AlertDescription>
+                  Two creator sessions are ready for operator review.
+                </AlertDescription>
+              </Alert>
             </div>
             <div className="grid gap-2">
               <ComponentReference names="Notice" />

@@ -1,7 +1,7 @@
 import * as React from "react"
-import { X } from "lucide-react"
+import { Filter, X } from "lucide-react"
 
-import { Button } from "@nextide/ui/components/button"
+import { Button, buttonVariants } from "@nextide/ui/components/button"
 import { SelectMenu } from "@nextide/ui/components/select-menu"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
 import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
@@ -52,34 +52,73 @@ function DashboardFilterBar({
     axis: "x",
   })
   const visibleItems = items.filter((item) => item.groupId === activeGroupId)
-  const hasSelection = !!selectedItemId
+  const visibleItemCount = visibleItems.length
+  const activeGroup = groups.find((group) => group.id === activeGroupId)
+  const hasSelection = visibleItems.some((item) => item.id === selectedItemId)
+  const [canScrollLeft, setCanScrollLeft] = React.useState(false)
+  const [canScrollRight, setCanScrollRight] = React.useState(false)
+
+  const updateScrollState = React.useCallback(() => {
+    const scroller = scrollerRef.current
+
+    if (!scroller) return
+
+    setCanScrollLeft(scroller.scrollLeft > 1)
+    setCanScrollRight(
+      scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 1
+    )
+  }, [scrollerRef])
 
   React.useEffect(() => {
     scrollerRef.current?.scrollTo({ left: 0, behavior: "smooth" })
   }, [activeGroupId, scrollerRef])
 
+  React.useEffect(() => {
+    const scroller = scrollerRef.current
+
+    if (!scroller) return
+
+    updateScrollState()
+
+    const resizeObserver = new ResizeObserver(updateScrollState)
+    resizeObserver.observe(scroller)
+
+    return () => resizeObserver.disconnect()
+  }, [activeGroupId, scrollerRef, updateScrollState, visibleItemCount])
+
   return (
     <section
       data-slot="dashboard-filter-bar"
       className={cn(
-        "grid gap-2 rounded-xl border border-nextide-line bg-nextide-panel p-2 sm:grid-cols-[12rem_minmax(0,1fr)]",
+        "rounded-xl border border-nextide-line bg-nextide-panel p-2",
         className
       )}
       {...props}
     >
-      <div className="grid gap-1">
-        <span className="sr-only">Filter group</span>
-        <SelectMenu
-          value={activeGroupId}
-          onValueChange={onGroupChange}
-          options={groups.map((group) => ({
-            value: group.id,
-            label: group.label,
-          }))}
-          aria-label="Filter group"
-        />
-      </div>
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] overflow-hidden rounded-lg border border-nextide-line bg-background/20">
+      <div
+        data-slot="dashboard-filter-carousel"
+        className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-lg border border-nextide-line bg-nextide-panel"
+      >
+        <div
+          data-slot="dashboard-filter-scope-action"
+          className="grid place-items-center px-2"
+        >
+          <SelectMenu
+            value={activeGroupId}
+            onValueChange={onGroupChange}
+            options={groups.map((group) => ({
+              value: group.id,
+              label: group.label,
+              description: `${items.filter((item) => item.groupId === group.id).length} available`,
+            }))}
+            triggerContent={<Filter aria-hidden="true" />}
+            triggerClassName={cn(
+              buttonVariants({ variant: "secondary", size: "icon-sm" }),
+              "size-9! border-transparent! bg-secondary! p-0! text-secondary-foreground! hover:bg-secondary/80! data-popup-open:bg-nextide-tide! data-popup-open:text-black! data-popup-open:hover:bg-nextide-tide! [&_svg:last-child]:hidden"
+            )}
+            aria-label={`Scope: ${activeGroup?.label ?? "Select"}`}
+          />
+        </div>
         <div
           data-slot="dashboard-filter-slider"
           className="relative min-w-0 overflow-hidden"
@@ -87,6 +126,7 @@ function DashboardFilterBar({
           <div
             ref={scrollerRef}
             onWheel={onWheel}
+            onScroll={updateScrollState}
             data-slot="dashboard-filter-scroll"
             className="nextide-contained-scroll nextide-scrollbar-none flex min-h-11 gap-2 overflow-x-auto p-2"
           >
@@ -136,9 +176,27 @@ function DashboardFilterBar({
               })
             )}
           </div>
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-14 bg-linear-to-r from-transparent via-background/65 to-background/95" />
+          <div
+            aria-hidden="true"
+            data-slot="dashboard-filter-fade-start"
+            className={cn(
+              "pointer-events-none absolute inset-y-0 left-0 w-14 bg-linear-to-r from-nextide-panel via-nextide-panel/65 to-transparent transition-opacity duration-[var(--nextide-motion-state)]",
+              canScrollLeft ? "opacity-100" : "opacity-0"
+            )}
+          />
+          <div
+            aria-hidden="true"
+            data-slot="dashboard-filter-fade"
+            className={cn(
+              "pointer-events-none absolute inset-y-0 right-0 w-14 bg-linear-to-r from-transparent via-nextide-panel/65 to-nextide-panel transition-opacity duration-[var(--nextide-motion-state)]",
+              canScrollRight ? "opacity-100" : "opacity-0"
+            )}
+          />
         </div>
-        <div className="grid place-items-center bg-background/30 px-2">
+        <div
+          data-slot="dashboard-filter-actions"
+          className="grid place-items-center bg-nextide-panel px-2"
+        >
           <Button
             type="button"
             size="icon-sm"

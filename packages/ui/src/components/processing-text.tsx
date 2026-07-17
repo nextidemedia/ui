@@ -12,6 +12,8 @@ type ProcessingTextProps = Omit<React.ComponentProps<"span">, "children"> & {
   variant?: ProcessingTextVariant
 }
 
+const processingTextTravelRatio = 0.8
+
 function ProcessingText({
   children,
   tone = "neutral",
@@ -24,7 +26,10 @@ function ProcessingText({
   const resolvedTravelSpeed =
     Number.isFinite(travelSpeed) && travelSpeed > 0 ? travelSpeed : 5
   const duration =
-    (Math.max(children.trim().length, 1) / resolvedTravelSpeed) * 2000
+    (Math.max(children.trim().length, 1) /
+      resolvedTravelSpeed /
+      processingTextTravelRatio) *
+    1000
 
   return (
     <span

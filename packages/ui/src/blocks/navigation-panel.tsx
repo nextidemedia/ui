@@ -213,10 +213,19 @@ function NavigationPanelCommandRow({
 
       clearSearch()
     }
+    const handleEscapeKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return
+
+      event.preventDefault()
+      event.stopPropagation()
+      clearSearch()
+    }
 
     document.addEventListener("pointerdown", handleOutsidePointerDown)
+    document.addEventListener("keydown", handleEscapeKeyDown, true)
     return () => {
       document.removeEventListener("pointerdown", handleOutsidePointerDown)
+      document.removeEventListener("keydown", handleEscapeKeyDown, true)
     }
   }, [clearSearch, searchFocused])
 
@@ -271,7 +280,7 @@ function NavigationPanelCommandRow({
           className={cn(
             "absolute top-0 left-0 flex h-11 min-w-0 items-center gap-0 overflow-hidden rounded-lg border px-0 text-left text-sm text-muted-foreground/65 transition-[top,width,padding,color,background-color,border-color,box-shadow] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] hover:bg-nextide-panel-strong motion-reduce:transition-none max-lg:static max-lg:w-full",
             compactSearchOpen
-              ? "z-50 w-[min(18rem,calc(100vw-6rem))] border-nextide-line bg-popover shadow-md focus-within:border-nextide-tide/55 focus-within:ring-0"
+              ? "z-50 w-[min(18rem,calc(100vw-6rem))] border-nextide-line bg-popover! shadow-md focus-within:border-nextide-tide/55 focus-within:ring-0"
               : collapsed
                 ? "z-30 w-11"
                 : "w-[calc(100%-3.25rem)]",
@@ -313,15 +322,14 @@ function NavigationPanelCommandRow({
               onFocus={() => {
                 setSearchFocused(true)
               }}
-              onKeyDown={(event) => {
-                if (event.key !== "Escape") return
-
-                event.preventDefault()
-                clearSearch()
-              }}
             />
             {showCommandShortcut && !compactSearchOpen ? (
-              <Kbd className="mr-2.5 hidden h-auto shrink-0 rounded-md border border-nextide-line bg-background/40 px-1.5 py-0.5 text-ui-caption leading-none sm:inline-flex">
+              <Kbd
+                className={cn(
+                  "mr-2.5 hidden h-auto shrink-0 rounded-md border border-nextide-line bg-background/40 px-1.5 py-0.5 text-ui-caption leading-none sm:inline-flex",
+                  collapsed && "opacity-0"
+                )}
+              >
                 {commandShortcutLabel}
               </Kbd>
             ) : null}

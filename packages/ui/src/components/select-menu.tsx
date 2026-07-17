@@ -21,6 +21,7 @@ type SelectMenuProps = Omit<React.ComponentProps<"div">, "onChange"> & {
   options: SelectMenuOption[]
   onValueChange: (value: string) => void
   placeholder?: React.ReactNode
+  triggerContent?: React.ReactNode
   triggerClassName?: string
   contentClassName?: string
   contentAnchorRef?: React.RefObject<HTMLElement | null>
@@ -37,6 +38,7 @@ function SelectMenu({
   options,
   onValueChange,
   placeholder = "Select",
+  triggerContent,
   className,
   triggerClassName,
   contentClassName,
@@ -99,9 +101,11 @@ function SelectMenu({
             triggerClassName
           )}
         >
-          <span data-slot="select-value" className="min-w-0 truncate">
-            {selectedOption?.label ?? placeholder}
-          </span>
+          {triggerContent ?? (
+            <span data-slot="select-value" className="min-w-0 truncate">
+              {selectedOption?.label ?? placeholder}
+            </span>
+          )}
         </SelectTrigger>
         <SelectContent
           anchor={usesExternalAnchor ? contentAnchor : undefined}
@@ -126,10 +130,7 @@ function SelectMenu({
                 key={option.value}
                 value={option.value}
                 disabled={option.disabled}
-                className={cn(
-                  "py-2 data-selected:text-nextide-tide",
-                  optionClassName
-                )}
+                className={cn("py-2", optionClassName)}
               >
                 <span className="grid min-w-0 gap-0.5">
                   <span

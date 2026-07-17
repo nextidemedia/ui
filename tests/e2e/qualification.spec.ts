@@ -409,6 +409,48 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   expect(stagedDurations).toEqual(["0.3s", "0s", "0.16s", "0.16s"])
 })
 
+test("collapsed navigation search closes cleanly", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=foundations")
+
+  const mainSidebar = page
+    .locator('[data-slot="navigation-panel-frame"]')
+    .first()
+  const search = mainSidebar.locator(
+    '[data-slot="navigation-panel-command-control"]'
+  )
+  const searchInput = mainSidebar.getByRole("combobox", {
+    name: "Search library",
+  })
+  const shortcut = search.getByText("CTRL K", { exact: true })
+
+  await mainSidebar.getByRole("button", { name: "Collapse sidebar" }).click()
+  await expect(mainSidebar).toHaveAttribute("data-collapsed", "true")
+
+  await search.click()
+  await expect(searchInput).toBeFocused()
+  await expect(search).toHaveCSS("background-color", "rgb(31, 31, 31)")
+  await expect(search).toHaveCSS("width", "288px")
+  await expect(shortcut).toHaveCount(0)
+
+  await page.keyboard.press("Escape")
+  await expect(searchInput).not.toBeFocused()
+  await expect(shortcut).toHaveCSS("opacity", "0")
+  await page.waitForTimeout(50)
+  const closingSearchWidth = await search.evaluate(
+    (element) => element.getBoundingClientRect().width
+  )
+  expect(closingSearchWidth).toBeGreaterThan(44)
+  expect(closingSearchWidth).toBeLessThan(288)
+  await expect(search).toHaveCSS("width", "44px")
+
+  await search.click()
+  await expect(search).toHaveCSS("width", "288px")
+  await page.getByRole("button", { name: "Inspect" }).click()
+  await expect(shortcut).toHaveCSS("opacity", "0")
+  await expect(search).toHaveCSS("width", "44px")
+})
+
 test("playground shows exact public names beside component examples", async ({
   page,
 }) => {
@@ -645,7 +687,7 @@ test("processing text follows progress state and reduced-motion preference", asy
   const standaloneDuration = await standalone.evaluate((element) =>
     Number.parseFloat(getComputedStyle(element).animationDuration)
   )
-  expect((examples[0][2].length * 2) / standaloneDuration).toBeCloseTo(5, 1)
+  expect(examples[0][2].length / (standaloneDuration * 0.8)).toBeCloseTo(5, 1)
 
   await page.goto("/?view=intelligence")
   const progression = page.locator(
@@ -676,7 +718,7 @@ test("processing text follows progress state and reduced-motion preference", asy
   const activeDuration = await activeLabel.evaluate((element) =>
     Number.parseFloat(getComputedStyle(element).animationDuration)
   )
-  expect(("Analyze VODs".length * 2) / activeDuration).toBeCloseTo(5, 1)
+  expect("Analyze VODs".length / (activeDuration * 0.8)).toBeCloseTo(5, 1)
   expect(standaloneDuration).toBeGreaterThan(activeDuration)
   await expectNoSeriousAxeViolations(
     page,
@@ -797,6 +839,92 @@ test("playground queues creator changes and keeps generated flow edges contained
     progression.locator('path.nextide-flow-line[stroke^="url("]')
   ).toHaveCount(7)
   await expect(progression.locator("div.absolute.z-20")).toHaveCount(7)
+})
+
+test("dashboard filter bar scrolls campaigns and disables clear without a selection", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=daedalus")
+
+  const filterBar = page.locator('[data-slot="dashboard-filter-bar"]')
+  const scroller = filterBar.locator('[data-slot="dashboard-filter-scroll"]')
+  const fade = filterBar.locator('[data-slot="dashboard-filter-fade"]')
+  const startFade = filterBar.locator(
+    '[data-slot="dashboard-filter-fade-start"]'
+  )
+  const clearFilter = filterBar.getByRole("button", { name: "Clear filter" })
+  const scope = filterBar.getByRole("combobox", {
+    name: "Scope: Campaigns",
+  })
+
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    const overflow = await page.evaluate(
+      () =>
+        Math.max(
+          document.documentElement.scrollWidth,
+          document.body.scrollWidth
+        ) - window.innerWidth
+    )
+    expect(overflow).toBeLessThanOrEqual(1)
+    expect(
+      await scroller.evaluate(
+        (element) => element.scrollWidth > element.clientWidth
+      )
+    ).toBe(true)
+  }
+
+  const scopeBox = await scope.boundingBox()
+  const clearFilterBox = await clearFilter.boundingBox()
+  expect(scopeBox).not.toBeNull()
+  expect(clearFilterBox).not.toBeNull()
+  expect(
+    Math.abs(scopeBox!.height - clearFilterBox!.height)
+  ).toBeLessThanOrEqual(1)
+  expect(Math.abs(scopeBox!.width - clearFilterBox!.width)).toBeLessThanOrEqual(
+    1
+  )
+
+  await expect(scroller.getByRole("button")).toHaveCount(10)
+  await expect(startFade).toHaveCSS("opacity", "0")
+  await expect(fade).toHaveCSS("opacity", "1")
+
+  await scope.click()
+  const selectedScopeOption = page.getByRole("option", {
+    name: "Campaigns 10 available",
+  })
+  const otherScopeOption = page.getByRole("option", {
+    name: "Creators 2 available",
+  })
+  await expect(scope).toHaveCSS("background-color", "rgb(30, 228, 188)")
+  await expect(scope).toHaveCSS("color", "rgb(0, 0, 0)")
+  await expect(selectedScopeOption).toHaveCSS("color", "rgb(30, 228, 188)")
+  await otherScopeOption.hover()
+  await expect(selectedScopeOption).toHaveCSS("color", "rgb(30, 228, 188)")
+  await selectedScopeOption.hover()
+  await expect(selectedScopeOption).toHaveCSS("color", "rgb(30, 228, 188)")
+  await page.keyboard.press("Escape")
+
+  await scroller.hover()
+  await page.mouse.wheel(0, 600)
+  await expect
+    .poll(() => scroller.evaluate((element) => element.scrollLeft))
+    .toBeGreaterThan(0)
+  await expect(startFade).toHaveCSS("opacity", "1")
+
+  await scroller.evaluate((element) => {
+    element.scrollLeft = element.scrollWidth
+  })
+  await expect(fade).toHaveCSS("opacity", "0")
+
+  await clearFilter.click()
+  await expect(clearFilter).toBeDisabled()
+  await expectNoSeriousAxeViolations(
+    page,
+    "dashboard filter bar without a selection",
+    '[data-slot="dashboard-filter-bar"]'
+  )
 })
 
 test("signal ridge and impression details share compact overview and exact detail", async ({
