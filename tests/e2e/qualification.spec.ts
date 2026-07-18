@@ -228,16 +228,21 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   const toggle = mainSidebar.locator('[data-slot="sidebar-toggle"]')
   await expect(toggle).toHaveAccessibleName("Collapse sidebar")
   const shortcut = search.getByText("CTRL K", { exact: true })
+  const commandCopy = mainSidebar.locator(
+    '[data-slot="navigation-panel-command-copy"]'
+  )
   const searchBox = await search.boundingBox()
   const searchInputBox = await searchInput.boundingBox()
   const toggleBox = await toggle.boundingBox()
   const shortcutBox = await shortcut.boundingBox()
+  const commandCopyBox = await commandCopy.boundingBox()
   const commandRowBox = await commandRow.boundingBox()
 
   expect(searchBox).not.toBeNull()
   expect(searchInputBox).not.toBeNull()
   expect(toggleBox).not.toBeNull()
   expect(shortcutBox).not.toBeNull()
+  expect(commandCopyBox).not.toBeNull()
   expect(commandRowBox).not.toBeNull()
   expect(toggleBox!.height).toBe(searchBox!.height)
   expect(toggleBox!.width).toBe(toggleBox!.height)
@@ -272,6 +277,15 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   await expect(userMenuContent).toBeHidden()
   await expectVisibleFocus(userMenu)
 
+  await settings.click()
+  const settingsDialog = page.getByRole("dialog", { name: "Preview settings" })
+  const slowMotion = settingsDialog
+    .getByText("Slow motion")
+    .locator("../..")
+    .getByRole("switch")
+  await slowMotion.click()
+  await page.keyboard.press("Escape")
+
   await searchInput.fill("Foundations")
   await expect(searchInput).toHaveValue("Foundations")
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "false")
@@ -286,7 +300,7 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   ).toEqual({ collapsed: "false", drawerCollapsed: "true" })
   await expect(shell).toHaveAttribute("data-collapsed", "true")
 
-  await page.waitForTimeout(100)
+  await page.waitForTimeout(600)
   const stageOne = await mainSidebar.evaluate((element) => {
     const shell = document.querySelector('[data-slot="app-shell"]')
     const row = element.querySelector(
@@ -298,9 +312,6 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
     const commandCopy = element.querySelector(
       '[data-slot="navigation-panel-command-copy"]'
     )
-    const commandIcon = element.querySelector(
-      '[data-slot="navigation-panel-command-icon"]'
-    )
     const searchInput = element.querySelector(
       'input[aria-label="Search library"]'
     )
@@ -308,8 +319,6 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
     const toggleButton = element.querySelector(
       'button[aria-label="Expand sidebar"]'
     )
-    const activeItem = element.querySelector('nav button[aria-current="page"]')
-
     return {
       shellWidth:
         element.closest("aside")?.getBoundingClientRect().width ??
@@ -320,28 +329,26 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
       searchY: searchControl?.getBoundingClientRect().y ?? 0,
       toggleY: toggleButton?.getBoundingClientRect().y ?? 0,
       commandCopyX: commandCopy?.getBoundingClientRect().x ?? 0,
-      commandIconX: commandIcon?.getBoundingClientRect().x ?? 0,
       searchInputWidth: searchInput?.getBoundingClientRect().width ?? 0,
       shortcutWidth: shortcut?.getBoundingClientRect().width ?? 0,
       shortcutHeight: shortcut?.getBoundingClientRect().height ?? 0,
-      activeItemHeight: activeItem?.getBoundingClientRect().height ?? 0,
     }
   })
   expect(stageOne.shellWidth).toBeGreaterThan(72)
   expect(stageOne.shellWidth).toBeLessThan(288)
-  expect(stageOne.rowHeight).toBeGreaterThan(44)
-  expect(stageOne.rowHeight).toBeLessThan(96)
+  expect(stageOne.rowHeight).toBe(44)
   expect(Math.abs(stageOne.searchY - stageOne.toggleY)).toBeLessThanOrEqual(2)
-  expect(stageOne.commandCopyX).toBeLessThan(stageOne.commandIconX)
+  expect(stageOne.commandCopyX).toBeLessThan(commandCopyBox!.x - 1)
   expect(stageOne.searchInputWidth).toBeCloseTo(searchInputBox!.width, 0)
   expect(stageOne.shortcutWidth).toBeCloseTo(shortcutBox!.width, 0)
   expect(stageOne.shortcutHeight).toBeCloseTo(shortcutBox!.height, 0)
-  expect(stageOne.activeItemHeight).toBeCloseTo(44, 0)
-
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "true")
   await expect(shell).toHaveCSS("grid-template-columns", /72px [0-9.]+px/)
   await expect(brandText).toHaveCSS("opacity", "0")
   await expect(brandText).toHaveCount(1)
+  const collapsedActiveItemBox = await activeNavItem.boundingBox()
+  expect(collapsedActiveItemBox).not.toBeNull()
+  expect(collapsedActiveItemBox!.height).toBeCloseTo(44, 0)
 
   const expand = mainSidebar.getByRole("button", { name: "Expand sidebar" })
   await expect(expand).toBeVisible()
@@ -389,6 +396,10 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   await expect(
     mainSidebar.getByRole("button", { name: "Collapse sidebar" })
   ).toBeFocused()
+
+  await settings.click()
+  await slowMotion.click()
+  await page.keyboard.press("Escape")
 
   const stagedDurations = await mainSidebar.evaluate((element) => {
     const shell = document.querySelector('[data-slot="app-shell"]')
