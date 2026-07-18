@@ -100,7 +100,7 @@ function SegmentedControl({
               "relative z-10 grid min-w-0 place-items-center truncate rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors duration-[var(--nextide-motion-state)] outline-none",
               size === "tall" ? "min-h-12 py-1.5" : "h-7",
               active && variant !== "fill" && "text-foreground",
-              "focus-visible:z-30 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
+              "focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
             )}
           >
             {option.label}

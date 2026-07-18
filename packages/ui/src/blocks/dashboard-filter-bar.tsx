@@ -135,7 +135,10 @@ function DashboardFilterBar({
       >
         <div
           data-slot="dashboard-filter-scope-action"
-          className="grid place-items-center px-2"
+          className={cn(
+            "relative z-2 grid place-items-center px-2",
+            canScrollLeft && "bg-nextide-panel"
+          )}
         >
           <SelectMenu
             value={activeGroupId}
@@ -219,7 +222,7 @@ function DashboardFilterBar({
             aria-hidden="true"
             data-slot="dashboard-filter-fade-start"
             className={cn(
-              "pointer-events-none absolute inset-y-0 left-0 w-14 bg-linear-to-r from-nextide-panel via-nextide-panel/65 to-transparent transition-opacity duration-[var(--nextide-motion-state)]",
+              "pointer-events-none absolute inset-y-0 left-0 z-2 w-14 bg-linear-to-r from-nextide-panel via-nextide-panel/65 to-transparent",
               canScrollLeft ? "opacity-100" : "opacity-0"
             )}
           />

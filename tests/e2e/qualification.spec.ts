@@ -516,12 +516,41 @@ test("playground shows exact public names beside component examples", async ({
   await expect(dialog).toBeHidden()
   await expect(openDialog).toBeFocused()
 
+  const segmented = page.getByRole("group", { name: "Segmented control" })
+  const compactSegment = segmented.getByRole("button", { name: "Compact" })
+  const comfortSegment = segmented.getByRole("button", { name: "Comfort" })
+  await compactSegment.click()
+  await compactSegment.press("ArrowRight")
+  await expect(comfortSegment).toBeFocused()
+  await expect(compactSegment).toHaveAttribute("aria-pressed", "true")
+  await expect(comfortSegment).toHaveAttribute("aria-pressed", "false")
+  const segmentedLayers = await segmented.evaluate((element) => ({
+    focused: Number.parseInt(
+      getComputedStyle(element.querySelector(":focus")!).zIndex,
+      10
+    ),
+    overlay: Number.parseInt(
+      getComputedStyle(
+        element.querySelector('[data-slot="segmented-control-label-overlay"]')!
+      ).zIndex,
+      10
+    ),
+  }))
+  expect(segmentedLayers.focused).toBeLessThan(segmentedLayers.overlay)
+
   const carouselPrevious = page.getByRole("button", {
     name: "Previous slide",
   })
   const carouselNext = page.getByRole("button", { name: "Next slide" })
   await expect(carouselPrevious).toHaveCSS("border-style", "solid")
   await expect(carouselNext).toHaveCSS("border-style", "solid")
+  expect(
+    await carouselPrevious.evaluate(
+      (element) =>
+        getComputedStyle(element).backgroundColor ===
+        getComputedStyle(document.body).backgroundColor
+    )
+  ).toBe(true)
   await expect(page.locator('[id^="carousel-demo-panel-"]')).toHaveCount(3)
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 1000 })
@@ -700,6 +729,19 @@ test("live proof modal keeps audio actionable in the shared dialog shell", async
   })
   await expect(proof).toBeVisible()
   await expect(proof).toHaveAttribute("data-dialog-content", "")
+  const timelineCenterOffset = await proof
+    .locator('[data-slot="live-event-proof-timeline-marker"]')
+    .first()
+    .evaluate((marker) => {
+      const item = marker.parentElement!
+      const itemBounds = item.getBoundingClientRect()
+      const markerBounds = marker.getBoundingClientRect()
+      return Math.abs(
+        Number.parseFloat(getComputedStyle(item, "::after").left) -
+          (markerBounds.left - itemBounds.left + markerBounds.width / 2)
+      )
+    })
+  expect(timelineCenterOffset).toBeLessThanOrEqual(0.5)
   await proof.evaluate(async (element) => {
     await Promise.all(
       element.getAnimations().map((animation) => animation.finished)

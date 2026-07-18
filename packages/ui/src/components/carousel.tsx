@@ -234,7 +234,7 @@ function CarouselPrevious({
       {...props}
       aria-label={ariaLabel}
       className={cn(
-        "absolute top-1/2 left-3 z-10 -translate-y-1/2 active:not-aria-[haspopup]:-translate-y-1/2",
+        "absolute top-1/2 left-3 z-10 -translate-y-1/2 bg-background! active:not-aria-[haspopup]:-translate-y-1/2",
         className
       )}
       data-slot="carousel-previous"
@@ -270,7 +270,7 @@ function CarouselNext({
       {...props}
       aria-label={ariaLabel}
       className={cn(
-        "absolute top-1/2 right-3 z-10 -translate-y-1/2 active:not-aria-[haspopup]:-translate-y-1/2",
+        "absolute top-1/2 right-3 z-10 -translate-y-1/2 bg-background! active:not-aria-[haspopup]:-translate-y-1/2",
         className
       )}
       data-slot="carousel-next"

@@ -213,6 +213,7 @@ function TimelineItem({
         {item.timeLabel}
       </span>
       <span
+        data-slot="live-event-proof-timeline-marker"
         className={cn(
           "relative z-10 grid size-8 place-items-center rounded-full border bg-background",
           item.kind === "stream" &&
@@ -246,7 +247,7 @@ function TimelineItem({
   )
 
   const className =
-    "relative grid min-h-14 grid-cols-[3.375rem_2rem_minmax(0,1fr)] gap-2 pb-3 after:absolute after:bottom-0 after:left-[4.375rem] after:top-8 after:w-0.5 after:rounded-full after:bg-gradient-to-b after:from-nextide-tide/55 after:to-nextide-purple/35"
+    "relative grid min-h-14 grid-cols-[3.375rem_2rem_minmax(0,1fr)] gap-2 pb-3 after:absolute after:bottom-0 after:left-[4.875rem] after:top-8 after:w-0.5 after:-translate-x-1/2 after:rounded-full after:bg-gradient-to-b after:from-nextide-tide/55 after:to-nextide-purple/35"
 
   if (!onSelect || item.kind === "stream") {
     return <div className={className}>{body}</div>
