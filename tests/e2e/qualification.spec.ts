@@ -511,6 +511,7 @@ test("playground shows exact public names beside component examples", async ({
   const carouselNext = page.getByRole("button", { name: "Next slide" })
   await expect(carouselPrevious).toHaveCSS("border-style", "solid")
   await expect(carouselNext).toHaveCSS("border-style", "solid")
+  await expect(page.locator('[id^="carousel-demo-panel-"]')).toHaveCount(3)
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 1000 })
     const overflow = await page.evaluate(
@@ -642,9 +643,7 @@ test("duration picker optionally supports days and confirms on blur or Enter", a
   await expect(reportName).toBeFocused()
   await expect(output).toHaveText("4 d 2 hr 33 min")
 
-  await page
-    .getByRole("checkbox", { name: "Include degraded runs" })
-    .focus()
+  await page.getByRole("checkbox", { name: "Include degraded runs" }).focus()
   await page.keyboard.press("Shift+Tab")
   await expectVisibleFocus(edit)
   await edit.press("Enter")
@@ -691,7 +690,9 @@ test("live proof modal keeps audio actionable in the shared dialog shell", async
   await expect(proof).toBeVisible()
   await expect(proof).toHaveAttribute("data-dialog-content", "")
   await proof.evaluate(async (element) => {
-    await Promise.all(element.getAnimations().map((animation) => animation.finished))
+    await Promise.all(
+      element.getAnimations().map((animation) => animation.finished)
+    )
   })
   await page.getByRole("button", { name: "Play audio proof" }).click()
   await expect(proof.getByText("Audio proof started.")).toBeVisible()
@@ -1138,7 +1139,12 @@ test("signal ridge and impression details share compact overview and exact detai
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/?view=daedalus")
 
-  await expect(page.locator('[data-slot="signal-ridge-chart"]')).toHaveCount(1)
+  const ridge = page.locator('[data-slot="signal-ridge-chart"]')
+  await expect(ridge).toHaveCount(1)
+  const ridgePoint = ridge.locator('g[role="img"]').first()
+  await ridgePoint.focus()
+  await expect(page.locator('[data-slot="graph-tooltip"]')).toBeVisible()
+  await expect(ridge.locator('g[role="button"]')).toHaveCount(0)
 
   const impressions = page
     .locator('[data-slot="line-item-graph"]')

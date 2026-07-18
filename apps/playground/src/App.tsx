@@ -2778,15 +2778,18 @@ function ComponentMatrix({
             </div>
             <div className="grid gap-2">
               <ComponentReference names="Carousel" />
-              <Carousel>
+              <Carousel loop>
                 <CarouselContent>
                   {[
                     "Campaign delivery",
                     "Creator evidence",
                     "Safety review",
-                  ].map((label) => (
+                  ].map((label, index) => (
                     <CarouselItem key={label}>
-                      <div className="grid min-h-24 place-items-center rounded-lg border border-nextide-line bg-input/30 px-12 text-sm font-medium">
+                      <div
+                        id={`carousel-demo-panel-${index}`}
+                        className="grid min-h-24 place-items-center rounded-lg border border-nextide-line bg-input/30 px-12 text-sm font-medium"
+                      >
                         {label}
                       </div>
                     </CarouselItem>

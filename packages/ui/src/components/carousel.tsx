@@ -145,25 +145,15 @@ function CarouselContent({
   const renderedItems =
     context.loop && itemCount > 1
       ? [
-          <div
-            key="carousel-loop-last"
-            aria-hidden="true"
-            inert
-            className="min-w-0 flex-[0_0_100%]"
-          >
+          <CarouselLoopClone key="carousel-loop-last">
             {items[itemCount - 1]}
-          </div>,
+          </CarouselLoopClone>,
           ...items.map((item, index) => (
             <Fragment key={`carousel-item-${index}`}>{item}</Fragment>
           )),
-          <div
-            key="carousel-loop-first"
-            aria-hidden="true"
-            inert
-            className="min-w-0 flex-[0_0_100%]"
-          >
+          <CarouselLoopClone key="carousel-loop-first">
             {items[0]}
-          </div>,
+          </CarouselLoopClone>,
         ]
       : items
 
@@ -198,6 +188,22 @@ function CarouselContent({
       >
         {renderedItems}
       </div>
+    </div>
+  )
+}
+
+function CarouselLoopClone({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement | null>(null)
+
+  useLayoutEffect(() => {
+    ref.current
+      ?.querySelectorAll<HTMLElement>("[id]")
+      .forEach((element) => element.removeAttribute("id"))
+  }, [children])
+
+  return (
+    <div ref={ref} aria-hidden="true" inert className="min-w-0 flex-[0_0_100%]">
+      {children}
     </div>
   )
 }

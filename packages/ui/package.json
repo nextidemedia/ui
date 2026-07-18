@@ -14,6 +14,7 @@
     "README.md"
   ],
   "sideEffects": [
+    "./dist/styles/display-font.css",
     "./dist/styles/globals.css"
   ],
   "publishConfig": {

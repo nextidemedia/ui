@@ -1,3 +1,5 @@
+"use client"
+
 import * as React from "react"
 
 import {
@@ -86,7 +88,7 @@ function SignalRidgeChart({
       <svg
         ref={svgRef}
         viewBox="0 0 600 190"
-        role="img"
+        role="group"
         aria-label="Signal ridge trend"
         className="h-auto min-h-48 w-full overflow-visible"
         onMouseLeave={() => setHover(null)}
@@ -147,12 +149,12 @@ function SignalRidgeChart({
         {positions.map((position, index) => (
           <g
             key={points[index].id}
-            role="button"
+            role="img"
             tabIndex={0}
             aria-label={`${stringifyNode(points[index].label)}: ${stringifyNode(
               points[index].valueLabel ?? valueFormatter(points[index].value)
             )}`}
-            className="cursor-pointer outline-none"
+            className="cursor-crosshair outline-none"
             onFocus={() => showPointTooltip(points[index], position)}
             onBlur={() => setHover(null)}
             onMouseEnter={(event) =>
