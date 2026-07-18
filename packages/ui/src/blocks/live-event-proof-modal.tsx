@@ -144,7 +144,7 @@ function LiveEventProofModal({
               </div>
             </ProofPanel>
             <ProofPanel title="Audio">
-              <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_4.5rem] items-center gap-3 rounded-lg border border-nextide-line bg-black/20 p-2">
+              <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-3 rounded-lg border border-nextide-line bg-black/20 p-2 sm:grid-cols-[2.75rem_minmax(0,1fr)_4.5rem]">
                 <Button
                   type="button"
                   aria-label="Play audio proof"
@@ -154,7 +154,7 @@ function LiveEventProofModal({
                 >
                   <Play aria-hidden="true" />
                 </Button>
-                <div className="relative grid h-14 grid-cols-[repeat(72,minmax(2px,1fr))] items-center gap-0.5 before:absolute before:inset-x-0 before:top-1/2 before:h-px before:bg-nextide-tide/20">
+                <div className="relative grid h-14 min-w-0 grid-cols-[repeat(72,minmax(0,1fr))] items-center gap-px before:absolute before:inset-x-0 before:top-1/2 before:h-px before:bg-nextide-tide/20 sm:gap-0.5">
                   {waveform.map((height, index) => (
                     <span
                       className="relative z-10 min-h-1 rounded bg-nextide-tide/35"
@@ -163,7 +163,7 @@ function LiveEventProofModal({
                     />
                   ))}
                 </div>
-                <span className="text-right text-xs text-muted-foreground tabular-nums">
+                <span className="col-span-2 text-right text-xs text-muted-foreground tabular-nums sm:col-span-1">
                   0:00 / 0:19
                 </span>
               </div>

@@ -694,7 +694,9 @@ test("live proof modal keeps audio actionable in the shared dialog shell", async
       element.getAnimations().map((animation) => animation.finished)
     )
   })
-  await page.getByRole("button", { name: "Play audio proof" }).click()
+  const playAudio = proof.getByRole("button", { name: "Play audio proof" })
+  const audioRow = playAudio.locator("..")
+  await playAudio.click()
   await expect(proof.getByText("Audio proof started.")).toBeVisible()
 
   for (const width of [320, 390, 768, 1440]) {
@@ -724,6 +726,14 @@ test("live proof modal keeps audio actionable in the shared dialog shell", async
       box.x + box.width,
       JSON.stringify({ viewport: width, ...box })
     ).toBeLessThanOrEqual(width + 1)
+    const audioWidth = await audioRow.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+    }))
+    expect(
+      audioWidth.scrollWidth,
+      JSON.stringify({ viewport: width, ...audioWidth })
+    ).toBeLessThanOrEqual(audioWidth.clientWidth + 1)
   }
 
   await page.keyboard.press("Escape")
