@@ -9,7 +9,7 @@ The implementation guide from `nextide-saas-meta` is copied into `docs/brand_ass
 ## Structure
 
 - `packages/ui/src/components`: primitive shadcn-compatible components.
-- `packages/ui/src/blocks`: composed, prop-driven Nextide app patterns such as `AppShell`, `Sidebar`, `NavigationPanel`, and `WorkflowStepper`.
+- `packages/ui/src/blocks`: composed, prop-driven Nextide app patterns such as `AppShell`, `NavigationPanel`, and `WorkflowStepper`.
 - `packages/ui/src/hooks`: shared interaction hooks such as `useStagedDrawer` for collapse/expand drawer motion.
 - `apps/playground`: Vite consumer app for visual checks.
 - `docs/component-map.md`: quick lookup map for shared primitives, blocks, hooks, and the upstream workflow.
@@ -35,7 +35,7 @@ The package expects React 19 and Tailwind CSS 4. Install an exact release so a
 consumer upgrades deliberately:
 
 ```bash
-pnpm add --save-exact @nextide/ui@1.0.0
+pnpm add --save-exact @nextide/ui@2.0.0
 pnpm add --save-dev --save-exact tailwindcss@4.3.1 @tailwindcss/vite@4.3.1
 ```
 

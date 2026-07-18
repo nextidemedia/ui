@@ -5,6 +5,7 @@ import {
   CreatorScopePanel,
   type CreatorScopeItem,
 } from "@nextide/ui/blocks/creator-scope-panel"
+import { Empty, EmptyDescription } from "@nextide/ui/components/empty"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
 import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
 import { cn } from "@nextide/ui/lib/utils"
@@ -139,8 +140,7 @@ function StreamSelector({
 
     const exitDelay =
       exitingIds.size > 0
-        ? motion.exit +
-          Math.min((exitingIds.size - 1) * 17, 50) * stateScale
+        ? motion.exit + Math.min((exitingIds.size - 1) * 17, 50) * stateScale
         : 0
     queueMotionTimer(() => {
       reflowMotion.current = { previousRects, enteringIds }
@@ -269,9 +269,9 @@ function StreamSelector({
         aria-busy={motionLocked}
       >
         {renderedStreams.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-nextide-line px-4 py-8 text-sm text-muted-foreground">
-            {emptyLabel}
-          </div>
+          <Empty className="border border-nextide-line px-4 py-8">
+            <EmptyDescription>{emptyLabel}</EmptyDescription>
+          </Empty>
         ) : null}
         {renderedStreams.map((stream) => {
           const selected = selectedIdSet.has(stream.id)

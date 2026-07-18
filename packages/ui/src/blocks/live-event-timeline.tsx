@@ -59,7 +59,7 @@ function LiveEventTimeline({
   incidents: LiveEventTimelineIncident[]
   activeIncidentId?: string | null
   onIncidentFocus?: (incident: LiveEventTimelineIncident) => void
-  onIncidentOpen?: (incident: LiveEventTimelineIncident) => void
+  onIncidentOpen: (incident: LiveEventTimelineIncident) => void
 }) {
   const activeIncident =
     incidents.find((incident) => incident.id === activeIncidentId) ??
@@ -107,7 +107,7 @@ function LiveEventTimeline({
                         "focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none",
                         activeIncident?.id === incident.id && "text-foreground"
                       )}
-                      onClick={() => onIncidentOpen?.(incident)}
+                      onClick={() => onIncidentOpen(incident)}
                       onFocus={() => onIncidentFocus?.(incident)}
                       onMouseEnter={() => onIncidentFocus?.(incident)}
                     >

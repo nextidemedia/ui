@@ -55,8 +55,8 @@ function ExportWorkbench({
   workbookName?: React.ReactNode
   generatedUntil?: React.ReactNode
   sessions: ExportSessionRow[]
-  onGenerate?: () => void
-  onDownload?: () => void
+  onGenerate: () => void
+  onDownload: () => void
 }) {
   const workbookTone =
     workbookState === "current"

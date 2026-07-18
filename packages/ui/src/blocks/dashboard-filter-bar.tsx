@@ -2,6 +2,7 @@ import * as React from "react"
 import { Filter, X } from "lucide-react"
 
 import { Button } from "@nextide/ui/components/button"
+import { Empty, EmptyDescription } from "@nextide/ui/components/empty"
 import { SelectMenu } from "@nextide/ui/components/select-menu"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
 import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
@@ -46,7 +47,7 @@ function DashboardFilterBar({
   selectedItemId?: string
   onGroupChange: (groupId: string) => void
   onItemSelect: (item: DashboardFilterItem) => void
-  onClear?: () => void
+  onClear: () => void
 }) {
   const { ref: scrollerRef, onWheel } = useContainedScroll<HTMLDivElement>({
     axis: "x",
@@ -162,9 +163,9 @@ function DashboardFilterBar({
             className="nextide-contained-scroll nextide-scrollbar-none flex min-h-11 gap-2 overflow-x-auto p-2"
           >
             {visibleItems.length === 0 ? (
-              <div className="grid min-h-16 min-w-full place-items-center text-sm text-muted-foreground">
-                No filters in this group.
-              </div>
+              <Empty className="min-h-16 min-w-full rounded-none p-2">
+                <EmptyDescription>No filters in this group.</EmptyDescription>
+              </Empty>
             ) : (
               visibleItems.map((item) => {
                 const selected = item.id === selectedItemId

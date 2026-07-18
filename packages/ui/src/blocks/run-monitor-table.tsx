@@ -58,7 +58,7 @@ function RunMonitorTable({
   title?: React.ReactNode
   description?: React.ReactNode
   activeRowId?: string
-  onRowSelect?: (row: RunMonitorRow) => void
+  onRowSelect: (row: RunMonitorRow) => void
 }) {
   const runningCount = rows.filter((row) => row.tone === "processing").length
   const failedCount = rows.filter((row) => row.tone === "danger").length
@@ -109,7 +109,7 @@ function RunMonitorTable({
                   active &&
                     "border-nextide-tide/70 bg-nextide-tide/8 shadow-[0_0_22px_rgb(30_228_188/0.12)]"
                 )}
-                onClick={() => onRowSelect?.(row)}
+                onClick={() => onRowSelect(row)}
               >
                 <span className="grid min-w-0 gap-0.5">
                   <strong className="truncate">{row.title}</strong>

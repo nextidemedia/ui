@@ -18,6 +18,7 @@ import {
 import { EvidenceDrawer } from "@nextide/ui/blocks/evidence-drawer"
 import { ExportWorkbench } from "@nextide/ui/blocks/export-workbench"
 import { IntelligenceProgressionChart } from "@nextide/ui/blocks/intelligence-progression-chart"
+import { LiveEventProofModal } from "@nextide/ui/blocks/live-event-proof-modal"
 import { SignalPlate } from "@nextide/ui/blocks/signal-plate"
 import { LiveguardIncidentReview } from "@nextide/ui/blocks/liveguard-incident-review"
 import { PacingConfigurator } from "@nextide/ui/blocks/pacing-configurator"
@@ -27,6 +28,7 @@ import {
   RunMonitorTable,
   type RunMonitorRow,
 } from "@nextide/ui/blocks/run-monitor-table"
+import { Button } from "@nextide/ui/components/button"
 import { DataLedger } from "@nextide/ui/components/data-ledger"
 import { type HourlyPacingBucket } from "@nextide/ui/components/hourly-pacing-chart"
 import { Metric } from "@nextide/ui/components/metric"
@@ -198,6 +200,13 @@ const reportHistory: ReportRailItem[] = [
 function WebMiningPage() {
   const [activeBookingId, setActiveBookingId] = useState("booking-2")
   const [activePresetId, setActivePresetId] = useState("7d")
+  const [pacingAction, setPacingAction] = useState("Preset ready")
+  const [exportAction, setExportAction] = useState("Generated through May 12")
+  const [proofOpen, setProofOpen] = useState(false)
+  const [proofTimelineItemId, setProofTimelineItemId] = useState("proof-alert")
+  const [audioProofStatus, setAudioProofStatus] = useState(
+    "Evidence ready for review."
+  )
   const [schedule, setSchedule] = useReducer(
     (_current: ScheduleControlValue, next: ScheduleControlValue) => next,
     exportSchedule
@@ -261,7 +270,19 @@ function WebMiningPage() {
           targetLabel="100%"
           actualLabel="118%"
           onPresetChange={(preset) => setActivePresetId(preset.id)}
+          onSave={() => setPacingAction(`Saved ${activePresetId} preset`)}
+          onRevert={() => {
+            setActivePresetId("7d")
+            setPacingAction("Reverted to 7 days")
+          }}
         />
+        <output
+          data-slot="pacing-configurator-demo-status"
+          className="text-ui-caption text-muted-foreground"
+          aria-live="polite"
+        >
+          {pacingAction}
+        </output>
       </div>
 
       <div className="grid gap-2">
@@ -272,7 +293,9 @@ function WebMiningPage() {
           workbookState="current"
           nextRun="Mon 09:00"
           workbookName="Starforge weekly workbook"
-          generatedUntil="Generated through May 12"
+          generatedUntil={exportAction}
+          onGenerate={() => setExportAction("Generated just now")}
+          onDownload={() => setExportAction("Downloaded just now")}
           sessions={[
             {
               id: "session-1",
@@ -352,6 +375,46 @@ function WebMiningPage() {
             },
           ]}
           transcript="Ren compared the sponsored read against another tool, then immediately returned to the Starforge talking points. The segment stayed below the configured escalation threshold."
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <ComponentReference names="LiveEventProofModal" />
+          <Button type="button" onClick={() => setProofOpen(true)}>
+            Open proof modal
+          </Button>
+        </div>
+        <LiveEventProofModal
+          open={proofOpen}
+          onClose={() => setProofOpen(false)}
+          creatorLabel="Ren Kade"
+          creatorMark="RK"
+          incidentTitle="Competitor mention under threshold"
+          incidentMeta="May 13 · 18:42"
+          isFlagged
+          selectedTimelineItemId={proofTimelineItemId}
+          timelineItems={[
+            {
+              id: "proof-stream",
+              title: "Stream started",
+              timeLabel: "18:04",
+              kind: "stream",
+            },
+            {
+              id: "proof-alert",
+              title: "Mention detected",
+              meta: "Transcript evidence",
+              timeLabel: "18:42",
+              severity: "watch",
+            },
+          ]}
+          onTimelineItemSelect={(item) => setProofTimelineItemId(item.id)}
+          transcript="Ren compared the sponsored read against another tool, then returned to the Starforge talking points."
+          evidenceFields={[
+            { id: "risk", label: "Risk score", value: "0.62" },
+            { id: "confidence", label: "Confidence", value: "74%" },
+            { id: "window", label: "Window", value: "42s" },
+          ]}
+          evidenceSummary={audioProofStatus}
+          onAudioPlay={() => setAudioProofStatus("Audio proof started.")}
         />
       </div>
     </section>

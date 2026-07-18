@@ -142,7 +142,7 @@ function CampaignScheduleMatrix({
   title?: React.ReactNode
   description?: React.ReactNode
   activeBookingId?: string
-  onBookingSelect?: (booking: CampaignScheduleBooking) => void
+  onBookingSelect: (booking: CampaignScheduleBooking) => void
 }) {
   const scrollRef = React.useRef<HTMLDivElement | null>(null)
   const zoomRef = React.useRef<CampaignScheduleZoom>("week")
@@ -153,9 +153,9 @@ function CampaignScheduleMatrix({
     typeof setTimeout
   > | null>(null)
   const wheelAccumulatorRef = React.useRef(0)
-  const wheelResetTimerRef = React.useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null)
+  const wheelResetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  )
   const wheelLockUntilRef = React.useRef(0)
   const zoomFocusRef = React.useRef<{
     ratio: number
@@ -691,7 +691,7 @@ function CampaignScheduleMatrix({
                           left: `${(start / boundedDays) * 100}%`,
                           width: `${((end - start + 1) / boundedDays) * 100}%`,
                         }}
-                        onClick={() => onBookingSelect?.(booking)}
+                        onClick={() => onBookingSelect(booking)}
                       >
                         <span className="grid min-w-0 gap-0.5 self-center">
                           <span className="truncate text-sm leading-tight font-medium">
@@ -764,9 +764,7 @@ function ScheduleHeader({
               gridColumn: `${span.startIndex + 1} / ${span.endIndex + 2}`,
             }}
           >
-            <span className="truncate">
-              {span.contextLabel ?? span.label}
-            </span>
+            <span className="truncate">{span.contextLabel ?? span.label}</span>
           </span>
         ))}
       </span>
@@ -870,9 +868,7 @@ function scheduleTransitionClass(
   return `nextide-schedule-layer-${phase}-${direction}`
 }
 
-function contextTierForZoom(
-  zoom: CampaignScheduleZoom
-): CampaignScheduleTier {
+function contextTierForZoom(zoom: CampaignScheduleZoom): CampaignScheduleTier {
   if (zoom === "day") return "week"
   if (zoom === "week") return "month"
   return "quarter"

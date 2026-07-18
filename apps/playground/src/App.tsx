@@ -86,7 +86,7 @@ import {
   AvatarGroupCount,
 } from "@nextide/ui/components/avatar"
 import { Badge } from "@nextide/ui/components/badge"
-import { Button, buttonVariants } from "@nextide/ui/components/button"
+import { Button } from "@nextide/ui/components/button"
 import {
   Card,
   CardContent,
@@ -116,6 +116,14 @@ import {
   type DateRange,
 } from "@nextide/ui/components/date-range-picker"
 import { DonutChart } from "@nextide/ui/components/donut-chart"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@nextide/ui/components/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1724,6 +1732,9 @@ function DaedalusPlayground({
     hours: 2,
     minutes: 33,
   })
+  const [workbookAction, setWorkbookAction] = useState(
+    "Generated through May 12"
+  )
   const selectedFilter =
     daedalusFilterItems.find((item) => item.id === selectedFilterId) ?? null
 
@@ -1967,8 +1978,10 @@ function DaedalusPlayground({
           workbookState="current"
           nextRun="Mon 09:00"
           workbookName="Starforge weekly workbook"
-          generatedUntil="Generated through May 12"
+          generatedUntil={workbookAction}
           sessions={exportSessionRows}
+          onGenerate={() => setWorkbookAction("Generated just now")}
+          onDownload={() => setWorkbookAction("Downloaded just now")}
         />
       </div>
 
@@ -2432,9 +2445,23 @@ function ComponentMatrix({
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <ComponentReference
-                names={["DropdownMenu", "Popover", "Tooltip"]}
+                names={["Dialog", "DropdownMenu", "Popover", "Tooltip"]}
               />
               <div className="flex flex-wrap gap-2">
+                <Dialog>
+                  <DialogTrigger render={<Button variant="outline" />}>
+                    Open dialog
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md p-5">
+                    <DialogHeader>
+                      <DialogTitle>Review report scope</DialogTitle>
+                      <DialogDescription>
+                        Confirm the creators and campaigns included in this
+                        report.
+                      </DialogDescription>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
                 <DropdownMenu>
                   <DropdownMenuTrigger render={<Button variant="outline" />}>
                     Open menu
@@ -2566,17 +2593,26 @@ function ComponentMatrix({
               <ComponentReference names="Checkbox" />
               <div className="flex items-center gap-3">
                 <Checkbox
+                  id="include-degraded-runs"
                   checked={checked}
                   onCheckedChange={(value) => onCheckedChange(value === true)}
                 />
-                <span className="text-sm">Include degraded runs</span>
+                <label htmlFor="include-degraded-runs" className="text-sm">
+                  Include degraded runs
+                </label>
               </div>
             </div>
             <div className="grid gap-2">
               <ComponentReference names="Switch" />
               <div className="flex items-center gap-3">
-                <Switch checked={enabled} onCheckedChange={onEnabledChange} />
-                <span className="text-sm">Runtime checks</span>
+                <Switch
+                  id="runtime-checks"
+                  checked={enabled}
+                  onCheckedChange={onEnabledChange}
+                />
+                <label htmlFor="runtime-checks" className="text-sm">
+                  Runtime checks
+                </label>
               </div>
             </div>
           </CardContent>
@@ -2756,24 +2792,8 @@ function ComponentMatrix({
                     </CarouselItem>
                   ))}
                 </CarouselContent>
-                <CarouselPrevious
-                  className={cn(
-                    buttonVariants({
-                      variant: "outline",
-                      size: "icon-sm",
-                    }),
-                    "active:not-aria-[haspopup]:-translate-y-1/2"
-                  )}
-                />
-                <CarouselNext
-                  className={cn(
-                    buttonVariants({
-                      variant: "outline",
-                      size: "icon-sm",
-                    }),
-                    "active:not-aria-[haspopup]:-translate-y-1/2"
-                  )}
-                />
+                <CarouselPrevious />
+                <CarouselNext />
               </Carousel>
             </div>
           </CardContent>

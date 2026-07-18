@@ -48,9 +48,9 @@ function PacingConfigurator({
   rangeLabel?: React.ReactNode
   targetLabel?: React.ReactNode
   actualLabel?: React.ReactNode
-  onPresetChange?: (preset: PacingPreset) => void
-  onSave?: () => void
-  onRevert?: () => void
+  onPresetChange: (preset: PacingPreset) => void
+  onSave: () => void
+  onRevert: () => void
 }) {
   const activePreset =
     presets.find((preset) => preset.id === activePresetId) ?? presets[0]
@@ -92,7 +92,7 @@ function PacingConfigurator({
             }))}
             onValueChange={(presetId) => {
               const preset = presets.find((item) => item.id === presetId)
-              if (preset) onPresetChange?.(preset)
+              if (preset) onPresetChange(preset)
             }}
           />
         </div>

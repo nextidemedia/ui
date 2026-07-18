@@ -128,7 +128,7 @@ type NavigationPanelProps = React.ComponentProps<typeof Surface> & {
   commandLabel?: string
   commandShortcut?: string
   onToggle?: () => void
-  onSelectItem?: (item: NavigationPanelItem) => void
+  onSelectItem: (item: NavigationPanelItem) => void
   footer?: React.ReactNode
   userMenu?: NavigationPanelUserMenu
 }
@@ -139,7 +139,7 @@ type NavigationPanelCommandRowProps = {
   sections: NavigationPanelSection[]
   commandLabel: string
   commandShortcut?: string
-  onSelectItem?: (item: NavigationPanelItem) => void
+  onSelectItem: (item: NavigationPanelItem) => void
   onToggle?: () => void
 }
 
@@ -149,7 +149,7 @@ type NavigationPanelNavProps = {
   collapsed: boolean
   drawerCollapsed: boolean
   drawerTransitioning: boolean
-  onSelectItem?: (item: NavigationPanelItem) => void
+  onSelectItem: (item: NavigationPanelItem) => void
 }
 
 type NavigationPanelFooterProps = {
@@ -367,7 +367,7 @@ function NavigationPanelCommandRow({
                     value={item}
                     className="min-h-11 py-2"
                     onClick={() => {
-                      onSelectItem?.(item)
+                      onSelectItem(item)
                       clearSearch()
                     }}
                   >
@@ -736,7 +736,7 @@ function NavigationPanelNav({
                     }
                     onClick={(event) => {
                       measureOutline(event.currentTarget)
-                      onSelectItem?.(item)
+                      onSelectItem(item)
                     }}
                   >
                     <span

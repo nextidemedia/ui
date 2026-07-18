@@ -21,7 +21,7 @@ function WorkflowStepper({
 }: React.ComponentProps<"nav"> & {
   steps: WorkflowStep[]
   activeStepId: string
-  onStepChange?: (step: WorkflowStep) => void
+  onStepChange: (step: WorkflowStep) => void
 }) {
   const activeIndex = steps.findIndex((step) => step.id === activeStepId)
   const { ref: stepperRef, onWheel: onContainedWheel } =
@@ -137,7 +137,7 @@ function WorkflowStepper({
               done && "text-foreground"
             )}
             aria-current={active ? "step" : undefined}
-            onClick={() => onStepChange?.(step)}
+            onClick={() => onStepChange(step)}
           >
             <StepNumber value={done ? "check" : index + 1} active={active} />
             <span className="grid min-w-0 gap-0.5">

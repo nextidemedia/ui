@@ -2,6 +2,7 @@ import * as React from "react"
 import { createPortal } from "react-dom"
 import { ArrowRight, Plus, Search, X } from "lucide-react"
 
+import { Empty, EmptyDescription } from "@nextide/ui/components/empty"
 import { Input } from "@nextide/ui/components/input"
 import { cn } from "@nextide/ui/lib/utils"
 
@@ -523,9 +524,9 @@ function CreatorTransferPanel({
       </label>
       <div className="grid gap-2">
         {items.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-nextide-line px-3 py-4 text-sm text-muted-foreground">
-            {emptyLabel}
-          </div>
+          <Empty className="border border-nextide-line px-3 py-4">
+            <EmptyDescription>{emptyLabel}</EmptyDescription>
+          </Empty>
         ) : null}
         {items.map((id) => {
           const creator = itemById.get(id)

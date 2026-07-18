@@ -21,7 +21,7 @@ function CreatorScopePanel({
 }: React.ComponentProps<"section"> & {
   creators: CreatorScopeItem[]
   activeId?: string
-  onActiveIdChange?: (id: string) => void
+  onActiveIdChange: (id: string) => void
   title?: React.ReactNode
   allLabel?: React.ReactNode
   getAction?: (creator: CreatorScopeItem) => React.ReactNode
@@ -41,7 +41,7 @@ function CreatorScopePanel({
           type="button"
           aria-pressed={activeId === "all"}
           className={scopeRowClass(activeId === "all")}
-          onClick={() => onActiveIdChange?.("all")}
+          onClick={() => onActiveIdChange("all")}
         >
           <span className="col-span-2 truncate">{allLabel}</span>
         </button>
@@ -52,7 +52,7 @@ function CreatorScopePanel({
             type="button"
             aria-pressed={activeId === creator.id}
             className={scopeRowClass(activeId === creator.id)}
-            onClick={() => onActiveIdChange?.(creator.id)}
+            onClick={() => onActiveIdChange(creator.id)}
           >
             <span className="grid size-7 place-items-center rounded-full bg-nextide-tide/10 text-ui-caption font-medium text-nextide-tide">
               {creator.avatar ?? initials(creator.name)}

@@ -12,6 +12,7 @@ import {
 } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
+import { Button } from "@nextide/ui/components/button"
 import { cn } from "@nextide/ui/lib/utils"
 
 type CarouselContextValue = {
@@ -217,16 +218,19 @@ function CarouselPrevious({
   disabled,
   onClick,
   ...props
-}: ComponentProps<"button">) {
+}: ComponentProps<typeof Button>) {
   const context = useCarousel()
   const controlDisabled =
     disabled || context.itemCount <= 1 || (!context.loop && context.index <= 0)
 
   return (
-    <button
+    <Button
       {...props}
       aria-label={ariaLabel}
-      className={cn("absolute top-1/2 left-3 z-10 -translate-y-1/2", className)}
+      className={cn(
+        "absolute top-1/2 left-3 z-10 -translate-y-1/2 active:not-aria-[haspopup]:-translate-y-1/2",
+        className
+      )}
       data-slot="carousel-previous"
       disabled={controlDisabled}
       onClick={(event) => {
@@ -234,9 +238,11 @@ function CarouselPrevious({
         if (!event.defaultPrevented) context.setIndex(context.index - 1)
       }}
       type="button"
+      variant="outline"
+      size="icon-sm"
     >
-      <ChevronLeft aria-hidden="true" size={18} />
-    </button>
+      <ChevronLeft aria-hidden="true" />
+    </Button>
   )
 }
 
@@ -246,7 +252,7 @@ function CarouselNext({
   disabled,
   onClick,
   ...props
-}: ComponentProps<"button">) {
+}: ComponentProps<typeof Button>) {
   const context = useCarousel()
   const controlDisabled =
     disabled ||
@@ -254,11 +260,11 @@ function CarouselNext({
     (!context.loop && context.index >= context.itemCount - 1)
 
   return (
-    <button
+    <Button
       {...props}
       aria-label={ariaLabel}
       className={cn(
-        "absolute top-1/2 right-3 z-10 -translate-y-1/2",
+        "absolute top-1/2 right-3 z-10 -translate-y-1/2 active:not-aria-[haspopup]:-translate-y-1/2",
         className
       )}
       data-slot="carousel-next"
@@ -268,9 +274,11 @@ function CarouselNext({
         if (!event.defaultPrevented) context.setIndex(context.index + 1)
       }}
       type="button"
+      variant="outline"
+      size="icon-sm"
     >
-      <ChevronRight aria-hidden="true" size={18} />
-    </button>
+      <ChevronRight aria-hidden="true" />
+    </Button>
   )
 }
 

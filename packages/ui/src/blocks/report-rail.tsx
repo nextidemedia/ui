@@ -49,7 +49,7 @@ function ReportRail({
   activeItemId?: string
   title?: React.ReactNode
   description?: React.ReactNode
-  onItemSelect?: (item: ReportRailItem) => void
+  onItemSelect: (item: ReportRailItem) => void
 }) {
   return (
     <Surface
@@ -77,7 +77,7 @@ function ReportRail({
                 "relative grid grid-cols-[2rem_minmax(0,1fr)] gap-2 overflow-hidden rounded-lg border border-transparent p-2 text-left transition-[background-color,border-color] duration-[var(--nextide-motion-state)] hover:bg-nextide-panel-strong",
                 active && "border-nextide-tide/45 bg-nextide-tide/[0.08]"
               )}
-              onClick={() => onItemSelect?.(item)}
+              onClick={() => onItemSelect(item)}
             >
               <span
                 className={cn(

@@ -1,4 +1,6 @@
 import * as React from "react"
+import { Toggle } from "@base-ui/react/toggle"
+import { ToggleGroup } from "@base-ui/react/toggle-group"
 
 import { cn } from "@nextide/ui/lib/utils"
 
@@ -39,28 +41,28 @@ function SegmentedControl({
   style,
   "aria-label": ariaLabel = "Segmented control",
   ...props
-}: Omit<React.ComponentProps<"div">, "onChange"> & {
+}: Omit<React.ComponentProps<"div">, "defaultValue" | "onChange"> & {
   value: string
   options: SegmentedControlOption[]
   onValueChange: (value: string) => void
   variant?: SegmentedControlVariant
   size?: SegmentedControlSize
 }) {
-  const activeIndex = Math.max(
-    0,
-    options.findIndex((option) => option.value === value)
-  )
+  const activeIndex = options.findIndex((option) => option.value === value)
   const count = Math.max(options.length, 1)
 
   return (
-    <div
+    <ToggleGroup
       data-slot="segmented-control"
       className={cn(
         "relative grid w-full min-w-0 grid-flow-col rounded-lg border border-nextide-line bg-nextide-panel p-1",
         className
       )}
-      role="radiogroup"
       aria-label={ariaLabel}
+      value={activeIndex >= 0 ? [value] : []}
+      onValueChange={(nextValue) => {
+        if (nextValue[0]) onValueChange(nextValue[0])
+      }}
       style={
         {
           "--segmented-count": count,
@@ -71,7 +73,7 @@ function SegmentedControl({
       }
       {...props}
     >
-      {options.length > 0 ? (
+      {activeIndex >= 0 ? (
         <span
           aria-hidden="true"
           data-slot="segmented-control-indicator"
@@ -90,11 +92,9 @@ function SegmentedControl({
         const active = option.value === value
 
         return (
-          <button
+          <Toggle
             key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={active}
+            value={option.value}
             disabled={option.disabled}
             className={cn(
               "relative z-10 grid min-w-0 place-items-center truncate rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors duration-[var(--nextide-motion-state)] outline-none",
@@ -102,13 +102,12 @@ function SegmentedControl({
               active && variant !== "fill" && "text-foreground",
               "focus-visible:z-30 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
             )}
-            onClick={() => onValueChange(option.value)}
           >
             {option.label}
-          </button>
+          </Toggle>
         )
       })}
-      {options.length > 0 && variant === "fill" ? (
+      {activeIndex >= 0 && variant === "fill" ? (
         // Intentionally duplicate the labels in a clipped overlay: the moving
         // selection fill acts as a mask that flips only the covered text color.
         <span
@@ -131,7 +130,7 @@ function SegmentedControl({
           ))}
         </span>
       ) : null}
-    </div>
+    </ToggleGroup>
   )
 }
 

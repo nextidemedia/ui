@@ -43,7 +43,7 @@ description of where the component happens to appear.
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Actions and commands       | `components/button`, `components/badge`, `components/status-badge`                                                                                                                                                                                                                                                                                                                                |
 | Forms and inputs           | `components/input`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/autocomplete`, `components/token-list-editor`                                                                                                                                                             |
-| Choice controls            | `components/segmented-control`, `components/tabs`, `components/collapsible`, `components/dropdown-menu`, `components/popover`, `components/tooltip`                                                                                                                                                                                                                                               |
+| Choice controls            | `components/segmented-control`, `components/tabs`, `components/collapsible`, `components/dropdown-menu`, `components/dialog`, `components/popover`, `components/tooltip`                                                                                                                                                                                                                          |
 | Date and schedule controls | `components/date-range-picker`, `components/duration-picker`, `components/schedule-control`                                                                                                                                                                                                                                                                                                       |
 | Layout and surfaces        | `components/surface`, `components/card`, `components/separator`, `components/scroll-area`, `components/carousel`, `components/table`, `components/alert`, `components/notice`, `components/metric`, `components/kbd`                                                                                                                                                                              |
 | Identity and feedback      | `components/avatar`, `components/empty`, `components/progress`, `components/processing-text`, `components/spinner`, `components/skeleton`                                                                                                                                                                                                                                                         |
@@ -53,7 +53,7 @@ description of where the component happens to appear.
 
 | Need                        | Start with                                                                                                                                                                |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| App frame and navigation    | `blocks/app-shell`, `blocks/sidebar`, `blocks/navigation-panel`, `blocks/navigation-user-menu`, `blocks/workflow-stepper`, `blocks/signal-plate`, `blocks/settings-modal` |
+| App frame and navigation    | `blocks/app-shell`, `blocks/navigation-panel`, `blocks/navigation-user-menu`, `blocks/workflow-stepper`, `blocks/signal-plate`, `blocks/settings-modal`                   |
 | Report building and reading | `blocks/report-context-builder`, `blocks/progressive-summary-rail`, `blocks/report-reader`, `blocks/report-rail`, `blocks/export-workbench`                               |
 | Creator workflows           | `blocks/creator-transfer`, `blocks/creator-scope-panel`, `blocks/campaign-schedule-matrix`, `blocks/pacing-configurator`, `blocks/fit-leaderboard`                        |
 | Operations and dashboards   | `blocks/dashboard-filter-bar`, `blocks/run-monitor-table`, `blocks/stream-selector`, `blocks/intelligence-progression-chart`, `blocks/evidence-drawer`                    |
@@ -81,6 +81,11 @@ work areas, forms, and operational containers; those stay visually plain.
 
 Navigation uses the quiet active rail. Report history uses a contained outline
 so navigation and record selection remain visually distinct.
+
+`blocks/navigation-panel` is the canonical sidebar navigation block. The
+smaller `SidebarBrand` and `SidebarToggleButton` exports in `blocks/sidebar`
+only provide its shared brand and collapse chrome; they do not implement a
+second navigation model.
 
 `blocks/navigation-panel` includes section-aware search through the shared
 autocomplete surface. The Search field is the input itself; focusing it or
@@ -133,7 +138,17 @@ and forced-color modes render static text.
 
 The `components/segmented-control` fill variant changes label contrast exactly
 where its moving selection indicator overlaps the label. The quiet and
-underline variants keep their simpler state-color transition.
+underline variants keep their simpler state-color transition. Its Base UI
+toggle group owns roving focus and Arrow, Home, and End keyboard navigation.
+
+`components/carousel` owns its previous and next `Button` controls. Consumers
+may reposition them with `className`, but should not have to add button variants
+or repair the pressed-state transform.
+
+Use `components/dialog` for shared modal focus, backdrop, close, and motion
+behavior. Product blocks such as `SettingsModal` and `LiveEventProofModal` own
+their content layout but compose that primitive instead of styling Base UI
+dialog parts directly.
 
 `blocks/campaign-schedule-matrix` derives day/week/month/quarter headers from
 each slot's ISO `date`. It opens at week scale and, when a `today` slot exists,
@@ -151,7 +166,8 @@ consumers keep the same seven canonical stage ids without supplying
 viewport-specific geometry.
 
 Give each `blocks/live-event-proof-modal` `evidenceFields` entry a stable `id`
-so evidence rows preserve their identity when the list changes.
+so evidence rows preserve their identity when the list changes. Provide
+`onAudioPlay` when rendering the block; its audio control is always actionable.
 
 `components/graph-tooltip` owns graph tooltip portaling, viewport clamping,
 right-first placement with edge flipping, and the shared series-row treatment.

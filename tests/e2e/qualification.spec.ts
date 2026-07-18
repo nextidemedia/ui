@@ -192,14 +192,14 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   expect(settingsBox).not.toBeNull()
   expect(settingsBox!.height).toBe(inspectBox!.height)
 
-  await page.getByRole("radio", { name: "Report" }).click()
+  await page.getByRole("button", { name: "Report", exact: true }).click()
   const typesetArticle = page.locator("article.typeset")
   await expect(typesetArticle).toHaveCSS("font-size", "17px")
   await expect(typesetArticle).toHaveCSS("line-height", "29.75px")
 
-  const typesetSelector = page.getByRole("radiogroup", {
-    name: "Typeset preset",
-  })
+  const typesetSelector = page.locator(
+    '[data-slot="segmented-control"][aria-label="Typeset preset"]'
+  )
   await expect(typesetSelector).toHaveAttribute(
     "data-slot",
     "segmented-control"
@@ -472,6 +472,7 @@ test("playground shows exact public names beside component examples", async ({
     "Surface",
     "Card",
     "Button",
+    "Dialog",
     "Popover",
     "Tooltip",
     "ScrollArea",
@@ -494,6 +495,22 @@ test("playground shows exact public names beside component examples", async ({
     "Empty",
     "Metric",
   ])
+  const openDialog = page.getByRole("button", { name: "Open dialog" })
+  await openDialog.click()
+  const dialog = page.getByRole("dialog", { name: "Review report scope" })
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toHaveAttribute("data-dialog-content", "")
+  await expectNoSeriousAxeViolations(page, "shared dialog", "[role=dialog]")
+  await page.keyboard.press("Escape")
+  await expect(dialog).toBeHidden()
+  await expect(openDialog).toBeFocused()
+
+  const carouselPrevious = page.getByRole("button", {
+    name: "Previous slide",
+  })
+  const carouselNext = page.getByRole("button", { name: "Next slide" })
+  await expect(carouselPrevious).toHaveCSS("border-style", "solid")
+  await expect(carouselNext).toHaveCSS("border-style", "solid")
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 1000 })
     const overflow = await page.evaluate(
@@ -625,7 +642,10 @@ test("duration picker optionally supports days and confirms on blur or Enter", a
   await expect(reportName).toBeFocused()
   await expect(output).toHaveText("4 d 2 hr 33 min")
 
-  await page.keyboard.press("Tab")
+  await page
+    .getByRole("checkbox", { name: "Include degraded runs" })
+    .focus()
+  await page.keyboard.press("Shift+Tab")
   await expectVisibleFocus(edit)
   await edit.press("Enter")
 
@@ -653,6 +673,61 @@ test("duration picker optionally supports days and confirms on blur or Enter", a
     "confirmed duration",
     '[data-slot="duration-picker"]'
   )
+})
+
+test("live proof modal keeps audio actionable in the shared dialog shell", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=web-mining")
+
+  const openProof = page.getByRole("button", { name: "Open proof modal" })
+  await openProof.scrollIntoViewIfNeeded()
+  await openProof.click()
+
+  const proof = page.getByRole("dialog", {
+    name: "Competitor mention under threshold",
+  })
+  await expect(proof).toBeVisible()
+  await expect(proof).toHaveAttribute("data-dialog-content", "")
+  await proof.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished))
+  })
+  await page.getByRole("button", { name: "Play audio proof" }).click()
+  await expect(proof.getByText("Audio proof started.")).toBeVisible()
+
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        )
+    )
+    const box = await proof.evaluate((element) => {
+      const bounds = element.getBoundingClientRect()
+      const style = getComputedStyle(element)
+      return {
+        x: bounds.x,
+        width: bounds.width,
+        viewportWidth: window.innerWidth,
+        cssWidth: style.width,
+        maxWidth: style.maxWidth,
+      }
+    })
+    expect(
+      box.x,
+      JSON.stringify({ viewport: width, ...box })
+    ).toBeGreaterThanOrEqual(0)
+    expect(
+      box.x + box.width,
+      JSON.stringify({ viewport: width, ...box })
+    ).toBeLessThanOrEqual(width + 1)
+  }
+
+  await page.keyboard.press("Escape")
+  await expect(proof).toBeHidden()
+  await expect(openProof).toBeFocused()
 })
 
 test("autocomplete empty state reuses a result row footprint", async ({
@@ -843,7 +918,7 @@ test("playground session reports reverse cleanly and Kraken evidence tabs reflow
   const evidenceDrawer = page.locator('[data-slot="evidence-drawer"]')
   await evidenceDrawer.scrollIntoViewIfNeeded()
   const choices = ["Decisions", "Sources", "Costs"].map((name) =>
-    evidenceDrawer.getByRole("radio", { name })
+    evidenceDrawer.getByRole("button", { name })
   )
   const boxes = await Promise.all(choices.map((choice) => choice.boundingBox()))
 
@@ -855,8 +930,11 @@ test("playground session reports reverse cleanly and Kraken evidence tabs reflow
   expect(boxes[0]!.x + boxes[0]!.width).toBeLessThanOrEqual(boxes[1]!.x)
   expect(boxes[1]!.x + boxes[1]!.width).toBeLessThanOrEqual(boxes[2]!.x)
 
-  await choices[1].click()
-  await expect(choices[1]).toHaveAttribute("aria-checked", "true")
+  await choices[0].focus()
+  await page.keyboard.press("ArrowRight")
+  await expect(choices[1]).toBeFocused()
+  await page.keyboard.press("Enter")
+  await expect(choices[1]).toHaveAttribute("aria-pressed", "true")
   await expect(
     evidenceDrawer.getByText("Monitor cache warmed").first()
   ).toBeVisible()
