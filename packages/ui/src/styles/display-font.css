@@ -1,0 +1,11 @@
+@font-face {
+  font-family: "Nextide Display";
+  src: url("../assets/fonts/Obviously-Bold.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 700;
+}
+
+:root {
+  --nextide-font-display: "Nextide Display", var(--nextide-font-ui);
+}

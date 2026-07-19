@@ -26,7 +26,7 @@ function Metric({
     >
       <div className="flex items-center gap-2 text-nextide-tide">
         {icon ? <span className="[&_svg]:size-4">{icon}</span> : null}
-        <strong className="truncate text-xl leading-none font-semibold text-foreground">
+        <strong className="truncate text-xl leading-none font-medium text-foreground">
           {value}
         </strong>
       </div>

@@ -159,6 +159,6 @@ function ScheduleField({
 }
 
 const inputClassName =
-  "h-9 rounded-lg border border-nextide-line bg-nextide-panel px-3 text-sm text-foreground outline-none transition-[border-color,box-shadow,background-color] focus:border-nextide-tide/50 focus:ring-3 focus:ring-nextide-tide/15"
+  "rounded-lg border-nextide-line bg-nextide-panel px-3 text-sm text-foreground"
 
 export { ScheduleControl, type ScheduleCadence, type ScheduleControlValue }

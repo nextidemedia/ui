@@ -5,6 +5,7 @@ import {
   CreatorScopePanel,
   type CreatorScopeItem,
 } from "@nextide/ui/blocks/creator-scope-panel"
+import { Empty, EmptyDescription } from "@nextide/ui/components/empty"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
 import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
 import { cn } from "@nextide/ui/lib/utils"
@@ -25,9 +26,7 @@ type StreamSelectorItem = {
 }
 
 const filterEase = "cubic-bezier(0.76, 0, 0.24, 1)"
-const filterExitMs = 180
-const filterMoveMs = 312
-const filterEnterMs = 228
+const defaultFilterMotion = { exit: 220, move: 300, enter: 220 }
 
 function StreamSelector({
   creators,
@@ -53,19 +52,24 @@ function StreamSelector({
     () => new Set()
   )
   const [motionLocked, setMotionLocked] = React.useState(false)
+  const selectedIdSet = React.useMemo(() => new Set(selectedIds), [selectedIds])
   const rowRefs = React.useRef<Record<string, HTMLButtonElement | null>>({})
   const motionTimers = React.useRef<number[]>([])
+  const filterMotion = React.useRef(defaultFilterMotion)
   const reflowMotion = React.useRef<{
     previousRects: Map<string, DOMRect>
     enteringIds: Set<string>
   } | null>(null)
-  const { ref: listRef, onWheel } =
-    useContainedScroll<HTMLDivElement>({ axis: "y" })
+  const { ref: listRef, onWheel } = useContainedScroll<HTMLDivElement>({
+    axis: "y",
+  })
   const visibleStreams = React.useMemo(
     () =>
       activeCreatorId === "all"
         ? sortedStreams
-        : sortedStreams.filter((stream) => stream.creatorId === activeCreatorId),
+        : sortedStreams.filter(
+            (stream) => stream.creatorId === activeCreatorId
+          ),
     [activeCreatorId, sortedStreams]
   )
 
@@ -84,6 +88,10 @@ function StreamSelector({
 
   const changeCreatorFilter = (nextCreatorId: string) => {
     if (motionLocked || nextCreatorId === activeCreatorId) return
+
+    filterMotion.current = readFilterMotion(listRef.current)
+    const motion = filterMotion.current
+    const stateScale = motion.exit / defaultFilterMotion.exit
 
     const nextStreams =
       nextCreatorId === "all"
@@ -112,7 +120,6 @@ function StreamSelector({
 
     setActiveCreatorId(nextCreatorId)
     setMotionLocked(true)
-
     ;[...exitingIds].forEach((streamId, index) => {
       const row = rowRefs.current[streamId]
       if (!row) return
@@ -123,8 +130,8 @@ function StreamSelector({
           { opacity: 0, transform: "translate3d(108%, 0, 0) scale(0.985)" },
         ],
         {
-          delay: Math.min(index * 17, 50),
-          duration: filterExitMs,
+          delay: Math.min(index * 17, 50) * stateScale,
+          duration: motion.exit,
           easing: filterEase,
           fill: "forwards",
         }
@@ -133,7 +140,7 @@ function StreamSelector({
 
     const exitDelay =
       exitingIds.size > 0
-        ? filterExitMs + Math.min((exitingIds.size - 1) * 17, 50)
+        ? motion.exit + Math.min((exitingIds.size - 1) * 17, 50) * stateScale
         : 0
     queueMotionTimer(() => {
       reflowMotion.current = { previousRects, enteringIds }
@@ -147,11 +154,14 @@ function StreamSelector({
   React.useLayoutEffect(() => {
     const motion = reflowMotion.current
     if (!motion) return
+    const durations = filterMotion.current
+    const stateScale = durations.enter / defaultFilterMotion.enter
 
     reflowMotion.current = null
     const survivors = renderedStreams.filter(
       (stream) =>
-        motion.previousRects.has(stream.id) && !motion.enteringIds.has(stream.id)
+        motion.previousRects.has(stream.id) &&
+        !motion.enteringIds.has(stream.id)
     )
 
     survivors.forEach((stream) => {
@@ -166,43 +176,50 @@ function StreamSelector({
       if (Math.abs(deltaX) > 0.5 || Math.abs(deltaY) > 0.5) {
         row.animate(
           [
-            { transform: `translate3d(${deltaX}px, ${deltaY}px, 0)`, opacity: 1 },
+            {
+              transform: `translate3d(${deltaX}px, ${deltaY}px, 0)`,
+              opacity: 1,
+            },
             { transform: "translate3d(0, 0, 0)", opacity: 1 },
           ],
-          { duration: filterMoveMs, easing: filterEase }
+          { duration: durations.move, easing: filterEase }
         )
       }
     })
 
-    queueMotionTimer(() => {
-      const enteringIds = [...motion.enteringIds]
-      enteringIds.forEach((streamId, index) => {
-        const row = rowRefs.current[streamId]
-        if (!row) return
+    queueMotionTimer(
+      () => {
+        const enteringIds = [...motion.enteringIds]
+        enteringIds.forEach((streamId, index) => {
+          const row = rowRefs.current[streamId]
+          if (!row) return
 
-        row.animate(
-          [
-            { opacity: 0, transform: "translate3d(108%, 0, 0) scale(0.985)" },
-            { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
-          ],
-          {
-            delay: Math.min(index * 20, 61),
-            duration: filterEnterMs,
-            easing: filterEase,
-            fill: "both",
-          }
-        )
-      })
+          row.animate(
+            [
+              { opacity: 0, transform: "translate3d(108%, 0, 0) scale(0.985)" },
+              { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
+            ],
+            {
+              delay: Math.min(index * 20, 61) * stateScale,
+              duration: durations.enter,
+              easing: filterEase,
+              fill: "both",
+            }
+          )
+        })
 
-      const enterDelay =
-        enteringIds.length > 0
-          ? filterEnterMs + Math.min((enteringIds.length - 1) * 20, 61)
-          : 0
-      queueMotionTimer(() => {
-        setEnteringStreamIds(new Set())
-        setMotionLocked(false)
-      }, enterDelay)
-    }, survivors.length > 0 ? filterMoveMs : 0)
+        const enterDelay =
+          enteringIds.length > 0
+            ? durations.enter +
+              Math.min((enteringIds.length - 1) * 20, 61) * stateScale
+            : 0
+        queueMotionTimer(() => {
+          setEnteringStreamIds(new Set())
+          setMotionLocked(false)
+        }, enterDelay)
+      },
+      survivors.length > 0 ? durations.move : 0
+    )
   }, [queueMotionTimer, renderedStreams])
 
   React.useEffect(() => {
@@ -246,18 +263,19 @@ function StreamSelector({
         ref={listRef}
         onWheel={onWheel}
         className={cn(
-          "nextide-contained-scroll grid max-h-[32rem] min-h-0 content-start gap-2 overflow-y-auto pr-1",
+          "nextide-contained-scroll nextide-scrollbar-none grid max-h-[32rem] min-h-0 content-start gap-2 overflow-y-auto pr-1",
           motionLocked && "pointer-events-none"
         )}
         aria-busy={motionLocked}
       >
         {renderedStreams.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-nextide-line px-4 py-8 text-sm text-muted-foreground">
-            {emptyLabel}
-          </div>
+          <Empty className="border border-nextide-line px-4 py-8">
+            <EmptyDescription>{emptyLabel}</EmptyDescription>
+          </Empty>
         ) : null}
         {renderedStreams.map((stream) => {
-          const selected = selectedIds.includes(stream.id)
+          const selected = selectedIdSet.has(stream.id)
+          const entering = enteringStreamIds.has(stream.id)
 
           return (
             <button
@@ -273,10 +291,16 @@ function StreamSelector({
               className={cn(
                 "grid min-h-[4.9rem] w-full min-w-0 grid-cols-[5.5rem_minmax(0,1fr)_7rem_auto_1.75rem] items-center gap-3 rounded-lg border border-nextide-line bg-nextide-panel px-3 py-2 text-left transition-[background-color,border-color,box-shadow]",
                 selected &&
-                  "border-nextide-tide/55 bg-nextide-tide/10 shadow-[0_0_24px_rgb(30_228_188/0.13)]",
-                enteringStreamIds.has(stream.id) &&
-                  "opacity-0 translate-x-full scale-[0.985]"
+                  "border-nextide-tide/55 bg-nextide-tide/10 shadow-[0_0_24px_rgb(30_228_188/0.13)]"
               )}
+              style={
+                entering
+                  ? {
+                      opacity: 0,
+                      transform: "translate3d(108%, 0, 0) scale(0.985)",
+                    }
+                  : undefined
+              }
               onClick={() =>
                 onSelectedIdsChange(
                   selected
@@ -304,7 +328,9 @@ function StreamSelector({
               </span>
               <span className="grid justify-items-end gap-1 text-xs text-muted-foreground">
                 {stream.dateLabel ? <span>{stream.dateLabel}</span> : null}
-                {stream.durationLabel ? <small>{stream.durationLabel}</small> : null}
+                {stream.durationLabel ? (
+                  <small>{stream.durationLabel}</small>
+                ) : null}
               </span>
               <StatusBadge tone={stream.readinessTone ?? "success"}>
                 {stream.readinessLabel ?? "Ready"}
@@ -312,7 +338,8 @@ function StreamSelector({
               <span
                 className={cn(
                   "grid size-6 place-items-center rounded-md border border-nextide-line",
-                  selected && "border-nextide-tide bg-nextide-tide text-background"
+                  selected &&
+                    "border-nextide-tide bg-nextide-tide text-background"
                 )}
               >
                 {selected ? <Check className="size-3.5" /> : null}
@@ -325,8 +352,32 @@ function StreamSelector({
   )
 }
 
-export {
-  StreamSelector,
-  type StreamSelectorItem,
-  type StreamSelectorTone,
+function readFilterMotion(node: HTMLElement | null) {
+  if (!node || typeof window === "undefined") return defaultFilterMotion
+
+  const styles = window.getComputedStyle(node)
+  return {
+    exit: readCssTime(
+      styles.getPropertyValue("--nextide-motion-state"),
+      defaultFilterMotion.exit
+    ),
+    move: readCssTime(
+      styles.getPropertyValue("--nextide-motion-layout"),
+      defaultFilterMotion.move
+    ),
+    enter: readCssTime(
+      styles.getPropertyValue("--nextide-motion-state"),
+      defaultFilterMotion.enter
+    ),
+  }
 }
+
+function readCssTime(value: string, fallback: number) {
+  const parsed = Number.parseFloat(value)
+  if (!Number.isFinite(parsed)) return fallback
+  return value.trim().endsWith("s") && !value.trim().endsWith("ms")
+    ? parsed * 1000
+    : parsed
+}
+
+export { StreamSelector, type StreamSelectorItem, type StreamSelectorTone }

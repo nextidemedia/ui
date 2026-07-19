@@ -1,10 +1,11 @@
 import * as React from "react"
 
 import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
+import { formatCompactNumber } from "@nextide/ui/lib/format-number"
 import { cn } from "@nextide/ui/lib/utils"
 
 type TrendBarChartTone = "neutral" | "success" | "warning" | "danger"
-type TrendBarChartVariant = "rail" | "block" | "signal" | "capsule"
+type TrendBarChartVariant = "rail" | "block" | "signal"
 
 type TrendBarChartRow = {
   id: string
@@ -131,7 +132,7 @@ function TrendBarChart({
           {rows.map((row) => {
             const height = Math.max(
               4,
-              Math.min(100, (row.value / resolvedMax) * 100)
+              Math.min(84, (row.value / resolvedMax) * 84)
             )
             const tone = row.tone ?? "success"
 
@@ -145,16 +146,18 @@ function TrendBarChart({
                     : undefined
                 }
               >
-                <div className="pointer-events-none h-5 text-center text-[0.68rem] leading-none font-medium text-foreground opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                  {row.valueLabel ?? row.value}
-                </div>
-                <BarGlyph height={height} tone={tone} variant={variant} />
+                <BarGlyph
+                  height={height}
+                  tone={tone}
+                  variant={variant}
+                  valueLabel={row.valueLabel ?? row.value}
+                />
                 <div className="grid gap-0.5 text-center">
-                  <span className="text-[0.68rem] leading-tight font-medium text-muted-foreground">
+                  <span className="text-ui-caption leading-tight font-medium text-muted-foreground">
                     {row.label}
                   </span>
                   {row.meta ? (
-                    <span className="text-[0.62rem] leading-none text-muted-foreground/70">
+                    <span className="text-ui-caption leading-none text-muted-foreground/70">
                       {row.meta}
                     </span>
                   ) : null}
@@ -173,78 +176,93 @@ function BarGlyph({
   height,
   tone,
   variant,
+  valueLabel,
 }: {
   height: number
   tone: TrendBarChartTone
   variant: TrendBarChartVariant
+  valueLabel: React.ReactNode
 }) {
   if (variant === "block") {
     return (
-      <div className="flex h-32 w-full max-w-11 min-w-7 items-end rounded-md bg-white/[0.025] p-1 shadow-[inset_0_1px_1px_rgb(255_255_255/0.03)]">
+      <div className="relative flex h-36 w-full max-w-12 min-w-8 items-end border-b border-nextide-line/70 px-1">
         <span
           className={cn(
-            "relative block w-full rounded-[0.35rem] bg-linear-to-b transition-[height,filter] duration-500 ease-[var(--nextide-ease-out-quart)] group-hover:brightness-110 group-hover:filter before:absolute before:inset-x-1 before:top-1 before:h-px before:bg-white/30",
+            "relative block w-full rounded-t-md bg-linear-to-b transition-[height,filter] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-out-quart)] group-hover:brightness-110 group-hover:filter before:absolute before:inset-x-1 before:top-1 before:h-px before:bg-white/30",
             toneClasses[tone]
           )}
           style={{ height: `${height}%` }}
-        />
+        >
+          <BarValue height={height} value={valueLabel} inside={height >= 44} />
+        </span>
       </div>
     )
   }
 
   if (variant === "signal") {
     return (
-      <div className="relative flex h-32 w-full max-w-10 min-w-0 items-end justify-center overflow-visible">
-        <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-nextide-line" />
-        <span className="absolute inset-y-2 left-1/2 w-1 -translate-x-1/2 overflow-visible">
+      <div className="relative flex h-36 w-full max-w-10 min-w-0 items-end justify-center border-b border-nextide-line/70">
+        <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-nextide-line/80" />
+        <span className="absolute inset-y-0 left-1/2 w-1.5 -translate-x-1/2 overflow-visible">
           <span
             className={cn(
-              "absolute inset-x-0 bottom-0 rounded-full bg-linear-to-b opacity-75 transition-[height,filter] duration-500 ease-[var(--nextide-ease-out-quart)] group-hover:brightness-110 group-hover:filter",
+              "absolute inset-x-0 bottom-0 rounded-t-sm bg-linear-to-b opacity-85 transition-[height,filter] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-out-quart)] group-hover:brightness-110 group-hover:filter",
               toneClasses[tone]
             )}
             style={{ height: `${Math.max(8, height)}%` }}
           >
-            <span className="absolute top-0 left-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background bg-nextide-tide shadow-[0_0_18px_rgb(30_228_188/0.42)] transition-transform duration-300 ease-[var(--nextide-ease-out-quart)] group-hover:scale-110" />
+            <span className="absolute top-0 left-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-background bg-nextide-tide shadow-[0_0_14px_rgb(30_228_188/0.38)] transition-transform duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-out-quart)] group-hover:scale-110" />
+            <BarValue height={height} value={valueLabel} />
           </span>
         </span>
       </div>
     )
   }
 
-  if (variant === "capsule") {
-    return (
-      <div className="flex h-36 w-full max-w-8 items-end rounded-full bg-white/[0.025] p-1 shadow-[inset_0_1px_1px_rgb(255_255_255/0.03)]">
-        <span
-          className={cn(
-            "block w-full rounded-full bg-linear-to-b shadow-[0_0_18px_rgb(30_228_188/0.16)] transition-[height,filter] duration-500 ease-[var(--nextide-ease-out-quart)] group-hover:brightness-110 group-hover:filter",
-            toneClasses[tone]
-          )}
-          style={{ height: `${height}%` }}
-        />
-      </div>
-    )
-  }
-
   return (
-    <div className="flex h-32 w-full max-w-9 min-w-7 items-end justify-center px-2">
+    <div className="relative flex h-36 w-full max-w-10 min-w-7 items-end justify-center border-b border-nextide-line/70 px-2">
       <span
         className={cn(
-          "block w-full max-w-3 rounded-full bg-linear-to-b shadow-[0_0_20px_rgb(30_228_188/0.18)] transition-[height,filter] duration-500 ease-[var(--nextide-ease-out-quart)] group-hover:brightness-110 group-hover:filter",
+          "relative block w-full max-w-3 rounded-t-md bg-linear-to-b shadow-[0_0_20px_rgb(30_228_188/0.18)] transition-[height,filter] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-out-quart)] group-hover:brightness-110 group-hover:filter",
           toneClasses[tone]
         )}
         style={{ height: `${height}%` }}
-      />
+      >
+        <BarValue height={height} value={valueLabel} />
+      </span>
     </div>
+  )
+}
+
+function BarValue({
+  height,
+  value,
+  inside = false,
+}: {
+  height: number
+  value: React.ReactNode
+  inside?: boolean
+}) {
+  return (
+    <span
+      className={cn(
+        "pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 whitespace-nowrap text-ui-caption leading-none font-medium",
+        inside ? "top-2 text-black/80" : "-top-5 text-foreground"
+      )}
+      data-height={Math.round(height)}
+    >
+      {value}
+    </span>
   )
 }
 
 function ChartLegend({ items }: { items: TrendBarChartLegendItem[] }) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5 border-t border-nextide-line/70 pt-2 text-[0.68rem] leading-none text-muted-foreground">
+    <div className="flex flex-wrap items-center gap-1.5 border-t border-nextide-line/70 pt-2 text-ui-caption leading-none text-muted-foreground">
       {items.map((item) => (
         <span
           key={item.id}
-          className="inline-flex min-h-6 items-center gap-1.5 rounded-full border border-nextide-line bg-background/25 px-2"
+          className="inline-flex min-h-6 items-center gap-1.5 rounded-md border border-nextide-line bg-background/25 px-2"
         >
           <span
             className={cn(
@@ -253,20 +271,14 @@ function ChartLegend({ items }: { items: TrendBarChartLegendItem[] }) {
             )}
           />
           <span>{item.label}</span>
-          <strong className="font-semibold text-foreground">
-            {item.value}
-          </strong>
+          <strong className="font-medium text-foreground">{item.value}</strong>
         </span>
       ))}
     </div>
   )
 }
 
-function formatChartValue(value: number) {
-  return Number.isInteger(value)
-    ? value.toLocaleString("en-US")
-    : value.toLocaleString("en-US", { maximumFractionDigits: 1 })
-}
+const formatChartValue = formatCompactNumber
 
 export {
   TrendBarChart,

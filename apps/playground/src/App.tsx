@@ -1,4 +1,10 @@
-import { type CSSProperties, type ReactNode, useReducer, useState } from "react"
+import {
+  type CSSProperties,
+  type ReactNode,
+  useEffect,
+  useReducer,
+  useState,
+} from "react"
 import { useRef } from "react"
 import {
   Activity,
@@ -9,7 +15,6 @@ import {
   CalendarClock,
   Check,
   Database,
-  Download,
   FileJson,
   FileText,
   Filter,
@@ -25,7 +30,6 @@ import {
   Sparkles,
   ServerCog,
   Video,
-  WalletCards,
 } from "lucide-react"
 
 import { AppShell } from "@nextide/ui/blocks/app-shell"
@@ -41,7 +45,7 @@ import {
   IntelligenceProgressionChart,
   type IntelligenceProgressionStage,
 } from "@nextide/ui/blocks/intelligence-progression-chart"
-import { IntroPlate } from "@nextide/ui/blocks/intro-plate"
+import { SignalPlate } from "@nextide/ui/blocks/signal-plate"
 import { LiveguardCockpit } from "@nextide/ui/blocks/liveguard-cockpit"
 import { NavigationPanel } from "@nextide/ui/blocks/navigation-panel"
 import { ProgressiveSummaryRail } from "@nextide/ui/blocks/progressive-summary-rail"
@@ -49,7 +53,6 @@ import {
   ReportContextBuilder,
   type ReportContextBucket,
 } from "@nextide/ui/blocks/report-context-builder"
-import { Sidebar } from "@nextide/ui/blocks/sidebar"
 import {
   SettingsModal,
   SettingsModalSection,
@@ -58,7 +61,6 @@ import {
   StreamSelector,
   type StreamSelectorItem,
 } from "@nextide/ui/blocks/stream-selector"
-import { WorkflowStepper } from "@nextide/ui/blocks/workflow-stepper"
 import {
   Autocomplete,
   AutocompleteClear,
@@ -71,6 +73,11 @@ import {
   AutocompletePortal,
   AutocompletePositioner,
 } from "@nextide/ui/components/autocomplete"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@nextide/ui/components/alert"
 import {
   Avatar,
   AvatarBadge,
@@ -87,17 +94,48 @@ import {
   CardHeader,
   CardTitle,
 } from "@nextide/ui/components/card"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@nextide/ui/components/carousel"
 import { Checkbox } from "@nextide/ui/components/checkbox"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@nextide/ui/components/collapsible"
 import {
   CreatorFlowChart,
   type CreatorFlowSession,
 } from "@nextide/ui/components/creator-flow-chart"
 import {
-  DualDateRangePicker,
   SingleCalendarDateRangePicker,
   type DateRange,
 } from "@nextide/ui/components/date-range-picker"
 import { DonutChart } from "@nextide/ui/components/donut-chart"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@nextide/ui/components/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@nextide/ui/components/dropdown-menu"
+import {
+  DurationPicker,
+  type DurationValue,
+} from "@nextide/ui/components/duration-picker"
 import {
   Empty,
   EmptyDescription,
@@ -105,8 +143,14 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@nextide/ui/components/empty"
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from "@nextide/ui/components/field"
 import { HourlyPacingChart } from "@nextide/ui/components/hourly-pacing-chart"
 import { Input } from "@nextide/ui/components/input"
+import { Kbd, KbdGroup } from "@nextide/ui/components/kbd"
 import { LineGraph } from "@nextide/ui/components/line-graph"
 import {
   LineItemGraph,
@@ -128,6 +172,7 @@ import {
   ProgressLabel,
   ProgressValue,
 } from "@nextide/ui/components/progress"
+import { ProcessingText } from "@nextide/ui/components/processing-text"
 import type { ScheduleControlValue } from "@nextide/ui/components/schedule-control"
 import { ScrollArea } from "@nextide/ui/components/scroll-area"
 import { SelectMenu } from "@nextide/ui/components/select-menu"
@@ -144,7 +189,22 @@ import {
   SurfaceTitle,
 } from "@nextide/ui/components/surface"
 import { Switch } from "@nextide/ui/components/switch"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@nextide/ui/components/table"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@nextide/ui/components/tabs"
 import { TrendBarChart } from "@nextide/ui/components/trend-bar-chart"
+import { SignalRidgeChart } from "@nextide/ui/components/signal-ridge-chart"
 import {
   Tooltip,
   TooltipContent,
@@ -153,46 +213,14 @@ import {
 } from "@nextide/ui/components/tooltip"
 import { useStagedDrawer } from "@nextide/ui/hooks/use-staged-drawer"
 import { cn } from "@nextide/ui/lib/utils"
+import { formatCompactNumber } from "@nextide/ui/lib/format-number"
 
 import {
   IntelligenceReportMiningPage,
   KrakenMiningPage,
   WebMiningPage,
 } from "./mining-pages"
-
-const sidebarItems = [
-  {
-    id: "primitives",
-    label: "Primitives",
-    meta: "9 components",
-    status: "Ready",
-    tone: "success" as const,
-    icon: <Boxes />,
-  },
-  {
-    id: "blocks",
-    label: "Blocks",
-    meta: "4 patterns",
-    status: "Active",
-    tone: "processing" as const,
-    icon: <Layers3 />,
-  },
-  {
-    id: "theme",
-    label: "Theme",
-    meta: "Nextide tokens",
-    status: "Draft",
-    tone: "warning" as const,
-    icon: <Sparkles />,
-  },
-]
-
-const workflowSteps = [
-  { id: "scaffold", label: "Scaffold", meta: "shadcn monorepo" },
-  { id: "primitives", label: "Primitives", meta: "buttons and inputs" },
-  { id: "blocks", label: "Blocks", meta: "shell and workflow" },
-  { id: "publish", label: "Publish", meta: "main branch" },
-]
+import { ComponentReference } from "./component-reference"
 
 const daedalusFilterGroups = [
   { id: "campaign", label: "Campaigns" },
@@ -224,6 +252,62 @@ const daedalusFilterItems: DashboardFilterItem[] = [
     title: "Daedalus Pilot",
     subtitle: "LiveGuard warmup",
     badge: "Guarded",
+    tone: "warning",
+  },
+  {
+    id: "campaign-helix",
+    groupId: "campaign",
+    title: "Helix Launch Week",
+    subtitle: "12 creators · starts Monday",
+    badge: "Ready",
+    tone: "success",
+  },
+  {
+    id: "campaign-neon",
+    groupId: "campaign",
+    title: "Neon Arena Series",
+    subtitle: "4 live · 2 awaiting proof",
+    badge: "Watch",
+    tone: "warning",
+  },
+  {
+    id: "campaign-atlas",
+    groupId: "campaign",
+    title: "Atlas Creator Sprint",
+    subtitle: "Daily report at 18:00",
+    badge: "Export",
+    tone: "processing",
+  },
+  {
+    id: "campaign-ember",
+    groupId: "campaign",
+    title: "Ember Winter Drop",
+    subtitle: "Creative review in progress",
+    badge: "Review",
+    tone: "neutral",
+  },
+  {
+    id: "campaign-vanguard",
+    groupId: "campaign",
+    title: "Vanguard Finals",
+    subtitle: "8 creators · all approved",
+    badge: "Ready",
+    tone: "success",
+  },
+  {
+    id: "campaign-lumen",
+    groupId: "campaign",
+    title: "Lumen Partner Flight",
+    subtitle: "Partner evidence attached",
+    badge: "Scoped",
+    tone: "success",
+  },
+  {
+    id: "campaign-afterglow",
+    groupId: "campaign",
+    title: "Afterglow Retargeting",
+    subtitle: "Pacing 6% above plan",
+    badge: "Pacing",
     tone: "warning",
   },
   {
@@ -266,17 +350,6 @@ const weeklyTrendRows = [
   { id: "fri", label: "Fri", value: 68, valueLabel: "68k" },
   { id: "sat", label: "Sat", value: 59, valueLabel: "59k" },
   { id: "sun", label: "Sun", value: 63, valueLabel: "63k" },
-]
-
-const monthlyTrendRows = [
-  { id: "jan", label: "Jan", value: 320, valueLabel: "320k" },
-  { id: "feb", label: "Feb", value: 344, valueLabel: "344k" },
-  { id: "mar", label: "Mar", value: 396, valueLabel: "396k" },
-  { id: "apr", label: "Apr", value: 418, valueLabel: "418k" },
-  { id: "may", label: "May", value: 486, valueLabel: "486k" },
-  { id: "jun", label: "Jun", value: 441, valueLabel: "441k" },
-  { id: "jul", label: "Jul", value: 509, valueLabel: "509k" },
-  { id: "aug", label: "Aug", value: 544, valueLabel: "544k" },
 ]
 
 const hourlyPacingBuckets = [
@@ -487,7 +560,7 @@ const exportSessionRows = [
     window: "May 13, live",
     metric: "31k",
     status: (
-      <StatusBadge tone="processing" pulse>
+      <StatusBadge tone="processing" indicator="pulse">
         Live
       </StatusBadge>
     ),
@@ -802,10 +875,105 @@ type PlaygroundViewMode =
   | "kraken-mining"
   | "report-mining"
 
+const workbenchNavigationSections = [
+  {
+    id: "system",
+    label: "System",
+    items: [
+      {
+        id: "theme",
+        label: "Foundations",
+        meta: "Type, color, radius, motion",
+        icon: <Sparkles />,
+      },
+      {
+        id: "primitives",
+        label: "Primitives",
+        meta: "Controls and states",
+        icon: <Boxes />,
+      },
+      {
+        id: "blocks",
+        label: "Patterns",
+        meta: "Composed shared UI",
+        icon: <Layers3 />,
+      },
+    ],
+  },
+  {
+    id: "product-proofs",
+    label: "Product proofs",
+    items: [
+      {
+        id: "platform",
+        label: "Platform shell",
+        meta: "Shared application frame",
+        icon: <PanelLeft />,
+      },
+      {
+        id: "daedalus",
+        label: "Daedalus",
+        meta: "Campaign operations",
+        icon: <RadioTower />,
+      },
+      {
+        id: "intelligence",
+        label: "Creator workflow",
+        meta: "Guided report flow",
+        icon: <Sparkles />,
+      },
+    ],
+  },
+  {
+    id: "mined-proofs",
+    label: "Mined proofs",
+    items: [
+      {
+        id: "web-mining",
+        label: "Campaign tools",
+        meta: "Schedule and pacing",
+        icon: <BriefcaseBusiness />,
+      },
+      {
+        id: "kraken-mining",
+        label: "Kraken operations",
+        meta: "Monitor and evidence",
+        icon: <ServerCog />,
+      },
+      {
+        id: "report-mining",
+        label: "Report reader",
+        meta: "History and documents",
+        icon: <BookOpenText />,
+      },
+    ],
+  },
+]
+
+const workbenchViewByItemId: Record<string, PlaygroundViewMode> = {
+  theme: "report",
+  primitives: "report",
+  blocks: "report",
+  platform: "platform",
+  daedalus: "daedalus",
+  intelligence: "intelligence",
+  "web-mining": "web-mining",
+  "kraken-mining": "kraken-mining",
+  "report-mining": "report-mining",
+}
+
+const blockPreviewNavigationLabels: Record<string, string> = {
+  dashboard: "Dashboard",
+  campaigns: "Campaigns",
+  "clients-partners": "Clients & Partners",
+  creators: "Creators",
+  settings: "Settings",
+  "service-health": "Service Health",
+}
+
 type PlaygroundState = {
   viewMode: PlaygroundViewMode
   activeItemId: string
-  activeNavigationItemId: string
   daedalusFilterGroupId: string
   daedalusFilterId: string
   daedalusDateRange: DateRange
@@ -821,13 +989,12 @@ type PlaygroundState = {
   confidence: number[]
   checked: boolean
   enabled: boolean
-  activeStepId: string
+  slowAnimations: boolean
 }
 
 const initialPlaygroundState: PlaygroundState = {
   viewMode: "report",
-  activeItemId: "primitives",
-  activeNavigationItemId: "dashboard",
+  activeItemId: "theme",
   daedalusFilterGroupId: "campaign",
   daedalusFilterId: "campaign-starforge",
   daedalusDateRange: {
@@ -850,12 +1017,12 @@ const initialPlaygroundState: PlaygroundState = {
   intelligenceContext: intelligenceContextBuckets,
   intelligenceFlowSessions,
   intelligenceStreamIds: ["stream-mina-1", "stream-ren-1"],
-  inspectorVisible: true,
+  inspectorVisible: false,
   density: "comfortable",
   confidence: [72],
   checked: true,
   enabled: true,
-  activeStepId: "blocks",
+  slowAnimations: false,
 }
 
 function createInitialPlaygroundState(state: PlaygroundState) {
@@ -886,124 +1053,69 @@ function playgroundReducer(
   return { ...state, ...patch }
 }
 
-const DRAWER_DEBUG_SLOWDOWN = 1
-const DRAWER_STAGE_DURATION_MS = 260 * DRAWER_DEBUG_SLOWDOWN
-const DRAWER_ICON_STAGE_DURATION_MS = 180 * DRAWER_DEBUG_SLOWDOWN
-const DRAWER_OUTLINE_DURATION_MS = 520 * DRAWER_DEBUG_SLOWDOWN
-const drawerDebugMotionStyle = {
-  "--nextide-drawer-duration": `${DRAWER_STAGE_DURATION_MS}ms`,
-  "--nextide-drawer-icon-duration": `${DRAWER_ICON_STAGE_DURATION_MS}ms`,
-  "--nextide-drawer-outline-duration": `${DRAWER_OUTLINE_DURATION_MS}ms`,
-} as CSSProperties
-
-const playgroundViewPages: {
-  mode: PlaygroundViewMode
-  label: string
-  description: string
-  icon: ReactNode
-}[] = [
-  {
-    mode: "report",
-    label: "Package",
-    description: "primitives and blocks",
-    icon: <Layers3 />,
-  },
-  {
-    mode: "platform",
-    label: "Platform",
-    description: "navigation shell",
-    icon: <PanelLeft />,
-  },
-  {
-    mode: "daedalus",
-    label: "Daedalus",
-    description: "campaign components",
-    icon: <RadioTower />,
-  },
-  {
-    mode: "intelligence",
-    label: "Workflow",
-    description: "creator report flow",
-    icon: <Sparkles />,
-  },
-  {
-    mode: "web-mining",
-    label: "Web mining",
-    description: "schedule and pacing",
-    icon: <BriefcaseBusiness />,
-  },
-  {
-    mode: "kraken-mining",
-    label: "Kraken ops",
-    description: "run monitor evidence",
-    icon: <ServerCog />,
-  },
-  {
-    mode: "report-mining",
-    label: "Report reader",
-    description: "history and document UI",
-    icon: <BookOpenText />,
-  },
-]
+const DRAWER_STAGE_DURATION_MS = 300
+const DRAWER_ICON_STAGE_DURATION_MS = 160
+const PLAYGROUND_MOTION_DURATIONS = {
+  "--nextide-motion-instant": 120,
+  "--nextide-motion-control": 160,
+  "--nextide-motion-state": 220,
+  "--nextide-motion-layout": 300,
+  "--nextide-motion-context-exit": 110,
+  "--nextide-motion-context-enter": 190,
+  "--nextide-motion-flow-dash": 700,
+  "--nextide-motion-status-pulse": 880,
+  "--nextide-motion-brand-glow": 6000,
+} as const
 
 const playgroundViewCopy: Record<
   PlaygroundViewMode,
   {
     eyebrow: string
     title: string
-    sidebarEyebrow: string
-    sidebarStatus: string
-    sidebarDetail: string
+    description: string
   }
 > = {
   report: {
-    eyebrow: "Shared component package",
-    title: "Nextide UI primitives and product blocks",
-    sidebarEyebrow: "Package",
-    sidebarStatus: "Local package",
-    sidebarDetail: "@nextide/ui",
+    eyebrow: "Shared interface system",
+    title: "Nextide UI v2",
+    description:
+      "Tune one design language, then prove it against real product compositions.",
   },
   platform: {
     eyebrow: "Platform shell preview",
-    title: "Nextide platform shell and product blocks",
-    sidebarEyebrow: "Platform",
-    sidebarStatus: "Workspace live",
-    sidebarDetail: "Platform navigation",
+    title: "Shared platform shell",
+    description:
+      "Application wayfinding with product-level identity and compact operational context.",
   },
   daedalus: {
-    eyebrow: "Daedalus component migration",
-    title: "Daedalus campaign intelligence blocks",
-    sidebarEyebrow: "Daedalus",
-    sidebarStatus: "Daedalus ready",
-    sidebarDetail: "Shared campaign primitives",
+    eyebrow: "Campaign delivery platform",
+    title: "Campaign operations",
+    description:
+      "Dense controls for planning, pacing, delivery, and human approval.",
   },
   intelligence: {
-    eyebrow: "Intelligence report UI mining",
-    title: "Intelligence report workflow components",
-    sidebarEyebrow: "Intelligence",
-    sidebarStatus: "Report UI ready",
-    sidebarDetail: "Mined workflow primitives",
+    eyebrow: "Creator intelligence workflow",
+    title: "Creator report workflow",
+    description:
+      "A guided sequence for selecting creators, evidence, context, and streams.",
   },
   "web-mining": {
-    eyebrow: "nextide-web mining targets",
-    title: "Campaign schedule, pacing, export, and proof blocks",
-    sidebarEyebrow: "Campaigns",
-    sidebarStatus: "Web targets",
-    sidebarDetail: "P1 source candidates",
+    eyebrow: "Campaign operations toolkit",
+    title: "Campaign tools",
+    description:
+      "Plan schedules, tune delivery, export results, and review campaign proof.",
   },
   "kraken-mining": {
-    eyebrow: "Kraken mining targets",
-    title: "Operations monitor and evidence blocks",
-    sidebarEyebrow: "Kraken Ops",
-    sidebarStatus: "Ops targets",
-    sidebarDetail: "Run monitor patterns",
+    eyebrow: "Kraken operations",
+    title: "Kraken operations",
+    description:
+      "Monitoring and evidence patterns that stay recognizably Kraken in composition.",
   },
   "report-mining": {
     eyebrow: "Intelligence report targets",
-    title: "Report history rail and reader components",
-    sidebarEyebrow: "Reports",
-    sidebarStatus: "Reader targets",
-    sidebarDetail: "Document report UI",
+    title: "Intelligence report reader",
+    description:
+      "History, evidence, and long-form report patterns for focused analytical reading.",
   },
 }
 
@@ -1015,17 +1127,11 @@ function formatLargeMetricValue(value: number) {
   return value.toLocaleString("en-US")
 }
 
-function formatCompactMetricValue(value: number) {
-  return Intl.NumberFormat("en-US", {
-    maximumFractionDigits: value >= 1000000 ? 1 : 0,
-    notation: value >= 1000 ? "compact" : "standard",
-  })
-    .format(value)
-    .toLowerCase()
-}
+const formatCompactMetricValue = formatCompactNumber
 
 export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [playgroundSessionActive, setPlaygroundSessionActive] = useState(true)
   const settingsContentRef = useRef<HTMLDivElement>(null)
   const settingsSelectAnchorRef = useRef<HTMLDivElement>(null)
   const settingsSelectWidthRef = useRef<HTMLDivElement>(null)
@@ -1034,14 +1140,14 @@ export function App() {
     initialPlaygroundState,
     createInitialPlaygroundState
   )
+  const motionScale = playgroundState.slowAnimations ? 10 : 1
   const sidebar = useStagedDrawer({
-    durationMs: DRAWER_STAGE_DURATION_MS,
-    iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS,
+    durationMs: DRAWER_STAGE_DURATION_MS * motionScale,
+    iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS * motionScale,
   })
   const {
     viewMode,
     activeItemId,
-    activeNavigationItemId,
     daedalusFilterGroupId,
     daedalusFilterId,
     daedalusDateRange,
@@ -1057,14 +1163,41 @@ export function App() {
     confidence,
     checked,
     enabled,
-    activeStepId,
+    slowAnimations,
   } = playgroundState
+
+  useEffect(() => {
+    const root = document.documentElement
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+
+    if (!slowAnimations || reducedMotion) {
+      for (const property of Object.keys(PLAYGROUND_MOTION_DURATIONS)) {
+        root.style.removeProperty(property)
+      }
+      return
+    }
+
+    for (const [property, duration] of Object.entries(
+      PLAYGROUND_MOTION_DURATIONS
+    )) {
+      root.style.setProperty(property, `${duration * 10}ms`)
+    }
+
+    return () => {
+      for (const property of Object.keys(PLAYGROUND_MOTION_DURATIONS)) {
+        root.style.removeProperty(property)
+      }
+    }
+  }, [slowAnimations])
   const daedalusView = viewMode === "daedalus"
   const intelligenceView = viewMode === "intelligence"
   const webMiningView = viewMode === "web-mining"
   const krakenMiningView = viewMode === "kraken-mining"
   const reportMiningView = viewMode === "report-mining"
   const viewCopy = getPlaygroundViewCopy(viewMode)
+  const workbenchActiveItemId = viewMode === "report" ? activeItemId : viewMode
   const setViewMode = (nextMode: PlaygroundViewMode) => {
     updatePlaygroundState({ viewMode: nextMode })
 
@@ -1074,65 +1207,46 @@ export function App() {
       window.history.replaceState(null, "", nextUrl)
     }
   }
+  const selectWorkbenchItem = (itemId: string) => {
+    const nextMode = workbenchViewByItemId[itemId]
+    if (!nextMode) return
+
+    if (nextMode === "report") {
+      updatePlaygroundState({ activeItemId: itemId })
+    }
+    setViewMode(nextMode)
+  }
 
   return (
     <>
       <AppShell
-        style={drawerDebugMotionStyle}
         collapsed={sidebar.collapsed}
         drawerCollapsed={sidebar.drawerCollapsed}
         sidebarTransitioning={sidebar.transitioning}
         sidebar={
-          viewMode !== "report" ? (
-            <NavigationPanel
-              brand="Nextide"
-              eyebrow={viewCopy.sidebarEyebrow}
-              activeItemId={activeNavigationItemId}
-              collapsed={sidebar.iconsCollapsed}
-              drawerCollapsed={sidebar.drawerCollapsed}
-              drawerTransitioning={sidebar.transitioning}
-              footer={
-                <div className="grid gap-2 text-xs text-muted-foreground">
-                  <StatusBadge tone="success">
-                    {viewCopy.sidebarStatus}
-                  </StatusBadge>
-                  <span>{viewCopy.sidebarDetail}</span>
-                </div>
-              }
-              onCommand={() =>
-                updatePlaygroundState({
-                  activeNavigationItemId: "campaigns",
-                })
-              }
-              onSelectItem={(item) =>
-                updatePlaygroundState({ activeNavigationItemId: item.id })
-              }
-              onToggle={sidebar.toggleCollapsed}
-            />
-          ) : (
-            <Sidebar
-              brand="Nextide UI"
-              eyebrow="Package"
-              byline="Nextide"
-              items={sidebarItems}
-              activeItemId={activeItemId}
-              collapsed={sidebar.iconsCollapsed}
-              drawerCollapsed={sidebar.drawerCollapsed}
-              drawerTransitioning={sidebar.transitioning}
-              actionLabel="New block"
-              footer={
-                <div className="grid gap-2 text-xs text-muted-foreground">
-                  <StatusBadge tone="success">Local package</StatusBadge>
-                  <span>@nextide/ui</span>
-                </div>
-              }
-              onAction={() => updatePlaygroundState({ activeItemId: "blocks" })}
-              onSelectItem={(item) =>
-                updatePlaygroundState({ activeItemId: item.id })
-              }
-              onToggle={sidebar.toggleCollapsed}
-            />
-          )
+          <NavigationPanel
+            brand="Nextide UI"
+            eyebrow="System workbench"
+            activeItemId={workbenchActiveItemId}
+            collapsed={sidebar.iconsCollapsed}
+            drawerCollapsed={sidebar.drawerCollapsed}
+            drawerTransitioning={sidebar.transitioning}
+            sections={workbenchNavigationSections}
+            commandLabel="Search library"
+            userMenu={
+              playgroundSessionActive
+                ? {
+                    name: "Nextide Operator",
+                    email: "operator@nextide.media",
+                    initials: "NO",
+                    onSettings: () => setSettingsOpen(true),
+                    onLogout: () => setPlaygroundSessionActive(false),
+                  }
+                : undefined
+            }
+            onSelectItem={(item) => selectWorkbenchItem(item.id)}
+            onToggle={sidebar.toggleCollapsed}
+          />
         }
         aside={
           inspectorVisible ? (
@@ -1146,19 +1260,37 @@ export function App() {
         }
       >
         <div className="grid gap-4">
-          <Surface variant="strong" className="grid gap-4">
+          <Surface variant="strong" className="grid gap-4 overflow-hidden">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <SurfaceHeader>
+                <ComponentReference names={["AppShell", "NavigationPanel"]} />
                 <SurfaceDescription>{viewCopy.eyebrow}</SurfaceDescription>
-                <h1 className="max-w-3xl text-3xl leading-tight font-semibold tracking-normal">
+                <h1
+                  className={cn(
+                    "max-w-3xl text-ui-headline font-medium",
+                    viewMode === "report" &&
+                      "font-display text-ui-display font-bold"
+                  )}
+                >
                   {viewCopy.title}
                 </h1>
+                <p className="max-w-[65ch] text-ui-body text-muted-foreground">
+                  {viewCopy.description}
+                </p>
               </SurfaceHeader>
               <div className="flex flex-wrap gap-2">
-                <Button>
-                  <Download />
-                  Export
-                </Button>
+                {!inspectorVisible ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      updatePlaygroundState({ inspectorVisible: true })
+                    }
+                  >
+                    <PanelRightOpen data-icon="inline-start" />
+                    Inspect
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   variant="outline"
@@ -1170,14 +1302,6 @@ export function App() {
                 </Button>
               </div>
             </div>
-            <WorkflowStepper
-              steps={workflowSteps}
-              activeStepId={activeStepId}
-              onStepChange={(step) =>
-                updatePlaygroundState({ activeStepId: step.id })
-              }
-            />
-            <PlaygroundPageTabs mode={viewMode} onModeChange={setViewMode} />
           </Surface>
 
           {intelligenceView ? (
@@ -1243,8 +1367,12 @@ export function App() {
                 updatePlaygroundState({ watchlistTokens: nextTokens })
               }
             />
+          ) : activeItemId === "theme" ? (
+            <FoundationsPreview />
+          ) : activeItemId === "blocks" ? (
+            <BlockPreview motionScale={motionScale} />
           ) : (
-            <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <section className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_20rem]">
               <div className="grid gap-4">
                 <ComponentMatrix
                   density={density}
@@ -1264,10 +1392,10 @@ export function App() {
                     updatePlaygroundState({ enabled: nextEnabled })
                   }
                 />
-                <BlockPreview />
               </div>
               <Surface className="grid content-start gap-4 self-start">
                 <SurfaceHeader>
+                  <ComponentReference names="Metric" />
                   <SurfaceTitle>Signals</SurfaceTitle>
                   <SurfaceDescription>
                     Operational states from the mined intelligence UI.
@@ -1310,6 +1438,9 @@ export function App() {
           title="Runtime checks"
           description="Show enabled states across the preview."
         >
+          <ComponentReference
+            names={["SettingsModal", "SettingsModalSection", "SelectMenu"]}
+          />
           <div ref={settingsSelectWidthRef} className="w-44 sm:w-full">
             <div ref={settingsSelectAnchorRef} className="w-full sm:w-56">
               <SelectMenu
@@ -1339,22 +1470,22 @@ export function App() {
               }
             />
           </div>
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-nextide-line bg-nextide-panel p-3">
+            <span className="grid gap-0.5">
+              <span className="text-sm font-medium">Slow motion</span>
+              <small className="text-xs text-muted-foreground">
+                Run interface animations at 10× duration.
+              </small>
+            </span>
+            <Switch
+              checked={slowAnimations}
+              onCheckedChange={(nextSlowAnimations) =>
+                updatePlaygroundState({ slowAnimations: nextSlowAnimations })
+              }
+            />
+          </div>
         </SettingsModalSection>
       </SettingsModal>
-      <ViewModeToggle mode={viewMode} onModeChange={setViewMode} />
-      {!inspectorVisible ? (
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label="Show inspector"
-          title="Show inspector"
-          className="fixed right-3 bottom-4 z-50 bg-background/80 shadow-[0_12px_40px_rgb(0_0_0/0.28)] backdrop-blur-xl"
-          onClick={() => updatePlaygroundState({ inspectorVisible: true })}
-        >
-          <PanelRightOpen />
-        </Button>
-      ) : null}
     </>
   )
 }
@@ -1392,45 +1523,51 @@ function IntelligencePlayground({
 
   return (
     <section className="grid gap-4">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
-        <IntroPlate
-          eyebrow="Creator select"
-          title="Report workflow shell"
-          description="Creator movement, date overrides, streams, context, and generation progress are split into reusable package components."
-          status="Mined from intelligence UI"
-          metrics={[
-            {
-              label: "Creators",
-              value: selectedCreatorIds.length.toString(),
-              detail: "selected right now",
-            },
-            {
-              label: "Streams",
-              value: selectedStreamIds.length.toString(),
-              detail: "selected for report",
-            },
-            {
-              label: "Stages",
-              value: "7",
-              detail: "generation pipeline",
-            },
-          ]}
-        />
-        <IntroPlate
-          eyebrow="Package seam"
-          title="Shared report primitives"
-          description="The playground owns sample state only; the mined behavior lives in package blocks and components."
-          status="Public exports"
-          metrics={[
-            { label: "Transfer", value: "FLIP", detail: "row handoff" },
-            { label: "Streams", value: "FLIP", detail: "filter motion" },
-            { label: "Dates", value: "Gantt", detail: "creator flow" },
-          ]}
-        />
+      <div className="grid gap-2">
+        <ComponentReference names="SignalPlate" />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
+          <SignalPlate
+            eyebrow="Creator select"
+            title="Report workflow shell"
+            description="Move from creator selection through dates, streams, context, and generation with progress always visible."
+            status="Workflow ready"
+            statusTone="success"
+            metrics={[
+              {
+                label: "Creators",
+                value: selectedCreatorIds.length.toString(),
+                detail: "selected right now",
+              },
+              {
+                label: "Streams",
+                value: selectedStreamIds.length.toString(),
+                detail: "selected for report",
+              },
+              {
+                label: "Stages",
+                value: "7",
+                detail: "generation pipeline",
+              },
+            ]}
+          />
+          <SignalPlate
+            eyebrow="Workflow coverage"
+            title="Report preparation"
+            description="Choose creators, narrow evidence, set the reporting context, and confirm the final source set."
+            status="Ready"
+            statusTone="processing"
+            metrics={[
+              { label: "Transfer", value: "FLIP", detail: "row handoff" },
+              { label: "Streams", value: "FLIP", detail: "filter motion" },
+              { label: "Dates", value: "Gantt", detail: "creator flow" },
+            ]}
+          />
+        </div>
       </div>
 
       <Surface className="grid gap-4">
         <SurfaceHeader>
+          <ComponentReference names="FitLeaderboard" />
           <SurfaceTitle>Creator fit</SurfaceTitle>
           <SurfaceDescription>
             Compare fit, safety, audience sentiment, and evidence volume in one
@@ -1442,6 +1579,7 @@ function IntelligencePlayground({
 
       <Surface className="grid gap-4">
         <SurfaceHeader>
+          <ComponentReference names="CreatorTransfer" />
           <SurfaceTitle>Creator Select</SurfaceTitle>
           <SurfaceDescription>
             Individual searchable creator bars and the fused left-to-right
@@ -1464,56 +1602,66 @@ function IntelligencePlayground({
           </SurfaceDescription>
         </SurfaceHeader>
         <div className="grid gap-4 xl:grid-cols-[16rem_minmax(0,1fr)]">
-          <CreatorScopePanel
-            creators={selectedCreators}
-            activeId={activeDateScope}
-            onActiveIdChange={setActiveDateScope}
-            getAction={(creator) => (
-              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span>Override</span>
-                <Checkbox
-                  aria-label={`Override ${creator.name}`}
-                  checked={activeDateScope === creator.id}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setActiveDateScope(creator.id)
-                    }
-                  }}
-                />
-              </span>
-            )}
-          />
+          <div className="grid content-start gap-2">
+            <ComponentReference names="CreatorScopePanel" />
+            <CreatorScopePanel
+              creators={selectedCreators}
+              activeId={activeDateScope}
+              onActiveIdChange={setActiveDateScope}
+              getAction={(creator) => (
+                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span>Override</span>
+                  <Checkbox
+                    aria-label={`Override ${creator.name}`}
+                    checked={activeDateScope === creator.id}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setActiveDateScope(creator.id)
+                      }
+                    }}
+                  />
+                </span>
+              )}
+            />
+          </div>
           <div className="grid gap-4">
-            <DualDateRangePicker
-              value={dateRange}
-              onValueChange={onDateRangeChange}
-            />
-            <CreatorFlowChart
-              creators={intelligenceCreators.map((creator) => ({
-                id: creator.id,
-                name: creator.name,
-                meta: creator.meta,
-              }))}
-              days={[
-                "Mon",
-                "Tue",
-                "Wed",
-                "Thu",
-                "Fri",
-                "Sat",
-                "Sun",
-                "Mon",
-                "Tue",
-              ]}
-              sessions={flowSessions}
-              onSessionsChange={onFlowSessionsChange}
-            />
+            <div className="grid gap-2">
+              <ComponentReference names="SingleCalendarDateRangePicker" />
+              <SingleCalendarDateRangePicker
+                value={dateRange}
+                onValueChange={onDateRangeChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="CreatorFlowChart" />
+              <CreatorFlowChart
+                creators={intelligenceCreators.map((creator) => ({
+                  id: creator.id,
+                  name: creator.name,
+                  meta: creator.meta,
+                }))}
+                days={[
+                  "Mon",
+                  "Tue",
+                  "Wed",
+                  "Thu",
+                  "Fri",
+                  "Sat",
+                  "Sun",
+                  "Mon",
+                  "Tue",
+                ]}
+                sessions={flowSessions}
+                onSessionsChange={onFlowSessionsChange}
+              />
+            </div>
           </div>
         </div>
       </Surface>
 
       <Surface className="grid gap-4">
         <SurfaceHeader>
+          <ComponentReference names="StreamSelector" />
           <SurfaceTitle>Stream Select</SurfaceTitle>
           <SurfaceDescription>
             Per-creator filtering with the same exit, reflow, and enter motion
@@ -1530,6 +1678,7 @@ function IntelligencePlayground({
 
       <Surface className="grid gap-4">
         <SurfaceHeader>
+          <ComponentReference names="ReportContextBuilder" />
           <SurfaceTitle>Report Context</SurfaceTitle>
           <SurfaceDescription>
             Required and optional context rows with selected chips, suggestion
@@ -1542,11 +1691,14 @@ function IntelligencePlayground({
         />
       </Surface>
 
-      <IntelligenceProgressionChart
-        stages={intelligenceProgressionStages}
-        title="Generate"
-        description="Reusable generation progression map for sponsored content reports."
-      />
+      <div className="grid gap-2">
+        <ComponentReference names="IntelligenceProgressionChart" />
+        <IntelligenceProgressionChart
+          stages={intelligenceProgressionStages}
+          title="Generate"
+          description="Reusable generation progression map for sponsored content reports."
+        />
+      </div>
     </section>
   )
 }
@@ -1576,100 +1728,121 @@ function DaedalusPlayground({
   onExportScheduleChange: (value: ScheduleControlValue) => void
   onWatchlistTokensChange: (tokens: string[]) => void
 }) {
+  const [reportDuration, setReportDuration] = useState<DurationValue>({
+    hours: 2,
+    minutes: 33,
+  })
+  const [workbookAction, setWorkbookAction] = useState(
+    "Generated through May 12"
+  )
   const selectedFilter =
     daedalusFilterItems.find((item) => item.id === selectedFilterId) ?? null
 
   return (
     <section className="grid gap-4">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
-        <IntroPlate
-          eyebrow="Campaign surface"
-          title="Daedalus command"
-          description="Campaign filters, graph slices, workbook output, and LiveGuard proof share one reusable component lane."
-          status="Live data ready"
-          metrics={[
-            { label: "Creators", value: "42", detail: "6 live now" },
-            { label: "Reports", value: "18", detail: "Weekly scope" },
-            {
-              label: "Export health",
-              value: "96%",
-              detail: "Workbook current",
-            },
-          ]}
-          actions={
-            <Button type="button" variant="outline">
-              <WalletCards />
-              Ledger
-            </Button>
-          }
-        />
-        <IntroPlate
-          eyebrow="LiveGuard"
-          title="Cockpit proof"
-          description="Safety tokens, score thresholds, creator states, and incident rows stay package-owned."
-          status="Nominal"
-          metrics={[
-            { label: "Rules", value: "12", detail: "Brand plus safety" },
-            { label: "Incidents", value: "2", detail: "Below threshold" },
-            { label: "Cooldown", value: "8m", detail: "Delivery window" },
-          ]}
+      <div className="grid gap-2">
+        <ComponentReference names="SignalPlate" />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
+          <SignalPlate
+            eyebrow="Campaign surface"
+            title="Daedalus command"
+            description="Coordinate campaign filters, delivery signals, workbook output, and safety proof from one operational view."
+            status="Live data ready"
+            statusTone="success"
+            metrics={[
+              { label: "Creators", value: "42", detail: "6 live now" },
+              { label: "Reports", value: "18", detail: "Weekly scope" },
+              {
+                label: "Export health",
+                value: "96%",
+                detail: "Workbook current",
+              },
+            ]}
+          />
+          <SignalPlate
+            eyebrow="LiveGuard"
+            title="Cockpit proof"
+            description="Track safety rules, thresholds, creator state, and incidents without losing campaign context."
+            status="Nominal"
+            statusTone="success"
+            metrics={[
+              { label: "Rules", value: "12", detail: "Brand plus safety" },
+              { label: "Incidents", value: "2", detail: "Below threshold" },
+              { label: "Cooldown", value: "8m", detail: "Delivery window" },
+            ]}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-2">
+        <ComponentReference names="DashboardFilterBar" />
+        <DashboardFilterBar
+          groups={daedalusFilterGroups}
+          items={daedalusFilterItems}
+          activeGroupId={filterGroupId}
+          selectedItemId={selectedFilterId}
+          onGroupChange={onFilterGroupChange}
+          onItemSelect={onFilterSelect}
+          onClear={onFilterClear}
         />
       </div>
 
-      <DashboardFilterBar
-        groups={daedalusFilterGroups}
-        items={daedalusFilterItems}
-        activeGroupId={filterGroupId}
-        selectedItemId={selectedFilterId}
-        onGroupChange={onFilterGroupChange}
-        onItemSelect={onFilterSelect}
-        onClear={onFilterClear}
-      />
-
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <Metric
-          icon={<Filter />}
-          value={selectedFilter?.badge ?? "Scoped"}
-          label="Active filter"
-          detail={selectedFilter?.title ?? "No campaign selected"}
-        />
-        <Metric
-          icon={<CalendarClock />}
-          value="Mon 09:00"
-          label="Export cadence"
-          detail="Campaign workbook"
-        />
-        <Metric
-          icon={<Gauge />}
-          value="0.71"
-          label="Latest safety score"
-          detail="Under threshold"
-        />
-        <Metric
-          icon={<RadioTower />}
-          value="3"
-          label="Live channels"
-          detail="Runtime watchlist"
-        />
+      <div className="grid gap-2">
+        <ComponentReference names="Metric" />
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <Metric
+            icon={<Filter />}
+            value={selectedFilter?.badge ?? "Scoped"}
+            label="Active filter"
+            detail={selectedFilter?.title ?? "No campaign selected"}
+          />
+          <Metric
+            icon={<CalendarClock />}
+            value="Mon 09:00"
+            label="Export cadence"
+            detail="Campaign workbook"
+          />
+          <Metric
+            icon={<Gauge />}
+            value="0.71"
+            label="Latest safety score"
+            detail="Under threshold"
+          />
+          <Metric
+            icon={<RadioTower />}
+            value="3"
+            label="Live channels"
+            detail="Runtime watchlist"
+          />
+        </div>
       </div>
 
       <Surface className="grid gap-4">
         <SurfaceHeader>
-          <SurfaceTitle>Date pickers</SurfaceTitle>
+          <SurfaceTitle>Date range</SurfaceTitle>
           <SurfaceDescription>
-            Dual date controls and a single-calendar range control for export
-            and report windows.
+            One calendar keeps export and report windows in a single context.
           </SurfaceDescription>
         </SurfaceHeader>
         <div className="grid gap-4">
-          <DualDateRangePicker
-            value={dateRange}
-            onValueChange={onDateRangeChange}
-          />
-          <SingleCalendarDateRangePicker
-            value={dateRange}
-            onValueChange={onDateRangeChange}
-          />
+          <div className="grid gap-2">
+            <ComponentReference names="SingleCalendarDateRangePicker" />
+            <SingleCalendarDateRangePicker
+              value={dateRange}
+              onValueChange={onDateRangeChange}
+            />
+          </div>
+          <Surface
+            variant="plain"
+            padding="sm"
+            className="grid w-fit max-w-full justify-items-start gap-2"
+          >
+            <ComponentReference names="DurationPicker" />
+            <DurationPicker
+              value={reportDuration}
+              onValueChange={setReportDuration}
+            />
+          </Surface>
         </div>
       </Surface>
 
@@ -1677,45 +1850,52 @@ function DaedalusPlayground({
         <SurfaceHeader>
           <SurfaceTitle>Trend graphs</SurfaceTitle>
           <SurfaceDescription>
-            Bar, line, and donut primitives with Nextide chart treatment.
+            Compare delivery signals, pacing, reach, and channel mix at a
+            glance.
           </SurfaceDescription>
         </SurfaceHeader>
         <div className="grid gap-4 xl:grid-cols-2">
           <Surface variant="plain" className="grid gap-3 xl:col-span-2">
             <div className="flex items-center justify-between gap-3">
               <strong className="text-sm">Bar chart directions</strong>
-              <StatusBadge tone="neutral">5 concepts</StatusBadge>
+              <StatusBadge tone="neutral">7 directions</StatusBadge>
             </div>
             <div className="grid gap-3 lg:grid-cols-2">
-              <ChartDirection title="Rail" badge="+18%">
+              <ChartDirection
+                componentName="TrendBarChart"
+                title="Rail"
+                badge="+18%"
+              >
                 <TrendBarChart
                   rows={weeklyTrendRows}
                   variant="rail"
                   valueFormatter={(value) => `${Math.round(value)}k`}
                 />
               </ChartDirection>
-              <ChartDirection title="Block" badge="Dense">
+              <ChartDirection
+                componentName="TrendBarChart"
+                title="Block"
+                badge="Dense"
+              >
                 <TrendBarChart
                   rows={weeklyTrendRows}
                   variant="block"
                   valueFormatter={(value) => `${Math.round(value)}k`}
                 />
               </ChartDirection>
-              <ChartDirection title="Signal" badge="Live">
+              <ChartDirection
+                componentName="TrendBarChart"
+                title="Signal"
+                badge="Live"
+              >
                 <TrendBarChart
                   rows={weeklyTrendRows}
                   variant="signal"
                   valueFormatter={(value) => `${Math.round(value)}k`}
                 />
               </ChartDirection>
-              <ChartDirection title="Capsule" badge="Soft">
-                <TrendBarChart
-                  rows={monthlyTrendRows}
-                  variant="capsule"
-                  valueFormatter={(value) => `${Math.round(value)}k`}
-                />
-              </ChartDirection>
               <ChartDirection
+                componentName="HourlyPacingChart"
                 title="Pacing bars"
                 badge="Target line"
                 className="lg:col-span-2"
@@ -1727,32 +1907,48 @@ function DaedalusPlayground({
                   description="The pacing graph bar grammar reused as a general comparison option."
                 />
               </ChartDirection>
+              <ChartDirection
+                componentName="SignalRidgeChart"
+                title="Signal ridge"
+                badge="Trajectory"
+                className="lg:col-span-2"
+              >
+                <SignalRidgeChart
+                  points={weeklyTrendRows}
+                  valueFormatter={(value) =>
+                    `${formatCompactNumber(value * 1000)}`
+                  }
+                />
+              </ChartDirection>
             </div>
           </Surface>
-          <LineItemGraph
-            className="xl:col-span-2"
-            title="Weekly total impressions"
-            rangeLabel="Last 7 days"
-            days={weeklyImpressionDays}
-            series={weeklyImpressionSeries}
-            axisLabelMode="weekday-day"
-            minChartWidth={560}
-            valueFormatter={formatLargeMetricValue}
-            tickFormatter={formatCompactMetricValue}
-          />
-          <LineItemGraph
-            className="xl:col-span-2"
-            title="Banner impressions"
-            rangeLabel="Last 30 days"
-            days={bannerImpressionDays}
-            series={bannerImpressionSeries}
-            totalLine={{ label: "Total" }}
-            axisLabelMode="angled-day"
-            minChartWidth={1120}
-            valueFormatter={formatLargeMetricValue}
-            tickFormatter={formatCompactMetricValue}
-          />
+          <div className="grid gap-2 xl:col-span-2">
+            <ComponentReference names="LineItemGraph" />
+            <LineItemGraph
+              title="Weekly total impressions"
+              rangeLabel="Last 7 days"
+              days={weeklyImpressionDays}
+              series={weeklyImpressionSeries}
+              axisLabelMode="weekday-day"
+              valueFormatter={formatLargeMetricValue}
+              tickFormatter={formatCompactMetricValue}
+            />
+          </div>
+          <div className="grid gap-2 xl:col-span-2">
+            <ComponentReference names="LineItemGraph" />
+            <LineItemGraph
+              title="Banner impressions"
+              rangeLabel="Last 30 days"
+              days={bannerImpressionDays}
+              series={bannerImpressionSeries}
+              totalLine={{ label: "Total" }}
+              axisLabelMode="angled-day"
+              valueFormatter={formatLargeMetricValue}
+              tickFormatter={formatCompactMetricValue}
+            />
+          </div>
           <Surface variant="plain" className="grid gap-3">
+            <ComponentReference names="LineGraph" />
             <div className="flex items-center justify-between gap-3">
               <strong className="text-sm">Reach trajectory</strong>
               <StatusBadge tone="success">Climbing</StatusBadge>
@@ -1760,6 +1956,7 @@ function DaedalusPlayground({
             <LineGraph points={campaignLinePoints} />
           </Surface>
           <Surface variant="plain" className="grid gap-3">
+            <ComponentReference names="DonutChart" />
             <div className="flex items-center justify-between gap-3">
               <strong className="text-sm">Channel mix</strong>
               <StatusBadge tone="neutral">Current</StatusBadge>
@@ -1773,38 +1970,48 @@ function DaedalusPlayground({
         </div>
       </Surface>
 
-      <ExportWorkbench
-        schedule={exportSchedule}
-        onScheduleChange={onExportScheduleChange}
-        workbookState="current"
-        nextRun="Mon 09:00"
-        workbookName="Starforge weekly workbook"
-        generatedUntil="Generated through May 12"
-        sessions={exportSessionRows}
-      />
+      <div className="grid gap-2">
+        <ComponentReference names="ExportWorkbench" />
+        <ExportWorkbench
+          schedule={exportSchedule}
+          onScheduleChange={onExportScheduleChange}
+          workbookState="current"
+          nextRun="Mon 09:00"
+          workbookName="Starforge weekly workbook"
+          generatedUntil={workbookAction}
+          sessions={exportSessionRows}
+          onGenerate={() => setWorkbookAction("Generated just now")}
+          onDownload={() => setWorkbookAction("Downloaded just now")}
+        />
+      </div>
 
-      <LiveguardCockpit
-        enabled
-        activeRules={12}
-        scheduledCreators={liveguardCreators.length}
-        cooldown="8m"
-        creators={liveguardCreators}
-        incidents={liveguardIncidents}
-        watchlistTokens={watchlistTokens}
-        onWatchlistTokensChange={onWatchlistTokensChange}
-        score={0.71}
-        threshold={0.82}
-      />
+      <div className="grid gap-2">
+        <ComponentReference names="LiveguardCockpit" />
+        <LiveguardCockpit
+          enabled
+          activeRules={12}
+          scheduledCreators={liveguardCreators.length}
+          cooldown="8m"
+          creators={liveguardCreators}
+          incidents={liveguardIncidents}
+          watchlistTokens={watchlistTokens}
+          onWatchlistTokensChange={onWatchlistTokensChange}
+          score={0.71}
+          threshold={0.82}
+        />
+      </div>
     </section>
   )
 }
 
 function ChartDirection({
+  componentName,
   title,
   badge,
   children,
   className,
 }: {
+  componentName: string
   title: ReactNode
   badge: ReactNode
   children: ReactNode
@@ -1817,11 +2024,355 @@ function ChartDirection({
         className
       )}
     >
+      <ComponentReference names={componentName} />
       <div className="flex items-center justify-between gap-3 px-1">
         <strong className="text-sm">{title}</strong>
         <StatusBadge tone="success">{badge}</StatusBadge>
       </div>
       {children}
+    </div>
+  )
+}
+
+function FoundationsPreview() {
+  return (
+    <section className="grid gap-4 2xl:grid-cols-2">
+      <Card className="2xl:col-span-2">
+        <CardHeader>
+          <CardTitle>Typography</CardTitle>
+          <CardDescription>
+            Regular carries the interface. Medium creates hierarchy. Obviously
+            appears only when the title itself is the moment.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+          <div className="grid content-start gap-3">
+            <p className="font-display text-ui-display font-bold">
+              Signals, not noise.
+            </p>
+            <p className="text-ui-headline font-medium">
+              Campaign state should read in one glance.
+            </p>
+            <p className="max-w-[65ch] text-ui-body text-muted-foreground">
+              The everyday interface uses a metric-stable system stack with no
+              baseline offsets or per-component corrections.
+            </p>
+          </div>
+          <dl className="grid content-start gap-3">
+            <FoundationDefinition
+              label="Display"
+              value="Obviously Bold · rare title"
+            />
+            <FoundationDefinition label="Medium" value="500 · hierarchy" />
+            <FoundationDefinition label="Regular" value="400 · body" />
+            <FoundationDefinition label="Caption floor" value="12px" />
+          </dl>
+        </CardContent>
+      </Card>
+
+      <TypesetWorkbench />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Color and surface</CardTitle>
+          <CardDescription>
+            Quiet graphite layers keep turquoise scarce enough to remain a
+            signal.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          <FoundationSwatch className="bg-background" label="Canvas" />
+          <FoundationSwatch className="bg-nextide-panel" label="Surface" />
+          <FoundationSwatch
+            className="bg-nextide-panel-strong"
+            label="Raised state"
+          />
+          <FoundationSwatch
+            className="bg-nextide-tide text-black"
+            label="Signal"
+          />
+          <FoundationSwatch
+            className="bg-nextide-yellow text-black"
+            label="Warning"
+          />
+          <FoundationSwatch
+            className="bg-nextide-red text-white"
+            label="Danger"
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Radius</CardTitle>
+          <CardDescription>
+            Every control and surface stays between 8 and 12 pixels. True
+            circles and data marks are the only exceptions.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Control", value: "8px", className: "rounded-md" },
+            { label: "Surface", value: "10px", className: "rounded-lg" },
+            { label: "Overlay", value: "12px", className: "rounded-xl" },
+          ].map((radius) => (
+            <div
+              key={radius.label}
+              className={cn(
+                "grid min-h-28 place-content-center gap-1 border border-nextide-tide/28 bg-nextide-tide/[0.06] text-center",
+                radius.className
+              )}
+            >
+              <strong className="text-ui-label">{radius.label}</strong>
+              <span className="text-ui-caption text-muted-foreground">
+                {radius.value}
+              </span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Motion</CardTitle>
+          <CardDescription>
+            Four timings cover response, control feedback, state change, and
+            layout. Motion explains change; it does not decorate rest.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          {[
+            { label: "Instant", value: "120ms", detail: "Tooltip and exit" },
+            { label: "Control", value: "160ms", detail: "Hover and focus" },
+            { label: "State", value: "220ms", detail: "Selection and reveal" },
+            { label: "Layout", value: "300ms", detail: "Drawer and reflow" },
+          ].map((motion) => (
+            <div
+              key={motion.label}
+              className="group grid gap-3 rounded-lg border border-nextide-line bg-background/25 p-3"
+            >
+              <span className="h-1.5 overflow-hidden rounded-full bg-nextide-panel-strong">
+                <span className="block h-full w-1/3 rounded-full bg-nextide-tide transition-transform duration-[var(--nextide-motion-state)] ease-[var(--nextide-ease-out-quart)] group-hover:translate-x-[200%] motion-reduce:transition-none" />
+              </span>
+              <span className="grid gap-0.5">
+                <strong className="text-ui-label">
+                  {motion.label} · {motion.value}
+                </strong>
+                <span className="text-ui-caption text-muted-foreground">
+                  {motion.detail}
+                </span>
+              </span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Iconography</CardTitle>
+          <CardDescription>
+            One outline family, consistent optical size, and text labels for
+            every non-obvious action.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="flex flex-wrap gap-3 text-nextide-tide [&_svg]:size-5">
+            <Search />
+            <CalendarClock />
+            <RadioTower />
+            <ShieldAlert />
+            <Database />
+            <Settings />
+          </div>
+          <p className="text-ui-label text-muted-foreground">
+            Lucide is the current shared default. The family can change later;
+            mixing families within a product cannot.
+          </p>
+        </CardContent>
+      </Card>
+    </section>
+  )
+}
+
+type TypesetPreset = "compact" | "editorial" | "report"
+
+const typesetPresets: Record<
+  TypesetPreset,
+  { size: number; leading: number; flow: number }
+> = {
+  compact: { size: 14, leading: 1.55, flow: 0.9 },
+  editorial: { size: 16, leading: 1.7, flow: 1.25 },
+  report: { size: 17, leading: 1.75, flow: 1.45 },
+}
+
+function TypesetWorkbench() {
+  const [preset, setPreset] = useState<TypesetPreset>("editorial")
+  const [settings, setSettings] = useState(typesetPresets.editorial)
+  const updateSetting = (
+    key: keyof (typeof typesetPresets)[TypesetPreset],
+    value: number | readonly number[]
+  ) => {
+    const nextValue = Array.isArray(value) ? value[0] : value
+    setSettings((current) => ({ ...current, [key]: nextValue }))
+  }
+  const applyPreset = (nextPreset: string) => {
+    const resolvedPreset = nextPreset as TypesetPreset
+    setPreset(resolvedPreset)
+    setSettings(typesetPresets[resolvedPreset])
+  }
+
+  return (
+    <Card className="2xl:col-span-2">
+      <CardHeader>
+        <CardTitle>Typeset workbench</CardTitle>
+        <CardDescription>
+          Tune shadcn Typeset rhythm against real report content. These three
+          variables are the shared contract; product screens own the words.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-5 xl:grid-cols-[18rem_minmax(0,1fr)]">
+        <div className="grid content-start gap-5 self-start rounded-lg border border-nextide-line bg-background/20 p-4">
+          <SegmentedControl
+            value={preset}
+            options={[
+              { value: "compact", label: "Compact" },
+              { value: "editorial", label: "Editorial" },
+              { value: "report", label: "Report" },
+            ]}
+            onValueChange={applyPreset}
+            aria-label="Typeset preset"
+          />
+          <TypesetControl
+            label="Size"
+            value={`${settings.size}px`}
+            min={13}
+            max={19}
+            step={1}
+            sliderValue={settings.size}
+            onValueChange={(value) => updateSetting("size", value)}
+          />
+          <TypesetControl
+            label="Leading"
+            value={settings.leading.toFixed(2)}
+            min={1.4}
+            max={1.9}
+            step={0.05}
+            sliderValue={settings.leading}
+            onValueChange={(value) => updateSetting("leading", value)}
+          />
+          <TypesetControl
+            label="Flow"
+            value={`${settings.flow.toFixed(2)}em`}
+            min={0.75}
+            max={1.75}
+            step={0.05}
+            sliderValue={settings.flow}
+            onValueChange={(value) => updateSetting("flow", value)}
+          />
+        </div>
+        <article
+          className="typeset min-w-0 rounded-lg border border-nextide-line bg-nextide-panel p-5 sm:p-6"
+          style={
+            {
+              "--typeset-size": `${settings.size}px`,
+              "--typeset-leading": settings.leading,
+              "--typeset-flow": `${settings.flow}em`,
+            } as CSSProperties
+          }
+        >
+          <h1>Campaign signal review</h1>
+          <p>
+            Delivery is pacing <strong>within the approved range</strong>. Two
+            creator sessions need review before the next flight begins.
+          </p>
+          <h2>What changed</h2>
+          <p>
+            Qualified reach increased after the safety threshold moved from
+            <code>0.68</code> to <code>0.72</code>. The recommendation remains
+            visible until an operator approves it.
+          </p>
+          <blockquote>
+            Keep the decision legible: show the proposed result, its evidence,
+            and the human approval state together.
+          </blockquote>
+          <ul>
+            <li>18 creators are ready for review.</li>
+            <li>2 category overrides require confirmation.</li>
+            <li>Exported evidence remains attached to the report.</li>
+          </ul>
+        </article>
+      </CardContent>
+    </Card>
+  )
+}
+
+function TypesetControl({
+  label,
+  value,
+  sliderValue,
+  min,
+  max,
+  step,
+  onValueChange,
+}: {
+  label: string
+  value: string
+  sliderValue: number
+  min: number
+  max: number
+  step: number
+  onValueChange: (value: number | readonly number[]) => void
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="flex items-center justify-between gap-3 text-ui-caption text-muted-foreground">
+        <span className="font-medium uppercase">{label}</span>
+        <output className="font-mono text-foreground">{value}</output>
+      </span>
+      <Slider
+        value={sliderValue}
+        min={min}
+        max={max}
+        step={step}
+        onValueChange={onValueChange}
+        aria-label={`Typeset ${label.toLowerCase()}`}
+      />
+    </label>
+  )
+}
+
+function FoundationDefinition({
+  label,
+  value,
+}: {
+  label: string
+  value: string
+}) {
+  return (
+    <div className="grid grid-cols-[6rem_minmax(0,1fr)] gap-3 border-b border-nextide-line pb-2 last:border-b-0 last:pb-0">
+      <dt className="text-ui-caption font-medium text-muted-foreground uppercase">
+        {label}
+      </dt>
+      <dd className="text-ui-label font-medium">{value}</dd>
+    </div>
+  )
+}
+
+function FoundationSwatch({
+  className,
+  label,
+}: {
+  className?: string
+  label: string
+}) {
+  return (
+    <div
+      className={cn(
+        "flex min-h-20 items-end rounded-lg border border-nextide-line p-3",
+        className
+      )}
+    >
+      <strong className="text-ui-label">{label}</strong>
     </div>
   )
 }
@@ -1846,10 +2397,17 @@ function ComponentMatrix({
   onEnabledChange: (value: boolean) => void
 }) {
   const [creatorQuery, setCreatorQuery] = useState("")
+  const [primitiveScope, setPrimitiveScope] = useState("campaigns")
+  const [duration, setDuration] = useState<DurationValue>({
+    days: 2,
+    hours: 2,
+    minutes: 33,
+  })
 
   return (
     <Surface className="grid gap-4">
       <SurfaceHeader>
+        <ComponentReference names={["Surface", "Card"]} />
         <SurfaceTitle>Primitives</SurfaceTitle>
         <SurfaceDescription>
           Buttons, controls, badges, metrics, and notices.
@@ -1859,6 +2417,7 @@ function ComponentMatrix({
       <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-4">
         <Card>
           <CardHeader>
+            <ComponentReference names="Button" />
             <CardTitle>Buttons</CardTitle>
             <CardDescription>
               Default shadcn variants with Nextide tokens available.
@@ -1883,48 +2442,97 @@ function ComponentMatrix({
               Focused details and compact overflow surfaces.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3">
-            <div className="flex flex-wrap gap-2">
-              <Popover>
-                <PopoverTrigger render={<Button variant="outline" />}>
-                  Open details
-                </PopoverTrigger>
-                <PopoverContent>
-                  <PopoverHeader>
-                    <PopoverTitle>Shared preview</PopoverTitle>
-                    <PopoverDescription>
-                      Review compact overlays without leaving the page.
-                    </PopoverDescription>
-                  </PopoverHeader>
-                </PopoverContent>
-              </Popover>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger render={<Button variant="outline" />}>
-                    Hover for status
-                  </TooltipTrigger>
-                  <TooltipContent>All checks are ready.</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <ScrollArea className="h-28 rounded-lg border border-nextide-line bg-background/25">
-              <div className="grid gap-2 p-3 text-sm">
-                {[
-                  "Campaign summary",
-                  "Creator confidence",
-                  "Safety review",
-                  "Export schedule",
-                  "Delivery status",
-                ].map((label) => (
-                  <div
-                    key={label}
-                    className="rounded-md bg-nextide-panel px-3 py-2"
-                  >
-                    {label}
-                  </div>
-                ))}
+          <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <ComponentReference
+                names={["Dialog", "DropdownMenu", "Popover", "Tooltip"]}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Dialog>
+                  <DialogTrigger render={<Button variant="outline" />}>
+                    Open dialog
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md p-5">
+                    <DialogHeader>
+                      <DialogTitle>Review report scope</DialogTitle>
+                      <DialogDescription>
+                        Confirm the creators and campaigns included in this
+                        report.
+                      </DialogDescription>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
+                <DropdownMenu>
+                  <DropdownMenuTrigger render={<Button variant="outline" />}>
+                    Open menu
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Switch view</DropdownMenuLabel>
+                      <DropdownMenuItem>Campaigns</DropdownMenuItem>
+                      <DropdownMenuItem>Creators</DropdownMenuItem>
+                      <DropdownMenuItem>Partners</DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Popover>
+                  <PopoverTrigger render={<Button variant="outline" />}>
+                    Open details
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <PopoverHeader>
+                      <PopoverTitle>Shared preview</PopoverTitle>
+                      <PopoverDescription>
+                        Review compact overlays without leaving the page.
+                      </PopoverDescription>
+                    </PopoverHeader>
+                  </PopoverContent>
+                </Popover>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger render={<Button variant="outline" />}>
+                      Hover for status
+                    </TooltipTrigger>
+                    <TooltipContent>All checks are ready.</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
-            </ScrollArea>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="ScrollArea" />
+              <ScrollArea className="h-28 rounded-lg border border-nextide-line bg-background/25">
+                <div className="grid gap-2 p-3 text-sm">
+                  {[
+                    "Campaign summary",
+                    "Creator confidence",
+                    "Safety review",
+                    "Export schedule",
+                    "Delivery status",
+                  ].map((label) => (
+                    <div
+                      key={label}
+                      className="rounded-md border border-input bg-input/30 px-3 py-2"
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Collapsible" />
+              <Collapsible defaultOpen>
+                <CollapsibleTrigger
+                  render={<Button variant="outline" size="sm" />}
+                >
+                  Campaign details
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2 text-sm text-muted-foreground">
+                  Delivery and evidence controls stay available without opening
+                  another surface.
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
           </CardContent>
         </Card>
 
@@ -1932,21 +2540,80 @@ function ComponentMatrix({
           <CardHeader>
             <CardTitle>Inputs</CardTitle>
             <CardDescription>
-              Compact form controls for dense app surfaces.
+              Labeled fields and compact controls for dense app surfaces.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3">
-            <Input defaultValue="Sponsored report" aria-label="Report name" />
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={checked}
-                onCheckedChange={(value) => onCheckedChange(value === true)}
-              />
-              <span className="text-sm">Include degraded runs</span>
+          <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <ComponentReference names={["Field", "FieldLabel", "Input"]} />
+              <Field>
+                <FieldLabel htmlFor="primitive-report-name">
+                  Report name
+                </FieldLabel>
+                <Input
+                  id="primitive-report-name"
+                  defaultValue="Sponsored report"
+                />
+                <FieldDescription>
+                  Used for saved reports and exported evidence.
+                </FieldDescription>
+              </Field>
             </div>
-            <div className="flex items-center gap-3">
-              <Switch checked={enabled} onCheckedChange={onEnabledChange} />
-              <span className="text-sm">Runtime checks</span>
+            <div className="grid gap-2">
+              <ComponentReference names="SelectMenu" />
+              <SelectMenu
+                value={primitiveScope}
+                onValueChange={setPrimitiveScope}
+                options={[
+                  { value: "campaigns", label: "Campaigns" },
+                  { value: "creators", label: "Creators" },
+                  { value: "partners", label: "Partners" },
+                ]}
+                aria-label="Report scope"
+              />
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="DurationPicker" />
+              <DurationPicker
+                showDays
+                maxDays={365}
+                value={duration}
+                onValueChange={setDuration}
+              />
+              <output
+                data-slot="duration-picker-output"
+                className="text-ui-caption text-muted-foreground"
+                aria-live="polite"
+              >
+                {duration.days ?? 0} d {duration.hours} hr {duration.minutes}{" "}
+                min
+              </output>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Checkbox" />
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="include-degraded-runs"
+                  checked={checked}
+                  onCheckedChange={(value) => onCheckedChange(value === true)}
+                />
+                <label htmlFor="include-degraded-runs" className="text-sm">
+                  Include degraded runs
+                </label>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Switch" />
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="runtime-checks"
+                  checked={enabled}
+                  onCheckedChange={onEnabledChange}
+                />
+                <label htmlFor="runtime-checks" className="text-sm">
+                  Runtime checks
+                </label>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1959,31 +2626,59 @@ function ComponentMatrix({
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <SegmentedControl
-              value={density}
-              options={[
-                { value: "compact", label: "Compact" },
-                { value: "comfortable", label: "Comfort" },
-                { value: "spacious", label: "Spacious" },
-              ]}
-              onValueChange={onDensityChange}
-            />
-            <Slider
-              value={confidence}
-              min={0}
-              max={100}
-              step={1}
-              onValueChange={(nextValue) =>
-                onConfidenceChange(
-                  Array.isArray(nextValue) ? [...nextValue] : [nextValue]
-                )
-              }
-            />
+            <div className="grid gap-2">
+              <ComponentReference names="SegmentedControl" />
+              <SegmentedControl
+                value={density}
+                options={[
+                  { value: "compact", label: "Compact" },
+                  { value: "comfortable", label: "Comfort" },
+                  { value: "spacious", label: "Spacious" },
+                ]}
+                onValueChange={onDensityChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Slider" />
+              <Slider
+                value={confidence}
+                min={0}
+                max={100}
+                step={1}
+                onValueChange={(nextValue) =>
+                  onConfidenceChange(
+                    Array.isArray(nextValue) ? [...nextValue] : [nextValue]
+                  )
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Tabs" />
+              <Tabs defaultValue="overview">
+                <TabsList>
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="evidence">Evidence</TabsTrigger>
+                </TabsList>
+                <TabsContent
+                  value="overview"
+                  className="rounded-md bg-input/30 p-3 text-muted-foreground"
+                >
+                  Campaign-level delivery signals.
+                </TabsContent>
+                <TabsContent
+                  value="evidence"
+                  className="rounded-md bg-input/30 p-3 text-muted-foreground"
+                >
+                  Creator proof and review state.
+                </TabsContent>
+              </Tabs>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
+            <ComponentReference names="Autocomplete" />
             <CardTitle>Autocomplete</CardTitle>
             <CardDescription>
               Free-form search with inline suggestions and keyboard selection.
@@ -2042,24 +2737,151 @@ function ComponentMatrix({
 
         <Card>
           <CardHeader>
+            <CardTitle>Structure</CardTitle>
+            <CardDescription>
+              Keyboard hints, compact data, and paged content.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <ComponentReference names={["Kbd", "Separator"]} />
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span>Open command palette</span>
+                <KbdGroup>
+                  <Kbd>Ctrl</Kbd>
+                  <span>+</span>
+                  <Kbd>K</Kbd>
+                </KbdGroup>
+              </div>
+              <Separator />
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Table" />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Campaign</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell>Starforge</TableCell>
+                    <TableCell>Live</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Orbit</TableCell>
+                    <TableCell>Ready</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Carousel" />
+              <Carousel loop>
+                <CarouselContent>
+                  {[
+                    "Campaign delivery",
+                    "Creator evidence",
+                    "Safety review",
+                  ].map((label, index) => (
+                    <CarouselItem key={label}>
+                      <div
+                        id={`carousel-demo-panel-${index}`}
+                        className="grid min-h-24 place-items-center rounded-lg border border-nextide-line bg-input/30 px-12 text-sm font-medium"
+                      >
+                        {label}
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Status</CardTitle>
             <CardDescription>
               Badges and notices for runtime state.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
-            <div className="flex flex-wrap gap-2">
-              <StatusBadge tone="success">Ready</StatusBadge>
-              <StatusBadge tone="processing" pulse>
-                Processing
-              </StatusBadge>
-              <StatusBadge tone="warning">Degraded</StatusBadge>
-              <StatusBadge tone="danger">Failed</StatusBadge>
-              <Badge variant="outline">Outline</Badge>
+            <div className="grid gap-2">
+              <ComponentReference names={["StatusBadge", "Badge"]} />
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge tone="success">Ready</StatusBadge>
+                <StatusBadge tone="processing" indicator="pulse">
+                  Processing
+                </StatusBadge>
+                <StatusBadge tone="warning">Degraded</StatusBadge>
+                <StatusBadge tone="danger">Failed</StatusBadge>
+                <Badge variant="outline">Outline</Badge>
+              </div>
             </div>
-            <Notice title="Projection cache warm" tone="info">
-              Read model data is available for the current playground run.
-            </Notice>
+            <div className="grid gap-2">
+              <ComponentReference names="Alert" />
+              <Alert>
+                <ShieldAlert />
+                <AlertTitle>Evidence review ready</AlertTitle>
+                <AlertDescription>
+                  Two creator sessions are ready for operator review.
+                </AlertDescription>
+              </Alert>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Notice" />
+              <Notice title="Projection cache warm" tone="info">
+                Read model data is available for the current playground run.
+              </Notice>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <ComponentReference names="ProcessingText" />
+            <CardTitle>Processing text</CardTitle>
+            <CardDescription>
+              Three named styles moving at the same travel speed across any text
+              length.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {[
+              {
+                label: "Classic",
+                variant: "classic" as const,
+                copy: "Preparing your campaign report",
+              },
+              {
+                label: "Aurora",
+                variant: "aurora" as const,
+                copy: "Analyzing creator evidence",
+              },
+              {
+                label: "Flame",
+                variant: "flame" as const,
+                copy: "Generating delivery insights",
+              },
+            ].map((example) => (
+              <div
+                key={example.variant}
+                className="grid gap-1.5 rounded-lg border border-nextide-line bg-background/25 p-3"
+              >
+                <strong className="text-ui-caption text-muted-foreground">
+                  ProcessingText · {example.label}
+                </strong>
+                <p className="text-ui-title font-medium">
+                  <ProcessingText variant={example.variant}>
+                    {example.copy}
+                  </ProcessingText>
+                </p>
+              </div>
+            ))}
           </CardContent>
         </Card>
 
@@ -2071,41 +2893,56 @@ function ComponentMatrix({
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <AvatarGroup>
-              {intelligenceCreators.slice(0, 3).map((creator, index) => (
-                <Avatar key={creator.id}>
-                  <AvatarFallback>{creator.avatar}</AvatarFallback>
-                  {index === 0 ? <AvatarBadge aria-hidden="true" /> : null}
-                </Avatar>
-              ))}
-              <AvatarGroupCount>+2</AvatarGroupCount>
-            </AvatarGroup>
-            <Progress value={72}>
-              <ProgressLabel>Profile readiness</ProgressLabel>
-              <ProgressValue />
-            </Progress>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Spinner />
-              Refreshing preview
+            <div className="grid gap-2">
+              <ComponentReference names={["Avatar", "AvatarGroup"]} />
+              <AvatarGroup>
+                {intelligenceCreators.slice(0, 3).map((creator, index) => (
+                  <Avatar key={creator.id}>
+                    <AvatarFallback>{creator.avatar}</AvatarFallback>
+                    {index === 0 ? <AvatarBadge aria-hidden="true" /> : null}
+                  </Avatar>
+                ))}
+                <AvatarGroupCount>+2</AvatarGroupCount>
+              </AvatarGroup>
             </div>
-            <div className="flex items-center gap-3" aria-hidden="true">
-              <Skeleton className="size-9 rounded-full" />
-              <div className="grid flex-1 gap-2">
-                <Skeleton className="h-3 w-2/3" />
-                <Skeleton className="h-3 w-1/2" />
+            <div className="grid gap-2">
+              <ComponentReference names="Progress" />
+              <Progress value={72}>
+                <ProgressLabel>Profile readiness</ProgressLabel>
+                <ProgressValue />
+              </Progress>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Spinner" />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Spinner />
+                Refreshing preview
               </div>
             </div>
-            <Empty className="min-h-32 border border-nextide-line bg-background/20">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <Search />
-                </EmptyMedia>
-                <EmptyTitle>No saved views</EmptyTitle>
-                <EmptyDescription>
-                  Saved views will appear here.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <div className="grid gap-2">
+              <ComponentReference names="Skeleton" />
+              <div className="flex items-center gap-3" aria-hidden="true">
+                <Skeleton className="size-9 rounded-full" />
+                <div className="grid flex-1 gap-2">
+                  <Skeleton className="h-3 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <ComponentReference names="Empty" />
+              <Empty className="min-h-32 border border-nextide-line bg-background/20">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <Search />
+                  </EmptyMedia>
+                  <EmptyTitle>No saved views</EmptyTitle>
+                  <EmptyDescription>
+                    Saved views will appear here.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -2113,123 +2950,126 @@ function ComponentMatrix({
   )
 }
 
-function BlockPreview() {
+function BlockPreview({ motionScale }: { motionScale: number }) {
   const navigationDrawer = useStagedDrawer({
-    durationMs: DRAWER_STAGE_DURATION_MS,
-    iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS,
+    durationMs: DRAWER_STAGE_DURATION_MS * motionScale,
+    iconDurationMs: DRAWER_ICON_STAGE_DURATION_MS * motionScale,
   })
   const [activeNavigationItemId, updateActiveNavigationItemId] = useReducer(
     (_current: string, nextItemId: string) => nextItemId,
     "dashboard"
   )
-  const navigationLabels: Record<string, string> = {
-    dashboard: "Dashboard",
-    campaigns: "Campaigns",
-    "clients-partners": "Clients & Partners",
-    creators: "Creators",
-    settings: "Settings",
-    "service-health": "Service Health",
-  }
   const activeNavigationLabel =
-    navigationLabels[activeNavigationItemId] ?? "Dashboard"
+    blockPreviewNavigationLabels[activeNavigationItemId] ?? "Dashboard"
 
   return (
     <Surface className="grid gap-4">
       <SurfaceHeader>
+        <ComponentReference names="Surface" />
         <SurfaceTitle>Blocks</SurfaceTitle>
         <SurfaceDescription>
           Composed app patterns that stay outside primitive components.
         </SurfaceDescription>
       </SurfaceHeader>
 
-      <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4">
-        <Surface variant="plain" className="grid gap-3">
-          <div className="flex items-center gap-2">
-            <Database className="size-4 text-nextide-tide" />
-            <strong className="text-sm">App shell</strong>
+      <div className="grid gap-4 xl:grid-cols-[18rem_minmax(0,1fr)]">
+        <Surface variant="plain" className="grid content-start">
+          <div className="grid gap-1 pb-2">
+            <strong className="text-sm">Pattern coverage</strong>
+            <span className="text-xs text-muted-foreground">
+              Shared compositions proven against a real workspace frame.
+            </span>
           </div>
-          <Separator />
-          <p className="text-sm text-muted-foreground">
-            Sidebar, main workspace, and optional inspector slots share one
-            responsive frame.
-          </p>
+          {[
+            {
+              icon: Database,
+              title: "AppShell",
+              detail: "Sidebar, workspace, and inspector",
+            },
+            {
+              icon: Layers3,
+              title: "ProgressiveSummaryRail",
+              detail: "Stable sections with live values",
+            },
+            {
+              icon: PanelLeft,
+              title: "NavigationPanel",
+              detail: "Workspace and system wayfinding",
+            },
+            {
+              icon: Check,
+              title: "WorkflowStepper",
+              detail: "Active and completed decisions",
+            },
+          ].map((pattern) => (
+            <div
+              key={pattern.title}
+              className="grid min-h-11 grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-2 border-t border-nextide-line py-1.5 first:border-t-0"
+            >
+              <span className="grid size-7 place-items-center self-center rounded-md border border-nextide-line bg-background/30 text-nextide-tide">
+                <pattern.icon className="size-3.5" />
+              </span>
+              <span className="grid min-w-0 gap-0.5">
+                <ComponentReference names={pattern.title} />
+                <span className="truncate text-ui-caption text-muted-foreground">
+                  {pattern.detail}
+                </span>
+              </span>
+            </div>
+          ))}
         </Surface>
-        <Surface variant="plain" className="grid gap-3">
-          <div className="flex items-center gap-2">
-            <Layers3 className="size-4 text-nextide-tide" />
-            <strong className="text-sm">Report sidebar</strong>
-          </div>
-          <Separator />
-          <p className="text-sm text-muted-foreground">
-            Brand, action, status-aware nav items, collapse behavior, and footer
-            slot.
-          </p>
-        </Surface>
-        <Surface variant="plain" className="grid gap-3">
-          <div className="flex items-center gap-2">
-            <PanelLeft className="size-4 text-nextide-tide" />
-            <strong className="text-sm">Navigation panel</strong>
-          </div>
-          <Separator />
-          <p className="text-sm text-muted-foreground">
-            Product wayfinding for workspace and system-level application areas.
-          </p>
-        </Surface>
-        <Surface variant="plain" className="grid gap-3">
-          <div className="flex items-center gap-2">
-            <Check className="size-4 text-nextide-tide" />
-            <strong className="text-sm">Stepper</strong>
-          </div>
-          <Separator />
-          <p className="text-sm text-muted-foreground">
-            Horizontal workflow navigation with active and completed states.
-          </p>
-        </Surface>
+
+        <div className="grid gap-2">
+          <ComponentReference names="ProgressiveSummaryRail" />
+          <ProgressiveSummaryRail
+            title="Progressive summary"
+            description="Section headers remain stable while confirmed values enter the review."
+            sections={[
+              {
+                id: "report",
+                title: "Report",
+                summary: "Creator fit review",
+                rows: [
+                  {
+                    id: "brand",
+                    label: "Brand",
+                    badge: "BR",
+                    value: "Daedalus",
+                  },
+                ],
+              },
+              {
+                id: "campaign",
+                title: "Campaign shape",
+                rows: [],
+                emptyLabel: "Waiting for campaign input",
+              },
+              {
+                id: "safety",
+                title: "Safety gate",
+                summary: "0.72 minimum",
+                rows: [
+                  { id: "qualified", label: "qualified creators", badge: "18" },
+                  { id: "overrides", label: "category overrides", badge: "2" },
+                ],
+              },
+            ]}
+            className="rounded-xl border border-nextide-line bg-nextide-panel p-4"
+          />
+        </div>
       </div>
 
-      <ProgressiveSummaryRail
-        title="Progressive summary"
-        description="Section headers remain stable while filled rows enter as values become available."
-        sections={[
-          {
-            id: "report",
-            title: "Report",
-            summary: "Creator fit review",
-            rows: [
-              { id: "brand", label: "Brand", badge: "BR", value: "Daedalus" },
-            ],
-          },
-          {
-            id: "campaign",
-            title: "Campaign Shape",
-            rows: [],
-          },
-          {
-            id: "safety",
-            title: "Safety Gate",
-            summary: "0.72 minimum",
-            rows: [
-              { id: "qualified", label: "qualified creators", badge: "18" },
-              { id: "overrides", label: "category overrides", badge: "2" },
-            ],
-          },
-        ]}
-        className="rounded-xl border border-nextide-line bg-nextide-panel p-4"
+      <ComponentReference
+        names={["NavigationPanel", "NavigationUserMenu", "Metric", "Separator"]}
       />
-
       <div
         className={cn(
           "grid min-h-[34rem] grid-cols-1 items-start gap-3 overflow-hidden rounded-xl border border-nextide-line bg-black/20 p-3 transition-[grid-template-columns] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-          "2xl:grid-cols-[18rem_minmax(0,1fr)]",
-          navigationDrawer.collapsed && "2xl:grid-cols-[4.5rem_minmax(0,1fr)]"
+          "lg:grid-cols-[18rem_minmax(0,1fr)]",
+          navigationDrawer.collapsed && "lg:grid-cols-[4.5rem_minmax(0,1fr)]"
         )}
       >
-        <div
-          className={cn(
-            "h-full min-h-[31rem] overflow-visible transition-[width] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-            navigationDrawer.collapsed ? "w-[4.5rem]" : "w-full max-w-[18rem]"
-          )}
-        >
+        <div className="h-full min-h-[31rem] min-w-0 overflow-visible">
           <NavigationPanel
             brand="Nextide"
             eyebrow="Platform"
@@ -2237,13 +3077,13 @@ function BlockPreview() {
             collapsed={navigationDrawer.iconsCollapsed}
             drawerCollapsed={navigationDrawer.drawerCollapsed}
             drawerTransitioning={navigationDrawer.transitioning}
+            commandShortcut=""
             footer={
               <div className="grid gap-2 text-xs text-muted-foreground">
                 <StatusBadge tone="success">Workspace live</StatusBadge>
                 <span>Shared staged drawer motion</span>
               </div>
             }
-            onCommand={() => updateActiveNavigationItemId("campaigns")}
             onSelectItem={(item) => updateActiveNavigationItemId(item.id)}
             onToggle={navigationDrawer.toggleCollapsed}
           />
@@ -2259,7 +3099,7 @@ function BlockPreview() {
               <span className="text-xs text-muted-foreground">
                 Navigation target
               </span>
-              <strong className="text-xl leading-tight font-bold">
+              <strong className="text-xl leading-tight font-medium">
                 {activeNavigationLabel}
               </strong>
             </div>
@@ -2291,93 +3131,6 @@ function BlockPreview() {
         </div>
       </div>
     </Surface>
-  )
-}
-
-function PlaygroundPageTabs({
-  mode,
-  onModeChange,
-}: {
-  mode: PlaygroundViewMode
-  onModeChange: (mode: PlaygroundViewMode) => void
-}) {
-  return (
-    <div
-      data-slot="playground-page-tabs"
-      className="nextide-contained-scroll nextide-scrollbar-none flex gap-2 overflow-x-auto rounded-lg border border-nextide-line bg-background/20 p-1"
-      aria-label="Playground page"
-      role="radiogroup"
-    >
-      {playgroundViewPages.map((page) => {
-        const active = page.mode === mode
-
-        return (
-          <button
-            key={page.mode}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            className={cn(
-              "grid min-w-36 grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-2 rounded-md px-2.5 py-2 text-left transition-[background-color,color,box-shadow] duration-200",
-              active
-                ? "bg-nextide-tide text-black shadow-[0_0_18px_rgb(30_228_188/0.18)]"
-                : "text-muted-foreground hover:bg-nextide-panel hover:text-foreground"
-            )}
-            onClick={() => onModeChange(page.mode)}
-          >
-            <span className="[&_svg]:size-4">{page.icon}</span>
-            <span className="grid min-w-0">
-              <strong className="truncate text-xs font-semibold">
-                {page.label}
-              </strong>
-              <span className="truncate text-[0.68rem] opacity-75">
-                {page.description}
-              </span>
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-function ViewModeToggle({
-  mode,
-  onModeChange,
-}: {
-  mode: PlaygroundViewMode
-  onModeChange: (mode: PlaygroundViewMode) => void
-}) {
-  return (
-    <div
-      data-slot="view-mode-toggle"
-      className="fixed top-1/2 right-3 z-50 hidden -translate-y-1/2 gap-1 rounded-full border border-nextide-line bg-background/80 p-1 shadow-[0_12px_40px_rgb(0_0_0/0.32)] backdrop-blur-xl md:grid"
-      aria-label="Playground view"
-      role="radiogroup"
-    >
-      {playgroundViewPages.map((page) => {
-        const active = page.mode === mode
-
-        return (
-          <button
-            key={page.mode}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            aria-label={`${page.label} view`}
-            title={`${page.label} view`}
-            className={cn(
-              "grid size-9 place-items-center rounded-full text-muted-foreground transition-[background-color,color,box-shadow] duration-[220ms] hover:text-foreground",
-              active &&
-                "bg-nextide-tide text-black shadow-[0_0_18px_rgb(30_228_188/0.2)]"
-            )}
-            onClick={() => onModeChange(page.mode)}
-          >
-            <span className="[&_svg]:size-4">{page.icon}</span>
-          </button>
-        )
-      })}
-    </div>
   )
 }
 

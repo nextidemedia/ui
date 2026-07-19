@@ -82,7 +82,10 @@ export function ThemeProvider({
   storageKey = "theme",
   disableTransitionOnChange = true,
 }: ThemeProviderProps) {
-  const themeRef = React.useRef<Theme>(getStoredTheme(storageKey, defaultTheme))
+  const themeRef = React.useRef<Theme | null>(null)
+  if (themeRef.current === null) {
+    themeRef.current = getStoredTheme(storageKey, defaultTheme)
+  }
 
   const applyTheme = React.useCallback(
     (nextTheme: Theme) => {
@@ -106,7 +109,7 @@ export function ThemeProvider({
     applyTheme(nextTheme)
   })
   const applyCurrentThemeEvent = React.useEffectEvent(() => {
-    applyTheme(themeRef.current)
+    applyTheme(themeRef.current ?? defaultTheme)
   })
 
   React.useEffect(() => {
@@ -144,7 +147,7 @@ export function ThemeProvider({
         return
       }
 
-      const currentTheme = themeRef.current
+      const currentTheme = themeRef.current ?? defaultTheme
       const nextTheme =
         currentTheme === "dark"
           ? "light"
@@ -164,7 +167,7 @@ export function ThemeProvider({
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [storageKey])
+  }, [defaultTheme, storageKey])
 
   React.useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {

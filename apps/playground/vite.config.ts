@@ -19,6 +19,13 @@ export default defineConfig(({ command }) => {
         ),
       },
       {
+        find: "@nextide/ui/display-font.css",
+        replacement: path.resolve(
+          __dirname,
+          "../../packages/ui/src/styles/display-font.css"
+        ),
+      },
+      {
         find: /^@nextide\/ui\/(.*)$/,
         replacement: `${path.resolve(__dirname, "../../packages/ui/src")}/$1`,
       }
@@ -27,6 +34,9 @@ export default defineConfig(({ command }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    build: {
+      chunkSizeWarningLimit: 850,
+    },
     resolve: {
       alias: aliases,
     },

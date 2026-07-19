@@ -1,6 +1,9 @@
 import * as React from "react"
 
-import { StatusBadge } from "@nextide/ui/components/status-badge"
+import {
+  StatusBadge,
+  type StatusBadgeTone,
+} from "@nextide/ui/components/status-badge"
 import {
   Surface,
   SurfaceDescription,
@@ -9,20 +12,29 @@ import {
 } from "@nextide/ui/components/surface"
 import { cn } from "@nextide/ui/lib/utils"
 
-type IntroPlateMetric = {
+type SignalPlateMetric = {
   id?: string
   label: React.ReactNode
   value: React.ReactNode
   detail?: React.ReactNode
 }
 
-const emptyMetrics: IntroPlateMetric[] = []
+const emptyMetrics: SignalPlateMetric[] = []
 
-function IntroPlate({
+const toneClasses: Record<StatusBadgeTone, string> = {
+  neutral: "before:via-muted-foreground/45 after:bg-muted-foreground/[0.06]",
+  success: "before:via-nextide-tide/75 after:bg-nextide-tide/[0.12]",
+  processing: "before:via-nextide-purple/75 after:bg-nextide-purple/[0.12]",
+  warning: "before:via-nextide-yellow/75 after:bg-nextide-yellow/[0.11]",
+  danger: "before:via-nextide-red/75 after:bg-nextide-red/[0.11]",
+}
+
+function SignalPlate({
   eyebrow,
   title,
   description,
   status,
+  statusTone = "neutral",
   metrics = emptyMetrics,
   actions,
   className,
@@ -31,22 +43,25 @@ function IntroPlate({
   eyebrow?: React.ReactNode
   title: React.ReactNode
   description?: React.ReactNode
-  status?: React.ReactNode
-  metrics?: IntroPlateMetric[]
+  status: React.ReactNode
+  statusTone?: StatusBadgeTone
+  metrics?: SignalPlateMetric[]
   actions?: React.ReactNode
 }) {
   return (
     <Surface
-      data-slot="intro-plate"
+      data-slot="signal-plate"
+      data-tone={statusTone}
       variant="strong"
       className={cn(
-        "relative isolate grid gap-5 overflow-hidden p-5 before:pointer-events-none before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-nextide-tide/70 before:to-transparent after:pointer-events-none after:absolute after:top-0 after:left-1/2 after:h-12 after:w-1/2 after:-translate-x-1/2 after:bg-nextide-tide/10 after:blur-2xl",
+        "relative isolate grid gap-5 overflow-hidden p-5 before:pointer-events-none before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:to-transparent after:pointer-events-none after:absolute after:top-0 after:left-1/2 after:h-14 after:w-3/5 after:-translate-x-1/2 after:blur-2xl",
+        toneClasses[statusTone],
         className
       )}
       {...props}
     >
-      <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
-        <SurfaceHeader className="max-w-2xl">
+      <div className="relative z-10 grid items-start gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <SurfaceHeader className="max-w-2xl min-w-0">
           {eyebrow ? (
             <SurfaceDescription className="uppercase">
               {eyebrow}
@@ -62,7 +77,7 @@ function IntroPlate({
           ) : null}
         </SurfaceHeader>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {status ? <StatusBadge tone="success">{status}</StatusBadge> : null}
+          <StatusBadge tone={statusTone}>{status}</StatusBadge>
           {actions}
         </div>
       </div>
@@ -90,4 +105,4 @@ function IntroPlate({
   )
 }
 
-export { IntroPlate, type IntroPlateMetric }
+export { SignalPlate, type SignalPlateMetric }

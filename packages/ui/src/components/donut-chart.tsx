@@ -2,7 +2,12 @@ import * as React from "react"
 
 import { cn } from "@nextide/ui/lib/utils"
 
-type DonutChartTone = "success" | "processing" | "warning" | "danger" | "neutral"
+type DonutChartTone =
+  | "success"
+  | "processing"
+  | "warning"
+  | "danger"
+  | "neutral"
 
 type DonutChartSegment = {
   id: string
@@ -51,8 +56,7 @@ function DonutChart({
       }>
     }>(
       (result, segment) => {
-        const length =
-          (Math.max(0, segment.value) / total) * circumference
+        const length = (Math.max(0, segment.value) / total) * circumference
         return {
           offset: result.offset + length,
           items: [
@@ -128,7 +132,7 @@ function DonutChart({
         </svg>
         <div className="absolute inset-0 grid place-items-center text-center">
           <div className="grid gap-0.5">
-            <strong className="text-2xl leading-none font-bold">
+            <strong className="text-2xl leading-none font-medium">
               {totalLabel ?? total}
             </strong>
             <span className="text-xs font-medium text-muted-foreground">
@@ -150,7 +154,7 @@ function DonutChart({
             <span className="min-w-0 truncate text-muted-foreground">
               {segment.label}
             </span>
-            <strong className="truncate text-right font-bold">
+            <strong className="truncate text-right font-medium">
               {segment.valueLabel ?? segment.value}
             </strong>
           </div>

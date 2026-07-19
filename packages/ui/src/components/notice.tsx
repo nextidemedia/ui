@@ -52,7 +52,7 @@ function Notice({
     >
       <span className="mt-0.5 text-nextide-tide [&_svg]:size-4">{icon}</span>
       <span className="grid min-w-0 gap-1">
-        <AlertTitle className="text-sm leading-none font-semibold">
+        <AlertTitle className="text-sm leading-none font-medium">
           {title}
         </AlertTitle>
         <AlertDescription className="text-xs text-muted-foreground">

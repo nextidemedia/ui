@@ -24,83 +24,6 @@ const compactDateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 })
 
-function DualDateRangePicker({
-  value,
-  onValueChange,
-  className,
-  ...props
-}: React.ComponentProps<"section"> & {
-  value: DateRange
-  onValueChange: (value: DateRange) => void
-}) {
-  const [startMonth, setStartMonth] = React.useState(() =>
-    startOfMonth(parseDate(value.start))
-  )
-  const [endMonth, setEndMonth] = React.useState(() =>
-    startOfMonth(parseDate(value.end))
-  )
-  const today = new Date()
-
-  return (
-    <section
-      data-slot="dual-date-range-picker"
-      className={cn(
-        "grid gap-3 rounded-lg border border-nextide-line bg-nextide-panel p-3",
-        className
-      )}
-      {...props}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="size-4 text-nextide-tide" />
-          <strong className="text-sm">Separate date windows</strong>
-        </div>
-        <DateRangeSummary value={value} />
-      </div>
-      <div className="grid gap-3 xl:grid-cols-[repeat(2,minmax(18rem,1fr))]">
-        <CalendarField
-          label="Start date"
-          edge="start"
-          value={value}
-          month={startMonth}
-          todayDate={today}
-          onMonthChange={setStartMonth}
-          onSelectDate={(date) => {
-            const start = formatDateKey(date)
-            onValueChange({
-              start,
-              end: start > value.end ? start : value.end,
-            })
-          }}
-        />
-        <CalendarField
-          label="End date"
-          edge="end"
-          value={value}
-          month={endMonth}
-          todayDate={today}
-          onTodayClick={() => {
-            const end = formatDateKey(today)
-            setEndMonth(startOfMonth(today))
-            onValueChange({
-              start: end < value.start ? end : value.start,
-              end,
-            })
-          }}
-          onMonthChange={setEndMonth}
-          onSelectDate={(date) => {
-            const end = formatDateKey(date)
-            onValueChange({
-              start: end < value.start ? end : value.start,
-              end,
-            })
-          }}
-        />
-      </div>
-    </section>
-  )
-}
-
 function SingleCalendarDateRangePicker({
   value,
   onValueChange,
@@ -199,7 +122,7 @@ function SingleDatePicker({
           <CalendarDays className="size-4 text-nextide-tide" />
           <strong className="text-sm">{label}</strong>
         </div>
-        <span className="rounded-full border border-nextide-line bg-background/25 px-2 py-1 text-xs font-medium text-muted-foreground">
+        <span className="rounded-md border border-nextide-line bg-background/25 px-2 py-1 text-xs font-medium text-muted-foreground">
           {formatDisplayDate(value)}
         </span>
       </div>
@@ -233,59 +156,6 @@ function SingleDateCalendar({
   )
 }
 
-function CalendarField({
-  label,
-  edge,
-  value,
-  month,
-  todayDate,
-  onTodayClick,
-  onMonthChange,
-  onSelectDate,
-}: {
-  label: React.ReactNode
-  edge: DateRangeEdge
-  value: DateRange
-  month: Date
-  todayDate?: Date
-  onTodayClick?: () => void
-  onMonthChange: (date: Date) => void
-  onSelectDate: (date: Date) => void
-}) {
-  return (
-    <div className="grid min-w-0 gap-2 rounded-lg border border-nextide-line bg-background/20 p-2">
-      <div className="flex min-h-7 flex-wrap items-center justify-between gap-2 px-1">
-        <span className="text-xs font-medium text-muted-foreground">
-          {label}
-        </span>
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-          {onTodayClick ? (
-            <button
-              type="button"
-              className="min-h-7 rounded-full border border-nextide-tide/35 bg-nextide-tide/10 px-2 py-1 text-[0.68rem] font-semibold text-nextide-tide transition-[background-color,border-color,color] hover:border-nextide-tide/60 hover:bg-nextide-tide/16 focus-visible:border-nextide-tide/70 focus-visible:ring-3 focus-visible:ring-nextide-tide/15"
-              onClick={onTodayClick}
-            >
-              Today
-            </button>
-          ) : null}
-          <strong className="whitespace-nowrap text-sm">
-            {formatDisplayDate(edge === "start" ? value.start : value.end)}
-          </strong>
-        </div>
-      </div>
-      <CalendarGrid
-        month={month}
-        value={value}
-        activeEdge={edge}
-        size="compact"
-        todayDate={todayDate}
-        onMonthChange={onMonthChange}
-        onSelectDate={onSelectDate}
-      />
-    </div>
-  )
-}
-
 function CalendarGrid({
   month,
   value,
@@ -303,24 +173,13 @@ function CalendarGrid({
   onMonthChange: (date: Date) => void
   onSelectDate: (date: Date) => void
 }) {
-  const lastWheelAt = React.useRef(0)
   const days = React.useMemo(() => buildCalendarDays(month), [month])
   const rangeStart = value.start <= value.end ? value.start : value.end
   const rangeEnd = value.start <= value.end ? value.end : value.start
   const todayKey = formatDateKey(todayDate ?? new Date())
 
   return (
-    <div
-      className="nextide-contained-scroll grid gap-2"
-      onWheel={(event) => {
-        if (Math.abs(event.deltaY) < 6) return
-        event.preventDefault()
-        const now = event.timeStamp
-        if (now - lastWheelAt.current < 220) return
-        lastWheelAt.current = now
-        onMonthChange(addMonths(month, event.deltaY > 0 ? 1 : -1))
-      }}
-    >
+    <div className="grid gap-2">
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
@@ -344,7 +203,7 @@ function CalendarGrid({
         {weekdayLabels.map((weekday) => (
           <span
             key={weekday}
-            className="py-1 text-[0.64rem] font-medium text-muted-foreground"
+            className="py-1 text-ui-caption font-medium text-muted-foreground"
           >
             {weekday}
           </span>
@@ -365,7 +224,7 @@ function CalendarGrid({
               aria-current={today ? "date" : undefined}
               onClick={() => onSelectDate(date)}
               className={cn(
-                "relative grid place-items-center rounded-lg border border-transparent font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-200 outline-none hover:-translate-y-0.5 hover:border-nextide-tide/35 hover:bg-nextide-tide/10 focus-visible:border-nextide-tide/60 focus-visible:ring-3 focus-visible:ring-nextide-tide/15",
+                "relative grid place-items-center rounded-lg border border-transparent font-medium transition-[background-color,border-color,color,box-shadow] duration-[var(--nextide-motion-state)] outline-none hover:border-nextide-tide/35 hover:bg-nextide-tide/10 focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring",
                 size === "compact" ? "h-9 text-xs" : "h-11 text-sm sm:h-12",
                 !inMonth && "text-muted-foreground/35",
                 inRange && "bg-nextide-tide/8 text-foreground",
@@ -382,14 +241,6 @@ function CalendarGrid({
         })}
       </div>
     </div>
-  )
-}
-
-function DateRangeSummary({ value }: { value: DateRange }) {
-  return (
-    <span className="rounded-full border border-nextide-line bg-background/25 px-2 py-1 text-xs font-medium text-muted-foreground">
-      {formatDisplayDate(value.start)} - {formatDisplayDate(value.end)}
-    </span>
   )
 }
 
@@ -411,7 +262,7 @@ function RangeEdgeButton({
       type="button"
       aria-pressed={active}
       className={cn(
-        "rounded-full border px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow]",
+        "rounded-md border px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow]",
         active
           ? "border-nextide-tide/65 bg-nextide-tide/12 text-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.14)]"
           : "border-nextide-line bg-background/25 text-muted-foreground"
@@ -470,11 +321,6 @@ function isSameMonth(left: Date, right: Date) {
 }
 
 const calendarIconButtonClassName =
-  "grid size-8 place-items-center rounded-lg border border-nextide-line bg-background/25 text-muted-foreground transition-[background-color,color,border-color] hover:border-nextide-tide/45 hover:bg-nextide-tide/10 hover:text-nextide-tide focus-visible:border-nextide-tide/60 focus-visible:ring-3 focus-visible:ring-nextide-tide/15"
+  "grid size-8 place-items-center rounded-lg border border-nextide-line bg-background/25 text-muted-foreground transition-[background-color,color,border-color] hover:border-nextide-tide/45 hover:bg-nextide-tide/10 hover:text-nextide-tide focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring"
 
-export {
-  DualDateRangePicker,
-  SingleCalendarDateRangePicker,
-  SingleDatePicker,
-  type DateRange,
-}
+export { SingleCalendarDateRangePicker, SingleDatePicker, type DateRange }

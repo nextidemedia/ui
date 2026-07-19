@@ -59,7 +59,7 @@ function LiveEventTimeline({
   incidents: LiveEventTimelineIncident[]
   activeIncidentId?: string | null
   onIncidentFocus?: (incident: LiveEventTimelineIncident) => void
-  onIncidentOpen?: (incident: LiveEventTimelineIncident) => void
+  onIncidentOpen: (incident: LiveEventTimelineIncident) => void
 }) {
   const activeIncident =
     incidents.find((incident) => incident.id === activeIncidentId) ??
@@ -104,10 +104,10 @@ function LiveEventTimeline({
                       type="button"
                       className={cn(
                         "relative z-10 grid w-64 shrink-0 grid-cols-[3.25rem_2.125rem_minmax(0,1fr)] gap-2 border-0 bg-transparent p-0 text-left",
-                        "focus-visible:ring-3 focus-visible:ring-nextide-tide/15 focus-visible:outline-none",
+                        "focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-none",
                         activeIncident?.id === incident.id && "text-foreground"
                       )}
-                      onClick={() => onIncidentOpen?.(incident)}
+                      onClick={() => onIncidentOpen(incident)}
                       onFocus={() => onIncidentFocus?.(incident)}
                       onMouseEnter={() => onIncidentFocus?.(incident)}
                     >
@@ -148,7 +148,7 @@ function LiveEventTimeline({
             <span className="text-xs font-medium text-nextide-tide">
               {activeIncident.kind}
             </span>
-            <h3 className="text-xl font-semibold">{activeIncident.title}</h3>
+            <h3 className="text-xl font-medium">{activeIncident.title}</h3>
             <p className="text-sm text-muted-foreground">
               {activeIncident.detail}
             </p>
@@ -182,7 +182,7 @@ function TimelineMetric({
 }) {
   return (
     <span className="grid gap-1 rounded-md border border-nextide-line bg-background/25 p-2">
-      <small className="text-[0.65rem] text-muted-foreground uppercase">
+      <small className="text-ui-caption text-muted-foreground uppercase">
         {label}
       </small>
       <strong className="text-sm">{children}</strong>

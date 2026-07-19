@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-15T23:15:54Z",
+  "title": "Design System: Nextide UI v2",
+  "extensions": {
+    "colorMeta": {
+      "signal-turquoise": {
+        "role": "primary",
+        "displayName": "Signal Turquoise",
+        "canonical": "#1ee4bc",
+        "tonalRamp": [
+          "#05251f",
+          "#073f34",
+          "#0a5c4b",
+          "#0d7b64",
+          "#119c7f",
+          "#16bd9a",
+          "#1ee4bc",
+          "#b9f9eb"
+        ]
+      },
+      "focus-teal": {
+        "role": "primary",
+        "displayName": "Focus Teal",
+        "canonical": "#006b5a",
+        "tonalRamp": [
+          "#002d26",
+          "#00483c",
+          "#006b5a",
+          "#087f69",
+          "#16a085",
+          "#38c9aa",
+          "#8be9d3",
+          "#d2faf1"
+        ]
+      },
+      "graphite-canvas": {
+        "role": "neutral",
+        "displayName": "Graphite Canvas",
+        "canonical": "#0a0a0a",
+        "tonalRamp": [
+          "#0a0a0a",
+          "#171717",
+          "#262626",
+          "#404040",
+          "#525252",
+          "#737373",
+          "#a3a3a3",
+          "#f5f5f5"
+        ]
+      },
+      "warning-yellow": {
+        "role": "tertiary",
+        "displayName": "Review Yellow",
+        "canonical": "#ffda53",
+        "tonalRamp": [
+          "#2b2205",
+          "#4c3b08",
+          "#70570d",
+          "#967515",
+          "#bd941f",
+          "#e2b932",
+          "#ffda53",
+          "#fff2bd"
+        ]
+      },
+      "danger-red": {
+        "role": "tertiary",
+        "displayName": "Blocking Red",
+        "canonical": "#ff3355",
+        "tonalRamp": [
+          "#2d070e",
+          "#500b18",
+          "#771022",
+          "#9f162e",
+          "#c81f3b",
+          "#e92949",
+          "#ff3355",
+          "#ffc0cb"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "brand": {
+        "displayName": "Brand",
+        "purpose": "Opt-in Obviously product name inside the primary navigation lockup only."
+      },
+      "display": {
+        "displayName": "Display",
+        "purpose": "Opt-in Obviously display face for rare product intros and report mastheads only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Primary screen and major region headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Panels, sections, and focused tasks."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Product copy and readable prose."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Controls, navigation, and table labels."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Nonessential timestamps and secondary metadata."
+      },
+      "micro": {
+        "displayName": "Micro",
+        "purpose": "Short status badges and dense chart labels only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay",
+        "value": "0 24px 64px rgba(0, 0, 0, 0.36)",
+        "purpose": "Dialogs, menus, popovers, and drawers."
+      },
+      {
+        "name": "state-lift",
+        "value": "0 8px 24px rgba(0, 0, 0, 0.2)",
+        "purpose": "Hovered draggable or explicitly raised work items."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-quart",
+        "value": "cubic-bezier(0.25, 1, 0.5, 1)",
+        "purpose": "Entering state and direct feedback."
+      },
+      {
+        "name": "duration-instant",
+        "value": "120ms",
+        "purpose": "Tooltips, lightweight overlays, and exits."
+      },
+      {
+        "name": "duration-control",
+        "value": "160ms",
+        "purpose": "Hover, focus, switch, and button feedback."
+      },
+      {
+        "name": "duration-state",
+        "value": "220ms",
+        "purpose": "Selection, progressive disclosure, and local state change."
+      },
+      {
+        "name": "duration-layout",
+        "value": "300ms",
+        "purpose": "Drawers, rails, and bounded reflow."
+      }
+    ],
+    "breakpoints": [
+      { "name": "mobile-floor", "value": "320px" },
+      { "name": "mobile-primary", "value": "390px" },
+      { "name": "tablet", "value": "768px" },
+      { "name": "desktop", "value": "1440px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single dominant action in a focused region.",
+      "html": "<button class=\"ds-btn-primary\">Continue</button>",
+      "css": ".ds-btn-primary { min-height: 2.5rem; padding: .625rem .875rem; border: 0; border-radius: .5rem; background: var(--primary, #1ee4bc); color: var(--primary-foreground, #0a0a0a); font: 500 .875rem/1.4 system-ui, sans-serif; transition: filter 160ms cubic-bezier(.25,1,.5,1), transform 160ms cubic-bezier(.25,1,.5,1); } .ds-btn-primary:hover { filter: brightness(.94); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary, #1ee4bc) 46%, white); outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A supporting action that stays subordinate to the primary decision.",
+      "html": "<button class=\"ds-btn-secondary\">Save draft</button>",
+      "css": ".ds-btn-secondary { min-height: 2.5rem; padding: .625rem .875rem; border: 1px solid var(--border, rgba(255,255,255,.12)); border-radius: .5rem; background: var(--secondary, #262626); color: var(--secondary-foreground, #fafafa); font: 500 .875rem/1.4 system-ui, sans-serif; transition: background 160ms cubic-bezier(.25,1,.5,1); } .ds-btn-secondary:hover { background: var(--accent, #303030); } .ds-btn-secondary:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary, #1ee4bc) 46%, white); outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A stable, readable field for operational data entry.",
+      "html": "<label class=\"ds-field\"><span>Campaign name</span><input value=\"Summer launch\" /></label>",
+      "css": ".ds-field { display: grid; gap: .5rem; color: var(--foreground, #fafafa); font: 500 .875rem/1.4 system-ui, sans-serif; } .ds-field input { min-height: 2.5rem; padding: .625rem .75rem; border: 1px solid var(--input, rgba(255,255,255,.15)); border-radius: .5rem; background: var(--card, #171717); color: var(--card-foreground, #fafafa); font: 400 1rem/1.5 system-ui, sans-serif; outline: none; } .ds-field input:focus-visible { border-color: var(--primary, #1ee4bc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #1ee4bc) 25%, transparent); }"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "description": "Compact state with icon or text redundancy.",
+      "html": "<span class=\"ds-status\"><span aria-hidden=\"true\">●</span> Ready</span>",
+      "css": ".ds-status { display: inline-flex; align-items: center; gap: .375rem; min-height: 1.75rem; padding: .25rem .625rem; border: 1px solid color-mix(in srgb, var(--primary, #1ee4bc) 40%, transparent); border-radius: .5rem; background: color-mix(in srgb, var(--primary, #1ee4bc) 10%, transparent); color: var(--foreground, #fafafa); font: 500 .75rem/1.35 system-ui, sans-serif; } .ds-status > span { color: var(--primary, #1ee4bc); font-size: .625rem; }"
+    },
+    {
+      "name": "Work Surface",
+      "kind": "card",
+      "refersTo": "surface",
+      "description": "A quiet task grouping, not a decorative card.",
+      "html": "<section class=\"ds-surface\"><h3>Readiness</h3><p>Resolve two required fields before review.</p></section>",
+      "css": ".ds-surface { padding: 1rem; border: 1px solid var(--border, rgba(255,255,255,.1)); border-radius: .625rem; background: var(--card, #171717); color: var(--card-foreground, #fafafa); } .ds-surface h3 { margin: 0; font: 500 1.1875rem/1.3 system-ui, sans-serif; } .ds-surface p { max-width: 65ch; margin: .5rem 0 0; color: var(--muted-foreground, #a3a3a3); font: 400 1rem/1.5 system-ui, sans-serif; } .ds-surface:focus-within { border-color: color-mix(in srgb, var(--primary, #1ee4bc) 55%, transparent); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Signal Desk",
+    "overview": "A focused place where complex activity becomes clear, actionable state. The system is precise, confident, and alive, with familiar SaaS dashboard ergonomics and product-specific composition.",
+    "keyCharacteristics": [
+      "Graphite and paper neutrals with turquoise used as a scarce signal.",
+      "Fixed readable product typography with predictable metrics.",
+      "Tonal layering at rest and lift only for active state.",
+      "Dense information grouped by task rather than card reflex.",
+      "Responsive composition at 320, 390, 768, and 1440 CSS pixels."
+    ],
+    "rules": [
+      {
+        "name": "The Scarce Signal Rule",
+        "body": "Turquoise must stay below roughly ten percent of a screen. If the whole interface glows, nothing is a signal.",
+        "section": "colors"
+      },
+      {
+        "name": "The Metric Gate",
+        "body": "Reject a UI font if ordinary controls require vertical offsets or metric overrides.",
+        "section": "typography"
+      },
+      {
+        "name": "The Compact Number Rule",
+        "body": "Dense number displays use compact notation with at most three significant digits; decision-relevant exact values stay available in details.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-at-Rest Rule",
+        "body": "Default surfaces are tonal; only active or temporary layers lift.",
+        "section": "elevation"
+      },
+      {
+        "name": "The State-change Grammar",
+        "body": "Numbers roll or crossfade, short labels crossfade, local panels slide with direction, and operational text never scrambles.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do make important state obvious before adding decoration.",
+      "Do use real 400/500 weights for everyday product UI; keep Brand and Display restricted.",
+      "Do change composition for mobile around the immediate task."
+    ],
+    "donts": [
+      "Don't produce generic shadcn dashboard output or card grids without hierarchy.",
+      "Don't use unbounded neon, glow, gradient, glass, or motion as product meaning; the bounded product lockup is the exception.",
+      "Don't use Obviously as universal product text or accept baseline hacks.",
+      "Don't compress desktop workflows into mobile."
+    ]
+  }
+}

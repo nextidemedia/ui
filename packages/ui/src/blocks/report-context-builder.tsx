@@ -13,6 +13,10 @@ type ReportContextBucket = {
   suggestions: string[]
 }
 
+type ContextChipMotion = {
+  direction: "select" | "remove"
+}
+
 function ReportContextBuilder({
   buckets,
   onBucketsChange,
@@ -22,9 +26,13 @@ function ReportContextBuilder({
   buckets: ReportContextBucket[]
   onBucketsChange: (buckets: ReportContextBucket[]) => void
 }) {
+  const updateBuckets = (
+    update: (current: ReportContextBucket[]) => ReportContextBucket[]
+  ) => onBucketsChange(update(buckets))
+
   const moveToSelected = (bucketId: string, value: string) => {
-    onBucketsChange(
-      buckets.map((bucket) =>
+    updateBuckets((current) =>
+      current.map((bucket) =>
         bucket.id === bucketId
           ? {
               ...bucket,
@@ -37,8 +45,8 @@ function ReportContextBuilder({
   }
 
   const moveToSuggestions = (bucketId: string, value: string) => {
-    onBucketsChange(
-      buckets.map((bucket) => {
+    updateBuckets((current) =>
+      current.map((bucket) => {
         if (bucket.id !== bucketId) return bucket
         if (bucket.required && bucket.selected.length <= 1) return bucket
         return {
@@ -77,8 +85,47 @@ function ContextBucketRow({
   onSelect: (value: string) => void
   onRemove: (value: string) => void
 }) {
+  const [chipMotions, setChipMotions] = React.useState<
+    Record<string, ContextChipMotion>
+  >({})
+  const motionTimers = React.useRef<Record<string, number[]>>({})
   const { ref: suggestionRef, onWheel: onSuggestionWheel } =
     useContainedScroll<HTMLDivElement>({ axis: "x" })
+
+  React.useEffect(
+    () => () => {
+      Object.values(motionTimers.current).forEach((timers) => {
+        timers.forEach((timer) => window.clearTimeout(timer))
+      })
+    },
+    []
+  )
+
+  const moveChip = (
+    value: string,
+    direction: ContextChipMotion["direction"],
+    commit: () => void
+  ) => {
+    motionTimers.current[value]?.forEach((timer) =>
+      window.clearTimeout(timer)
+    )
+    commit()
+    setChipMotions((current) => ({
+      ...current,
+      [value]: { direction },
+    }))
+
+    const settleTimer = window.setTimeout(() => {
+      setChipMotions((current) => {
+        const next = { ...current }
+        delete next[value]
+        return next
+      })
+      delete motionTimers.current[value]
+    }, 300)
+
+    motionTimers.current[value] = [settleTimer]
+  }
   const { ref: selectedRef, onWheel: onSelectedWheel } =
     useContainedScroll<HTMLDivElement>({ axis: "x" })
 
@@ -106,8 +153,13 @@ function ContextBucketRow({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="shrink-0 border-nextide-tide/35 bg-nextide-tide/10 text-nextide-tide"
-                onClick={() => onRemove(item)}
+                className={cn(
+                  "shrink-0 border-nextide-tide/35 bg-nextide-tide/10 text-nextide-tide",
+                  chipMotionClass(chipMotions[item])
+                )}
+                onClick={() =>
+                  moveChip(item, "remove", () => onRemove(item))
+                }
               >
                 {item}
                 <X className="size-3.5" />
@@ -131,7 +183,7 @@ function ContextBucketRow({
             onWheel={onSuggestionWheel}
             className="nextide-contained-scroll nextide-scrollbar-none flex gap-1.5 overflow-x-auto pb-0.5"
           >
-            <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold text-nextide-purple">
+            <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-nextide-purple">
               <Sparkles className="size-3.5" />
               AI suggestions
             </span>
@@ -141,8 +193,10 @@ function ContextBucketRow({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="shrink-0"
-                onClick={() => onSelect(item)}
+                className={cn("shrink-0", chipMotionClass(chipMotions[item]))}
+                onClick={() =>
+                  moveChip(item, "select", () => onSelect(item))
+                }
               >
                 {item}
                 <Plus className="size-3.5" />
@@ -154,6 +208,13 @@ function ContextBucketRow({
       </div>
     </section>
   )
+}
+
+function chipMotionClass(motion?: ContextChipMotion) {
+  if (!motion) return undefined
+  return motion.direction === "select"
+    ? "nextide-context-enter-up"
+    : "nextide-context-enter-down"
 }
 
 export { ReportContextBuilder, type ReportContextBucket }

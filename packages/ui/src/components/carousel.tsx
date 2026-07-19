@@ -1,6 +1,18 @@
-import { Children, Fragment, createContext, useContext, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties } from "react"
+import {
+  Children,
+  Fragment,
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+  type CSSProperties,
+} from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
+import { Button } from "@nextide/ui/components/button"
 import { cn } from "@nextide/ui/lib/utils"
 
 type CarouselContextValue = {
@@ -51,48 +63,68 @@ function Carousel({
     setTrackIndex(loopEnabled ? index + 1 : index)
   }, [index, loopEnabled, value])
 
-  const context = useMemo<CarouselContextValue>(() => ({
-    index,
-    itemCount,
-    loop: loopEnabled,
-    setIndex: (nextIndex) => {
-      if (itemCount <= 0 || pendingSnapTrackIndex.current !== null) return
+  const context = useMemo<CarouselContextValue>(
+    () => ({
+      index,
+      itemCount,
+      loop: loopEnabled,
+      setIndex: (nextIndex) => {
+        if (itemCount <= 0 || pendingSnapTrackIndex.current !== null) return
 
-      const maxIndex = itemCount - 1
-      const normalized = loopEnabled ? wrapCarouselIndex(nextIndex, itemCount) : clampCarouselIndex(nextIndex, itemCount)
-      const wrapsBackward = loopEnabled && nextIndex < 0
-      const wrapsForward = loopEnabled && nextIndex > maxIndex
+        const maxIndex = itemCount - 1
+        const normalized = loopEnabled
+          ? wrapCarouselIndex(nextIndex, itemCount)
+          : clampCarouselIndex(nextIndex, itemCount)
+        const wrapsBackward = loopEnabled && nextIndex < 0
+        const wrapsForward = loopEnabled && nextIndex > maxIndex
 
-      setTrackTransitionEnabled(true)
-      if (wrapsBackward || wrapsForward) {
-        pendingSnapTrackIndex.current = normalized + 1
-        pendingValueIndex.current = normalized
-        setTrackIndex(wrapsForward ? itemCount + 1 : 0)
-      } else {
-        setTrackIndex(loopEnabled ? normalized + 1 : normalized)
-      }
+        setTrackTransitionEnabled(true)
+        if (wrapsBackward || wrapsForward) {
+          pendingSnapTrackIndex.current = normalized + 1
+          pendingValueIndex.current = normalized
+          setTrackIndex(wrapsForward ? itemCount + 1 : 0)
+        } else {
+          setTrackIndex(loopEnabled ? normalized + 1 : normalized)
+        }
 
-      if (value === undefined) setInternalIndex(normalized)
-      onValueChange?.(normalized)
-    },
-    setItemCount,
-    trackIndex,
-    trackTransitionEnabled,
-    onTrackTransitionEnd: () => {
-      const snapTrackIndex = pendingSnapTrackIndex.current
-      if (snapTrackIndex === null) return
+        if (value === undefined) setInternalIndex(normalized)
+        onValueChange?.(normalized)
+      },
+      setItemCount,
+      trackIndex,
+      trackTransitionEnabled,
+      onTrackTransitionEnd: () => {
+        const snapTrackIndex = pendingSnapTrackIndex.current
+        if (snapTrackIndex === null) return
 
-      pendingSnapTrackIndex.current = null
-      pendingValueIndex.current = null
-      setTrackTransitionEnabled(false)
-      setTrackIndex(snapTrackIndex)
-      window.requestAnimationFrame(() => window.requestAnimationFrame(() => setTrackTransitionEnabled(true)))
-    },
-  }), [index, itemCount, loopEnabled, onValueChange, trackIndex, trackTransitionEnabled, value])
+        pendingSnapTrackIndex.current = null
+        pendingValueIndex.current = null
+        setTrackTransitionEnabled(false)
+        setTrackIndex(snapTrackIndex)
+        window.requestAnimationFrame(() =>
+          window.requestAnimationFrame(() => setTrackTransitionEnabled(true))
+        )
+      },
+    }),
+    [
+      index,
+      itemCount,
+      loopEnabled,
+      onValueChange,
+      trackIndex,
+      trackTransitionEnabled,
+      value,
+    ]
+  )
 
   return (
     <CarouselContext.Provider value={context}>
-      <div aria-roledescription="carousel" className={cn("relative min-w-0", className)} data-slot="carousel" {...props}>
+      <div
+        aria-roledescription="carousel"
+        className={cn("relative min-w-0", className)}
+        data-slot="carousel"
+        {...props}
+      >
         {children}
       </div>
     </CarouselContext.Provider>
@@ -110,32 +142,48 @@ function CarouselContent({
   const context = useCarousel()
   const items = Children.toArray(children)
   const itemCount = items.length
-  const renderedItems = context.loop && itemCount > 1
-    ? [
-        <div key="carousel-loop-last" aria-hidden="true" inert className="min-w-0 flex-[0_0_100%]">{items[itemCount - 1]}</div>,
-        ...items.map((item, index) => <Fragment key={`carousel-item-${index}`}>{item}</Fragment>),
-        <div key="carousel-loop-first" aria-hidden="true" inert className="min-w-0 flex-[0_0_100%]">{items[0]}</div>,
-      ]
-    : items
+  const renderedItems =
+    context.loop && itemCount > 1
+      ? [
+          <CarouselLoopClone key="carousel-loop-last">
+            {items[itemCount - 1]}
+          </CarouselLoopClone>,
+          ...items.map((item, index) => (
+            <Fragment key={`carousel-item-${index}`}>{item}</Fragment>
+          )),
+          <CarouselLoopClone key="carousel-loop-first">
+            {items[0]}
+          </CarouselLoopClone>,
+        ]
+      : items
 
   useLayoutEffect(() => {
     context.setItemCount(itemCount)
   }, [context, itemCount])
 
   return (
-    <div className={cn("overflow-hidden", viewportClassName)} data-slot="carousel-viewport">
+    <div
+      className={cn("overflow-hidden", viewportClassName)}
+      data-slot="carousel-viewport"
+    >
       <div
         className={cn(
-          "flex [transform:translate3d(calc(var(--carousel-index,0)*-100%),0,0)] transition-transform duration-500 ease-[var(--nextide-ease-in-out-quart)]",
+          "flex [transform:translate3d(calc(var(--carousel-index,0)*-100%),0,0)] transition-transform duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)]",
           !context.trackTransitionEnabled && "transition-none",
           className
         )}
         data-slot="carousel-content"
         onTransitionEnd={(event) => {
-          if (event.currentTarget === event.target && event.propertyName === "transform") context.onTrackTransitionEnd()
+          if (
+            event.currentTarget === event.target &&
+            event.propertyName === "transform"
+          )
+            context.onTrackTransitionEnd()
           onTransitionEnd?.(event)
         }}
-        style={{ ...style, "--carousel-index": context.trackIndex } as CSSProperties}
+        style={
+          { ...style, "--carousel-index": context.trackIndex } as CSSProperties
+        }
         {...props}
       >
         {renderedItems}
@@ -144,8 +192,30 @@ function CarouselContent({
   )
 }
 
+function CarouselLoopClone({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement | null>(null)
+
+  useLayoutEffect(() => {
+    ref.current
+      ?.querySelectorAll<HTMLElement>("[id]")
+      .forEach((element) => element.removeAttribute("id"))
+  }, [children])
+
+  return (
+    <div ref={ref} aria-hidden="true" inert className="min-w-0 flex-[0_0_100%]">
+      {children}
+    </div>
+  )
+}
+
 function CarouselItem({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("min-w-0 flex-[0_0_100%]", className)} data-slot="carousel-item" {...props} />
+  return (
+    <div
+      className={cn("min-w-0 flex-[0_0_100%]", className)}
+      data-slot="carousel-item"
+      {...props}
+    />
+  )
 }
 
 function CarouselPrevious({
@@ -154,15 +224,19 @@ function CarouselPrevious({
   disabled,
   onClick,
   ...props
-}: ComponentProps<"button">) {
+}: ComponentProps<typeof Button>) {
   const context = useCarousel()
-  const controlDisabled = disabled || context.itemCount <= 1 || (!context.loop && context.index <= 0)
+  const controlDisabled =
+    disabled || context.itemCount <= 1 || (!context.loop && context.index <= 0)
 
   return (
-    <button
+    <Button
       {...props}
       aria-label={ariaLabel}
-      className={cn("absolute top-1/2 left-3 z-10 -translate-y-1/2", className)}
+      className={cn(
+        "absolute top-1/2 left-3 z-10 -translate-y-1/2 bg-background! active:not-aria-[haspopup]:-translate-y-1/2",
+        className
+      )}
       data-slot="carousel-previous"
       disabled={controlDisabled}
       onClick={(event) => {
@@ -170,9 +244,11 @@ function CarouselPrevious({
         if (!event.defaultPrevented) context.setIndex(context.index - 1)
       }}
       type="button"
+      variant="outline"
+      size="icon-sm"
     >
-      <ChevronLeft aria-hidden="true" size={18} />
-    </button>
+      <ChevronLeft aria-hidden="true" />
+    </Button>
   )
 }
 
@@ -182,15 +258,21 @@ function CarouselNext({
   disabled,
   onClick,
   ...props
-}: ComponentProps<"button">) {
+}: ComponentProps<typeof Button>) {
   const context = useCarousel()
-  const controlDisabled = disabled || context.itemCount <= 1 || (!context.loop && context.index >= context.itemCount - 1)
+  const controlDisabled =
+    disabled ||
+    context.itemCount <= 1 ||
+    (!context.loop && context.index >= context.itemCount - 1)
 
   return (
-    <button
+    <Button
       {...props}
       aria-label={ariaLabel}
-      className={cn("absolute top-1/2 right-3 z-10 -translate-y-1/2", className)}
+      className={cn(
+        "absolute top-1/2 right-3 z-10 -translate-y-1/2 bg-background! active:not-aria-[haspopup]:-translate-y-1/2",
+        className
+      )}
       data-slot="carousel-next"
       disabled={controlDisabled}
       onClick={(event) => {
@@ -198,15 +280,18 @@ function CarouselNext({
         if (!event.defaultPrevented) context.setIndex(context.index + 1)
       }}
       type="button"
+      variant="outline"
+      size="icon-sm"
     >
-      <ChevronRight aria-hidden="true" size={18} />
-    </button>
+      <ChevronRight aria-hidden="true" />
+    </Button>
   )
 }
 
 function useCarousel() {
   const context = useContext(CarouselContext)
-  if (!context) throw new Error("Carousel components must be rendered inside Carousel.")
+  if (!context)
+    throw new Error("Carousel components must be rendered inside Carousel.")
   return context
 }
 
@@ -219,4 +304,10 @@ function wrapCarouselIndex(index: number, itemCount: number) {
   return ((index % itemCount) + itemCount) % itemCount
 }
 
-export { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious }
+export {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+}

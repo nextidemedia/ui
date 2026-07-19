@@ -16,8 +16,7 @@ type HourlyPacingBucket = {
 
 const toneClasses: Record<HourlyPacingTone, string> = {
   low: "from-nextide-tide/60 via-nextide-tide/45 to-nextide-tide/20",
-  nominal:
-    "from-nextide-tide via-nextide-tide/85 to-nextide-tide/35",
+  nominal: "from-nextide-tide via-nextide-tide/85 to-nextide-tide/35",
   high: "from-nextide-yellow via-nextide-yellow/80 to-nextide-yellow/30",
   critical: "from-nextide-red via-nextide-red/80 to-nextide-red/30",
 }
@@ -117,7 +116,7 @@ function HourlyPacingChart({
             </span>
           ) : null}
         </div>
-        <div className="rounded-full border border-nextide-tide/35 bg-nextide-tide/10 px-2.5 py-1 text-xs font-semibold text-nextide-tide">
+        <div className="rounded-md border border-nextide-tide/35 bg-nextide-tide/10 px-2.5 py-1 text-xs font-medium text-nextide-tide">
           Avg {formatPercent(resolvedAverage)}
         </div>
       </div>
@@ -128,7 +127,7 @@ function HourlyPacingChart({
         className="nextide-contained-scroll nextide-scrollbar-none overflow-x-auto"
       >
         <div className="grid min-w-[48rem] grid-cols-[3.6rem_minmax(0,1fr)] gap-3">
-          <div className="relative h-80 text-[0.68rem] font-medium text-muted-foreground">
+          <div className="relative h-80 text-ui-caption font-medium text-muted-foreground">
             <div className="absolute inset-x-0 top-0 bottom-7">
               {ticks.map((tick) => (
                 <span
@@ -178,7 +177,7 @@ function HourlyPacingChart({
                     >
                       <span
                         className={cn(
-                          "relative block w-full max-w-7 rounded-t-[0.35rem] rounded-b-[0.16rem] bg-linear-to-b shadow-[0_10px_24px_rgb(30_228_188/0.18)] transition-[height,filter] duration-500 ease-[var(--nextide-ease-out-quart)] before:absolute before:inset-0 before:rounded-[inherit] before:bg-linear-to-b before:from-white/35 before:to-transparent before:opacity-45 group-hover:brightness-110 group-focus-visible:brightness-110",
+                          "relative block w-full max-w-7 rounded-t-[0.35rem] rounded-b-[0.16rem] bg-linear-to-b shadow-[0_10px_24px_rgb(30_228_188/0.18)] transition-[height,filter] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-out-quart)] group-hover:brightness-110 group-focus-visible:brightness-110 before:absolute before:inset-0 before:rounded-[inherit] before:bg-linear-to-b before:from-white/35 before:to-transparent before:opacity-45",
                           toneClasses[tone],
                           selected && "brightness-110"
                         )}
@@ -193,7 +192,7 @@ function HourlyPacingChart({
               {normalizedBuckets.map((bucket) => (
                 <span
                   key={bucket.id ?? bucket.hour}
-                  className="text-center text-[0.64rem] leading-none font-medium text-muted-foreground"
+                  className="text-center text-ui-caption leading-none font-medium text-muted-foreground"
                 >
                   {padHour(bucket.hour)}
                 </span>
@@ -205,7 +204,8 @@ function HourlyPacingChart({
 
       <div className="flex min-h-8 flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <span>
-          Peak <strong className="text-foreground">{formatPercent(peak)}</strong>
+          Peak{" "}
+          <strong className="text-foreground">{formatPercent(peak)}</strong>
         </span>
         <span className="text-muted-foreground/45">/</span>
         <span>

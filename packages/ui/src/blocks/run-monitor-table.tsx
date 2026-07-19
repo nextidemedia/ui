@@ -58,7 +58,7 @@ function RunMonitorTable({
   title?: React.ReactNode
   description?: React.ReactNode
   activeRowId?: string
-  onRowSelect?: (row: RunMonitorRow) => void
+  onRowSelect: (row: RunMonitorRow) => void
 }) {
   const runningCount = rows.filter((row) => row.tone === "processing").length
   const failedCount = rows.filter((row) => row.tone === "danger").length
@@ -105,11 +105,11 @@ function RunMonitorTable({
                 key={row.id}
                 type="button"
                 className={cn(
-                  "grid grid-cols-[1.4fr_0.9fr_0.8fr_0.8fr_1.4fr_0.8fr] items-center gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-left text-sm transition-[background-color,border-color,box-shadow] duration-200 hover:bg-nextide-panel",
+                  "grid grid-cols-[1.4fr_0.9fr_0.8fr_0.8fr_1.4fr_0.8fr] items-center gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-left text-sm transition-[background-color,border-color,box-shadow] duration-[var(--nextide-motion-state)] hover:bg-nextide-panel",
                   active &&
                     "border-nextide-tide/70 bg-nextide-tide/8 shadow-[0_0_22px_rgb(30_228_188/0.12)]"
                 )}
-                onClick={() => onRowSelect?.(row)}
+                onClick={() => onRowSelect(row)}
               >
                 <span className="grid min-w-0 gap-0.5">
                   <strong className="truncate">{row.title}</strong>

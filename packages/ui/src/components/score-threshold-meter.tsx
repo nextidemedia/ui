@@ -40,7 +40,7 @@ function ScoreThresholdMeter({
         <strong className="text-sm leading-tight">{title}</strong>
         <span
           className={cn(
-            "rounded-full border px-2 py-0.5 text-xs font-medium",
+            "rounded-md border px-2 py-0.5 text-xs font-medium",
             blocked
               ? "border-nextide-red/40 bg-nextide-red/10 text-nextide-red"
               : "border-nextide-tide/40 bg-nextide-tide/10 text-nextide-tide"
@@ -50,7 +50,7 @@ function ScoreThresholdMeter({
         </span>
       </div>
       <div className="grid grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
-        <span className="text-center text-[0.65rem] text-muted-foreground">
+        <span className="text-center text-ui-caption text-muted-foreground">
           0.00
         </span>
         <div className="relative h-12">
@@ -72,7 +72,7 @@ function ScoreThresholdMeter({
             )}
           />
         </div>
-        <span className="text-center text-[0.65rem] text-muted-foreground">
+        <span className="text-center text-ui-caption text-muted-foreground">
           1.00
         </span>
       </div>
@@ -96,7 +96,7 @@ function MeterMarker({
         className
       )}
     >
-      <span className="absolute bottom-full left-1/2 mb-1 hidden -translate-x-1/2 rounded-md border border-nextide-line bg-background px-1.5 py-0.5 text-[0.62rem] font-medium whitespace-nowrap text-foreground shadow-sm sm:block">
+      <span className="absolute bottom-full left-1/2 mb-1 hidden -translate-x-1/2 rounded-md border border-nextide-line bg-background px-1.5 py-0.5 text-ui-caption font-medium whitespace-nowrap text-foreground shadow-sm sm:block">
         {label} {value.toFixed(2)}
       </span>
     </span>

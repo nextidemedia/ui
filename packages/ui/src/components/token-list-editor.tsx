@@ -2,6 +2,7 @@ import * as React from "react"
 import { Plus, X } from "lucide-react"
 
 import { Button } from "@nextide/ui/components/button"
+import { Input } from "@nextide/ui/components/input"
 import { cn } from "@nextide/ui/lib/utils"
 
 function TokenListEditor({
@@ -36,8 +37,8 @@ function TokenListEditor({
       className={cn("grid gap-3", className)}
       {...props}
     >
-      <div className="flex gap-2">
-        <input
+      <div className="grid grid-cols-[minmax(0,1fr)_2.5rem] gap-2">
+        <Input
           value={draft}
           placeholder={placeholder}
           onChange={(event) => setDraft(event.target.value)}
@@ -47,7 +48,7 @@ function TokenListEditor({
               addDraft()
             }
           }}
-          className="h-8 min-w-0 flex-1 rounded-lg border border-nextide-line bg-nextide-panel px-3 text-sm outline-none focus:border-nextide-tide/50 focus:ring-3 focus:ring-nextide-tide/15"
+          className="h-10 bg-nextide-panel dark:bg-nextide-panel"
         />
         <Button
           type="button"
@@ -58,19 +59,19 @@ function TokenListEditor({
           <Plus />
         </Button>
       </div>
-      <div className="flex min-h-9 flex-wrap gap-2">
+      <div className="flex min-h-8 flex-wrap items-start gap-1.5">
         {tokens.length === 0 ? (
           <span className="text-sm text-muted-foreground">{emptyLabel}</span>
         ) : (
           tokens.map((token) => (
             <span
               key={token}
-              className="inline-flex items-center gap-1.5 rounded-full border border-nextide-tide/35 bg-nextide-tide/10 py-1 pr-1 pl-2 text-xs font-medium text-nextide-tide"
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-nextide-tide/30 bg-nextide-tide/[0.07] pr-1 pl-2 text-xs font-medium text-nextide-tide"
             >
               {token}
               <button
                 type="button"
-                className="grid size-5 place-items-center rounded-full text-nextide-tide transition-colors hover:bg-nextide-tide/15"
+                className="grid size-5 place-items-center rounded-sm text-nextide-tide transition-colors hover:bg-nextide-tide/15"
                 aria-label={`Remove ${token}`}
                 onClick={() =>
                   onTokensChange(tokens.filter((item) => item !== token))

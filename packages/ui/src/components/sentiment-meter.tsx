@@ -63,10 +63,10 @@ function SentimentMeter({
         className="flex min-w-0 items-baseline justify-between gap-2"
         aria-hidden="true"
       >
-        <small className="truncate text-[0.65rem] font-semibold text-muted-foreground uppercase">
+        <small className="truncate text-ui-caption font-medium text-muted-foreground uppercase">
           {label}
         </small>
-        <strong className="shrink-0 text-xs font-bold text-[var(--sentiment-meter-color)] tabular-nums">
+        <strong className="shrink-0 text-xs font-medium text-[var(--sentiment-meter-color)] tabular-nums">
           {valueLabel ?? fallbackValueLabel}
         </strong>
       </span>
@@ -77,7 +77,7 @@ function SentimentMeter({
         <span className="absolute top-1/2 left-[var(--sentiment-meter-position)] size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background bg-[var(--sentiment-meter-color)] shadow-[0_0_12px_color-mix(in_srgb,var(--sentiment-meter-color)_52%,transparent)]" />
       </span>
       {detail != null ? (
-        <small className="truncate text-[0.65rem] text-muted-foreground">
+        <small className="truncate text-ui-caption text-muted-foreground">
           {detail}
         </small>
       ) : null}

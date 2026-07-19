@@ -1,6 +1,10 @@
 import * as React from "react"
 
-import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
+import {
+  GraphTooltip,
+  GraphTooltipRow,
+} from "@nextide/ui/components/graph-tooltip"
+import { formatCompactNumber } from "@nextide/ui/lib/format-number"
 import { cn } from "@nextide/ui/lib/utils"
 
 type LineItemGraphTone =
@@ -48,6 +52,8 @@ type LineItemGraphHover =
       dayId: string
       x: number
       y: number
+      viewportX: number
+      viewportY: number
     }
   | {
       kind: "point"
@@ -55,6 +61,8 @@ type LineItemGraphHover =
       seriesId: string
       x: number
       y: number
+      viewportX: number
+      viewportY: number
     }
 
 type PlottedLineItemPoint = LineItemGraphPoint & {
@@ -81,7 +89,6 @@ function LineItemGraph({
   axisLabelMode = "day",
   minValue,
   maxValue,
-  minChartWidth,
   activeSeriesIds,
   defaultActiveSeriesIds,
   onActiveSeriesIdsChange,
@@ -99,7 +106,6 @@ function LineItemGraph({
   axisLabelMode?: LineItemGraphAxisLabelMode
   minValue?: number
   maxValue?: number
-  minChartWidth?: number
   activeSeriesIds?: string[]
   defaultActiveSeriesIds?: string[]
   onActiveSeriesIdsChange?: (ids: string[]) => void
@@ -109,9 +115,6 @@ function LineItemGraph({
 }) {
   const rawId = React.useId()
   const clipId = `nextide-line-item-clip-${rawId.replace(/:/g, "")}`
-  const { ref: scrollRef, onWheel } = useContainedScroll<HTMLDivElement>({
-    axis: "x",
-  })
   const selectableSeries = React.useMemo(
     () => series.filter((item) => !item.disabled),
     [series]
@@ -126,6 +129,31 @@ function LineItemGraph({
   const [uncontrolledActiveIds, setUncontrolledActiveIds] =
     React.useState(fallbackActiveIds)
   const [hover, setHover] = React.useState<LineItemGraphHover | null>(null)
+  const [measuredChartWidth, setMeasuredChartWidth] = React.useState(0)
+  const viewportRef = React.useRef<HTMLDivElement | null>(null)
+  const chartRef = React.useRef<HTMLDivElement | null>(null)
+
+  React.useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+
+    const updateWidth = (width: number) => {
+      const nextWidth = Math.max(1, Math.round(width))
+      setMeasuredChartWidth((current) =>
+        current === nextWidth ? current : nextWidth
+      )
+    }
+
+    updateWidth(viewport.getBoundingClientRect().width)
+    if (typeof ResizeObserver === "undefined") return
+
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) updateWidth(entry.contentRect.width)
+    })
+    observer.observe(viewport)
+
+    return () => observer.disconnect()
+  }, [])
 
   const availableIdSet = React.useMemo(
     () => new Set(selectableSeries.map((item) => item.id)),
@@ -165,20 +193,38 @@ function LineItemGraph({
     () => days.filter((day) => !day.hidden),
     [days]
   )
-
-  const chartWidth = Math.max(
-    minChartWidth ?? (axisLabelMode === "angled-day" ? 1120 : 760),
-    visibleDays.length * (axisLabelMode === "angled-day" ? 42 : 72) + 68
+  const dayById = React.useMemo(
+    () => new Map(days.map((day) => [day.id, day])),
+    [days]
   )
-  const chartHeight = axisLabelMode === "angled-day" ? 306 : 274
+
+  const chartWidth = measuredChartWidth || 760
+  const compactAxis = chartWidth < 520
   const plotTop = 22
-  const plotBottom = axisLabelMode === "angled-day" ? 214 : 204
-  const plotLeft = 58
-  const plotRight = chartWidth - 22
-  const plotHeight = plotBottom - plotTop
+  const plotLeft = compactAxis ? 48 : 58
+  const plotRight = chartWidth - (compactAxis ? 12 : 22)
   const plotWidth = plotRight - plotLeft
   const step =
     visibleDays.length > 1 ? plotWidth / (visibleDays.length - 1) : plotWidth
+  const angleThreshold =
+    axisLabelMode === "weekday-day"
+      ? 74
+      : axisLabelMode === "angled-day"
+        ? 58
+        : 52
+  const shouldAngleLabels = visibleDays.length > 1 && step < angleThreshold
+  const chartHeight = shouldAngleLabels ? 306 : 274
+  const plotBottom = shouldAngleLabels ? 214 : 204
+  const plotHeight = plotBottom - plotTop
+  const minimumLabelGap = shouldAngleLabels
+    ? 52
+    : axisLabelMode === "weekday-day"
+      ? 82
+      : 58
+  const axisLabelIndices = getAxisLabelIndices(
+    visibleDays.length,
+    Math.max(1, Math.ceil(minimumLabelGap / Math.max(step, 1)))
+  )
   const dayX = React.useMemo(
     () => resolveDayPositions(days, plotLeft, plotRight, step),
     [days, plotLeft, plotRight, step]
@@ -228,29 +274,45 @@ function LineItemGraph({
     const progress = index / 4
     return resolvedMax - progress * range
   })
-  const seriesPlots = activeSeries.map((item) => ({
-    ...item,
-    color: resolveSeriesColor(item),
-    plottedPoints: item.points
-      .map((point) => {
-        const x = dayX.get(point.dayId)
-        if (x === undefined) return null
+  const seriesPlots = selectableSeries.map((item) => {
+    const plottedPoints: PlottedLineItemPoint[] = []
 
-        return {
-          ...point,
-          x,
-          y: valueToY(point.value, resolvedMin, range, plotBottom, plotHeight),
-          hidden: days.find((day) => day.id === point.dayId)?.hidden ?? false,
-        }
+    for (const point of item.points) {
+      const x = dayX.get(point.dayId)
+      if (x === undefined) continue
+
+      plottedPoints.push({
+        ...point,
+        x,
+        y: valueToY(point.value, resolvedMin, range, plotBottom, plotHeight),
+        hidden: dayById.get(point.dayId)?.hidden ?? false,
       })
-      .filter(isPlottedLineItemPoint),
-  }))
+    }
+
+    return {
+      ...item,
+      active: activeIdSet.has(item.id),
+      color: resolveSeriesColor(item),
+      plottedPoints,
+    }
+  })
+  const interactivePoints: Array<{
+    item: (typeof seriesPlots)[number]
+    point: PlottedLineItemPoint
+  }> = []
+
+  for (const item of seriesPlots) {
+    if (!item.active) continue
+    for (const point of item.plottedPoints) {
+      if (!point.hidden) interactivePoints.push({ item, point })
+    }
+  }
   const totalPlot =
     totalLineConfig && totalPoints.length > 0
       ? {
           id: "__total",
           label: totalLineConfig.label ?? "Total",
-          color: totalLineConfig.color ?? "rgb(210 214 222)",
+          color: totalLineConfig.color ?? "var(--muted-foreground)",
           plottedPoints: totalPoints.map((point) => ({
             ...point,
             x: dayX.get(point.dayId) ?? plotLeft,
@@ -265,12 +327,14 @@ function LineItemGraph({
           })),
         }
       : null
-  const hoveredDay = hover
-    ? days.find((day) => day.id === hover.dayId)
+  const resolvedHover =
+    hover?.kind === "point" && !activeIdSet.has(hover.seriesId) ? null : hover
+  const hoveredDay = resolvedHover
+    ? days.find((day) => day.id === resolvedHover.dayId)
     : undefined
   const hoveredSeries =
-    hover?.kind === "point"
-      ? seriesPlots.find((item) => item.id === hover.seriesId)
+    resolvedHover?.kind === "point"
+      ? seriesPlots.find((item) => item.id === resolvedHover.seriesId)
       : undefined
 
   const updateActiveIds = React.useCallback(
@@ -297,6 +361,43 @@ function LineItemGraph({
       updateActiveIds(next)
     },
     [resolvedActiveIds, selectableSeries, updateActiveIds]
+  )
+
+  const showDayHover = React.useCallback(
+    (dayId: string, x: number, y: number, viewportY?: number) => {
+      const chartRect = chartRef.current?.getBoundingClientRect()
+      setHover({
+        kind: "day",
+        dayId,
+        x,
+        y,
+        viewportX: (chartRect?.left ?? 0) + x,
+        viewportY: viewportY ?? (chartRect?.top ?? 0) + y,
+      })
+    },
+    []
+  )
+
+  const showPointHover = React.useCallback(
+    (
+      dayId: string,
+      seriesId: string,
+      x: number,
+      y: number,
+      viewportY?: number
+    ) => {
+      const chartRect = chartRef.current?.getBoundingClientRect()
+      setHover({
+        kind: "point",
+        dayId,
+        seriesId,
+        x,
+        y,
+        viewportX: (chartRect?.left ?? 0) + x,
+        viewportY: viewportY ?? (chartRect?.top ?? 0) + y,
+      })
+    },
+    []
   )
 
   if (days.length === 0 || selectableSeries.length === 0) {
@@ -326,10 +427,10 @@ function LineItemGraph({
       {(title || rangeLabel) && (
         <div className="flex flex-wrap items-start justify-between gap-3">
           {title ? (
-            <h3 className="text-sm leading-tight font-bold">{title}</h3>
+            <h3 className="text-sm leading-tight font-medium">{title}</h3>
           ) : null}
           {rangeLabel ? (
-            <span className="text-xs leading-tight font-semibold text-muted-foreground">
+            <span className="text-xs leading-tight font-medium text-muted-foreground">
               {rangeLabel}
             </span>
           ) : null}
@@ -348,7 +449,7 @@ function LineItemGraph({
               aria-pressed={active}
               onClick={() => toggleSeries(item.id)}
               className={cn(
-                "inline-flex min-h-7 items-center rounded-full border px-3 text-[0.68rem] leading-none font-bold tracking-normal uppercase transition-[background-color,border-color,color,opacity] duration-200",
+                "inline-flex min-h-7 items-center rounded-md border px-3 text-ui-caption leading-none font-medium tracking-normal uppercase transition-[background-color,border-color,color,opacity] duration-[var(--nextide-motion-state)]",
                 active
                   ? "bg-background/35 text-foreground"
                   : "border-nextide-line bg-transparent text-muted-foreground/60"
@@ -369,18 +470,20 @@ function LineItemGraph({
       </div>
 
       <div
-        ref={scrollRef}
-        onWheel={onWheel}
-        className="nextide-contained-scroll nextide-scrollbar-none overflow-x-auto"
+        ref={viewportRef}
+        data-slot="line-item-graph-viewport"
+        className="min-w-0 overflow-visible"
       >
         <div
-          className="relative"
-          style={{ width: chartWidth, height: chartHeight }}
+          ref={chartRef}
+          data-slot="line-item-graph-canvas"
+          className="relative w-full min-w-0"
+          style={{ height: chartHeight }}
           onMouseLeave={() => setHover(null)}
         >
           <svg
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-            role="img"
+            role="group"
             aria-label={typeof title === "string" ? title : "Line item graph"}
             className="h-full w-full overflow-visible text-muted-foreground"
           >
@@ -418,7 +521,7 @@ function LineItemGraph({
                     x={plotLeft - 12}
                     y={y + 3}
                     textAnchor="end"
-                    className="fill-current text-[10px] font-medium"
+                    className="fill-current text-ui-caption font-medium"
                   >
                     {tickFormatter(Math.max(tick, 0))}
                   </text>
@@ -448,22 +551,40 @@ function LineItemGraph({
                   width={Math.max(1, zoneRight - zoneLeft)}
                   height={plotHeight}
                   fill="transparent"
-                  onMouseEnter={() =>
-                    setHover({ kind: "day", dayId: day.id, x, y: plotTop + 12 })
+                  onMouseEnter={(event) =>
+                    showDayHover(day.id, x, plotTop + 12, event.clientY)
                   }
-                  onMouseMove={() =>
-                    setHover({ kind: "day", dayId: day.id, x, y: plotTop + 12 })
+                  onMouseMove={(event) =>
+                    showDayHover(day.id, x, plotTop + 12, event.clientY)
                   }
                 />
               )
             })}
+            {resolvedHover ? (
+              <line
+                data-slot="line-item-hover-guide"
+                x1={resolvedHover.x}
+                x2={resolvedHover.x}
+                y1={plotTop}
+                y2={plotBottom}
+                stroke="var(--nextide-tide)"
+                strokeDasharray="2 3"
+                strokeOpacity="0.48"
+                strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
+                pointerEvents="none"
+              />
+            ) : null}
             {totalPlot ? (
               <path
                 d={buildSmoothPath(totalPlot.plottedPoints)}
                 clipPath={`url(#${clipId})`}
+                className="nextide-line-draw"
                 fill="none"
+                pathLength={1}
                 stroke={totalPlot.color}
-                strokeDasharray="6 7"
+                strokeDasharray="0.02 0.025"
+                strokeDashoffset="0"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeOpacity="0.85"
@@ -475,127 +596,149 @@ function LineItemGraph({
               <g key={item.id} clipPath={`url(#${clipId})`}>
                 <path
                   d={buildSmoothPath(item.plottedPoints)}
+                  className={item.active ? "nextide-line-draw" : undefined}
                   fill="none"
+                  pathLength={1}
                   stroke={item.color}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeOpacity="0.28"
+                  strokeOpacity={item.active ? "0.28" : "0"}
+                  strokeDasharray="1"
+                  strokeDashoffset={item.active ? "0" : "1"}
                   strokeWidth="7"
                   vectorEffect="non-scaling-stroke"
+                  style={{
+                    transition:
+                      "stroke-dashoffset var(--nextide-motion-layout) var(--nextide-ease-out-quart), opacity var(--nextide-motion-state) linear",
+                  }}
                 />
                 <path
                   d={buildSmoothPath(item.plottedPoints)}
+                  className={item.active ? "nextide-line-draw" : undefined}
                   fill="none"
+                  pathLength={1}
                   stroke={item.color}
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  strokeOpacity={item.active ? "1" : "0"}
+                  strokeDasharray="1"
+                  strokeDashoffset={item.active ? "0" : "1"}
                   strokeWidth="2.25"
+                  vectorEffect="non-scaling-stroke"
+                  style={{
+                    transition:
+                      "stroke-dashoffset var(--nextide-motion-layout) var(--nextide-ease-out-quart), opacity var(--nextide-motion-state) linear",
+                  }}
+                />
+              </g>
+            ))}
+            {interactivePoints.map(({ item, point }) => (
+              <g
+                key={`${item.id}-${point.dayId}`}
+                role="img"
+                tabIndex={0}
+                aria-label={`${stringifyNode(item.label)} ${stringifyNode(
+                  dayById.get(point.dayId)?.label
+                )}: ${stringifyNode(point.valueLabel ?? valueFormatter(point.value))}`}
+                className="cursor-pointer outline-none"
+                onFocus={() =>
+                  showPointHover(point.dayId, item.id, point.x, point.y)
+                }
+                onBlur={() => setHover(null)}
+                onMouseEnter={(event) =>
+                  showPointHover(
+                    point.dayId,
+                    item.id,
+                    point.x,
+                    point.y,
+                    event.clientY
+                  )
+                }
+                onMouseMove={(event) =>
+                  showPointHover(
+                    point.dayId,
+                    item.id,
+                    point.x,
+                    point.y,
+                    event.clientY
+                  )
+                }
+              >
+                <circle cx={point.x} cy={point.y} r="8" fill="transparent" />
+                <circle
+                  cx={point.x}
+                  cy={point.y}
+                  r="3"
+                  fill="var(--background)"
+                  stroke={item.color}
+                  strokeWidth="1.75"
                   vectorEffect="non-scaling-stroke"
                 />
               </g>
             ))}
-            {seriesPlots.flatMap((item) =>
-              item.plottedPoints
-                .filter((point) => !point.hidden)
-                .map((point) => (
-                  <g
-                    key={`${item.id}-${point.dayId}`}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`${stringifyNode(item.label)} ${stringifyNode(
-                      days.find((day) => day.id === point.dayId)?.label
-                    )}: ${stringifyNode(point.valueLabel ?? valueFormatter(point.value))}`}
-                    className="cursor-pointer outline-none"
-                    onFocus={() =>
-                      setHover({
-                        kind: "point",
-                        dayId: point.dayId,
-                        seriesId: item.id,
-                        x: point.x,
-                        y: point.y,
-                      })
-                    }
-                    onMouseEnter={() =>
-                      setHover({
-                        kind: "point",
-                        dayId: point.dayId,
-                        seriesId: item.id,
-                        x: point.x,
-                        y: point.y,
-                      })
-                    }
-                    onMouseMove={() =>
-                      setHover({
-                        kind: "point",
-                        dayId: point.dayId,
-                        seriesId: item.id,
-                        x: point.x,
-                        y: point.y,
-                      })
-                    }
-                  >
-                    <circle
-                      cx={point.x}
-                      cy={point.y}
-                      r="8"
-                      fill="transparent"
-                    />
-                    <circle
-                      cx={point.x}
-                      cy={point.y}
-                      r="3"
-                      fill="var(--background)"
-                      stroke={item.color}
-                      strokeWidth="1.75"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </g>
-                ))
-            )}
-            {visibleDays.map((day) => {
+            {visibleDays.map((day, index) => {
+              if (!axisLabelIndices.has(index)) return null
+
               const x = dayX.get(day.id) ?? plotLeft
               const label = renderAxisLabel(day, axisLabelMode)
+              const labelY = plotBottom + (shouldAngleLabels ? 32 : 25)
+              const textAnchor = shouldAngleLabels ? "end" : "middle"
 
               return (
                 <text
                   key={day.id}
+                  data-slot="line-item-axis-label"
+                  data-angled={shouldAngleLabels ? "true" : undefined}
                   x={x}
-                  y={plotBottom + (axisLabelMode === "angled-day" ? 32 : 25)}
-                  textAnchor={axisLabelMode === "angled-day" ? "end" : "middle"}
+                  y={labelY}
+                  textAnchor={textAnchor}
                   transform={
-                    axisLabelMode === "angled-day"
-                      ? `rotate(-48 ${x} ${plotBottom + 32})`
-                      : undefined
+                    shouldAngleLabels ? `rotate(-42 ${x} ${labelY})` : undefined
                   }
-                  className="fill-current text-[10px] font-semibold"
+                  className="fill-current text-ui-caption font-medium"
                 >
                   {label}
                 </text>
               )
             })}
           </svg>
-          {hover && hoveredDay ? (
+          {resolvedHover && hoveredDay ? (
             <LineItemTooltip
-              hover={hover}
+              hover={resolvedHover}
               day={hoveredDay}
-              series={seriesPlots}
+              series={seriesPlots.filter((item) => item.active)}
               hoveredSeries={hoveredSeries}
               totalLabel={totalPlot?.label}
               totalValue={
                 totalPlot?.plottedPoints.find(
-                  (point) => point.dayId === hover.dayId
+                  (point) => point.dayId === resolvedHover.dayId
                 )?.value
               }
-              chartWidth={chartWidth}
-              plotTop={plotTop}
               valueFormatter={valueFormatter}
               pointMaps={pointMaps}
+              onDismiss={() => setHover(null)}
             />
           ) : null}
         </div>
       </div>
     </section>
   )
+}
+
+function getAxisLabelIndices(count: number, stride: number) {
+  const indices = new Set<number>()
+  if (count === 0) return indices
+
+  indices.add(0)
+  indices.add(count - 1)
+
+  for (let index = stride; index < count - 1; index += stride) {
+    if (count - 1 - index >= Math.max(1, Math.ceil(stride * 0.75))) {
+      indices.add(index)
+    }
+  }
+
+  return indices
 }
 
 function LineItemTooltip({
@@ -605,10 +748,9 @@ function LineItemTooltip({
   hoveredSeries,
   totalLabel,
   totalValue,
-  chartWidth,
-  plotTop,
   valueFormatter,
   pointMaps,
+  onDismiss,
 }: {
   hover: LineItemGraphHover
   day: LineItemGraphDay
@@ -621,28 +763,18 @@ function LineItemTooltip({
   hoveredSeries?: LineItemGraphSeries & { color: string }
   totalLabel?: React.ReactNode
   totalValue?: number
-  chartWidth: number
-  plotTop: number
   valueFormatter: (value: number) => React.ReactNode
   pointMaps: Map<string, Map<string, LineItemGraphPoint>>
+  onDismiss: () => void
 }) {
-  const alignRight = hover.x > chartWidth - 180
-  const alignLeft = hover.x < 180
-  const top =
-    hover.kind === "point" ? Math.max(plotTop + 58, hover.y - 8) : hover.y
-
   return (
-    <div
-      data-slot="line-item-tooltip"
-      className={cn(
-        "pointer-events-none absolute z-20 w-64 rounded-lg border border-nextide-line bg-background/95 p-3 text-xs shadow-[0_18px_60px_rgb(0_0_0/0.42)] backdrop-blur-xl sm:w-72",
-        hover.kind === "point" && "-translate-y-full",
-        alignRight ? "-translate-x-full" : alignLeft ? "" : "-translate-x-1/2"
-      )}
-      style={{ left: hover.x, top }}
+    <GraphTooltip
+      anchor={{ x: hover.viewportX, y: hover.viewportY }}
+      data-chart="line-item"
+      onDismiss={onDismiss}
     >
       <div className="grid gap-1">
-        <span className="text-[0.68rem] font-semibold text-muted-foreground">
+        <span className="text-ui-caption font-medium text-muted-foreground">
           {day.weekday ? (
             <>
               {day.weekday} | {day.label}
@@ -663,7 +795,7 @@ function LineItemTooltip({
       </div>
       <div className="mt-2 grid gap-1.5">
         {hover.kind === "point" && hoveredSeries ? (
-          <TooltipRow
+          <GraphTooltipRow
             color={hoveredSeries.color}
             label={hoveredSeries.label}
             value={
@@ -678,7 +810,7 @@ function LineItemTooltip({
             const point = pointMaps.get(item.id)?.get(hover.dayId)
 
             return (
-              <TooltipRow
+              <GraphTooltipRow
                 key={item.id}
                 color={item.color}
                 label={item.label}
@@ -688,7 +820,7 @@ function LineItemTooltip({
           })
         )}
         {totalLabel && totalValue !== undefined ? (
-          <TooltipRow
+          <GraphTooltipRow
             color="rgb(210 214 222)"
             label={totalLabel}
             value={valueFormatter(totalValue)}
@@ -696,35 +828,7 @@ function LineItemTooltip({
           />
         ) : null}
       </div>
-    </div>
-  )
-}
-
-function TooltipRow({
-  color,
-  label,
-  value,
-  dashed,
-}: {
-  color: string
-  label: React.ReactNode
-  value: React.ReactNode
-  dashed?: boolean
-}) {
-  return (
-    <span className="grid grid-cols-[0.75rem_minmax(0,1fr)_auto] items-start gap-2">
-      <span
-        className={cn("mt-1.5 h-0.5 w-3 rounded-full", dashed && "border-t")}
-        style={{
-          backgroundColor: dashed ? "transparent" : color,
-          borderColor: color,
-        }}
-      />
-      <span className="min-w-0 leading-tight text-muted-foreground">
-        {label}
-      </span>
-      <strong className="font-semibold text-foreground">{value}</strong>
-    </span>
+    </GraphTooltip>
   )
 }
 
@@ -798,12 +902,6 @@ function buildSmoothPath(points: PlottedLineItemPoint[]) {
   return path
 }
 
-function isPlottedLineItemPoint(
-  point: PlottedLineItemPoint | null
-): point is PlottedLineItemPoint {
-  return point !== null
-}
-
 function resolveSeriesColor(series: LineItemGraphSeries) {
   return series.color ?? toneColors[series.tone ?? "tide"]
 }
@@ -835,14 +933,7 @@ function formatLineItemValue(value: number) {
   return value.toLocaleString("en-US")
 }
 
-function formatCompactLineItemValue(value: number) {
-  return Intl.NumberFormat("en-US", {
-    maximumFractionDigits: value >= 1000000 ? 1 : 0,
-    notation: value >= 1000 ? "compact" : "standard",
-  })
-    .format(value)
-    .toLowerCase()
-}
+const formatCompactLineItemValue = formatCompactNumber
 
 function stringifyNode(value: React.ReactNode) {
   return typeof value === "string" || typeof value === "number"

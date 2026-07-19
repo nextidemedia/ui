@@ -21,6 +21,7 @@ type SelectMenuProps = Omit<React.ComponentProps<"div">, "onChange"> & {
   options: SelectMenuOption[]
   onValueChange: (value: string) => void
   placeholder?: React.ReactNode
+  triggerContent?: React.ReactNode
   triggerClassName?: string
   contentClassName?: string
   contentAnchorRef?: React.RefObject<HTMLElement | null>
@@ -37,6 +38,7 @@ function SelectMenu({
   options,
   onValueChange,
   placeholder = "Select",
+  triggerContent,
   className,
   triggerClassName,
   contentClassName,
@@ -95,13 +97,15 @@ function SelectMenu({
           ref={triggerRef}
           aria-label={ariaLabel}
           className={cn(
-            "h-9 w-full border-nextide-line bg-nextide-panel px-3 text-left font-medium hover:bg-nextide-panel-strong focus-visible:border-nextide-tide/50 focus-visible:ring-nextide-tide/15",
+            "w-full border-nextide-line bg-nextide-panel px-3 text-left font-medium hover:bg-nextide-panel-strong",
             triggerClassName
           )}
         >
-          <span data-slot="select-value" className="min-w-0 truncate">
-            {selectedOption?.label ?? placeholder}
-          </span>
+          {triggerContent ?? (
+            <span data-slot="select-value" className="min-w-0 truncate">
+              {selectedOption?.label ?? placeholder}
+            </span>
+          )}
         </SelectTrigger>
         <SelectContent
           anchor={usesExternalAnchor ? contentAnchor : undefined}
@@ -116,7 +120,7 @@ function SelectMenu({
             } as React.CSSProperties
           }
           className={cn(
-            "nextide-contained-scroll max-h-64 border border-nextide-line bg-background/96 p-1 shadow-[0_18px_60px_rgb(0_0_0/0.45)] backdrop-blur-xl",
+            "nextide-contained-scroll max-h-64 p-1",
             contentClassName
           )}
         >
@@ -126,10 +130,7 @@ function SelectMenu({
                 key={option.value}
                 value={option.value}
                 disabled={option.disabled}
-                className={cn(
-                  "py-2 focus:bg-nextide-tide/10 focus:text-foreground data-selected:text-nextide-tide",
-                  optionClassName
-                )}
+                className={cn("py-2", optionClassName)}
               >
                 <span className="grid min-w-0 gap-0.5">
                   <span

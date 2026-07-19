@@ -59,7 +59,7 @@ function ReportReader({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <SurfaceHeader>
           <SurfaceDescription>Intelligence report</SurfaceDescription>
-          <h2 className="max-w-3xl text-2xl leading-tight font-semibold tracking-normal">
+          <h2 className="max-w-3xl text-2xl leading-tight font-medium tracking-normal">
             {title}
           </h2>
           {description ? (
@@ -99,7 +99,7 @@ function ReportReader({
             key={section.id}
             className="grid gap-3 rounded-xl border border-nextide-line bg-background/20 p-4"
           >
-            <h3 className="text-lg leading-tight font-semibold">
+            <h3 className="text-lg leading-tight font-medium">
               {section.title}
             </h3>
             <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">

@@ -55,8 +55,8 @@ function ExportWorkbench({
   workbookName?: React.ReactNode
   generatedUntil?: React.ReactNode
   sessions: ExportSessionRow[]
-  onGenerate?: () => void
-  onDownload?: () => void
+  onGenerate: () => void
+  onDownload: () => void
 }) {
   const workbookTone =
     workbookState === "current"
@@ -186,7 +186,7 @@ function ExportWorkbench({
                         {row.window}
                       </span>
                     </TableCell>
-                    <TableCell className="border-y border-nextide-line bg-background/25 font-semibold whitespace-normal">
+                    <TableCell className="border-y border-nextide-line bg-background/25 font-medium whitespace-normal">
                       {row.metric}
                     </TableCell>
                     <TableCell className="rounded-r-lg border-y border-r border-nextide-line bg-background/25 whitespace-normal">

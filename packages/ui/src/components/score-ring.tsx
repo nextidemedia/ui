@@ -82,10 +82,10 @@ function ScoreRing({
         className="relative z-10 grid min-w-0 place-items-center gap-0.5 leading-none"
         aria-hidden="true"
       >
-        <strong className="max-w-[4.5rem] truncate text-sm font-bold tabular-nums group-data-[size=lg]/score-ring:text-base group-data-[size=sm]/score-ring:text-xs">
+        <strong className="max-w-[4.5rem] truncate text-sm font-medium tabular-nums group-data-[size=lg]/score-ring:text-base group-data-[size=sm]/score-ring:text-xs">
           {valueLabel ?? fallbackValueLabel}
         </strong>
-        <small className="max-w-[4.5rem] truncate text-[0.58rem] font-bold tracking-wide text-muted-foreground uppercase group-data-[size=lg]/score-ring:text-[0.65rem] group-data-[size=sm]/score-ring:text-[0.5rem]">
+        <small className="max-w-[4.5rem] truncate text-ui-caption font-medium tracking-wide text-muted-foreground uppercase group-data-[size=lg]/score-ring:text-ui-caption group-data-[size=sm]/score-ring:text-ui-caption">
           {label}
         </small>
       </span>

@@ -1,6 +1,6 @@
 import * as React from "react"
 
-type ContainedScrollAxis = "x" | "y" | "both"
+type ContainedScrollAxis = "x" | "y" | "both" | "auto"
 
 function useContainedScroll<T extends HTMLElement>({
   axis = "x",
@@ -9,37 +9,110 @@ function useContainedScroll<T extends HTMLElement>({
 } = {}) {
   const ref = React.useRef<T | null>(null)
 
-  const onWheel = React.useCallback(
-    (event: React.WheelEvent<T>) => {
-      const node = event.currentTarget
+  const containWheel = React.useCallback(
+    (
+      node: T,
+      event: Pick<
+        WheelEvent,
+        | "defaultPrevented"
+        | "deltaMode"
+        | "deltaX"
+        | "deltaY"
+        | "preventDefault"
+      >
+    ) => {
+      if (event.defaultPrevented) return
+
       const maxLeft = node.scrollWidth - node.clientWidth
       const maxTop = node.scrollHeight - node.clientHeight
       const canScrollX = maxLeft > 0
       const canScrollY = maxTop > 0
+      const resolvedAxis =
+        axis === "auto"
+          ? canScrollX && !canScrollY
+            ? "x"
+            : canScrollY && !canScrollX
+              ? "y"
+              : "both"
+          : axis
+      const lineMultiplier = 16
+      const xMultiplier =
+        event.deltaMode === 1
+          ? lineMultiplier
+          : event.deltaMode === 2
+            ? node.clientWidth
+            : 1
+      const yMultiplier =
+        event.deltaMode === 1
+          ? lineMultiplier
+          : event.deltaMode === 2
+            ? node.clientHeight
+            : 1
 
-      if (axis === "x" && canScrollX) {
+      if (resolvedAxis === "x" && canScrollX) {
         const delta =
           Math.abs(event.deltaX) > Math.abs(event.deltaY)
             ? event.deltaX
             : event.deltaY
+        const nextLeft = clamp(
+          node.scrollLeft + delta * xMultiplier,
+          0,
+          maxLeft
+        )
+        if (nextLeft === node.scrollLeft) return
+
         event.preventDefault()
-        node.scrollLeft = clamp(node.scrollLeft + delta, 0, maxLeft)
+        node.scrollLeft = nextLeft
         return
       }
 
-      if (axis === "y" && canScrollY) {
+      if (resolvedAxis === "y" && canScrollY) {
+        const nextTop = clamp(
+          node.scrollTop + event.deltaY * yMultiplier,
+          0,
+          maxTop
+        )
+        if (nextTop === node.scrollTop) return
+
         event.preventDefault()
-        node.scrollTop = clamp(node.scrollTop + event.deltaY, 0, maxTop)
+        node.scrollTop = nextTop
         return
       }
 
-      if (axis === "both" && (canScrollX || canScrollY)) {
+      if (resolvedAxis === "both" && (canScrollX || canScrollY)) {
+        const nextLeft = clamp(
+          node.scrollLeft + event.deltaX * xMultiplier,
+          0,
+          maxLeft
+        )
+        const nextTop = clamp(
+          node.scrollTop + event.deltaY * yMultiplier,
+          0,
+          maxTop
+        )
+        if (nextLeft === node.scrollLeft && nextTop === node.scrollTop) return
+
         event.preventDefault()
-        node.scrollLeft = clamp(node.scrollLeft + event.deltaX, 0, maxLeft)
-        node.scrollTop = clamp(node.scrollTop + event.deltaY, 0, maxTop)
+        node.scrollLeft = nextLeft
+        node.scrollTop = nextTop
       }
     },
     [axis]
+  )
+
+  React.useEffect(() => {
+    const node = ref.current
+    if (!node) return
+
+    const onNativeWheel = (event: WheelEvent) => containWheel(node, event)
+    node.addEventListener("wheel", onNativeWheel, { passive: false })
+
+    return () => node.removeEventListener("wheel", onNativeWheel)
+  }, [containWheel])
+
+  const onWheel = React.useCallback(
+    (event: React.WheelEvent<T>) => containWheel(event.currentTarget, event),
+    [containWheel]
   )
 
   return { ref, onWheel }

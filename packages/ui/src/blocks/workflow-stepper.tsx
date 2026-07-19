@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Check } from "lucide-react"
 
+import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
 import { cn } from "@nextide/ui/lib/utils"
 
 type WorkflowStep = {
@@ -20,10 +21,11 @@ function WorkflowStepper({
 }: React.ComponentProps<"nav"> & {
   steps: WorkflowStep[]
   activeStepId: string
-  onStepChange?: (step: WorkflowStep) => void
+  onStepChange: (step: WorkflowStep) => void
 }) {
   const activeIndex = steps.findIndex((step) => step.id === activeStepId)
-  const stepperRef = React.useRef<HTMLElement | null>(null)
+  const { ref: stepperRef, onWheel: onContainedWheel } =
+    useContainedScroll<HTMLElement>({ axis: "x" })
   const stepRefs = React.useRef<Array<HTMLButtonElement | null>>([])
 
   const onWheel = (event: React.WheelEvent<HTMLElement>) => {
@@ -32,25 +34,7 @@ function WorkflowStepper({
       return
     }
 
-    const stepper = event.currentTarget
-    if (stepper.scrollWidth <= stepper.clientWidth) {
-      return
-    }
-
-    const deltaModeMultiplier =
-      event.deltaMode === 1
-        ? 16
-        : event.deltaMode === 2
-          ? stepper.clientWidth
-          : 1
-    const dominantDelta =
-      Math.abs(event.deltaX) > Math.abs(event.deltaY)
-        ? event.deltaX
-        : event.deltaY
-
-    stepper.scrollLeft += dominantDelta * deltaModeMultiplier
-    event.preventDefault()
-    event.stopPropagation()
+    onContainedWheel(event)
   }
 
   React.useLayoutEffect(() => {
@@ -88,10 +72,13 @@ function WorkflowStepper({
     }
 
     measureOutline()
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
     activeStepElement.scrollIntoView({
       block: "nearest",
       inline: "nearest",
-      behavior: "smooth",
+      behavior: reduceMotion ? "auto" : "smooth",
     })
 
     const resizeObserver = new ResizeObserver(scheduleMeasureOutline)
@@ -104,7 +91,7 @@ function WorkflowStepper({
       resizeObserver.disconnect()
       window.removeEventListener("resize", scheduleMeasureOutline)
     }
-  }, [activeIndex])
+  }, [activeIndex, stepperRef])
 
   return (
     <nav
@@ -122,7 +109,7 @@ function WorkflowStepper({
       <span
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute top-2 bottom-2 z-0 rounded-lg border border-nextide-tide/50 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] transition-[left,width,opacity] duration-[520ms] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
+          "pointer-events-none absolute top-2 bottom-2 z-0 rounded-lg border border-nextide-tide/50 bg-nextide-tide/10 shadow-[inset_0_1px_1px_rgb(30_228_188/0.18),0_0_28px_rgb(30_228_188/0.18)] transition-[left,width,opacity] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
           activeIndex < 0 ? "opacity-0" : "opacity-100"
         )}
         style={{
@@ -142,7 +129,7 @@ function WorkflowStepper({
               stepRefs.current[index] = node
             }}
             className={cn(
-              "relative z-10 flex min-w-36 items-center gap-2 rounded-lg border border-transparent p-2 text-left transition-[color,background-color,border-color] duration-[220ms]",
+              "relative z-10 flex min-w-36 items-center gap-2 rounded-lg border border-transparent p-2 text-left transition-[color,background-color,border-color] duration-[var(--nextide-motion-state)] outline-none focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring",
               "disabled:pointer-events-none disabled:opacity-45",
               active
                 ? "text-foreground"
@@ -150,11 +137,11 @@ function WorkflowStepper({
               done && "text-foreground"
             )}
             aria-current={active ? "step" : undefined}
-            onClick={() => onStepChange?.(step)}
+            onClick={() => onStepChange(step)}
           >
             <StepNumber value={done ? "check" : index + 1} active={active} />
             <span className="grid min-w-0 gap-0.5">
-              <strong className="truncate text-sm leading-none font-bold">
+              <strong className="truncate text-sm leading-none font-medium">
                 {step.label}
               </strong>
               {step.meta ? (
@@ -192,13 +179,20 @@ function StepNumber({
     if (previousValue.current === value) return
     previousValue.current = value
     updateStepNumber({ type: "start" })
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      updateStepNumber({ type: "swap", value })
+      updateStepNumber({ type: "finish" })
+      return
+    }
+
     const swapTimer = window.setTimeout(
       () => updateStepNumber({ type: "swap", value }),
-      180
+      140
     )
     const finishTimer = window.setTimeout(
       () => updateStepNumber({ type: "finish" }),
-      380
+      300
     )
     return () => {
       window.clearTimeout(swapTimer)
@@ -209,7 +203,7 @@ function StepNumber({
   return (
     <span
       className={cn(
-        "grid size-7 shrink-0 place-items-center rounded-full border text-xs leading-none font-bold transition-[border-color,color,background-color,box-shadow] duration-[220ms] [transform-style:preserve-3d]",
+        "grid size-7 shrink-0 place-items-center rounded-full border text-xs leading-none font-medium transition-[border-color,color,background-color,box-shadow] duration-[var(--nextide-motion-state)] [transform-style:preserve-3d]",
         targetComplete
           ? "border-nextide-tide text-nextide-tide"
           : "border-nextide-line text-muted-foreground",
@@ -217,7 +211,7 @@ function StepNumber({
           !targetComplete &&
           "border-nextide-tide bg-nextide-tide/10 text-nextide-tide shadow-[0_0_18px_rgb(30_228_188/0.16)]",
         flipping &&
-          "animate-[nextide-step-coin-flip_360ms_var(--nextide-ease-in-out-quart)]"
+          "animate-[nextide-step-coin-flip_var(--nextide-motion-layout)_var(--nextide-ease-in-out-quart)]"
       )}
     >
       {displayValue === "check" ? <Check className="size-3.5" /> : displayValue}
