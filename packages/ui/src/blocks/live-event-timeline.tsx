@@ -104,7 +104,7 @@ function LiveEventTimeline({
                       type="button"
                       className={cn(
                         "relative z-10 grid w-64 shrink-0 grid-cols-[3.25rem_2.125rem_minmax(0,1fr)] gap-2 border-0 bg-transparent p-0 text-left",
-                        "focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none",
+                        "focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-none",
                         activeIncident?.id === incident.id && "text-foreground"
                       )}
                       onClick={() => onIncidentOpen(incident)}

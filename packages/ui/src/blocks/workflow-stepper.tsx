@@ -129,7 +129,7 @@ function WorkflowStepper({
               stepRefs.current[index] = node
             }}
             className={cn(
-              "relative z-10 flex min-w-36 items-center gap-2 rounded-lg border border-transparent p-2 text-left transition-[color,background-color,border-color] duration-[var(--nextide-motion-state)] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring",
+              "relative z-10 flex min-w-36 items-center gap-2 rounded-lg border border-transparent p-2 text-left transition-[color,background-color,border-color] duration-[var(--nextide-motion-state)] outline-none focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring",
               "disabled:pointer-events-none disabled:opacity-45",
               active
                 ? "text-foreground"

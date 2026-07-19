@@ -149,6 +149,7 @@ function DurationPicker({
   const shownDraft = editing ? draft : durationToDraft(currentValue)
 
   return (
+    // oxlint-disable-next-line react-doctor/no-static-element-interactions -- The wrapper expands the pointer hit area; the nested Edit duration button provides semantic keyboard activation.
     <div
       ref={rootRef}
       data-slot="duration-picker"
@@ -294,7 +295,8 @@ const DurationField = React.forwardRef<
       data-slot="duration-picker-field"
       className={cn(
         "flex h-12 min-w-0 items-center gap-1 bg-secondary px-3 text-secondary-foreground transition-[border-radius,padding,transform,box-shadow] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
-        showFocus && "focus-within:ring-3 focus-within:ring-ring",
+        showFocus &&
+          "focus-within:ring-(length:--nextide-focus-ring-width) focus-within:ring-ring",
         editing
           ? cn("rounded-xl", compact && "px-2")
           : position === "first"

@@ -224,7 +224,7 @@ function CalendarGrid({
               aria-current={today ? "date" : undefined}
               onClick={() => onSelectDate(date)}
               className={cn(
-                "relative grid place-items-center rounded-lg border border-transparent font-medium transition-[background-color,border-color,color,box-shadow] duration-[var(--nextide-motion-state)] outline-none hover:border-nextide-tide/35 hover:bg-nextide-tide/10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring",
+                "relative grid place-items-center rounded-lg border border-transparent font-medium transition-[background-color,border-color,color,box-shadow] duration-[var(--nextide-motion-state)] outline-none hover:border-nextide-tide/35 hover:bg-nextide-tide/10 focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring",
                 size === "compact" ? "h-9 text-xs" : "h-11 text-sm sm:h-12",
                 !inMonth && "text-muted-foreground/35",
                 inRange && "bg-nextide-tide/8 text-foreground",
@@ -321,10 +321,6 @@ function isSameMonth(left: Date, right: Date) {
 }
 
 const calendarIconButtonClassName =
-  "grid size-8 place-items-center rounded-lg border border-nextide-line bg-background/25 text-muted-foreground transition-[background-color,color,border-color] hover:border-nextide-tide/45 hover:bg-nextide-tide/10 hover:text-nextide-tide focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring"
+  "grid size-8 place-items-center rounded-lg border border-nextide-line bg-background/25 text-muted-foreground transition-[background-color,color,border-color] hover:border-nextide-tide/45 hover:bg-nextide-tide/10 hover:text-nextide-tide focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring"
 
-export {
-  SingleCalendarDateRangePicker,
-  SingleDatePicker,
-  type DateRange,
-}
+export { SingleCalendarDateRangePicker, SingleDatePicker, type DateRange }

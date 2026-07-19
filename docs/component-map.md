@@ -75,6 +75,10 @@ for the primary product lockup and rare intro or report mastheads. Reserve Micro
 for short badges and dense chart labels; shared controls and blocks should use
 the semantic roles instead of arbitrary font sizes or baseline offsets.
 
+Shared interactive primitives use the Tide focus ring width from
+`--nextide-focus-ring-width` (0.5px by default). Validation rings may remain
+stronger so error state stays visually distinct from ordinary focus.
+
 Use `blocks/signal-plate` for a top-level summary with a current status. Its
 accent follows the semantic status tone. Use `components/surface` for ordinary
 work areas, forms, and operational containers; those stay visually plain.
@@ -152,11 +156,11 @@ dialog parts directly.
 
 `blocks/campaign-schedule-matrix` derives day/week/month/quarter headers from
 each slot's ISO `date`. It opens at week scale and, when a `today` slot exists,
-positions that week after one visible week of history. Its wheel interaction
-steps between day, week, and month zoom only while another level is available,
-then hands scrolling back to the page. Pointer users can drag the timeline
-horizontally; a drag suppresses the booking click while an ordinary click still
-selects it.
+positions that week after one visible week of history. Inside the schedule
+board, wheel interaction steps between day, week, and month zoom only while
+another level is available, then hands scrolling back to the page. The top and
+creator legends remain inert. Pointer users can drag the board horizontally; a
+drag suppresses the booking click while an ordinary click still selects it.
 
 `blocks/intelligence-progression-chart` measures each rendered node and attaches
 its SVG connectors to the horizontal equator of the actual circle edges. Curves

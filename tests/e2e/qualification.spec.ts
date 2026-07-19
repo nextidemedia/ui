@@ -640,6 +640,91 @@ test("playground shows exact public names beside component examples", async ({
   ])
 })
 
+test("campaign schedule interactions start only inside the board", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=web-mining")
+
+  const matrix = page.locator('[data-slot="campaign-schedule-matrix"]')
+  const timeline = matrix.getByRole("region", {
+    name: "Campaign schedule timeline",
+  })
+  const topLegend = matrix.locator('[data-slot="campaign-schedule-top-legend"]')
+  const creatorLegend = matrix
+    .locator('[data-slot="campaign-schedule-creator-legend"]')
+    .first()
+  const boardRow = matrix
+    .locator('[data-slot="campaign-schedule-board-row"]')
+    .first()
+
+  await timeline.scrollIntoViewIfNeeded()
+  await expect(timeline).toHaveAttribute("data-zoom", "week")
+  await timeline.evaluate((element) => {
+    element.scrollLeft = 300
+  })
+  const startingScrollLeft = await timeline.evaluate(
+    (element) => element.scrollLeft
+  )
+
+  await topLegend.hover()
+  await page.mouse.wheel(120, 0)
+  expect(await timeline.evaluate((element) => element.scrollLeft)).toBe(
+    startingScrollLeft
+  )
+  await creatorLegend.hover()
+  await page.mouse.wheel(120, 0)
+  expect(await timeline.evaluate((element) => element.scrollLeft)).toBe(
+    startingScrollLeft
+  )
+  await boardRow.hover()
+  await page.mouse.wheel(120, 0)
+  await expect
+    .poll(() => timeline.evaluate((element) => element.scrollLeft))
+    .toBeGreaterThan(startingScrollLeft)
+
+  await timeline.evaluate((element) => {
+    element.scrollLeft = 300
+  })
+  const creatorLegendBox = await creatorLegend.boundingBox()
+  const boardRowBox = await boardRow.boundingBox()
+  expect(creatorLegendBox).not.toBeNull()
+  expect(boardRowBox).not.toBeNull()
+
+  await page.mouse.move(
+    creatorLegendBox!.x + creatorLegendBox!.width / 2,
+    creatorLegendBox!.y + creatorLegendBox!.height / 2
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    creatorLegendBox!.x + creatorLegendBox!.width / 2 - 100,
+    creatorLegendBox!.y + creatorLegendBox!.height / 2
+  )
+  await page.mouse.up()
+  expect(await timeline.evaluate((element) => element.scrollLeft)).toBe(300)
+
+  await page.mouse.move(
+    boardRowBox!.x + boardRowBox!.width / 2,
+    boardRowBox!.y + boardRowBox!.height / 2
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    boardRowBox!.x + boardRowBox!.width / 2 - 100,
+    boardRowBox!.y + boardRowBox!.height / 2
+  )
+  await page.mouse.up()
+  await expect
+    .poll(() => timeline.evaluate((element) => element.scrollLeft))
+    .toBeGreaterThan(300)
+
+  await topLegend.dispatchEvent("wheel", { deltaY: 60 })
+  await expect(timeline).toHaveAttribute("data-zoom", "week")
+  await creatorLegend.dispatchEvent("wheel", { deltaY: 60 })
+  await expect(timeline).toHaveAttribute("data-zoom", "week")
+  await boardRow.dispatchEvent("wheel", { deltaY: 60 })
+  await expect(timeline).toHaveAttribute("data-zoom", "month")
+})
+
 test("duration picker optionally supports days and confirms on blur or Enter", async ({
   page,
 }) => {
@@ -729,6 +814,11 @@ test("live proof modal keeps audio actionable in the shared dialog shell", async
   })
   await expect(proof).toBeVisible()
   await expect(proof).toHaveAttribute("data-dialog-content", "")
+  await proof.evaluate(async (element) => {
+    await Promise.all(
+      element.getAnimations().map((animation) => animation.finished)
+    )
+  })
   const timelineCenterOffset = await proof
     .locator('[data-slot="live-event-proof-timeline-marker"]')
     .first()
@@ -742,11 +832,6 @@ test("live proof modal keeps audio actionable in the shared dialog shell", async
       )
     })
   expect(timelineCenterOffset).toBeLessThanOrEqual(0.5)
-  await proof.evaluate(async (element) => {
-    await Promise.all(
-      element.getAnimations().map((animation) => animation.finished)
-    )
-  })
   const playAudio = proof.getByRole("button", { name: "Play audio proof" })
   const audioRow = playAudio.locator("..")
   await playAudio.click()

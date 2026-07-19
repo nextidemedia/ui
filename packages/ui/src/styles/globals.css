@@ -141,6 +141,7 @@
     ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   --nextide-font-display: var(--nextide-font-ui);
+  --nextide-focus-ring-width: 0.5px;
   --nx-black: #000000;
   --nx-white: #ffffff;
   --nx-turquoise: #1ee4bc;

@@ -328,6 +328,21 @@ function CampaignScheduleMatrix({
     if (!node) return
 
     const handleWheel = (event: WheelEvent) => {
+      const target = event.target
+      const overBoard =
+        target instanceof Element &&
+        target.closest('[data-slot="campaign-schedule-board-row"]')
+
+      if (!overBoard) {
+        if (
+          event.shiftKey ||
+          Math.abs(event.deltaX) >= Math.abs(event.deltaY)
+        ) {
+          event.preventDefault()
+        }
+        return
+      }
+
       if (
         event.ctrlKey ||
         event.metaKey ||
@@ -457,6 +472,8 @@ function CampaignScheduleMatrix({
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (
+      !(event.target instanceof Element) ||
+      !event.target.closest('[data-slot="campaign-schedule-board-row"]') ||
       event.pointerType !== "mouse" ||
       event.button !== 0 ||
       event.currentTarget.scrollWidth <= event.currentTarget.clientWidth
@@ -556,6 +573,7 @@ function CampaignScheduleMatrix({
         />
       </div>
 
+      {/* oxlint-disable-next-line react-doctor/click-events-have-key-events -- This region only cancels bubbled child clicks after a pointer drag; it is not an activation target. */}
       <div
         ref={scrollRef}
         role="region"
@@ -566,7 +584,7 @@ function CampaignScheduleMatrix({
         onPointerDown={handlePointerDown}
         onClickCapture={handleClickCapture}
         onDragStart={(event) => event.preventDefault()}
-        className="nextide-scrollbar-none relative cursor-grab overflow-x-auto rounded-xl border border-nextide-line bg-background/20 outline-none focus-visible:ring-2 focus-visible:ring-ring data-[dragging=true]:cursor-grabbing data-[dragging=true]:select-none"
+        className="nextide-scrollbar-none relative overflow-x-auto rounded-xl border border-nextide-line bg-background/20 outline-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring data-[dragging=true]:select-none"
       >
         <div
           className="grid w-full transition-[min-width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
@@ -606,7 +624,10 @@ function CampaignScheduleMatrix({
               Creator
             </span>
           </div>
-          <div className="relative h-20 overflow-hidden border-b border-nextide-line bg-background/35">
+          <div
+            data-slot="campaign-schedule-top-legend"
+            className="relative h-20 overflow-hidden border-b border-nextide-line bg-background/35"
+          >
             {zoomTransition ? (
               <ScheduleHeader
                 key={`old-${zoomTransition.id}`}
@@ -634,7 +655,10 @@ function CampaignScheduleMatrix({
 
             return (
               <React.Fragment key={creator.id}>
-                <div className="sticky left-0 z-20 flex min-w-0 items-center gap-2 border-r border-b border-nextide-line bg-nextide-panel p-3">
+                <div
+                  data-slot="campaign-schedule-creator-legend"
+                  className="sticky left-0 z-20 flex min-w-0 items-center gap-2 border-r border-b border-nextide-line bg-nextide-panel p-3"
+                >
                   <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-nextide-line bg-background/35 text-xs font-medium text-nextide-tide">
                     {creator.avatar ?? initialsFromNode(creator.name)}
                   </span>
@@ -650,7 +674,8 @@ function CampaignScheduleMatrix({
                   </span>
                 </div>
                 <div
-                  className="relative grid min-h-16 border-b border-nextide-line/70"
+                  data-slot="campaign-schedule-board-row"
+                  className="relative grid min-h-16 cursor-grab border-b border-nextide-line/70 in-data-[dragging=true]:cursor-grabbing"
                   style={{
                     gridTemplateColumns: `repeat(${boundedDays}, minmax(0, 1fr))`,
                   }}
@@ -682,7 +707,7 @@ function CampaignScheduleMatrix({
                         type="button"
                         data-slot="campaign-schedule-booking"
                         className={cn(
-                          "absolute top-2 bottom-2 flex min-w-0 cursor-pointer items-center rounded-lg border py-2 pr-16 pl-4 text-left shadow-[inset_0_1px_0_rgb(255_255_255/0.04)] transition-[background-color,border-color,box-shadow] duration-[var(--nextide-motion-state)] before:absolute before:inset-y-2 before:left-1.5 before:w-0.5 before:rounded-sm focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none in-data-[dragging=true]:cursor-grabbing",
+                          "absolute top-2 bottom-2 flex min-w-0 cursor-pointer items-center rounded-lg border py-2 pr-16 pl-4 text-left shadow-[inset_0_1px_0_rgb(255_255_255/0.04)] transition-[background-color,border-color,box-shadow] duration-[var(--nextide-motion-state)] before:absolute before:inset-y-2 before:left-1.5 before:w-0.5 before:rounded-sm focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-none in-data-[dragging=true]:cursor-grabbing",
                           bookingToneClasses[booking.tone ?? "success"],
                           active &&
                             "border-nextide-tide bg-nextide-tide/12 shadow-[0_0_0_1px_rgb(30_228_188/0.38),0_0_24px_rgb(30_228_188/0.14)]"

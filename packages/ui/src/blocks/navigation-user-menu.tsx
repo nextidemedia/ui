@@ -45,7 +45,7 @@ function NavigationUserMenu({
             type="button"
             aria-label={`${name} menu`}
             className={cn(
-              "grid h-11 w-full min-w-0 items-center rounded-lg border border-transparent text-left transition-[grid-template-columns,gap,padding,background-color,border-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] hover:border-nextide-tide/25 hover:bg-nextide-tide/8 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-popup-open:border-nextide-tide/25 data-popup-open:bg-nextide-tide/8 motion-reduce:transition-none",
+              "grid h-11 w-full min-w-0 items-center rounded-lg border border-transparent text-left transition-[grid-template-columns,gap,padding,background-color,border-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] hover:border-nextide-tide/25 hover:bg-nextide-tide/8 focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-none data-popup-open:border-nextide-tide/25 data-popup-open:bg-nextide-tide/8 motion-reduce:transition-none",
               collapsed
                 ? "grid-cols-[2rem] justify-center px-1.5"
                 : "grid-cols-[2rem_minmax(0,1fr)_1rem] gap-2 px-1.5"
