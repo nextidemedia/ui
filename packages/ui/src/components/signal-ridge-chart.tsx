@@ -11,9 +11,9 @@ import { cn } from "@nextide/ui/lib/utils"
 
 type SignalRidgeChartPoint = {
   id: string
-  label: React.ReactNode
+  label: string | number
   value: number
-  valueLabel?: React.ReactNode
+  valueLabel?: string | number
 }
 
 function SignalRidgeChart({
@@ -23,7 +23,7 @@ function SignalRidgeChart({
   ...props
 }: React.ComponentProps<"div"> & {
   points: SignalRidgeChartPoint[]
-  valueFormatter?: (value: number) => React.ReactNode
+  valueFormatter?: (value: number) => string | number
 }) {
   const svgRef = React.useRef<SVGSVGElement | null>(null)
   const [hover, setHover] = React.useState<{
@@ -200,6 +200,7 @@ function SignalRidgeChart({
         <GraphTooltip
           anchor={{ x: hover.viewportX, y: hover.viewportY }}
           data-chart="signal-ridge"
+          onDismiss={() => setHover(null)}
         >
           <div className="grid gap-1">
             <span className="text-ui-caption font-medium text-muted-foreground">
@@ -220,16 +221,6 @@ function SignalRidgeChart({
           </div>
         </GraphTooltip>
       ) : null}
-      <span className="sr-only">
-        {points
-          .map(
-            (point) =>
-              `${stringifyNode(point.label)}: ${stringifyNode(
-                point.valueLabel ?? valueFormatter(point.value)
-              )}`
-          )
-          .join(", ")}
-      </span>
     </div>
   )
 }
@@ -259,10 +250,8 @@ function smoothPath(points: Array<{ x: number; y: number }>) {
   }, `M ${points[0].x} ${points[0].y}`)
 }
 
-function stringifyNode(value: React.ReactNode) {
-  return typeof value === "string" || typeof value === "number"
-    ? String(value)
-    : ""
+function stringifyNode(value: string | number) {
+  return String(value)
 }
 
 export { SignalRidgeChart, type SignalRidgeChartPoint }

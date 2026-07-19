@@ -51,13 +51,13 @@ description of where the component happens to appear.
 
 ## Blocks
 
-| Need                        | Start with                                                                                                                                                                |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| App frame and navigation    | `blocks/app-shell`, `blocks/navigation-panel`, `blocks/navigation-user-menu`, `blocks/workflow-stepper`, `blocks/signal-plate`, `blocks/settings-modal`                   |
-| Report building and reading | `blocks/report-context-builder`, `blocks/progressive-summary-rail`, `blocks/report-reader`, `blocks/report-rail`, `blocks/export-workbench`                               |
-| Creator workflows           | `blocks/creator-transfer`, `blocks/creator-scope-panel`, `blocks/campaign-schedule-matrix`, `blocks/pacing-configurator`, `blocks/fit-leaderboard`                        |
-| Operations and dashboards   | `blocks/dashboard-filter-bar`, `blocks/run-monitor-table`, `blocks/stream-selector`, `blocks/intelligence-progression-chart`, `blocks/evidence-drawer`                    |
-| Live/event safety           | `blocks/liveguard-cockpit`, `blocks/liveguard-incident-review`, `blocks/live-event-timeline`, `blocks/live-event-proof-modal`                                             |
+| Need                        | Start with                                                                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App frame and navigation    | `blocks/app-shell`, `blocks/navigation-panel`, `blocks/navigation-user-menu`, `blocks/workflow-stepper`, `blocks/signal-plate`, `blocks/settings-modal` |
+| Report building and reading | `blocks/report-context-builder`, `blocks/progressive-summary-rail`, `blocks/report-reader`, `blocks/report-rail`, `blocks/export-workbench`             |
+| Creator workflows           | `blocks/creator-transfer`, `blocks/creator-scope-panel`, `blocks/campaign-schedule-matrix`, `blocks/pacing-configurator`, `blocks/fit-leaderboard`      |
+| Operations and dashboards   | `blocks/dashboard-filter-bar`, `blocks/run-monitor-table`, `blocks/stream-selector`, `blocks/intelligence-progression-chart`, `blocks/evidence-drawer`  |
+| Live/event safety           | `blocks/liveguard-cockpit`, `blocks/liveguard-incident-review`, `blocks/live-event-timeline`, `blocks/live-event-proof-modal`                           |
 
 ## Hooks
 
@@ -116,7 +116,8 @@ reverse.
 Pass `userMenu` to `blocks/navigation-panel` for the shadcn-style sidebar footer:
 the shared block owns the Avatar trigger, up/down glyph, compact avatar state,
 and Base UI dropdown containing Settings and Logout. Consumers provide identity
-copy and the two product callbacks only.
+copy and the two product callbacks only. Footer actions remain below the
+horizontally scrollable navigation at narrow widths.
 
 Clickable hover feedback changes color, border, glow, or emphasis without
 moving the control. Reserve hover translation or scaling for non-clickable data
@@ -174,8 +175,11 @@ so evidence rows preserve their identity when the list changes. Provide
 `onAudioPlay` when rendering the block; its audio control is always actionable.
 
 `components/graph-tooltip` owns graph tooltip portaling, viewport clamping,
-right-first placement with edge flipping, and the shared series-row treatment.
-Charts continue to own hit testing, guide geometry, labels, and value content.
+right-first placement with edge flipping, scroll dismissal, and the shared
+series-row treatment. Charts continue to own hit testing, guide geometry,
+labels, and value content. `components/signal-ridge-chart` point labels and
+value labels are text because the chart renders them into SVG and accessible
+names as well as its tooltip.
 
 `blocks/app-shell` is viewport-bound. Its sidebar stays within the available
 height while the main workspace and optional inspector own their vertical

@@ -175,6 +175,16 @@ for (const width of [320, 390, 768, 1440]) {
       expect(box!.x).toBeGreaterThanOrEqual(0)
       expect(box!.x + box!.width).toBeLessThanOrEqual(width + 1)
     }
+
+    await page.goto("/?view=foundations")
+    const userMenu = page.getByRole("button", {
+      name: "Nextide Operator menu",
+    })
+    await expect(userMenu).toBeVisible()
+    const userMenuBox = await userMenu.boundingBox()
+    expect(userMenuBox).not.toBeNull()
+    expect(userMenuBox!.x).toBeGreaterThanOrEqual(0)
+    expect(userMenuBox!.x + userMenuBox!.width).toBeLessThanOrEqual(width + 1)
   })
 }
 
@@ -686,6 +696,18 @@ test("campaign schedule interactions start only inside the board", async ({
   await timeline.evaluate((element) => {
     element.scrollLeft = 300
   })
+  await boardRow.hover()
+  await page.keyboard.down("Shift")
+  await page.mouse.wheel(0, 120)
+  await page.keyboard.up("Shift")
+  await expect
+    .poll(() => timeline.evaluate((element) => element.scrollLeft))
+    .toBeGreaterThan(300)
+  await expect(timeline).toHaveAttribute("data-zoom", "week")
+
+  await timeline.evaluate((element) => {
+    element.scrollLeft = 300
+  })
   const creatorLegendBox = await creatorLegend.boundingBox()
   const boardRowBox = await boardRow.boundingBox()
   expect(creatorLegendBox).not.toBeNull()
@@ -721,8 +743,27 @@ test("campaign schedule interactions start only inside the board", async ({
   await expect(timeline).toHaveAttribute("data-zoom", "week")
   await creatorLegend.dispatchEvent("wheel", { deltaY: 60 })
   await expect(timeline).toHaveAttribute("data-zoom", "week")
-  await boardRow.dispatchEvent("wheel", { deltaY: 60 })
+  const zoomConsumed = await boardRow.evaluate((element) =>
+    element.dispatchEvent(
+      new WheelEvent("wheel", {
+        bubbles: true,
+        cancelable: true,
+        deltaY: 60,
+      })
+    )
+  )
+  expect(zoomConsumed).toBe(false)
   await expect(timeline).toHaveAttribute("data-zoom", "month")
+  const boundaryHandedOff = await boardRow.evaluate((element) =>
+    element.dispatchEvent(
+      new WheelEvent("wheel", {
+        bubbles: true,
+        cancelable: true,
+        deltaY: 60,
+      })
+    )
+  )
+  expect(boundaryHandedOff).toBe(true)
 })
 
 test("duration picker optionally supports days and confirms on blur or Enter", async ({
@@ -1108,7 +1149,7 @@ test("playground session reports reverse cleanly and Kraken evidence tabs reflow
   await expect(activeReport).toHaveCSS("border-style", "solid")
 })
 
-test("playground queues creator changes and keeps generated flow edges contained", async ({
+test("playground queues creator and context changes without losing updates", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -1126,6 +1167,32 @@ test("playground queues creator changes and keeps generated flow edges contained
   await ivy.click()
   await expect(
     creatorTransfer.getByRole("heading", { name: "Added creators (4)" })
+  ).toBeVisible()
+
+  const contextBuilder = page.locator('[data-slot="report-context-builder"]')
+  await contextBuilder
+    .getByRole("button", { name: "Nextide", exact: true })
+    .click()
+  await contextBuilder
+    .getByRole("button", { name: "Creator roster", exact: true })
+    .click()
+  const contextRows = contextBuilder.locator(":scope > section")
+  const brandSelected = contextRows
+    .filter({ has: page.getByText("Brand", { exact: true }) })
+    .locator(".nextide-contained-scroll")
+    .first()
+  const productSelected = contextRows
+    .filter({ has: page.getByText("Products", { exact: true }) })
+    .locator(".nextide-contained-scroll")
+    .first()
+  await expect(
+    brandSelected.getByRole("button", { name: "Nextide", exact: true })
+  ).toBeVisible()
+  await expect(
+    productSelected.getByRole("button", {
+      name: "Creator roster",
+      exact: true,
+    })
   ).toBeVisible()
 
   const streamList = page
@@ -1289,10 +1356,24 @@ test("signal ridge and impression details share compact overview and exact detai
 
   const ridge = page.locator('[data-slot="signal-ridge-chart"]')
   await expect(ridge).toHaveCount(1)
+  await ridge.scrollIntoViewIfNeeded()
   const ridgePoint = ridge.locator('g[role="img"]').first()
   await ridgePoint.focus()
-  await expect(page.locator('[data-slot="graph-tooltip"]')).toBeVisible()
+  const tooltip = page.locator('[data-slot="graph-tooltip"]')
+  await expect(tooltip).toBeVisible()
   await expect(ridge.locator('g[role="button"]')).toHaveCount(0)
+  const workspace = ridge.locator("xpath=ancestor::main")
+  const initialScrollTop = await workspace.evaluate(
+    (element) => element.scrollTop
+  )
+  await workspace.evaluate((element) => {
+    const maxScrollTop = element.scrollHeight - element.clientHeight
+    element.scrollTop += element.scrollTop < maxScrollTop ? 1 : -1
+  })
+  await expect
+    .poll(() => workspace.evaluate((element) => element.scrollTop))
+    .not.toBe(initialScrollTop)
+  await expect(tooltip).toBeHidden()
 
   const impressions = page
     .locator('[data-slot="line-item-graph"]')
@@ -1308,13 +1389,27 @@ test("signal ridge and impression details share compact overview and exact detai
   expect(viewportBox).not.toBeNull()
   expect(canvasBox).not.toBeNull()
   expect(Math.abs(viewportBox!.width - canvasBox!.width)).toBeLessThanOrEqual(1)
-  const lastPoint = impressions.getByRole("button").last()
+  const hiddenSeries = impressions.getByRole("button", {
+    name: "Immersive frame impressions",
+    exact: true,
+  })
+  const hiddenSeriesPoint = impressions
+    .getByRole("img", { name: /^Immersive frame impressions / })
+    .first()
+  await hiddenSeriesPoint.focus()
+  await expect(tooltip).toContainText("Immersive frame impressions")
+  await hiddenSeries.evaluate((element) => (element as HTMLElement).click())
+  await expect(hiddenSeries).toHaveAttribute("aria-pressed", "false")
+  await expect(tooltip).toBeHidden()
+  await impressions.locator("svg > rect").first().hover()
+  await expect(tooltip).toContainText("Day breakdown")
+  await expect(tooltip).not.toContainText("Immersive frame impressions")
+  const lastPoint = impressions.getByRole("img").last()
   await lastPoint.focus()
 
   await expect(
     impressions.locator('[data-slot="line-item-hover-guide"]')
   ).toHaveCount(1)
-  const tooltip = page.locator('[data-slot="graph-tooltip"]')
   await expect(tooltip).toBeVisible()
   expect(
     await tooltip.evaluate((element) => element.parentElement === document.body)
@@ -1326,4 +1421,9 @@ test("signal ridge and impression details share compact overview and exact detai
   expect(tooltipBox!.x + tooltipBox!.width).toBeLessThanOrEqual(1432)
   expect(tooltipBox!.y + tooltipBox!.height).toBeLessThanOrEqual(892)
   await expect(tooltip).toContainText(/\d{1,3}(,\d{3})+/)
+  await lastPoint.press("Tab")
+  await expect(tooltip).toBeHidden()
+  await expect(
+    impressions.locator('[data-slot="line-item-hover-guide"]')
+  ).toHaveCount(0)
 })

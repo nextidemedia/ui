@@ -14,7 +14,6 @@ type ReportContextBucket = {
 }
 
 type ContextChipMotion = {
-  phase: "exit" | "enter"
   direction: "select" | "remove"
 }
 
@@ -27,9 +26,13 @@ function ReportContextBuilder({
   buckets: ReportContextBucket[]
   onBucketsChange: (buckets: ReportContextBucket[]) => void
 }) {
+  const updateBuckets = (
+    update: (current: ReportContextBucket[]) => ReportContextBucket[]
+  ) => onBucketsChange(update(buckets))
+
   const moveToSelected = (bucketId: string, value: string) => {
-    onBucketsChange(
-      buckets.map((bucket) =>
+    updateBuckets((current) =>
+      current.map((bucket) =>
         bucket.id === bucketId
           ? {
               ...bucket,
@@ -42,8 +45,8 @@ function ReportContextBuilder({
   }
 
   const moveToSuggestions = (bucketId: string, value: string) => {
-    onBucketsChange(
-      buckets.map((bucket) => {
+    updateBuckets((current) =>
+      current.map((bucket) => {
         if (bucket.id !== bucketId) return bucket
         if (bucket.required && bucket.selected.length <= 1) return bucket
         return {
@@ -106,18 +109,12 @@ function ContextBucketRow({
     motionTimers.current[value]?.forEach((timer) =>
       window.clearTimeout(timer)
     )
+    commit()
     setChipMotions((current) => ({
       ...current,
-      [value]: { phase: "exit", direction },
+      [value]: { direction },
     }))
 
-    const commitTimer = window.setTimeout(() => {
-      commit()
-      setChipMotions((current) => ({
-        ...current,
-        [value]: { phase: "enter", direction },
-      }))
-    }, 110)
     const settleTimer = window.setTimeout(() => {
       setChipMotions((current) => {
         const next = { ...current }
@@ -127,7 +124,7 @@ function ContextBucketRow({
       delete motionTimers.current[value]
     }, 300)
 
-    motionTimers.current[value] = [commitTimer, settleTimer]
+    motionTimers.current[value] = [settleTimer]
   }
   const { ref: selectedRef, onWheel: onSelectedWheel } =
     useContainedScroll<HTMLDivElement>({ axis: "x" })
@@ -215,11 +212,6 @@ function ContextBucketRow({
 
 function chipMotionClass(motion?: ContextChipMotion) {
   if (!motion) return undefined
-  if (motion.phase === "exit") {
-    return motion.direction === "select"
-      ? "nextide-context-exit-up"
-      : "nextide-context-exit-down"
-  }
   return motion.direction === "select"
     ? "nextide-context-enter-up"
     : "nextide-context-enter-down"

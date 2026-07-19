@@ -816,7 +816,7 @@ function NavigationPanelFooter({
   return (
     <footer
       className={cn(
-        "grid w-full overflow-hidden border-t border-nextide-line transition-[max-height,padding] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
+        "grid w-full overflow-hidden border-t border-nextide-line transition-[max-height,padding] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
         collapsed && !userMenu ? "max-h-0 pt-0" : "max-h-40 pt-3",
         footer && userMenu && !drawerCollapsed ? "gap-2" : "gap-0"
       )}

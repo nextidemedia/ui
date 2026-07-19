@@ -327,12 +327,14 @@ function LineItemGraph({
           })),
         }
       : null
-  const hoveredDay = hover
-    ? days.find((day) => day.id === hover.dayId)
+  const resolvedHover =
+    hover?.kind === "point" && !activeIdSet.has(hover.seriesId) ? null : hover
+  const hoveredDay = resolvedHover
+    ? days.find((day) => day.id === resolvedHover.dayId)
     : undefined
   const hoveredSeries =
-    hover?.kind === "point"
-      ? seriesPlots.find((item) => item.id === hover.seriesId)
+    resolvedHover?.kind === "point"
+      ? seriesPlots.find((item) => item.id === resolvedHover.seriesId)
       : undefined
 
   const updateActiveIds = React.useCallback(
@@ -481,7 +483,7 @@ function LineItemGraph({
         >
           <svg
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-            role="img"
+            role="group"
             aria-label={typeof title === "string" ? title : "Line item graph"}
             className="h-full w-full overflow-visible text-muted-foreground"
           >
@@ -558,11 +560,11 @@ function LineItemGraph({
                 />
               )
             })}
-            {hover ? (
+            {resolvedHover ? (
               <line
                 data-slot="line-item-hover-guide"
-                x1={hover.x}
-                x2={hover.x}
+                x1={resolvedHover.x}
+                x2={resolvedHover.x}
                 y1={plotTop}
                 y2={plotBottom}
                 stroke="var(--nextide-tide)"
@@ -633,7 +635,7 @@ function LineItemGraph({
             {interactivePoints.map(({ item, point }) => (
               <g
                 key={`${item.id}-${point.dayId}`}
-                role="button"
+                role="img"
                 tabIndex={0}
                 aria-label={`${stringifyNode(item.label)} ${stringifyNode(
                   dayById.get(point.dayId)?.label
@@ -642,6 +644,7 @@ function LineItemGraph({
                 onFocus={() =>
                   showPointHover(point.dayId, item.id, point.x, point.y)
                 }
+                onBlur={() => setHover(null)}
                 onMouseEnter={(event) =>
                   showPointHover(
                     point.dayId,
@@ -699,20 +702,21 @@ function LineItemGraph({
               )
             })}
           </svg>
-          {hover && hoveredDay ? (
+          {resolvedHover && hoveredDay ? (
             <LineItemTooltip
-              hover={hover}
+              hover={resolvedHover}
               day={hoveredDay}
-              series={seriesPlots}
+              series={seriesPlots.filter((item) => item.active)}
               hoveredSeries={hoveredSeries}
               totalLabel={totalPlot?.label}
               totalValue={
                 totalPlot?.plottedPoints.find(
-                  (point) => point.dayId === hover.dayId
+                  (point) => point.dayId === resolvedHover.dayId
                 )?.value
               }
               valueFormatter={valueFormatter}
               pointMaps={pointMaps}
+              onDismiss={() => setHover(null)}
             />
           ) : null}
         </div>
@@ -746,6 +750,7 @@ function LineItemTooltip({
   totalValue,
   valueFormatter,
   pointMaps,
+  onDismiss,
 }: {
   hover: LineItemGraphHover
   day: LineItemGraphDay
@@ -760,11 +765,13 @@ function LineItemTooltip({
   totalValue?: number
   valueFormatter: (value: number) => React.ReactNode
   pointMaps: Map<string, Map<string, LineItemGraphPoint>>
+  onDismiss: () => void
 }) {
   return (
     <GraphTooltip
       anchor={{ x: hover.viewportX, y: hover.viewportY }}
       data-chart="line-item"
+      onDismiss={onDismiss}
     >
       <div className="grid gap-1">
         <span className="text-ui-caption font-medium text-muted-foreground">

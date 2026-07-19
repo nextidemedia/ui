@@ -14,19 +14,26 @@ function GraphTooltip({
   anchor,
   children,
   className,
+  onDismiss,
   sideOffset = 14,
   style,
   ...props
 }: Omit<React.ComponentProps<"div">, "children"> & {
   anchor: GraphTooltipAnchor
   children: React.ReactNode
+  onDismiss?: () => void
   sideOffset?: number
 }) {
   const tooltipRef = React.useRef<HTMLDivElement | null>(null)
+  const onDismissRef = React.useRef(onDismiss)
   const [position, setPosition] = React.useState({
     left: anchor.x + sideOffset,
     top: anchor.y - 36,
   })
+
+  React.useEffect(() => {
+    onDismissRef.current = onDismiss
+  }, [onDismiss])
 
   React.useLayoutEffect(() => {
     const node = tooltipRef.current
@@ -70,6 +77,19 @@ function GraphTooltip({
       window.removeEventListener("resize", place)
     }
   }, [anchor.x, anchor.y, sideOffset])
+
+  React.useEffect(() => {
+    const dismiss = () => onDismissRef.current?.()
+    const listenerOptions = { capture: true, passive: true }
+    const frame = window.requestAnimationFrame(() => {
+      document.addEventListener("scroll", dismiss, listenerOptions)
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener("scroll", dismiss, listenerOptions)
+    }
+  }, [])
 
   if (typeof document === "undefined") return null
 

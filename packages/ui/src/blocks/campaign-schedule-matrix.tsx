@@ -343,18 +343,36 @@ function CampaignScheduleMatrix({
         return
       }
 
+      const multiplier =
+        event.deltaMode === 1
+          ? 16
+          : event.deltaMode === 2
+            ? node.clientHeight
+            : 1
+      if (event.shiftKey) {
+        const delta =
+          (Math.abs(event.deltaX) >= Math.abs(event.deltaY)
+            ? event.deltaX
+            : event.deltaY) * multiplier
+        const nextScrollLeft = clamp(
+          node.scrollLeft + delta,
+          0,
+          Math.max(node.scrollWidth - node.clientWidth, 0)
+        )
+
+        if (nextScrollLeft !== node.scrollLeft) {
+          event.preventDefault()
+          event.stopPropagation()
+          node.scrollLeft = nextScrollLeft
+        }
+        return
+      }
+
       if (
         event.ctrlKey ||
         event.metaKey ||
         Math.abs(event.deltaX) >= Math.abs(event.deltaY)
       ) {
-        return
-      }
-
-      const now = performance.now()
-      if (now < wheelLockUntilRef.current) {
-        event.preventDefault()
-        event.stopPropagation()
         return
       }
 
@@ -366,15 +384,16 @@ function CampaignScheduleMatrix({
         return
       }
 
+      const now = performance.now()
+      if (now < wheelLockUntilRef.current) {
+        event.preventDefault()
+        event.stopPropagation()
+        return
+      }
+
       event.preventDefault()
       event.stopPropagation()
 
-      const multiplier =
-        event.deltaMode === 1
-          ? 16
-          : event.deltaMode === 2
-            ? node.clientHeight
-            : 1
       const delta = event.deltaY * multiplier
       if (
         wheelAccumulatorRef.current !== 0 &&
