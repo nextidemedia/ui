@@ -1173,14 +1173,13 @@ function getEffectiveNavigationItemId(
   activeItemId: string | undefined,
   compact: boolean
 ) {
-  if (!activeItemId || !compact) return activeItemId
+  if (!activeItemId) return activeItemId
 
-  return (
-    sections
-      .flatMap((section) => section.items)
-      .find((item) => item.children?.some((child) => child.id === activeItemId))
-      ?.id ?? activeItemId
-  )
+  const parent = sections
+    .flatMap((section) => section.items)
+    .find((item) => item.children?.some((child) => child.id === activeItemId))
+
+  return parent && (compact || !parent.expanded) ? parent.id : activeItemId
 }
 
 export {

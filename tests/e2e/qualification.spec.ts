@@ -502,6 +502,17 @@ test("navigation branches keep destinations and create actions distinct", async 
   await expect(report).toHaveAttribute("aria-current", "page")
 
   await navigation.getByRole("button", { name: "Collapse Campaigns" }).click()
+  const closedBranchGlyph = navigation
+    .getByRole("button", { name: "Campaigns" })
+    .locator('[data-slot="navigation-panel-item-glyph"]')
+  const rail = navigation.locator('[data-slot="navigation-panel-rail"]')
+  await expect
+    .poll(async () => {
+      const glyphBox = await closedBranchGlyph.boundingBox()
+      const railBox = await rail.boundingBox()
+      return glyphBox && railBox ? Math.abs(railBox.y - (glyphBox.y - 2)) : 100
+    })
+    .toBeLessThan(1)
   await navigation
     .getByRole("combobox", { name: "Search" })
     .fill("Summer launch")
@@ -529,16 +540,21 @@ test("navigation branches keep destinations and create actions distinct", async 
   const current = navigation.getByRole("button", { name: "Summer launch" })
   await expect(current).toHaveAttribute("aria-current", "page")
   await expect(navigation).toHaveAttribute("data-collapsed", "true")
-  const glyphBox = await current
-    .locator('[data-slot="navigation-panel-item-glyph"]')
-    .boundingBox()
-  const railBox = await navigation
-    .locator('[data-slot="navigation-panel-rail"]')
-    .boundingBox()
-  expect(glyphBox).not.toBeNull()
-  expect(railBox).not.toBeNull()
-  expect(railBox!.y).toBeCloseTo(glyphBox!.y - 2, 0)
-  expect(railBox!.height).toBeCloseTo(glyphBox!.height + 4, 0)
+  const currentGlyph = current.locator(
+    '[data-slot="navigation-panel-item-glyph"]'
+  )
+  await expect
+    .poll(async () => {
+      const glyphBox = await currentGlyph.boundingBox()
+      const railBox = await rail.boundingBox()
+      return glyphBox && railBox
+        ? Math.max(
+            Math.abs(railBox.y - (glyphBox.y - 2)),
+            Math.abs(railBox.height - (glyphBox.height + 4))
+          )
+        : 100
+    })
+    .toBeLessThan(1)
   await navigation
     .getByRole("combobox", { name: "Search" })
     .fill("Create campaign")
