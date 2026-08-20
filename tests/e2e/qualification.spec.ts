@@ -506,6 +506,11 @@ test("navigation branches keep destinations and create actions distinct", async 
     .getByRole("button", { name: "Campaigns" })
     .locator('[data-slot="navigation-panel-item-glyph"]')
   const rail = navigation.locator('[data-slot="navigation-panel-rail"]')
+  await expect(
+    navigation.locator(
+      '[data-slot="navigation-panel-current-child"][aria-current="page"]'
+    )
+  ).toHaveText("Summer launch")
   await expect
     .poll(async () => {
       const glyphBox = await closedBranchGlyph.boundingBox()

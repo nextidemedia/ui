@@ -207,7 +207,6 @@ function NavigationPanelCommandRow({
             ? [
                 {
                   ...item,
-                  id: `${item.id}:action`,
                   label: item.action.label,
                   icon: item.action.icon,
                   sectionLabel: section.label,
@@ -396,7 +395,11 @@ function NavigationPanelCommandRow({
 
                 return (
                   <AutocompleteItem
-                    key={item.id}
+                    key={
+                      item.actionFor
+                        ? `action:${item.actionFor.id}`
+                        : `item:${item.id}`
+                    }
                     value={item}
                     className="min-h-11 py-2"
                     onClick={() => {
@@ -973,6 +976,15 @@ function NavigationPanelNav({
                           )
                         })}
                       </div>
+                    ) : null}
+                    {activeChild && !item.expanded && !compact ? (
+                      <span
+                        data-slot="navigation-panel-current-child"
+                        aria-current="page"
+                        className="sr-only"
+                      >
+                        {activeChild.label}
+                      </span>
                     ) : null}
                   </div>
                 )
