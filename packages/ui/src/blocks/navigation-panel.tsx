@@ -710,8 +710,8 @@ function NavigationPanelNav({
         )}
         style={{
           top: "var(--navigation-outline-top, 0px)",
-          left: "0px",
-          width: "100%",
+          left: "var(--navigation-outline-left, 0px)",
+          width: "var(--navigation-outline-width, 0px)",
           height: "var(--navigation-outline-height, 0px)",
         }}
       />
@@ -939,7 +939,7 @@ function NavigationPanelNav({
                               className={cn(
                                 "group relative grid min-h-11 w-full grid-cols-[2rem_minmax(0,1fr)] items-center rounded-lg border border-transparent pr-8 text-left text-sm transition-colors max-lg:w-auto max-lg:min-w-max",
                                 childActive
-                                  ? "bg-nextide-tide/[0.07] text-foreground"
+                                  ? "text-foreground max-lg:bg-nextide-tide/[0.07]"
                                   : "text-muted-foreground hover:bg-nextide-panel-strong/70 hover:text-foreground"
                               )}
                               aria-current={childActive ? "page" : undefined}

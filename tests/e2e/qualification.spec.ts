@@ -541,6 +541,23 @@ test("navigation branches keep destinations and create actions distinct", async 
   ).toBeVisible()
   await report.click()
   await expect(report).toHaveAttribute("aria-current", "page")
+  await expect(report).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
+  const selection = navigation.locator('[data-slot="navigation-panel-selection"]')
+  await expect
+    .poll(async () => {
+      const [reportBox, selectionBox] = await Promise.all([
+        report.boundingBox(),
+        selection.boundingBox(),
+      ])
+      if (!reportBox || !selectionBox) return 100
+      return Math.max(
+        Math.abs(reportBox.x - selectionBox.x),
+        Math.abs(reportBox.y - selectionBox.y),
+        Math.abs(reportBox.width - selectionBox.width),
+        Math.abs(reportBox.height - selectionBox.height)
+      )
+    })
+    .toBeLessThan(1)
 
   await navigation.getByRole("button", { name: "Create campaign" }).click()
   await expect(
@@ -575,6 +592,7 @@ test("navigation branches keep destinations and create actions distinct", async 
   await expect(report).toHaveAttribute("aria-current", "page")
 
   await page.setViewportSize({ width: 390, height: 900 })
+  await expect(report).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
   const action = navigation.getByRole("button", { name: "Create campaign" })
   const disclosure = navigation.getByRole("button", {
     name: "Collapse Campaigns",
