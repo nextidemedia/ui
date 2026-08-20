@@ -84,7 +84,6 @@ const defaultNavigationPanelSections: NavigationPanelSection[] = [
       {
         id: "dashboard",
         label: "Dashboard",
-        meta: "Command center",
         icon: <LayoutDashboard />,
       },
       {
@@ -800,7 +799,9 @@ function NavigationPanelNav({
                         data-slot="navigation-panel-item"
                         className={cn(
                           "group relative grid min-h-11 w-full items-center gap-2 rounded-lg border border-transparent text-left transition-[color,background-color] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none max-lg:h-11 max-lg:w-auto max-lg:min-w-max max-lg:grid-cols-[2rem_minmax(0,1fr)] max-lg:pr-3",
-                          collapsed ? "h-11" : "h-[3.25rem]",
+                          collapsed || (!item.meta && !item.status)
+                            ? "h-11"
+                            : "h-[3.25rem]",
                           collapsed
                             ? "mr-auto w-11 grid-cols-[2.75rem_0fr] gap-0 p-0"
                             : "grid-cols-[2.75rem_minmax(0,1fr)] p-0",

@@ -482,6 +482,16 @@ test("navigation branches keep destinations and create actions distinct", async 
   const navigation = page.locator('[data-slot="navigation-panel-frame"]').nth(1)
   const expand = navigation.getByRole("button", { name: "Expand Campaigns" })
 
+  await expect(navigation.getByRole("button", { name: "Dashboard" })).toHaveCSS(
+    "height",
+    "44px"
+  )
+  await expect(
+    navigation.getByRole("button", { name: "Campaigns Launch plans", exact: true })
+  ).toHaveCSS(
+    "height",
+    "52px"
+  )
   await expect(expand).toBeVisible()
   await expect(
     navigation.getByRole("button", { name: "Summer launch" })
