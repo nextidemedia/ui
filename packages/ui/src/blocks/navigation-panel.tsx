@@ -62,6 +62,7 @@ type NavigationPanelSection = {
 
 type NavigationPanelSearchItem = NavigationPanelItem & {
   sectionLabel?: string
+  parent?: NavigationPanelItem
 }
 
 type NavigationPanelUserMenu = Omit<
@@ -149,6 +150,7 @@ type NavigationPanelCommandRowProps = {
   commandLabel: string
   commandShortcut?: string
   onSelectItem: (item: NavigationPanelItem) => void
+  onToggleItem?: (item: NavigationPanelItem) => void
   onToggle?: () => void
 }
 
@@ -177,6 +179,7 @@ function NavigationPanelCommandRow({
   commandLabel,
   commandShortcut,
   onSelectItem,
+  onToggleItem,
   onToggle,
 }: NavigationPanelCommandRowProps) {
   const [searchFocused, setSearchFocused] = React.useState(false)
@@ -190,12 +193,14 @@ function NavigationPanelCommandRow({
   const searchItems = React.useMemo(
     () =>
       sections.flatMap((section) =>
-        section.items.flatMap((item) =>
-          [item, ...(item.children ?? [])].map((searchItem) => ({
-            ...searchItem,
+        section.items.flatMap((item) => [
+          { ...item, sectionLabel: section.label },
+          ...(item.children ?? []).map((child) => ({
+            ...child,
             sectionLabel: section.label,
-          }))
-        )
+            parent: item,
+          })),
+        ])
       ),
     [sections]
   )
@@ -380,6 +385,9 @@ function NavigationPanelCommandRow({
                     value={item}
                     className="min-h-11 py-2"
                     onClick={() => {
+                      if (item.parent && !item.parent.expanded) {
+                        onToggleItem?.(item.parent)
+                      }
                       onSelectItem(item)
                       clearSearch()
                     }}
@@ -836,7 +844,7 @@ function NavigationPanelNav({
                           type="button"
                           data-slot="navigation-panel-item-action"
                           aria-label={item.action.label}
-                          className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-nextide-panel-strong hover:text-nextide-tide focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:outline-none [&_svg]:size-4"
+                          className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-nextide-panel-strong hover:text-nextide-tide focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:outline-none max-lg:size-11 [&_svg]:size-4"
                           onClick={() => onActionItem(item)}
                         >
                           {item.action.icon ?? "+"}
@@ -851,7 +859,7 @@ function NavigationPanelNav({
                           data-slot="navigation-panel-item-toggle"
                           aria-label={`${item.expanded ? "Collapse" : "Expand"} ${item.label}`}
                           aria-expanded={item.expanded ?? false}
-                          className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-nextide-panel-strong hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:outline-none"
+                          className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-nextide-panel-strong hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:outline-none max-lg:size-11"
                           onClick={() => onToggleItem(item)}
                         >
                           <ChevronDown
@@ -1038,6 +1046,7 @@ function NavigationPanel({
           commandLabel={commandLabel}
           commandShortcut={commandShortcut}
           onSelectItem={onSelectItem}
+          onToggleItem={onToggleItem}
           onToggle={onToggle}
         />
         <NavigationPanelNav

@@ -500,6 +500,29 @@ test("navigation branches keep destinations and create actions distinct", async 
     page.getByText("Create campaign requested", { exact: true })
   ).toBeVisible()
   await expect(report).toHaveAttribute("aria-current", "page")
+
+  await navigation.getByRole("button", { name: "Collapse Campaigns" }).click()
+  await navigation
+    .getByRole("combobox", { name: "Search" })
+    .fill("Summer launch")
+  await page
+    .locator('[data-slot="autocomplete-item"]')
+    .filter({ hasText: "Summer launch" })
+    .click()
+  await expect(report).toHaveAttribute("aria-current", "page")
+
+  await page.setViewportSize({ width: 390, height: 900 })
+  const action = navigation.getByRole("button", { name: "Create campaign" })
+  const disclosure = navigation.getByRole("button", {
+    name: "Collapse Campaigns",
+  })
+  await action.scrollIntoViewIfNeeded()
+  for (const control of [action, disclosure]) {
+    const box = await control.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.width).toBeGreaterThanOrEqual(44)
+    expect(box!.height).toBeGreaterThanOrEqual(44)
+  }
 })
 
 test("playground shows exact public names beside component examples", async ({
