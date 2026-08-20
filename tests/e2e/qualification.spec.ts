@@ -526,9 +526,19 @@ test("navigation branches keep destinations and create actions distinct", async 
 
   await page.setViewportSize({ width: 1440, height: 900 })
   await navigation.getByRole("button", { name: "Collapse sidebar" }).click()
-  await expect(
-    navigation.getByRole("button", { name: "Summer launch" })
-  ).toHaveAttribute("aria-current", "page")
+  const current = navigation.getByRole("button", { name: "Summer launch" })
+  await expect(current).toHaveAttribute("aria-current", "page")
+  await expect(navigation).toHaveAttribute("data-collapsed", "true")
+  const glyphBox = await current
+    .locator('[data-slot="navigation-panel-item-glyph"]')
+    .boundingBox()
+  const railBox = await navigation
+    .locator('[data-slot="navigation-panel-rail"]')
+    .boundingBox()
+  expect(glyphBox).not.toBeNull()
+  expect(railBox).not.toBeNull()
+  expect(railBox!.y).toBeCloseTo(glyphBox!.y - 2, 0)
+  expect(railBox!.height).toBeCloseTo(glyphBox!.height + 4, 0)
   await navigation
     .getByRole("combobox", { name: "Search" })
     .fill("Create campaign")

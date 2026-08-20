@@ -451,7 +451,13 @@ function NavigationPanelNav({
   const itemAnimationsRef = React.useRef<Record<string, Animation>>({})
   const railRef = React.useRef<HTMLSpanElement | null>(null)
   const railAnimationRef = React.useRef<Animation | null>(null)
-  const previousCollapsedRef = React.useRef(collapsed)
+  const compact = collapsed || drawerCollapsed
+  const effectiveActiveItemId = getEffectiveNavigationItemId(
+    sections,
+    activeItemId,
+    compact
+  )
+  const previousCompactRef = React.useRef(compact)
   const writeOutlineVars = React.useCallback(
     (
       top: number,
@@ -519,7 +525,7 @@ function NavigationPanelNav({
     }
 
     const previousRects = itemRectsRef.current
-    const stateChanged = previousCollapsedRef.current !== collapsed
+    const stateChanged = previousCompactRef.current !== compact
     const reducedMotion =
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
 
@@ -536,7 +542,9 @@ function NavigationPanelNav({
         styles.getPropertyValue("--nextide-drawer-icon-duration"),
         160
       )
-      const activeElement = activeItemId ? itemRefs.current[activeItemId] : null
+      const activeElement = effectiveActiveItemId
+        ? itemRefs.current[effectiveActiveItemId]
+        : null
       const previousRailTop = Number.parseFloat(
         nav.style.getPropertyValue("--navigation-rail-top")
       )
@@ -606,7 +614,7 @@ function NavigationPanelNav({
     }
 
     itemRectsRef.current = nextRects
-    previousCollapsedRef.current = collapsed
+    previousCompactRef.current = compact
 
     return () => {
       for (const animation of Object.values(itemAnimationsRef.current)) {
@@ -616,13 +624,15 @@ function NavigationPanelNav({
       railAnimationRef.current?.cancel()
       railAnimationRef.current = null
     }
-  }, [activeItemId, collapsed, measureOutline, navRef, sections])
+  }, [compact, effectiveActiveItemId, measureOutline, navRef, sections])
 
   React.useLayoutEffect(() => {
     const nav = navRef.current
     if (!nav) return
 
-    const activeItem = activeItemId ? itemRefs.current[activeItemId] : null
+    const activeItem = effectiveActiveItemId
+      ? itemRefs.current[effectiveActiveItemId]
+      : null
     if (!activeItem) {
       const top =
         Number.parseFloat(
@@ -663,7 +673,7 @@ function NavigationPanelNav({
       window.removeEventListener("resize", scheduleMeasureOutline)
     }
   }, [
-    activeItemId,
+    effectiveActiveItemId,
     drawerTransitioning,
     measureOutline,
     navRef,
@@ -1155,6 +1165,21 @@ function getVisibleNavigationPanelItems(sections: NavigationPanelSection[]) {
       item,
       ...(item.expanded ? (item.children ?? []) : []),
     ])
+  )
+}
+
+function getEffectiveNavigationItemId(
+  sections: NavigationPanelSection[],
+  activeItemId: string | undefined,
+  compact: boolean
+) {
+  if (!activeItemId || !compact) return activeItemId
+
+  return (
+    sections
+      .flatMap((section) => section.items)
+      .find((item) => item.children?.some((child) => child.id === activeItemId))
+      ?.id ?? activeItemId
   )
 }
 
