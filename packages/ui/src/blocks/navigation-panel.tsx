@@ -63,6 +63,7 @@ type NavigationPanelSection = {
 type NavigationPanelSearchItem = NavigationPanelItem & {
   sectionLabel?: string
   parent?: NavigationPanelItem
+  actionFor?: NavigationPanelItem
 }
 
 type NavigationPanelUserMenu = Omit<
@@ -151,6 +152,7 @@ type NavigationPanelCommandRowProps = {
   commandShortcut?: string
   onSelectItem: (item: NavigationPanelItem) => void
   onToggleItem?: (item: NavigationPanelItem) => void
+  onActionItem?: (item: NavigationPanelItem) => void
   onToggle?: () => void
 }
 
@@ -180,6 +182,7 @@ function NavigationPanelCommandRow({
   commandShortcut,
   onSelectItem,
   onToggleItem,
+  onActionItem,
   onToggle,
 }: NavigationPanelCommandRowProps) {
   const [searchFocused, setSearchFocused] = React.useState(false)
@@ -200,9 +203,21 @@ function NavigationPanelCommandRow({
             sectionLabel: section.label,
             parent: item,
           })),
+          ...(item.action && onActionItem
+            ? [
+                {
+                  ...item,
+                  id: `${item.id}:action`,
+                  label: item.action.label,
+                  icon: item.action.icon,
+                  sectionLabel: section.label,
+                  actionFor: item,
+                },
+              ]
+            : []),
         ])
       ),
-    [sections]
+    [onActionItem, sections]
   )
   const showSearchResults = searchFocused && searchValue.trim().length > 0
 
@@ -385,10 +400,14 @@ function NavigationPanelCommandRow({
                     value={item}
                     className="min-h-11 py-2"
                     onClick={() => {
-                      if (item.parent && !item.parent.expanded) {
+                      if (item.actionFor) {
+                        onActionItem?.(item.actionFor)
+                      } else if (item.parent && !item.parent.expanded) {
                         onToggleItem?.(item.parent)
+                        onSelectItem(item)
+                      } else {
+                        onSelectItem(item)
                       }
-                      onSelectItem(item)
                       clearSearch()
                     }}
                   >
@@ -727,9 +746,12 @@ function NavigationPanelNav({
             <div className="grid gap-1.5 max-lg:flex">
               {section.items.map((item) => {
                 const active = item.id === activeItemId
-                const branchActive = item.children?.some(
+                const activeChild = item.children?.find(
                   (child) => child.id === activeItemId
                 )
+                const branchActive = Boolean(activeChild)
+                const compactChildActive =
+                  branchActive && (collapsed || drawerCollapsed)
 
                 return (
                   <div
@@ -768,17 +790,27 @@ function NavigationPanelNav({
                               ? "text-foreground"
                               : "text-muted-foreground hover:bg-nextide-panel-strong/70 hover:text-foreground"
                         )}
-                        aria-current={active ? "page" : undefined}
+                        aria-current={
+                          active || compactChildActive ? "page" : undefined
+                        }
                         aria-label={
                           collapsed || drawerCollapsed
-                            ? [item.label, item.status, item.meta]
+                            ? [
+                                activeChild?.label ?? item.label,
+                                item.status,
+                                item.meta,
+                              ]
                                 .filter(Boolean)
                                 .join(" ")
                             : undefined
                         }
                         onClick={(event) => {
                           measureOutline(event.currentTarget)
-                          onSelectItem(item)
+                          onSelectItem(
+                            compactChildActive && activeChild
+                              ? activeChild
+                              : item
+                          )
                         }}
                       >
                         <span
@@ -1047,6 +1079,7 @@ function NavigationPanel({
           commandShortcut={commandShortcut}
           onSelectItem={onSelectItem}
           onToggleItem={onToggleItem}
+          onActionItem={onActionItem}
           onToggle={onToggle}
         />
         <NavigationPanelNav

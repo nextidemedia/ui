@@ -2966,9 +2966,7 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
     "dashboard"
   )
   const [campaignsExpanded, setCampaignsExpanded] = useState(false)
-  const [navigationAction, setNavigationAction] = useState(
-    "No action requested"
-  )
+  const [navigationActionCount, setNavigationActionCount] = useState(0)
   const navigationSections = defaultNavigationPanelSections.map((section) => ({
     ...section,
     items: section.items.map((item) =>
@@ -3112,9 +3110,7 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
               </div>
             }
             onSelectItem={(item) => updateActiveNavigationItemId(item.id)}
-            onActionItem={() =>
-              setNavigationAction("Create campaign requested")
-            }
+            onActionItem={() => setNavigationActionCount((count) => count + 1)}
             onToggleItem={() => setCampaignsExpanded((expanded) => !expanded)}
             onToggle={navigationDrawer.toggleCollapsed}
           />
@@ -3140,7 +3136,9 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
                 aria-live="polite"
                 className="text-ui-caption text-muted-foreground"
               >
-                {navigationAction}
+                {navigationActionCount
+                  ? `Create campaign requested ${navigationActionCount} ${navigationActionCount === 1 ? "time" : "times"}`
+                  : "No action requested"}
               </span>
             </div>
           </div>
