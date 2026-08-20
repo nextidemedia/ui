@@ -472,6 +472,106 @@ test("collapsed navigation search closes cleanly", async ({ page }) => {
   await expect(search).toHaveCSS("width", "44px")
 })
 
+test("navigation branches keep destinations and create actions distinct", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.getByRole("button", { name: /Patterns/ }).click()
+
+  const navigation = page.locator('[data-slot="navigation-panel-frame"]').nth(1)
+  const expand = navigation.getByRole("button", { name: "Expand Campaigns" })
+
+  await expect(expand).toBeVisible()
+  await expect(
+    navigation.getByRole("button", { name: "Summer launch" })
+  ).toHaveCount(0)
+  await expand.click()
+
+  const report = navigation.getByRole("button", { name: "Summer launch" })
+  await expect(
+    navigation.getByRole("button", { name: "Collapse Campaigns" })
+  ).toBeVisible()
+  await report.click()
+  await expect(report).toHaveAttribute("aria-current", "page")
+
+  await navigation.getByRole("button", { name: "Create campaign" }).click()
+  await expect(
+    page.getByText("Create campaign requested 1 time", { exact: true })
+  ).toBeVisible()
+  await expect(report).toHaveAttribute("aria-current", "page")
+
+  await navigation.getByRole("button", { name: "Collapse Campaigns" }).click()
+  const closedBranchGlyph = navigation
+    .getByRole("button", { name: "Campaigns" })
+    .locator('[data-slot="navigation-panel-item-glyph"]')
+  const rail = navigation.locator('[data-slot="navigation-panel-rail"]')
+  await expect(
+    navigation.locator(
+      '[data-slot="navigation-panel-current-child"][aria-current="page"]'
+    )
+  ).toHaveText("Summer launch")
+  await expect
+    .poll(async () => {
+      const glyphBox = await closedBranchGlyph.boundingBox()
+      const railBox = await rail.boundingBox()
+      return glyphBox && railBox ? Math.abs(railBox.y - (glyphBox.y - 2)) : 100
+    })
+    .toBeLessThan(1)
+  await navigation
+    .getByRole("combobox", { name: "Search" })
+    .fill("Summer launch")
+  await page
+    .locator('[data-slot="autocomplete-item"]')
+    .filter({ hasText: "Summer launch" })
+    .click()
+  await expect(report).toHaveAttribute("aria-current", "page")
+
+  await page.setViewportSize({ width: 390, height: 900 })
+  const action = navigation.getByRole("button", { name: "Create campaign" })
+  const disclosure = navigation.getByRole("button", {
+    name: "Collapse Campaigns",
+  })
+  await action.scrollIntoViewIfNeeded()
+  for (const control of [action, disclosure]) {
+    const box = await control.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.width).toBeGreaterThanOrEqual(44)
+    expect(box!.height).toBeGreaterThanOrEqual(44)
+  }
+
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await navigation.getByRole("button", { name: "Collapse sidebar" }).click()
+  const current = navigation.getByRole("button", { name: "Summer launch" })
+  await expect(current).toHaveAttribute("aria-current", "page")
+  await expect(navigation).toHaveAttribute("data-collapsed", "true")
+  const currentGlyph = current.locator(
+    '[data-slot="navigation-panel-item-glyph"]'
+  )
+  await expect
+    .poll(async () => {
+      const glyphBox = await currentGlyph.boundingBox()
+      const railBox = await rail.boundingBox()
+      return glyphBox && railBox
+        ? Math.max(
+            Math.abs(railBox.y - (glyphBox.y - 2)),
+            Math.abs(railBox.height - (glyphBox.height + 4))
+          )
+        : 100
+    })
+    .toBeLessThan(1)
+  await navigation
+    .getByRole("combobox", { name: "Search" })
+    .fill("Create campaign")
+  await page
+    .locator('[data-slot="autocomplete-item"]')
+    .filter({ hasText: "Create campaign" })
+    .click()
+  await expect(
+    page.getByText("Create campaign requested 2 times", { exact: true })
+  ).toBeVisible()
+})
+
 test("playground shows exact public names beside component examples", async ({
   page,
 }) => {

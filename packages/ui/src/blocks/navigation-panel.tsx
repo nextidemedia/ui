@@ -1,5 +1,6 @@
 import * as React from "react"
 import {
+  ChevronDown,
   Handshake,
   HeartPulse,
   LayoutDashboard,
@@ -45,6 +46,12 @@ type NavigationPanelItem = {
   status?: string
   tone?: NavigationPanelStatusTone
   icon?: React.ReactNode
+  children?: NavigationPanelItem[]
+  expanded?: boolean
+  action?: {
+    label: string
+    icon?: React.ReactNode
+  }
 }
 
 type NavigationPanelSection = {
@@ -55,6 +62,8 @@ type NavigationPanelSection = {
 
 type NavigationPanelSearchItem = NavigationPanelItem & {
   sectionLabel?: string
+  parent?: NavigationPanelItem
+  actionFor?: NavigationPanelItem
 }
 
 type NavigationPanelUserMenu = Omit<
@@ -129,6 +138,8 @@ type NavigationPanelProps = React.ComponentProps<typeof Surface> & {
   commandShortcut?: string
   onToggle?: () => void
   onSelectItem: (item: NavigationPanelItem) => void
+  onToggleItem?: (item: NavigationPanelItem) => void
+  onActionItem?: (item: NavigationPanelItem) => void
   footer?: React.ReactNode
   userMenu?: NavigationPanelUserMenu
 }
@@ -140,6 +151,8 @@ type NavigationPanelCommandRowProps = {
   commandLabel: string
   commandShortcut?: string
   onSelectItem: (item: NavigationPanelItem) => void
+  onToggleItem?: (item: NavigationPanelItem) => void
+  onActionItem?: (item: NavigationPanelItem) => void
   onToggle?: () => void
 }
 
@@ -150,6 +163,8 @@ type NavigationPanelNavProps = {
   drawerCollapsed: boolean
   drawerTransitioning: boolean
   onSelectItem: (item: NavigationPanelItem) => void
+  onToggleItem?: (item: NavigationPanelItem) => void
+  onActionItem?: (item: NavigationPanelItem) => void
 }
 
 type NavigationPanelFooterProps = {
@@ -166,6 +181,8 @@ function NavigationPanelCommandRow({
   commandLabel,
   commandShortcut,
   onSelectItem,
+  onToggleItem,
+  onActionItem,
   onToggle,
 }: NavigationPanelCommandRowProps) {
   const [searchFocused, setSearchFocused] = React.useState(false)
@@ -179,12 +196,27 @@ function NavigationPanelCommandRow({
   const searchItems = React.useMemo(
     () =>
       sections.flatMap((section) =>
-        section.items.map((item) => ({
-          ...item,
-          sectionLabel: section.label,
-        }))
+        section.items.flatMap((item) => [
+          { ...item, sectionLabel: section.label },
+          ...(item.children ?? []).map((child) => ({
+            ...child,
+            sectionLabel: section.label,
+            parent: item,
+          })),
+          ...(item.action && onActionItem
+            ? [
+                {
+                  ...item,
+                  label: item.action.label,
+                  icon: item.action.icon,
+                  sectionLabel: section.label,
+                  actionFor: item,
+                },
+              ]
+            : []),
+        ])
       ),
-    [sections]
+    [onActionItem, sections]
   )
   const showSearchResults = searchFocused && searchValue.trim().length > 0
 
@@ -363,11 +395,22 @@ function NavigationPanelCommandRow({
 
                 return (
                   <AutocompleteItem
-                    key={item.id}
+                    key={
+                      item.actionFor
+                        ? `action:${item.actionFor.id}`
+                        : `item:${item.id}`
+                    }
                     value={item}
                     className="min-h-11 py-2"
                     onClick={() => {
-                      onSelectItem(item)
+                      if (item.actionFor) {
+                        onActionItem?.(item.actionFor)
+                      } else if (item.parent && !item.parent.expanded) {
+                        onToggleItem?.(item.parent)
+                        onSelectItem(item)
+                      } else {
+                        onSelectItem(item)
+                      }
                       clearSearch()
                     }}
                   >
@@ -400,6 +443,8 @@ function NavigationPanelNav({
   drawerCollapsed,
   drawerTransitioning,
   onSelectItem,
+  onToggleItem,
+  onActionItem,
 }: NavigationPanelNavProps) {
   const { ref: navRef, onWheel } = useContainedScroll<HTMLElement>({
     axis: "auto",
@@ -409,7 +454,13 @@ function NavigationPanelNav({
   const itemAnimationsRef = React.useRef<Record<string, Animation>>({})
   const railRef = React.useRef<HTMLSpanElement | null>(null)
   const railAnimationRef = React.useRef<Animation | null>(null)
-  const previousCollapsedRef = React.useRef(collapsed)
+  const compact = collapsed || drawerCollapsed
+  const effectiveActiveItemId = getEffectiveNavigationItemId(
+    sections,
+    activeItemId,
+    compact
+  )
+  const previousCompactRef = React.useRef(compact)
   const writeOutlineVars = React.useCallback(
     (
       top: number,
@@ -471,15 +522,14 @@ function NavigationPanelNav({
     if (!nav) return
 
     const nextRects: Record<string, DOMRect> = {}
-    for (const section of sections) {
-      for (const item of section.items) {
-        const element = itemRefs.current[item.id]
-        if (element) nextRects[item.id] = readNavigationItemMotionRect(element)
-      }
+    const visibleItems = getVisibleNavigationPanelItems(sections)
+    for (const item of visibleItems) {
+      const element = itemRefs.current[item.id]
+      if (element) nextRects[item.id] = readNavigationItemMotionRect(element)
     }
 
     const previousRects = itemRectsRef.current
-    const stateChanged = previousCollapsedRef.current !== collapsed
+    const stateChanged = previousCompactRef.current !== compact
     const reducedMotion =
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
 
@@ -496,7 +546,9 @@ function NavigationPanelNav({
         styles.getPropertyValue("--nextide-drawer-icon-duration"),
         160
       )
-      const activeElement = activeItemId ? itemRefs.current[activeItemId] : null
+      const activeElement = effectiveActiveItemId
+        ? itemRefs.current[effectiveActiveItemId]
+        : null
       const previousRailTop = Number.parseFloat(
         nav.style.getPropertyValue("--navigation-rail-top")
       )
@@ -506,35 +558,33 @@ function NavigationPanelNav({
         nav.style.getPropertyValue("--navigation-rail-top")
       )
 
-      for (const section of sections) {
-        for (const item of section.items) {
-          const element = itemRefs.current[item.id]
-          const previousRect = previousRects[item.id]
-          const nextRect = nextRects[item.id]
-          if (!element || !previousRect || !nextRect) continue
+      for (const item of visibleItems) {
+        const element = itemRefs.current[item.id]
+        const previousRect = previousRects[item.id]
+        const nextRect = nextRects[item.id]
+        if (!element || !previousRect || !nextRect) continue
 
-          const deltaY = previousRect.top - nextRect.top
-          if (Math.abs(deltaY) < 0.5) continue
+        const deltaY = previousRect.top - nextRect.top
+        if (Math.abs(deltaY) < 0.5) continue
 
-          const animation = element.animate(
-            [
-              { transform: `translate3d(0, ${deltaY}px, 0)` },
-              { transform: "translate3d(0, 0, 0)" },
-            ],
-            {
-              duration,
-              easing: "cubic-bezier(0.25, 1, 0.5, 1)",
-            }
-          )
+        const animation = element.animate(
+          [
+            { transform: `translate3d(0, ${deltaY}px, 0)` },
+            { transform: "translate3d(0, 0, 0)" },
+          ],
+          {
+            duration,
+            easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+          }
+        )
 
-          itemAnimationsRef.current[item.id] = animation
-          void animation.finished
-            .then(() => {
-              if (itemAnimationsRef.current[item.id] !== animation) return
-              delete itemAnimationsRef.current[item.id]
-            })
-            .catch(() => undefined)
-        }
+        itemAnimationsRef.current[item.id] = animation
+        void animation.finished
+          .then(() => {
+            if (itemAnimationsRef.current[item.id] !== animation) return
+            delete itemAnimationsRef.current[item.id]
+          })
+          .catch(() => undefined)
       }
 
       if (
@@ -568,7 +618,7 @@ function NavigationPanelNav({
     }
 
     itemRectsRef.current = nextRects
-    previousCollapsedRef.current = collapsed
+    previousCompactRef.current = compact
 
     return () => {
       for (const animation of Object.values(itemAnimationsRef.current)) {
@@ -578,13 +628,15 @@ function NavigationPanelNav({
       railAnimationRef.current?.cancel()
       railAnimationRef.current = null
     }
-  }, [activeItemId, collapsed, measureOutline, navRef, sections])
+  }, [compact, effectiveActiveItemId, measureOutline, navRef, sections])
 
   React.useLayoutEffect(() => {
     const nav = navRef.current
     if (!nav) return
 
-    const activeItem = activeItemId ? itemRefs.current[activeItemId] : null
+    const activeItem = effectiveActiveItemId
+      ? itemRefs.current[effectiveActiveItemId]
+      : null
     if (!activeItem) {
       const top =
         Number.parseFloat(
@@ -625,7 +677,7 @@ function NavigationPanelNav({
       window.removeEventListener("resize", scheduleMeasureOutline)
     }
   }, [
-    activeItemId,
+    effectiveActiveItemId,
     drawerTransitioning,
     measureOutline,
     navRef,
@@ -708,91 +760,235 @@ function NavigationPanelNav({
             <div className="grid gap-1.5 max-lg:flex">
               {section.items.map((item) => {
                 const active = item.id === activeItemId
+                const activeChild = item.children?.find(
+                  (child) => child.id === activeItemId
+                )
+                const branchActive = Boolean(activeChild)
+                const hasChildren = Boolean(item.children?.length)
+                const compactChildActive =
+                  branchActive && (collapsed || drawerCollapsed)
 
                 return (
-                  <button
+                  <div
                     key={item.id}
-                    type="button"
-                    ref={(node) => {
-                      itemRefs.current[item.id] = node
-                    }}
-                    className={cn(
-                      "group relative grid min-h-11 w-full items-center gap-2 rounded-lg border border-transparent text-left transition-[color,background-color] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none max-lg:h-11 max-lg:w-auto max-lg:min-w-max max-lg:grid-cols-[2rem_minmax(0,1fr)] max-lg:pr-3",
-                      collapsed ? "h-11" : "h-[3.25rem]",
-                      collapsed
-                        ? "mr-auto w-11 grid-cols-[2.75rem_0fr] gap-0 p-0"
-                        : "grid-cols-[2.75rem_minmax(0,1fr)] p-0",
-                      active
-                        ? "text-foreground max-lg:bg-nextide-tide/[0.07]"
-                        : "text-muted-foreground hover:bg-nextide-panel-strong/70 hover:text-foreground"
-                    )}
-                    aria-current={active ? "page" : undefined}
-                    aria-label={
-                      collapsed || drawerCollapsed
-                        ? [item.label, item.status, item.meta]
-                            .filter(Boolean)
-                            .join(" ")
-                        : undefined
-                    }
-                    onClick={(event) => {
-                      measureOutline(event.currentTarget)
-                      onSelectItem(item)
-                    }}
+                    data-slot="navigation-panel-branch"
+                    className="grid min-w-0 gap-1 max-lg:contents"
                   >
-                    <span
-                      data-slot="navigation-panel-item-icon"
-                      className="grid size-11 place-items-center justify-self-center"
-                    >
-                      <span
-                        data-slot="navigation-panel-item-glyph"
-                        className={cn(
-                          "grid size-7 place-items-center justify-self-center text-nextide-tide transition-[color,filter] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] [&_svg]:block [&_svg]:size-4",
-                          active && "drop-shadow-[0_0_8px_rgb(30_228_188/0.24)]"
-                        )}
-                      >
-                        {item.icon ?? item.label.slice(0, 1)}
-                      </span>
-                    </span>
-                    <span
-                      aria-hidden={collapsed || drawerCollapsed}
+                    <div
+                      data-slot="navigation-panel-item-row"
                       className={cn(
-                        "min-w-0 whitespace-nowrap transition-[max-width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-                        drawerCollapsed
-                          ? "max-w-0 overflow-visible opacity-0"
-                          : "max-w-52 overflow-hidden opacity-100"
+                        "grid min-w-0 items-center gap-1 max-lg:flex max-lg:min-w-max",
+                        !collapsed &&
+                          !drawerCollapsed &&
+                          (item.action || hasChildren)
+                          ? item.action && hasChildren
+                            ? "grid-cols-[minmax(0,1fr)_2rem_2rem]"
+                            : "grid-cols-[minmax(0,1fr)_2rem]"
+                          : "grid-cols-1"
                       )}
                     >
-                      <span
+                      <button
+                        type="button"
+                        ref={(node) => {
+                          itemRefs.current[item.id] = node
+                        }}
+                        data-slot="navigation-panel-item"
                         className={cn(
-                          "grid min-w-0 gap-0.5 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:block",
-                          drawerCollapsed
-                            ? "w-52 -translate-x-12"
-                            : "translate-x-0"
+                          "group relative grid min-h-11 w-full items-center gap-2 rounded-lg border border-transparent text-left transition-[color,background-color] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none max-lg:h-11 max-lg:w-auto max-lg:min-w-max max-lg:grid-cols-[2rem_minmax(0,1fr)] max-lg:pr-3",
+                          collapsed ? "h-11" : "h-[3.25rem]",
+                          collapsed
+                            ? "mr-auto w-11 grid-cols-[2.75rem_0fr] gap-0 p-0"
+                            : "grid-cols-[2.75rem_minmax(0,1fr)] p-0",
+                          active
+                            ? "text-foreground max-lg:bg-nextide-tide/[0.07]"
+                            : branchActive
+                              ? "text-foreground"
+                              : "text-muted-foreground hover:bg-nextide-panel-strong/70 hover:text-foreground"
                         )}
+                        aria-current={
+                          active || compactChildActive ? "page" : undefined
+                        }
+                        aria-label={
+                          collapsed || drawerCollapsed
+                            ? [
+                                activeChild?.label ?? item.label,
+                                item.status,
+                                item.meta,
+                              ]
+                                .filter(Boolean)
+                                .join(" ")
+                            : undefined
+                        }
+                        onClick={(event) => {
+                          measureOutline(event.currentTarget)
+                          onSelectItem(
+                            compactChildActive && activeChild
+                              ? activeChild
+                              : item
+                          )
+                        }}
                       >
-                        <span className="truncate text-sm font-medium">
-                          {item.label}
+                        <span
+                          data-slot="navigation-panel-item-icon"
+                          className="grid size-11 place-items-center justify-self-center"
+                        >
+                          <span
+                            data-slot="navigation-panel-item-glyph"
+                            className={cn(
+                              "grid size-7 place-items-center justify-self-center text-nextide-tide transition-[color,filter] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] [&_svg]:block [&_svg]:size-4",
+                              (active || branchActive) &&
+                                "drop-shadow-[0_0_8px_rgb(30_228_188/0.24)]"
+                            )}
+                          >
+                            {item.icon ?? item.label.slice(0, 1)}
+                          </span>
                         </span>
-                        {item.meta || item.status ? (
-                          <span className="flex min-w-0 items-center gap-2 max-lg:hidden">
-                            {item.meta ? (
-                              <small className="min-w-0 truncate text-xs text-muted-foreground">
-                                {item.meta}
-                              </small>
-                            ) : null}
-                            {item.status ? (
-                              <StatusBadge
-                                tone={item.tone ?? "neutral"}
-                                className="relative z-20 px-1.5 py-0.5"
-                              >
-                                {item.status}
-                              </StatusBadge>
+                        <span
+                          aria-hidden={collapsed || drawerCollapsed}
+                          className={cn(
+                            "min-w-0 whitespace-nowrap transition-[max-width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                            drawerCollapsed
+                              ? "max-w-0 overflow-visible opacity-0"
+                              : "max-w-52 overflow-hidden opacity-100"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "grid min-w-0 gap-0.5 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:block",
+                              drawerCollapsed
+                                ? "w-52 -translate-x-12"
+                                : "translate-x-0"
+                            )}
+                          >
+                            <span className="truncate text-sm font-medium">
+                              {item.label}
+                            </span>
+                            {item.meta || item.status ? (
+                              <span className="flex min-w-0 items-center gap-2 max-lg:hidden">
+                                {item.meta ? (
+                                  <small className="min-w-0 truncate text-xs text-muted-foreground">
+                                    {item.meta}
+                                  </small>
+                                ) : null}
+                                {item.status ? (
+                                  <StatusBadge
+                                    tone={item.tone ?? "neutral"}
+                                    className="relative z-20 px-1.5 py-0.5"
+                                  >
+                                    {item.status}
+                                  </StatusBadge>
+                                ) : null}
+                              </span>
                             ) : null}
                           </span>
-                        ) : null}
+                        </span>
+                      </button>
+                      {item.action &&
+                      onActionItem &&
+                      !collapsed &&
+                      !drawerCollapsed ? (
+                        <button
+                          type="button"
+                          data-slot="navigation-panel-item-action"
+                          aria-label={item.action.label}
+                          className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-nextide-panel-strong hover:text-nextide-tide focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:outline-none max-lg:size-11 [&_svg]:size-4"
+                          onClick={() => onActionItem(item)}
+                        >
+                          {item.action.icon ?? "+"}
+                        </button>
+                      ) : null}
+                      {hasChildren &&
+                      onToggleItem &&
+                      !collapsed &&
+                      !drawerCollapsed ? (
+                        <button
+                          type="button"
+                          data-slot="navigation-panel-item-toggle"
+                          aria-label={`${item.expanded ? "Collapse" : "Expand"} ${item.label}`}
+                          aria-expanded={item.expanded ?? false}
+                          className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-nextide-panel-strong hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:outline-none max-lg:size-11"
+                          onClick={() => onToggleItem(item)}
+                        >
+                          <ChevronDown
+                            className={cn(
+                              "size-4 transition-transform duration-[var(--nextide-motion-control)] motion-reduce:transition-none",
+                              !item.expanded && "-rotate-90"
+                            )}
+                          />
+                        </button>
+                      ) : null}
+                    </div>
+                    {hasChildren &&
+                    item.expanded &&
+                    !collapsed &&
+                    !drawerCollapsed ? (
+                      <div
+                        data-slot="navigation-panel-children"
+                        className="ml-[1.375rem] grid gap-1 border-l border-nextide-line/70 pl-3 max-lg:ml-0 max-lg:flex max-lg:border-l-0 max-lg:pl-0"
+                      >
+                        {item.children?.map((child) => {
+                          const childActive = child.id === activeItemId
+
+                          return (
+                            <button
+                              key={child.id}
+                              type="button"
+                              ref={(node) => {
+                                itemRefs.current[child.id] = node
+                              }}
+                              data-slot="navigation-panel-child"
+                              className={cn(
+                                "group grid min-h-11 w-full grid-cols-[2rem_minmax(0,1fr)] items-center rounded-lg border border-transparent pr-2 text-left text-sm transition-colors max-lg:w-auto max-lg:min-w-max",
+                                childActive
+                                  ? "bg-nextide-tide/[0.07] text-foreground"
+                                  : "text-muted-foreground hover:bg-nextide-panel-strong/70 hover:text-foreground"
+                              )}
+                              aria-current={childActive ? "page" : undefined}
+                              onClick={(event) => {
+                                measureOutline(event.currentTarget)
+                                onSelectItem(child)
+                              }}
+                            >
+                              <span
+                                data-slot="navigation-panel-item-icon"
+                                className="grid size-8 place-items-center"
+                              >
+                                <span
+                                  data-slot="navigation-panel-item-glyph"
+                                  className="grid size-6 place-items-center text-nextide-tide [&_svg]:size-3.5"
+                                >
+                                  {child.icon ?? (
+                                    <span className="size-1.5 rounded-full bg-current" />
+                                  )}
+                                </span>
+                              </span>
+                              <span className="grid min-w-0 gap-0.5">
+                                <span className="truncate font-medium">
+                                  {child.label}
+                                </span>
+                                {child.meta || child.status ? (
+                                  <small className="truncate text-xs text-muted-foreground max-lg:hidden">
+                                    {[child.meta, child.status]
+                                      .filter(Boolean)
+                                      .join(" · ")}
+                                  </small>
+                                ) : null}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : null}
+                    {activeChild && !item.expanded && !compact ? (
+                      <span
+                        data-slot="navigation-panel-current-child"
+                        aria-current="page"
+                        className="sr-only"
+                      >
+                        {activeChild.label}
                       </span>
-                    </span>
-                  </button>
+                    ) : null}
+                  </div>
                 )
               })}
             </div>
@@ -860,6 +1056,8 @@ function NavigationPanel({
   commandShortcut,
   onToggle,
   onSelectItem,
+  onToggleItem,
+  onActionItem,
   footer,
   userMenu,
   className,
@@ -904,6 +1102,8 @@ function NavigationPanel({
           commandLabel={commandLabel}
           commandShortcut={commandShortcut}
           onSelectItem={onSelectItem}
+          onToggleItem={onToggleItem}
+          onActionItem={onActionItem}
           onToggle={onToggle}
         />
         <NavigationPanelNav
@@ -913,6 +1113,8 @@ function NavigationPanel({
           drawerCollapsed={drawerCollapsed}
           drawerTransitioning={drawerTransitioning}
           onSelectItem={onSelectItem}
+          onToggleItem={onToggleItem}
+          onActionItem={onActionItem}
         />
         <NavigationPanelFooter
           collapsed={collapsed}
@@ -969,6 +1171,29 @@ function readNavigationItemMotionRect(item: HTMLButtonElement) {
       .querySelector<HTMLElement>("[data-slot='navigation-panel-item-icon']")
       ?.getBoundingClientRect() ?? item.getBoundingClientRect()
   )
+}
+
+function getVisibleNavigationPanelItems(sections: NavigationPanelSection[]) {
+  return sections.flatMap((section) =>
+    section.items.flatMap((item) => [
+      item,
+      ...(item.expanded ? (item.children ?? []) : []),
+    ])
+  )
+}
+
+function getEffectiveNavigationItemId(
+  sections: NavigationPanelSection[],
+  activeItemId: string | undefined,
+  compact: boolean
+) {
+  if (!activeItemId) return activeItemId
+
+  const parent = sections
+    .flatMap((section) => section.items)
+    .find((item) => item.children?.some((child) => child.id === activeItemId))
+
+  return parent && (compact || !parent.expanded) ? parent.id : activeItemId
 }
 
 export {

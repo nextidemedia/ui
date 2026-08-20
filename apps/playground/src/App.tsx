@@ -23,6 +23,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   PanelLeft,
+  Plus,
   RadioTower,
   Search,
   Settings,
@@ -47,7 +48,10 @@ import {
 } from "@nextide/ui/blocks/intelligence-progression-chart"
 import { SignalPlate } from "@nextide/ui/blocks/signal-plate"
 import { LiveguardCockpit } from "@nextide/ui/blocks/liveguard-cockpit"
-import { NavigationPanel } from "@nextide/ui/blocks/navigation-panel"
+import {
+  NavigationPanel,
+  defaultNavigationPanelSections,
+} from "@nextide/ui/blocks/navigation-panel"
 import { ProgressiveSummaryRail } from "@nextide/ui/blocks/progressive-summary-rail"
 import {
   ReportContextBuilder,
@@ -969,6 +973,8 @@ const blockPreviewNavigationLabels: Record<string, string> = {
   creators: "Creators",
   settings: "Settings",
   "service-health": "Service Health",
+  "summer-launch": "Summer launch",
+  "partner-rollout": "Partner rollout",
 }
 
 type PlaygroundState = {
@@ -2959,6 +2965,24 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
     (_current: string, nextItemId: string) => nextItemId,
     "dashboard"
   )
+  const [campaignsExpanded, setCampaignsExpanded] = useState(false)
+  const [navigationActionCount, setNavigationActionCount] = useState(0)
+  const navigationSections = defaultNavigationPanelSections.map((section) => ({
+    ...section,
+    items: section.items.map((item) =>
+      item.id === "campaigns"
+        ? {
+            ...item,
+            expanded: campaignsExpanded,
+            action: { label: "Create campaign", icon: <Plus /> },
+            children: [
+              { id: "summer-launch", label: "Summer launch" },
+              { id: "partner-rollout", label: "Partner rollout" },
+            ],
+          }
+        : item
+    ),
+  }))
   const activeNavigationLabel =
     blockPreviewNavigationLabels[activeNavigationItemId] ?? "Dashboard"
 
@@ -3077,6 +3101,7 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
             collapsed={navigationDrawer.iconsCollapsed}
             drawerCollapsed={navigationDrawer.drawerCollapsed}
             drawerTransitioning={navigationDrawer.transitioning}
+            sections={navigationSections}
             commandShortcut=""
             footer={
               <div className="grid gap-2 text-xs text-muted-foreground">
@@ -3085,6 +3110,8 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
               </div>
             }
             onSelectItem={(item) => updateActiveNavigationItemId(item.id)}
+            onActionItem={() => setNavigationActionCount((count) => count + 1)}
+            onToggleItem={() => setCampaignsExpanded((expanded) => !expanded)}
             onToggle={navigationDrawer.toggleCollapsed}
           />
         </div>
@@ -3103,7 +3130,17 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
                 {activeNavigationLabel}
               </strong>
             </div>
-            <StatusBadge tone="success">Nominal</StatusBadge>
+            <div className="grid justify-items-end gap-1">
+              <StatusBadge tone="success">Nominal</StatusBadge>
+              <span
+                aria-live="polite"
+                className="text-ui-caption text-muted-foreground"
+              >
+                {navigationActionCount
+                  ? `Create campaign requested ${navigationActionCount} ${navigationActionCount === 1 ? "time" : "times"}`
+                  : "No action requested"}
+              </span>
+            </div>
           </div>
           <div className="mt-5 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr))] gap-3">
             <Metric
