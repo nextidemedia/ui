@@ -98,8 +98,12 @@ In compact mode the icon opens that same field beside the rail without expanding
 the full sidebar. Matching is deliberately conservative and requires direct text
 matches across labels and their visible context. Selection navigates through
 `onSelectItem`, while Escape and outside clicks clear the query. Pass an empty
-`commandShortcut` when a secondary panel must not
-register the global shortcut.
+`commandShortcut` when a secondary panel must not register the global shortcut.
+
+Navigation items can expose one level of `children`, an `expanded` state, and a
+separate `action`. Use `onToggleItem` for disclosure and `onActionItem` for the
+item action so opening a saved destination, opening its workspace, and creating
+a new record remain distinct controls. Closed children remain searchable.
 
 Collapsed navigation controls use the same 44px icon track and hit area. Their
 final positions are measured before the layout changes so every control follows

@@ -472,6 +472,36 @@ test("collapsed navigation search closes cleanly", async ({ page }) => {
   await expect(search).toHaveCSS("width", "44px")
 })
 
+test("navigation branches keep destinations and create actions distinct", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.getByRole("button", { name: /Patterns/ }).click()
+
+  const navigation = page.locator('[data-slot="navigation-panel-frame"]').nth(1)
+  const expand = navigation.getByRole("button", { name: "Expand Campaigns" })
+
+  await expect(expand).toBeVisible()
+  await expect(
+    navigation.getByRole("button", { name: "Summer launch" })
+  ).toHaveCount(0)
+  await expand.click()
+
+  const report = navigation.getByRole("button", { name: "Summer launch" })
+  await expect(
+    navigation.getByRole("button", { name: "Collapse Campaigns" })
+  ).toBeVisible()
+  await report.click()
+  await expect(report).toHaveAttribute("aria-current", "page")
+
+  await navigation.getByRole("button", { name: "Create campaign" }).click()
+  await expect(
+    page.getByText("Create campaign requested", { exact: true })
+  ).toBeVisible()
+  await expect(report).toHaveAttribute("aria-current", "page")
+})
+
 test("playground shows exact public names beside component examples", async ({
   page,
 }) => {
