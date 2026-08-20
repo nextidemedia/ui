@@ -522,7 +522,8 @@ function NavigationPanelNav({
     if (!nav) return
 
     const nextRects: Record<string, DOMRect> = {}
-    for (const item of getVisibleNavigationPanelItems(sections)) {
+    const visibleItems = getVisibleNavigationPanelItems(sections)
+    for (const item of visibleItems) {
       const element = itemRefs.current[item.id]
       if (element) nextRects[item.id] = readNavigationItemMotionRect(element)
     }
@@ -557,7 +558,7 @@ function NavigationPanelNav({
         nav.style.getPropertyValue("--navigation-rail-top")
       )
 
-      for (const item of getVisibleNavigationPanelItems(sections)) {
+      for (const item of visibleItems) {
         const element = itemRefs.current[item.id]
         const previousRect = previousRects[item.id]
         const nextRect = nextRects[item.id]
@@ -763,6 +764,7 @@ function NavigationPanelNav({
                   (child) => child.id === activeItemId
                 )
                 const branchActive = Boolean(activeChild)
+                const hasChildren = Boolean(item.children?.length)
                 const compactChildActive =
                   branchActive && (collapsed || drawerCollapsed)
 
@@ -778,8 +780,8 @@ function NavigationPanelNav({
                         "grid min-w-0 items-center gap-1 max-lg:flex max-lg:min-w-max",
                         !collapsed &&
                           !drawerCollapsed &&
-                          (item.action || item.children?.length)
-                          ? item.action && item.children?.length
+                          (item.action || hasChildren)
+                          ? item.action && hasChildren
                             ? "grid-cols-[minmax(0,1fr)_2rem_2rem]"
                             : "grid-cols-[minmax(0,1fr)_2rem]"
                           : "grid-cols-1"
@@ -895,7 +897,7 @@ function NavigationPanelNav({
                           {item.action.icon ?? "+"}
                         </button>
                       ) : null}
-                      {item.children?.length &&
+                      {hasChildren &&
                       onToggleItem &&
                       !collapsed &&
                       !drawerCollapsed ? (
@@ -916,7 +918,7 @@ function NavigationPanelNav({
                         </button>
                       ) : null}
                     </div>
-                    {item.children?.length &&
+                    {hasChildren &&
                     item.expanded &&
                     !collapsed &&
                     !drawerCollapsed ? (
@@ -924,7 +926,7 @@ function NavigationPanelNav({
                         data-slot="navigation-panel-children"
                         className="ml-[1.375rem] grid gap-1 border-l border-nextide-line/70 pl-3 max-lg:ml-0 max-lg:flex max-lg:border-l-0 max-lg:pl-0"
                       >
-                        {item.children.map((child) => {
+                        {item.children?.map((child) => {
                           const childActive = child.id === activeItemId
 
                           return (
