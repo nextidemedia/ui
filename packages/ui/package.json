@@ -1,6 +1,6 @@
 {
   "name": "@nextide/ui",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Shared Nextide React components and product interface patterns.",
   "type": "module",
   "license": "UNLICENSED",

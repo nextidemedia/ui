@@ -14,12 +14,14 @@ import {
   BriefcaseBusiness,
   CalendarClock,
   Check,
+  Circle,
   Database,
   FileJson,
   FileText,
   Filter,
   Gauge,
   Layers3,
+  LoaderCircle,
   PanelRightClose,
   PanelRightOpen,
   PanelLeft,
@@ -31,6 +33,7 @@ import {
   Sparkles,
   ServerCog,
   Video,
+  X,
 } from "lucide-react"
 
 import { AppShell } from "@nextide/ui/blocks/app-shell"
@@ -2976,8 +2979,34 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
             expanded: campaignsExpanded,
             action: { label: "Create campaign", icon: <Plus /> },
             children: [
-              { id: "summer-launch", label: "Summer launch" },
-              { id: "partner-rollout", label: "Partner rollout" },
+              {
+                id: "summer-launch",
+                label: "Summer launch",
+                status: "Completed",
+                tone: "success" as const,
+                statusIcon: <Check />,
+              },
+              {
+                id: "partner-rollout",
+                label: "Partner rollout",
+                status: "Processing",
+                tone: "processing" as const,
+                statusIcon: <LoaderCircle className="motion-safe:animate-spin" />,
+              },
+              {
+                id: "creative-review",
+                label: "Creative review",
+                status: "Degraded",
+                tone: "neutral" as const,
+                statusIcon: <Circle className="fill-current" />,
+              },
+              {
+                id: "failed-sync",
+                label: "Failed sync",
+                status: "Failed",
+                tone: "danger" as const,
+                statusIcon: <X />,
+              },
             ],
           }
         : item
