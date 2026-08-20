@@ -38,10 +38,12 @@ function StatusBadge({
   tone,
   size,
   children,
+  icon,
   indicator = "dot",
   ...props
 }: React.ComponentProps<"span"> &
   VariantProps<typeof statusBadgeVariants> & {
+    icon?: React.ReactNode
     indicator?: StatusBadgeIndicator
   }) {
   const pulse = indicator === "pulse"
@@ -51,11 +53,22 @@ function StatusBadge({
       data-slot="status-badge"
       data-tone={tone}
       data-size={size ?? "default"}
-      data-indicator={indicator}
+      data-indicator={icon ? "icon" : indicator}
       className={cn(statusBadgeVariants({ tone, size }), className)}
       {...props}
     >
-      {indicator !== "none" ? (
+      {icon ? (
+        <span
+          aria-hidden="true"
+          data-slot="status-badge-icon"
+          className={cn(
+            "grid shrink-0 place-items-center [&_svg]:block",
+            size === "compact" ? "[&_svg]:size-2.5" : "[&_svg]:size-3"
+          )}
+        >
+          {icon}
+        </span>
+      ) : indicator !== "none" ? (
         <span
           data-slot="status-badge-dot"
           data-pulse={pulse ? "true" : undefined}

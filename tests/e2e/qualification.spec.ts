@@ -489,6 +489,43 @@ test("navigation branches keep destinations and create actions distinct", async 
   await expand.click()
 
   const report = navigation.getByRole("button", { name: "Summer launch" })
+  const completedBadge = report.locator('[data-slot="status-badge"]')
+  await expect(completedBadge).toHaveAttribute("data-tone", "success")
+  await expect(completedBadge.getByText("Completed")).toHaveClass("sr-only")
+  await expect(
+    completedBadge.locator('[data-slot="status-badge-icon"]')
+  ).toBeVisible()
+  const [reportBox, completedBadgeBox] = await Promise.all([
+    report.boundingBox(),
+    completedBadge.boundingBox(),
+  ])
+  expect(completedBadgeBox?.x).toBeGreaterThan(
+    (reportBox?.x ?? 0) + (reportBox?.width ?? 0) / 2
+  )
+  expect(completedBadgeBox?.y).toBeLessThan(
+    (reportBox?.y ?? 0) + (reportBox?.height ?? 0) / 2
+  )
+  await expect(
+    navigation
+      .getByRole("button", { name: "Creative review" })
+      .locator('[data-slot="status-badge"]')
+  ).toHaveAttribute("data-tone", "neutral")
+  await expect(
+    navigation
+      .getByRole("button", { name: "Failed sync" })
+      .locator('[data-slot="status-badge"]')
+  ).toHaveAttribute("data-tone", "danger")
+  const processingIcon = navigation
+    .getByRole("button", { name: "Partner rollout" })
+    .locator('[data-slot="status-badge-icon"] svg')
+  await expect
+    .poll(() => processingIcon.evaluate((icon) => getComputedStyle(icon).animationName))
+    .not.toBe("none")
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await expect
+    .poll(() => processingIcon.evaluate((icon) => getComputedStyle(icon).animationName))
+    .toBe("none")
+  await page.emulateMedia({ reducedMotion: "no-preference" })
   await expect(
     navigation.getByRole("button", { name: "Collapse Campaigns" })
   ).toBeVisible()

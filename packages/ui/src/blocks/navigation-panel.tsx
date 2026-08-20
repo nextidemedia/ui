@@ -27,7 +27,10 @@ import {
   AutocompletePositioner,
 } from "@nextide/ui/components/autocomplete"
 import { Kbd } from "@nextide/ui/components/kbd"
-import { StatusBadge } from "@nextide/ui/components/status-badge"
+import {
+  StatusBadge,
+  type StatusBadgeIndicator,
+} from "@nextide/ui/components/status-badge"
 import { Surface } from "@nextide/ui/components/surface"
 import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
 import { cn } from "@nextide/ui/lib/utils"
@@ -45,6 +48,8 @@ type NavigationPanelItem = {
   meta?: string
   status?: string
   tone?: NavigationPanelStatusTone
+  statusIcon?: React.ReactNode
+  statusIndicator?: StatusBadgeIndicator
   icon?: React.ReactNode
   children?: NavigationPanelItem[]
   expanded?: boolean
@@ -870,14 +875,7 @@ function NavigationPanelNav({
                                     {item.meta}
                                   </small>
                                 ) : null}
-                                {item.status ? (
-                                  <StatusBadge
-                                    tone={item.tone ?? "neutral"}
-                                    className="relative z-20 px-1.5 py-0.5"
-                                  >
-                                    {item.status}
-                                  </StatusBadge>
-                                ) : null}
+                                <NavigationPanelStatus item={item} />
                               </span>
                             ) : null}
                           </span>
@@ -938,7 +936,7 @@ function NavigationPanelNav({
                               }}
                               data-slot="navigation-panel-child"
                               className={cn(
-                                "group grid min-h-11 w-full grid-cols-[2rem_minmax(0,1fr)] items-center rounded-lg border border-transparent pr-2 text-left text-sm transition-colors max-lg:w-auto max-lg:min-w-max",
+                                "group relative grid min-h-11 w-full grid-cols-[2rem_minmax(0,1fr)] items-center rounded-lg border border-transparent pr-8 text-left text-sm transition-colors max-lg:w-auto max-lg:min-w-max",
                                 childActive
                                   ? "bg-nextide-tide/[0.07] text-foreground"
                                   : "text-muted-foreground hover:bg-nextide-panel-strong/70 hover:text-foreground"
@@ -966,14 +964,13 @@ function NavigationPanelNav({
                                 <span className="truncate font-medium">
                                   {child.label}
                                 </span>
-                                {child.meta || child.status ? (
+                                {child.meta ? (
                                   <small className="truncate text-xs text-muted-foreground max-lg:hidden">
-                                    {[child.meta, child.status]
-                                      .filter(Boolean)
-                                      .join(" · ")}
+                                    {child.meta}
                                   </small>
                                 ) : null}
                               </span>
+                              <NavigationPanelStatus item={child} iconOnly />
                             </button>
                           )
                         })}
@@ -996,6 +993,32 @@ function NavigationPanelNav({
         </React.Fragment>
       ))}
     </nav>
+  )
+}
+
+function NavigationPanelStatus({
+  item,
+  iconOnly = false,
+}: {
+  item: NavigationPanelItem
+  iconOnly?: boolean
+}) {
+  if (!item.status) return null
+
+  return (
+    <StatusBadge
+      title={iconOnly ? item.status : undefined}
+      tone={item.tone ?? "neutral"}
+      size="compact"
+      icon={item.statusIcon}
+      indicator={item.statusIndicator}
+      className={cn(
+        "relative z-20",
+        iconOnly && "absolute top-2 right-2 size-5 justify-center p-0"
+      )}
+    >
+      {iconOnly ? <span className="sr-only">{item.status}</span> : item.status}
+    </StatusBadge>
   )
 }
 
