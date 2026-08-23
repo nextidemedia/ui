@@ -1412,7 +1412,7 @@ test("playground queues creator and context changes without losing updates", asy
   )
   await expect(progression.locator("linearGradient")).toHaveCount(7)
   await expect(progression.locator('mask ellipse[fill="black"]')).toHaveCount(7)
-  await expect(progression.locator('g[mask^="url("]')).toHaveCount(2)
+  await expect(progression.locator('g[mask^="url("]')).toHaveCount(1)
   await expect(
     progression.locator('path.nextide-flow-line[stroke^="url("]')
   ).toHaveCount(7)
