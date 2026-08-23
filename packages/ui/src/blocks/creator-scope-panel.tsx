@@ -7,6 +7,7 @@ type CreatorScopeItem = {
   name: string
   meta?: React.ReactNode
   avatar?: React.ReactNode
+  disabled?: boolean
 }
 
 function CreatorScopePanel({
@@ -15,7 +16,9 @@ function CreatorScopePanel({
   onActiveIdChange,
   title = "Creators",
   allLabel = "All creators",
+  beforeHeader,
   getAction,
+  children,
   className,
   ...props
 }: React.ComponentProps<"section"> & {
@@ -24,7 +27,9 @@ function CreatorScopePanel({
   onActiveIdChange: (id: string) => void
   title?: React.ReactNode
   allLabel?: React.ReactNode
+  beforeHeader?: React.ReactNode
   getAction?: (creator: CreatorScopeItem) => React.ReactNode
+  children?: React.ReactNode
 }) {
   return (
     <section
@@ -35,49 +40,56 @@ function CreatorScopePanel({
       )}
       {...props}
     >
+      {beforeHeader}
       <h3 className="text-sm">{title}</h3>
       <div className="grid gap-2">
         <button
           type="button"
           aria-pressed={activeId === "all"}
-          className={scopeRowClass(activeId === "all")}
+          className={cn(scopeRowClass(activeId === "all"), "px-3")}
           onClick={() => onActiveIdChange("all")}
         >
           <span className="col-span-2 truncate">{allLabel}</span>
         </button>
         <span className="h-px bg-nextide-line" aria-hidden="true" />
         {creators.map((creator) => (
-          <button
+          <div
             key={creator.id}
-            type="button"
-            aria-pressed={activeId === creator.id}
             className={scopeRowClass(activeId === creator.id)}
-            onClick={() => onActiveIdChange(creator.id)}
           >
-            <span className="grid size-7 place-items-center rounded-full bg-nextide-tide/10 text-ui-caption font-medium text-nextide-tide">
-              {creator.avatar ?? initials(creator.name)}
-            </span>
-            <span className="grid min-w-0 gap-0.5 text-left">
-              <strong className="truncate text-sm">{creator.name}</strong>
-              {creator.meta ? (
-                <small className="truncate text-xs text-muted-foreground">
-                  {creator.meta}
-                </small>
-              ) : null}
-            </span>
-            {getAction ? (
-              <span className="ml-auto shrink-0">{getAction(creator)}</span>
+            <button
+              type="button"
+              disabled={creator.disabled}
+              aria-pressed={activeId === creator.id}
+              className="grid min-h-10 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-3 text-left disabled:cursor-not-allowed disabled:opacity-45"
+              onClick={() => onActiveIdChange(creator.id)}
+            >
+              <span className="grid size-7 place-items-center rounded-full bg-nextide-tide/10 text-ui-caption font-medium text-nextide-tide">
+                {creator.avatar ?? initials(creator.name)}
+              </span>
+              <span className="grid min-w-0 gap-0.5 text-left">
+                <strong className="truncate text-sm">{creator.name}</strong>
+                {creator.meta ? (
+                  <small className="truncate text-xs text-muted-foreground">
+                    {creator.meta}
+                  </small>
+                ) : null}
+              </span>
+            </button>
+            {getAction && !creator.disabled ? (
+              <span className="shrink-0 pr-3">{getAction(creator)}</span>
             ) : null}
-          </button>
+          </div>
         ))}
       </div>
+      {children}
     </section>
   )
 }
 
 function scopeRowClass(active: boolean) {
   return cn(
-    "grid min-h-10 w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border px-3 text-left transition-[background-color,border-color,box-shadow]",
+    "grid min-h-10 w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center rounded-lg border text-left transition-[background-color,border-color,box-shadow]",
     active
       ? "border-nextide-tide/55 bg-nextide-tide/10 text-foreground shadow-[0_0_24px_rgb(30_228_188/0.14)]"
       : "border-transparent bg-transparent text-muted-foreground hover:bg-nextide-panel"

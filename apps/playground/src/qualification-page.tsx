@@ -30,9 +30,14 @@ import {
 } from "@nextide/ui/components/tabs"
 
 const workflowSteps = [
-  { id: "details", label: "Details", meta: "Project basics" },
-  { id: "review", label: "Review", meta: "Confirm choices" },
-  { id: "complete", label: "Complete", meta: "Ready to continue" },
+  { id: "details", label: "Details", meta: "Project basics", completed: true },
+  { id: "review", label: "Review", meta: "Confirm choices", completed: true },
+  {
+    id: "complete",
+    label: "Complete",
+    meta: "Ready to continue",
+    completed: true,
+  },
 ]
 
 function QualificationPage() {
@@ -105,7 +110,7 @@ function QualificationPage() {
           <CardHeader>
             <CardTitle>Delivery workflow</CardTitle>
             <CardDescription>
-              Move between the available setup steps.
+              Revisit any step without losing completed progress.
             </CardDescription>
           </CardHeader>
           <CardContent>

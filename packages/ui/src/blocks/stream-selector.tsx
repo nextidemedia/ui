@@ -23,7 +23,13 @@ type StreamSelectorItem = {
   thumbnail?: string
   readinessLabel?: React.ReactNode
   readinessTone?: StreamSelectorTone
+  disabled?: boolean
 }
+
+type StreamSelectorCreatorScopeProps = Pick<
+  React.ComponentProps<typeof CreatorScopePanel>,
+  "beforeHeader" | "children" | "getAction" | "title" | "allLabel"
+>
 
 const filterEase = "cubic-bezier(0.76, 0, 0.24, 1)"
 const defaultFilterMotion = { exit: 220, move: 300, enter: 220 }
@@ -34,6 +40,7 @@ function StreamSelector({
   selectedIds,
   onSelectedIdsChange,
   title = "Creator filter",
+  creatorScopeProps,
   emptyLabel = "No streams in this view.",
   className,
   ...props
@@ -43,6 +50,7 @@ function StreamSelector({
   selectedIds: string[]
   onSelectedIdsChange: (ids: string[]) => void
   title?: React.ReactNode
+  creatorScopeProps?: StreamSelectorCreatorScopeProps
   emptyLabel?: React.ReactNode
 }) {
   const [activeCreatorId, setActiveCreatorId] = React.useState("all")
@@ -258,6 +266,7 @@ function StreamSelector({
         creators={creators}
         activeId={activeCreatorId}
         onActiveIdChange={changeCreatorFilter}
+        {...creatorScopeProps}
       />
       <div
         ref={listRef}
@@ -281,6 +290,8 @@ function StreamSelector({
             <button
               key={stream.id}
               type="button"
+              disabled={stream.disabled}
+              aria-pressed={selected}
               ref={(node) => {
                 if (node) {
                   rowRefs.current[stream.id] = node
@@ -291,7 +302,8 @@ function StreamSelector({
               className={cn(
                 "grid min-h-[4.9rem] w-full min-w-0 grid-cols-[5.5rem_minmax(0,1fr)_7rem_auto_1.75rem] items-center gap-3 rounded-lg border border-nextide-line bg-nextide-panel px-3 py-2 text-left transition-[background-color,border-color,box-shadow]",
                 selected &&
-                  "border-nextide-tide/55 bg-nextide-tide/10 shadow-[0_0_24px_rgb(30_228_188/0.13)]"
+                  "border-nextide-tide/55 bg-nextide-tide/10 shadow-[0_0_24px_rgb(30_228_188/0.13)]",
+                "disabled:cursor-not-allowed disabled:opacity-45"
               )}
               style={
                 entering
@@ -380,4 +392,9 @@ function readCssTime(value: string, fallback: number) {
     : parsed
 }
 
-export { StreamSelector, type StreamSelectorItem, type StreamSelectorTone }
+export {
+  StreamSelector,
+  type StreamSelectorCreatorScopeProps,
+  type StreamSelectorItem,
+  type StreamSelectorTone,
+}

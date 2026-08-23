@@ -9,6 +9,7 @@ type WorkflowStep = {
   label: string
   meta?: string
   disabled?: boolean
+  completed?: boolean
 }
 
 function WorkflowStepper({
@@ -119,7 +120,7 @@ function WorkflowStepper({
       />
       {steps.map((step, index) => {
         const active = step.id === activeStepId
-        const done = activeIndex >= 0 && index < activeIndex
+        const done = step.completed ?? (activeIndex >= 0 && index < activeIndex)
         return (
           <button
             key={step.id}
@@ -150,6 +151,7 @@ function WorkflowStepper({
                 </small>
               ) : null}
             </span>
+            {done ? <span className="sr-only">Completed</span> : null}
           </button>
         )
       })}
