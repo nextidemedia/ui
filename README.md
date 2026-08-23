@@ -2,6 +2,8 @@
 
 Shared Nextide shadcn/ui components with a Vite playground.
 
+Run `pnpm dev`, then open [http://127.0.0.1:5174](http://127.0.0.1:5174) to view the component catalogue.
+
 ## Brand
 
 The implementation guide from `nextide-saas-meta` is copied into `docs/brand_assets/NEXTIDE_BRAND_AGENT_GUIDE.md`. The large PDF and font zip stay in the meta repo for now.
