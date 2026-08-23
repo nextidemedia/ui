@@ -59,6 +59,14 @@ description of where the component happens to appear.
 | Operations and dashboards   | `blocks/dashboard-filter-bar`, `blocks/run-monitor-table`, `blocks/stream-selector`, `blocks/intelligence-progression-chart`, `blocks/evidence-drawer`  |
 | Live/event safety           | `blocks/liveguard-cockpit`, `blocks/liveguard-incident-review`, `blocks/live-event-timeline`, `blocks/live-event-proof-modal`                           |
 
+`WorkflowStepper` accepts explicit per-step completion when progress must
+survive revisits. `CreatorScopePanel` keeps row actions beside its selection
+button and supports content around the creator heading. `StreamSelector` can
+show the same creator-scope controls. Disabled creator and stream rows stay
+visible without changing selection. `ReportContextBuilder` supports multiple
+or single selection; locked and disabled rows cannot change, while editable
+rows can expose Add.
+
 ## Hooks
 
 | Need                                  | Start with                                            |

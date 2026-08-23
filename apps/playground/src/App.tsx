@@ -636,6 +636,7 @@ const intelligenceCreators = [
     name: "Ren Kade",
     meta: "Kick - live today",
     avatar: "RK",
+    disabled: true,
   },
   {
     id: "creator-taro",
@@ -727,6 +728,7 @@ const intelligenceStreamRows: StreamSelectorItem[] = [
     durationLabel: "1h 56m",
     readinessLabel: "Finished",
     readinessTone: "success",
+    disabled: true,
     thumbnail:
       "linear-gradient(135deg, rgb(30 228 188 / 0.2), rgb(255 218 83 / 0.12))",
   },
@@ -763,18 +765,21 @@ const intelligenceContextBuckets: ReportContextBucket[] = [
     id: "brand",
     label: "Brand",
     required: true,
+    selectionPolicy: "single",
     selected: ["Daedalus"],
     suggestions: ["Nextide", "Starforge", "Orbit"],
   },
   {
     id: "products",
     label: "Products",
+    locked: true,
     selected: ["Command center"],
     suggestions: ["Creator roster", "Weekly export", "LiveGuard cockpit"],
   },
   {
     id: "phrases",
     label: "Special phrases",
+    disabled: true,
     selected: ["runtime proof"],
     suggestions: ["brand-safe", "chat lift", "campaign slot"],
   },
@@ -1523,6 +1528,7 @@ function IntelligencePlayground({
   onSelectedStreamIdsChange: (ids: string[]) => void
 }) {
   const [activeDateScope, setActiveDateScope] = useState("all")
+  const [lastAddBucket, setLastAddBucket] = useState<ReactNode>(null)
   const selectedCreators = intelligenceCreators.filter((creator) =>
     selectedCreatorIds.includes(creator.id)
   )
@@ -1682,6 +1688,7 @@ function IntelligencePlayground({
           streams={scopedStreams}
           selectedIds={selectedStreamIds}
           onSelectedIdsChange={onSelectedStreamIdsChange}
+          creatorScopeProps={{ allLabel: "All report creators" }}
         />
       </Surface>
 
@@ -1697,7 +1704,19 @@ function IntelligencePlayground({
         <ReportContextBuilder
           buckets={contextBuckets}
           onBucketsChange={onContextBucketsChange}
+          onAdd={(bucketId) =>
+            setLastAddBucket(
+              contextBuckets.find((bucket) => bucket.id === bucketId)?.label
+            )
+          }
         />
+        <p className="text-xs text-muted-foreground" aria-live="polite">
+          {lastAddBucket ? (
+            <>Add requested for {lastAddBucket}.</>
+          ) : (
+            "Choose Add to extend an editable row."
+          )}
+        </p>
       </Surface>
 
       <div className="grid gap-2">
@@ -2991,7 +3010,9 @@ function BlockPreview({ motionScale }: { motionScale: number }) {
                 label: "Partner rollout",
                 status: "Processing",
                 tone: "processing" as const,
-                statusIcon: <LoaderCircle className="motion-safe:animate-spin" />,
+                statusIcon: (
+                  <LoaderCircle className="motion-safe:animate-spin" />
+                ),
               },
               {
                 id: "creative-review",

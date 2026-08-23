@@ -243,19 +243,6 @@ function IntelligenceProgressionChart({
             </mask>
           </defs>
           <g
-            data-slot="progression-flow-glow"
-            mask={`url(#${maskId})`}
-            className="[&>path]:fill-none [&>path]:stroke-[5] [&>path]:opacity-20 [&>path]:[filter:blur(0.5px)_drop-shadow(0_0_14px_rgb(30_228_188/0.38))] [&>path]:[vector-effect:non-scaling-stroke]"
-          >
-            {renderedEdges.map((edge) => (
-              <path
-                key={`glow-${edge.id}`}
-                d={edge.path}
-                stroke={`url(#${rawId}-${edge.id})`}
-              />
-            ))}
-          </g>
-          <g
             data-slot="progression-flow-lines"
             mask={`url(#${maskId})`}
             className="[&>path]:fill-none [&>path]:stroke-[1.05] [&>path]:[filter:drop-shadow(0_0_7px_rgb(30_228_188/0.42))] [&>path]:[vector-effect:non-scaling-stroke]"
@@ -265,7 +252,6 @@ function IntelligenceProgressionChart({
                 key={`line-${edge.id}`}
                 d={edge.path}
                 className="nextide-flow-line"
-                pathLength="100"
                 stroke={`url(#${rawId}-${edge.id})`}
                 strokeDasharray="5 4"
                 strokeLinecap="round"

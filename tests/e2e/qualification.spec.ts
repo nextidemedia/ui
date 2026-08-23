@@ -90,6 +90,13 @@ test("public controls and block are keyboard operable and accessible", async ({
   await reviewStep.press("Enter")
   await expect(reviewStep).toHaveAttribute("aria-current", "step")
   await expect(page.getByText("Current step: review")).toBeVisible()
+  await page
+    .getByRole("button", { name: /Details Project basics Completed/ })
+    .click()
+  await expect(page.getByText("Current step: details")).toBeVisible()
+  await expect(
+    page.getByRole("navigation", { name: "Workflow" }).getByText("Completed")
+  ).toHaveCount(3)
 
   const overviewTab = page.getByRole("tab", { name: "Overview" })
   const activityTab = page.getByRole("tab", { name: "Activity" })
@@ -1334,43 +1341,78 @@ test("playground queues creator and context changes without losing updates", asy
     creatorTransfer.getByRole("heading", { name: "Added creators (4)" })
   ).toBeVisible()
 
-  const contextBuilder = page.locator('[data-slot="report-context-builder"]')
-  await contextBuilder
-    .getByRole("button", { name: "Nextide", exact: true })
-    .click()
-  await contextBuilder
-    .getByRole("button", { name: "Creator roster", exact: true })
-    .click()
-  const contextRows = contextBuilder.locator(":scope > section")
-  const brandSelected = contextRows
-    .filter({ has: page.getByText("Brand", { exact: true }) })
-    .locator(".nextide-contained-scroll")
-    .first()
-  const productSelected = contextRows
-    .filter({ has: page.getByText("Products", { exact: true }) })
-    .locator(".nextide-contained-scroll")
-    .first()
+  const creatorScope = page.locator('[data-slot="creator-scope-panel"]').first()
+  await expect(creatorScope.locator("button button")).toHaveCount(0)
+  const disabledCreator = creatorScope.getByRole("button", {
+    name: /RK Ren Kade/,
+  })
+  await expect(disabledCreator).toBeDisabled()
+  await expect(creatorScope.getByRole("checkbox", { name: "Override Ren Kade" })).toHaveCount(0)
+  await disabledCreator.evaluate((element: HTMLButtonElement) =>
+    element.click()
+  )
   await expect(
-    brandSelected.getByRole("button", { name: "Nextide", exact: true })
-  ).toBeVisible()
-  await expect(
-    productSelected.getByRole("button", {
-      name: "Creator roster",
-      exact: true,
-    })
-  ).toBeVisible()
+    creatorScope.getByRole("button", { name: "All creators" })
+  ).toHaveAttribute("aria-pressed", "true")
 
-  const streamList = page
-    .locator('[data-slot="stream-selector"]')
-    .locator(".nextide-scrollbar-none")
+  const streamSelector = page.locator('[data-slot="stream-selector"]')
+  const disabledStream = streamSelector.getByRole("button", {
+    name: /Sponsored challenge slot/,
+  })
+  await expect(disabledStream).toBeDisabled()
+  await disabledStream.evaluate((element: HTMLButtonElement) => element.click())
+  await expect(disabledStream).toHaveAttribute("aria-pressed", "true")
+
+  const contextBuilder = page.locator('[data-slot="report-context-builder"]')
+  const contextRows = contextBuilder.locator(":scope > section")
+  const brandRow = contextRows.filter({
+    has: page.getByText("Brand", { exact: true }),
+  })
+  const productRow = contextRows.filter({
+    has: page.getByText("Products", { exact: true }),
+  })
+  const disabledRow = contextRows.filter({
+    has: page.getByText("Special phrases", { exact: true }),
+  })
+  const normalRow = contextRows.filter({
+    has: page.getByText("Competing brands", { exact: true }),
+  })
+
+  await brandRow.getByRole("button", { name: "Nextide", exact: true }).click()
+  await expect(
+    brandRow.getByRole("button", { name: "Daedalus", exact: true })
+  ).toBeEnabled()
+  await expect(
+    brandRow.getByRole("button", { name: "Nextide", exact: true })
+  ).toBeDisabled()
+  await expect(
+    productRow.getByRole("button", { name: "Creator roster", exact: true })
+  ).toBeDisabled()
+  await expect(
+    disabledRow.getByRole("button", { name: "brand-safe", exact: true })
+  ).toBeDisabled()
+  await normalRow.getByRole("button", { name: "Orbit", exact: true }).click()
+  await normalRow
+    .getByRole("button", { name: "Nova Media", exact: true })
+    .click()
+  await normalRow.getByRole("button", { name: "Add", exact: true }).click()
+  await expect(page.getByText("Add requested for Competing brands.")).toBeVisible()
+
+  const streamList = streamSelector.locator(".nextide-scrollbar-none")
   await expect(streamList).toHaveCSS("scrollbar-width", "none")
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1)
+  }
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await expect(contextBuilder).toBeVisible()
 
   const progression = page.locator(
     '[data-slot="intelligence-progression-chart"]'
   )
   await expect(progression.locator("linearGradient")).toHaveCount(7)
   await expect(progression.locator('mask ellipse[fill="black"]')).toHaveCount(7)
-  await expect(progression.locator('g[mask^="url("]')).toHaveCount(2)
+  await expect(progression.locator('g[mask^="url("]')).toHaveCount(1)
   await expect(
     progression.locator('path.nextide-flow-line[stroke^="url("]')
   ).toHaveCount(7)

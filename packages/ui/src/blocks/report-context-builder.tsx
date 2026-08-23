@@ -9,6 +9,9 @@ type ReportContextBucket = {
   id: string
   label: React.ReactNode
   required?: boolean
+  selectionPolicy?: "single" | "multiple"
+  locked?: boolean
+  disabled?: boolean
   selected: string[]
   suggestions: string[]
 }
@@ -20,11 +23,13 @@ type ContextChipMotion = {
 function ReportContextBuilder({
   buckets,
   onBucketsChange,
+  onAdd,
   className,
   ...props
 }: React.ComponentProps<"section"> & {
   buckets: ReportContextBucket[]
   onBucketsChange: (buckets: ReportContextBucket[]) => void
+  onAdd?: (bucketId: string) => void
 }) {
   const updateBuckets = (
     update: (current: ReportContextBucket[]) => ReportContextBucket[]
@@ -34,11 +39,22 @@ function ReportContextBuilder({
     updateBuckets((current) =>
       current.map((bucket) =>
         bucket.id === bucketId
-          ? {
-              ...bucket,
-              selected: [...bucket.selected, value],
-              suggestions: bucket.suggestions.filter((item) => item !== value),
-            }
+          ? bucket.selectionPolicy === "single"
+            ? {
+                ...bucket,
+                selected: [value],
+                suggestions: [
+                  ...bucket.selected,
+                  ...bucket.suggestions.filter((item) => item !== value),
+                ],
+              }
+            : {
+                ...bucket,
+                selected: [...bucket.selected, value],
+                suggestions: bucket.suggestions.filter(
+                  (item) => item !== value
+                ),
+              }
           : bucket
       )
     )
@@ -70,6 +86,7 @@ function ReportContextBuilder({
           bucket={bucket}
           onSelect={(value) => moveToSelected(bucket.id, value)}
           onRemove={(value) => moveToSuggestions(bucket.id, value)}
+          onAdd={onAdd ? () => onAdd(bucket.id) : undefined}
         />
       ))}
     </section>
@@ -80,10 +97,12 @@ function ContextBucketRow({
   bucket,
   onSelect,
   onRemove,
+  onAdd,
 }: {
   bucket: ReportContextBucket
   onSelect: (value: string) => void
   onRemove: (value: string) => void
+  onAdd?: () => void
 }) {
   const [chipMotions, setChipMotions] = React.useState<
     Record<string, ContextChipMotion>
@@ -106,9 +125,7 @@ function ContextBucketRow({
     direction: ContextChipMotion["direction"],
     commit: () => void
   ) => {
-    motionTimers.current[value]?.forEach((timer) =>
-      window.clearTimeout(timer)
-    )
+    motionTimers.current[value]?.forEach((timer) => window.clearTimeout(timer))
     commit()
     setChipMotions((current) => ({
       ...current,
@@ -137,6 +154,8 @@ function ContextBucketRow({
           <strong className="truncate text-sm">{bucket.label}</strong>
           <small className="text-xs text-muted-foreground">
             {bucket.required ? "Required" : "Optional"}
+            {bucket.locked ? " · Locked" : null}
+            {bucket.disabled ? " · Disabled" : null}
           </small>
         </span>
       </div>
@@ -157,9 +176,12 @@ function ContextBucketRow({
                   "shrink-0 border-nextide-tide/35 bg-nextide-tide/10 text-nextide-tide",
                   chipMotionClass(chipMotions[item])
                 )}
-                onClick={() =>
-                  moveChip(item, "remove", () => onRemove(item))
+                disabled={
+                  bucket.locked ||
+                  bucket.disabled ||
+                  (bucket.required && bucket.selected.length <= 1)
                 }
+                onClick={() => moveChip(item, "remove", () => onRemove(item))}
               >
                 {item}
                 <X className="size-3.5" />
@@ -170,6 +192,8 @@ function ContextBucketRow({
               variant="ghost"
               size="sm"
               className="shrink-0 text-muted-foreground"
+              disabled={!onAdd || bucket.locked || bucket.disabled}
+              onClick={onAdd}
             >
               <Plus className="size-3.5" />
               Add
@@ -194,9 +218,8 @@ function ContextBucketRow({
                 variant="outline"
                 size="sm"
                 className={cn("shrink-0", chipMotionClass(chipMotions[item]))}
-                onClick={() =>
-                  moveChip(item, "select", () => onSelect(item))
-                }
+                disabled={bucket.locked || bucket.disabled}
+                onClick={() => moveChip(item, "select", () => onSelect(item))}
               >
                 {item}
                 <Plus className="size-3.5" />
