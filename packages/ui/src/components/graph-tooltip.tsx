@@ -26,10 +26,12 @@ function GraphTooltip({
 }) {
   const tooltipRef = React.useRef<HTMLDivElement | null>(null)
   const onDismissRef = React.useRef(onDismiss)
-  const [position, setPosition] = React.useState({
-    left: anchor.x + sideOffset,
-    top: anchor.y - 36,
-  })
+  const [layout, setLayout] = React.useState<{
+    width: number
+    height: number
+    viewportWidth: number
+    viewportHeight: number
+  }>()
 
   React.useEffect(() => {
     onDismissRef.current = onDismiss
@@ -39,44 +41,40 @@ function GraphTooltip({
     const node = tooltipRef.current
     if (!node) return
 
-    const place = () => {
-      const gutter = 8
-      const width = node.offsetWidth
-      const height = node.offsetHeight
-      const preferredLeft = anchor.x + sideOffset
-      const left =
-        preferredLeft + width + gutter <= window.innerWidth
-          ? preferredLeft
-          : anchor.x - width - sideOffset
-      const top = anchor.y - Math.min(42, height * 0.28)
-      const nextPosition = {
-        left: Math.max(
-          gutter,
-          Math.min(left, window.innerWidth - width - gutter)
-        ),
-        top: Math.max(
-          gutter,
-          Math.min(top, window.innerHeight - height - gutter)
-        ),
-      }
+    const measure = () =>
+      setLayout({
+        width: node.offsetWidth,
+        height: node.offsetHeight,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+      })
 
-      setPosition((current) =>
-        current.left === nextPosition.left && current.top === nextPosition.top
-          ? current
-          : nextPosition
-      )
-    }
-
-    place()
-    const resizeObserver = new ResizeObserver(place)
+    measure()
+    const resizeObserver = new ResizeObserver(measure)
     resizeObserver.observe(node)
-    window.addEventListener("resize", place)
+    window.addEventListener("resize", measure)
 
     return () => {
       resizeObserver.disconnect()
-      window.removeEventListener("resize", place)
+      window.removeEventListener("resize", measure)
     }
-  }, [anchor.x, anchor.y, sideOffset])
+  }, [])
+
+  const gutter = 8
+  const width = layout?.width ?? 0
+  const height = layout?.height ?? 0
+  const preferredLeft = anchor.x + sideOffset
+  const left =
+    layout && preferredLeft + width + gutter > layout.viewportWidth
+      ? anchor.x - width - sideOffset
+      : preferredLeft
+  const top = anchor.y - (layout ? Math.min(42, height * 0.28) : 36)
+  const x = layout
+    ? Math.max(gutter, Math.min(left, layout.viewportWidth - width - gutter))
+    : left
+  const y = layout
+    ? Math.max(gutter, Math.min(top, layout.viewportHeight - height - gutter))
+    : top
 
   React.useEffect(() => {
     const dismiss = () => onDismissRef.current?.()
@@ -102,7 +100,7 @@ function GraphTooltip({
         "pointer-events-none fixed z-[1100] w-64 rounded-lg border border-nextide-line bg-background/95 p-3 text-xs shadow-[0_18px_60px_rgb(0_0_0/0.42)] backdrop-blur-xl sm:w-72",
         className
       )}
-      style={{ ...style, ...position }}
+      style={{ ...style, left: 0, top: 0, translate: `${x}px ${y}px` }}
     >
       {children}
     </div>,
