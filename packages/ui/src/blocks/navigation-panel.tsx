@@ -42,6 +42,8 @@ type NavigationPanelStatusTone =
   | "warning"
   | "danger"
 
+type NavigationPanelSelectionStyle = "rail" | "fill" | "outline" | "dot"
+
 type NavigationPanelItem = {
   id: string
   label: string
@@ -135,6 +137,7 @@ type NavigationPanelProps = React.ComponentProps<typeof Surface> & {
   bylineLogo?: React.ReactNode
   sections?: NavigationPanelSection[]
   activeItemId?: string
+  selectionStyle?: NavigationPanelSelectionStyle
   collapsed?: boolean
   drawerCollapsed?: boolean
   drawerTransitioning?: boolean
@@ -163,6 +166,7 @@ type NavigationPanelCommandRowProps = {
 type NavigationPanelNavProps = {
   sections: NavigationPanelSection[]
   activeItemId?: string
+  selectionStyle: NavigationPanelSelectionStyle
   collapsed: boolean
   drawerCollapsed: boolean
   drawerTransitioning: boolean
@@ -443,6 +447,7 @@ function NavigationPanelCommandRow({
 function NavigationPanelNav({
   sections,
   activeItemId,
+  selectionStyle,
   collapsed,
   drawerCollapsed,
   drawerTransitioning,
@@ -459,6 +464,13 @@ function NavigationPanelNav({
   const railRef = React.useRef<HTMLSpanElement | null>(null)
   const railAnimationRef = React.useRef<Animation | null>(null)
   const compact = collapsed || drawerCollapsed
+  const selectionSurfaceVisible =
+    Boolean(activeItemId) &&
+    selectionStyle !== "dot" &&
+    (!compact || selectionStyle !== "rail")
+  const selectionMarkerVisible =
+    Boolean(activeItemId) &&
+    (selectionStyle === "rail" || selectionStyle === "dot")
   const effectiveActiveItemId = getEffectiveNavigationItemId(
     sections,
     activeItemId,
@@ -699,11 +711,16 @@ function NavigationPanelNav({
         aria-hidden="true"
         data-slot="navigation-panel-selection"
         className={cn(
-          "pointer-events-none absolute z-0 rounded-lg bg-nextide-tide/[0.07] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
+          "pointer-events-none absolute z-0 rounded-lg ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
+          selectionStyle === "rail" && "bg-nextide-tide/[0.07]",
+          selectionStyle === "fill" &&
+            "nextide-navigation-selection-wave",
+          selectionStyle === "outline" &&
+            "ring-1 ring-nextide-tide/50 ring-inset",
           drawerTransitioning
             ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
             : "transition-[top,height,left,width,opacity] duration-[var(--nextide-motion-state)]",
-          activeItemId && !collapsed && !drawerCollapsed
+          selectionSurfaceVisible
             ? "opacity-100"
             : "opacity-0 duration-[var(--nextide-drawer-icon-duration)]",
           collapsed && "transition-none"
@@ -720,16 +737,20 @@ function NavigationPanelNav({
         aria-hidden="true"
         data-slot="navigation-panel-rail"
         className={cn(
-          "pointer-events-none absolute z-20 rounded-full bg-nextide-tide shadow-[0_0_14px_rgb(30_228_188/0.34)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
+          "pointer-events-none absolute z-20 ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
+          selectionStyle === "rail" &&
+            "rounded-full bg-nextide-tide shadow-[0_0_14px_rgb(30_228_188/0.34)]",
+          selectionStyle === "dot" &&
+            "bg-transparent after:absolute after:top-1/2 after:left-1/2 after:size-1.5 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full after:bg-nextide-tide after:shadow-[0_0_12px_rgb(30_228_188/0.4)] after:content-['']",
           drawerTransitioning
             ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
             : "transition-[top,height,opacity] duration-[var(--nextide-motion-state)]",
-          activeItemId ? "opacity-100" : "opacity-0"
+          selectionMarkerVisible ? "opacity-100" : "opacity-0"
         )}
         style={{
           top: "var(--navigation-rail-top, 0px)",
           left: "0px",
-          width: "2px",
+          width: selectionStyle === "dot" ? "8px" : "2px",
           height: "var(--navigation-rail-height, 0px)",
         }}
       />
@@ -806,7 +827,12 @@ function NavigationPanelNav({
                             ? "mr-auto w-11 grid-cols-[2.75rem_0fr] gap-0 p-0"
                             : "grid-cols-[2.75rem_minmax(0,1fr)] p-0",
                           active
-                            ? "text-foreground max-lg:bg-nextide-tide/[0.07]"
+                            ? cn(
+                                "text-foreground",
+                                getNavigationPanelMobileSelectionClass(
+                                  selectionStyle
+                                )
+                              )
                             : branchActive
                               ? "text-foreground"
                               : "text-muted-foreground hover:bg-nextide-panel-strong/70 hover:text-foreground"
@@ -939,7 +965,12 @@ function NavigationPanelNav({
                               className={cn(
                                 "group relative grid min-h-11 w-full grid-cols-[2rem_minmax(0,1fr)] items-center rounded-lg border border-transparent pr-8 text-left text-sm transition-colors max-lg:w-auto max-lg:min-w-max",
                                 childActive
-                                  ? "text-foreground max-lg:bg-nextide-tide/[0.07]"
+                                  ? cn(
+                                      "text-foreground",
+                                      getNavigationPanelMobileSelectionClass(
+                                        selectionStyle
+                                      )
+                                    )
                                   : "text-muted-foreground hover:bg-nextide-panel-strong/70 hover:text-foreground"
                               )}
                               aria-current={childActive ? "page" : undefined}
@@ -1073,6 +1104,7 @@ function NavigationPanel({
   bylineLogo,
   sections = defaultNavigationPanelSections,
   activeItemId,
+  selectionStyle = "fill",
   collapsed = false,
   drawerCollapsed = collapsed,
   drawerTransitioning = false,
@@ -1138,6 +1170,7 @@ function NavigationPanel({
         <NavigationPanelNav
           sections={sections}
           activeItemId={activeItemId}
+          selectionStyle={selectionStyle}
           collapsed={collapsed}
           drawerCollapsed={drawerCollapsed}
           drawerTransitioning={drawerTransitioning}
@@ -1225,11 +1258,27 @@ function getEffectiveNavigationItemId(
   return parent && (compact || !parent.expanded) ? parent.id : activeItemId
 }
 
+function getNavigationPanelMobileSelectionClass(
+  selectionStyle: NavigationPanelSelectionStyle
+) {
+  switch (selectionStyle) {
+    case "fill":
+      return "max-lg:bg-linear-to-r max-lg:from-nextide-tide/[0.16] max-lg:to-nextide-tide/[0.03]"
+    case "outline":
+      return "max-lg:ring-1 max-lg:ring-nextide-tide/50 max-lg:ring-inset"
+    case "dot":
+      return "max-lg:after:absolute max-lg:after:bottom-1 max-lg:after:left-1/2 max-lg:after:size-1 max-lg:after:-translate-x-1/2 max-lg:after:rounded-full max-lg:after:bg-nextide-tide max-lg:after:content-['']"
+    case "rail":
+      return "max-lg:bg-nextide-tide/[0.07]"
+  }
+}
+
 export {
   NavigationPanel,
   defaultNavigationPanelSections,
   type NavigationPanelItem,
   type NavigationPanelSection,
+  type NavigationPanelSelectionStyle,
   type NavigationPanelStatusTone,
   type NavigationPanelUserMenu,
 }

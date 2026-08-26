@@ -287,6 +287,12 @@
   }
 }
 
+@keyframes nextide-navigation-selection-wave {
+  to {
+    background-position: 100% 0;
+  }
+}
+
 @keyframes nextide-context-exit-up {
   to {
     opacity: 0;
@@ -389,6 +395,19 @@
 
 .nextide-flow-line {
   animation: nextide-flow-dash var(--nextide-motion-flow-dash) linear infinite;
+}
+
+.nextide-navigation-selection-wave {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--nextide-tide) 4%, transparent) 0%,
+    color-mix(in srgb, var(--nextide-tide) 18%, transparent) 25%,
+    color-mix(in srgb, var(--nextide-tide) 4%, transparent) 50%,
+    color-mix(in srgb, var(--nextide-tide) 18%, transparent) 75%,
+    color-mix(in srgb, var(--nextide-tide) 4%, transparent) 100%
+  );
+  background-position: 0 0;
+  background-size: 200% 100%;
 }
 
 .nextide-processing-text {
@@ -496,6 +515,10 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .nextide-navigation-selection-wave {
+    animation: nextide-navigation-selection-wave 20s linear infinite;
+  }
+
   [data-slot="status-badge-dot"][data-pulse="true"] {
     animation: nextide-status-dot-pulse var(--nextide-motion-status-pulse)
       var(--nextide-ease-out-quart) 3 both;

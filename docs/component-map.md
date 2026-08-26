@@ -106,7 +106,8 @@ body through its `header` prop. Borders separate these three layout regions;
 mobile composition remains the responsibility of each product workflow.
 The navigation rail uses a 16-pixel content inset and section gap. Its brand
 uses the same 16-pixel inset; product bodies use their own task-appropriate
-gutters.
+gutters. `NavigationPanel.selectionStyle` defaults to a slowly animated soft
+fill and can also render the active item as a rail, outline, or dot.
 
 `blocks/navigation-panel` includes section-aware search through the shared
 autocomplete surface. The Search field is the input itself; focusing it or
