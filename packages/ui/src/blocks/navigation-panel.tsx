@@ -1088,12 +1088,14 @@ function NavigationPanel({
   ...props
 }: NavigationPanelProps) {
   return (
-    <div
+    <Surface
+      {...props}
       data-slot="navigation-panel-frame"
       data-collapsed={collapsed}
       data-drawer-collapsed={drawerCollapsed}
+      padding="none"
       className={cn(
-        "relative z-20 flex h-full min-h-0 flex-col gap-3 overflow-visible max-lg:h-auto",
+        "relative z-20 flex h-full min-h-0 flex-col overflow-visible rounded-none border-x-0 border-t-0 border-nextide-line bg-nextide-panel max-lg:h-auto max-lg:border-b lg:border-r lg:border-b-0",
         className
       )}
     >
@@ -1106,18 +1108,21 @@ function NavigationPanel({
         collapsed={collapsed}
         drawerCollapsed={drawerCollapsed}
         drawerTransitioning={drawerTransitioning}
+        className={cn(
+          "shrink-0 border-b border-nextide-line",
+          collapsed ? "py-2" : "p-4"
+        )}
       />
-
-      <Surface
+      <div
         data-slot="navigation-panel"
         data-collapsed={collapsed}
         data-drawer-collapsed={drawerCollapsed}
-        padding="none"
         className={cn(
-          "flex min-h-0 flex-1 flex-col gap-3 overflow-visible transition-[padding,border-radius,box-shadow,background-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:flex-none",
-          collapsed ? "items-center gap-1.5 overflow-visible p-3" : "p-3"
+          "flex min-h-0 flex-1 flex-col overflow-visible transition-[padding,background-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:flex-none",
+          collapsed
+            ? "items-center gap-1.5 overflow-visible p-3"
+            : "gap-4 px-4 py-4"
         )}
-        {...props}
       >
         <NavigationPanelCommandRow
           collapsed={collapsed}
@@ -1146,8 +1151,8 @@ function NavigationPanel({
           footer={footer}
           userMenu={userMenu}
         />
-      </Surface>
-    </div>
+      </div>
+    </Surface>
   )
 }
 

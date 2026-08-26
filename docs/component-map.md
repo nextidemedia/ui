@@ -99,6 +99,15 @@ smaller `SidebarBrand` and `SidebarToggleButton` exports in `blocks/sidebar`
 only provide its shared brand and collapse chrome; they do not implement a
 second navigation model.
 
+`blocks/app-shell` and `blocks/navigation-panel` form one edge-to-edge desktop
+shell. The product lockup and navigation share a full-height rectangular left
+rail. `AppShell` can place a rectangular top bar above the rectangular main
+body through its `header` prop. Borders separate these three layout regions;
+mobile composition remains the responsibility of each product workflow.
+The navigation rail uses a 16-pixel content inset and section gap. Its brand
+uses the same 16-pixel inset; product bodies use their own task-appropriate
+gutters.
+
 `blocks/navigation-panel` includes section-aware search through the shared
 autocomplete surface. The Search field is the input itself; focusing it or
 pressing Command/Ctrl+K filters navigation results directly beneath the field.

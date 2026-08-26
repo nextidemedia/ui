@@ -250,8 +250,8 @@ Components are quiet at rest and decisive in action. Base UI owns interaction se
 
 ### Navigation
 
-- **Style:** Strong route hierarchy, neutral default state, tonal hover, and one clear active state. Desktop navigation supports density; mobile becomes task-based primary destinations rather than a squeezed sidebar.
-- **Brand lockup:** Product mark, product name, optional product subheading, and a small Nextide byline may use the bounded signature glow.
+- **Style:** Strong route hierarchy, neutral default state, tonal hover, and one clear active state. Desktop navigation is one square, full-height rail separated from the workspace by a single border; mobile becomes task-based primary destinations rather than a squeezed sidebar.
+- **Brand lockup:** Product mark, product name, optional product subheading, and a small Nextide byline live inside the navigation rail and may use the bounded signature glow.
 
 ### Scrolling
 

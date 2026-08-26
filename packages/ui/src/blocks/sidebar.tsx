@@ -164,7 +164,7 @@ function SidebarBrand({
             {eyebrow}
           </small>
           <span className="mt-1 flex items-center gap-1.5 uppercase">
-            <b className="text-ui-caption font-semibold text-muted-foreground">
+            <b className="-translate-y-1.5 text-ui-caption font-semibold text-muted-foreground">
               By
             </b>
             <span className="grid h-5 min-w-0 place-items-start overflow-visible">

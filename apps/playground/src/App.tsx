@@ -8,10 +8,12 @@ import {
 import { useRef } from "react"
 import {
   Activity,
+  ArrowRight,
   BarChart3,
   BookOpenText,
   Boxes,
   BriefcaseBusiness,
+  Building2,
   CalendarClock,
   Check,
   Circle,
@@ -26,12 +28,15 @@ import {
   PanelRightOpen,
   PanelLeft,
   Plus,
+  Radar,
   RadioTower,
   Search,
   Settings,
   ShieldAlert,
   Sparkles,
   ServerCog,
+  UserRound,
+  UsersRound,
   Video,
   X,
 } from "lucide-react"
@@ -962,6 +967,79 @@ const workbenchNavigationSections = [
   },
 ]
 
+const krakenNavigationSections = [
+  {
+    id: "kraken",
+    label: "Kraken",
+    items: [
+      { id: "kraken-discovery", label: "Discovery", icon: <Search /> },
+      {
+        id: "kraken-creator-fit",
+        label: "Creator Fit",
+        icon: <UsersRound />,
+      },
+      {
+        id: "kraken-campaign-reports",
+        label: "Campaign Reports",
+        icon: <FileText />,
+      },
+      {
+        id: "kraken-creator-portal",
+        label: "Creator Portal",
+        icon: <UserRound />,
+      },
+      {
+        id: "kraken-brand-portal",
+        label: "Brand Portal",
+        icon: <Building2 />,
+      },
+    ],
+  },
+  {
+    id: "live",
+    label: "Live",
+    items: [
+      {
+        id: "kraken-live-events",
+        label: "Live Events",
+        icon: <RadioTower />,
+      },
+    ],
+  },
+  {
+    id: "internal",
+    label: "Internal",
+    items: [
+      { id: "kraken-brand-focus", label: "Brand Focus", icon: <Gauge /> },
+      {
+        id: "kraken-catalog-review",
+        label: "Catalog Review",
+        icon: <Check />,
+      },
+      {
+        id: "kraken-creator-rosters",
+        label: "Creator Rosters",
+        icon: <Boxes />,
+      },
+      {
+        id: "kraken-universe",
+        label: "Universe (Demo)",
+        icon: <Sparkles />,
+      },
+    ],
+  },
+  {
+    id: "playground",
+    items: [
+      {
+        id: "shared-ui",
+        label: "Shared UI",
+        icon: <PanelLeft />,
+      },
+    ],
+  },
+]
+
 const workbenchViewByItemId: Record<string, PlaygroundViewMode> = {
   theme: "report",
   primitives: "report",
@@ -1146,6 +1224,8 @@ const formatCompactMetricValue = formatCompactNumber
 export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [playgroundSessionActive, setPlaygroundSessionActive] = useState(true)
+  const [krakenActiveItemId, setKrakenActiveItemId] =
+    useState("kraken-discovery")
   const settingsContentRef = useRef<HTMLDivElement>(null)
   const settingsSelectAnchorRef = useRef<HTMLDivElement>(null)
   const settingsSelectWidthRef = useRef<HTMLDivElement>(null)
@@ -1210,8 +1290,15 @@ export function App() {
   const webMiningView = viewMode === "web-mining"
   const krakenMiningView = viewMode === "kraken-mining"
   const reportMiningView = viewMode === "report-mining"
+  const platformView = viewMode === "platform"
   const viewCopy = getPlaygroundViewCopy(viewMode)
   const workbenchActiveItemId = viewMode === "report" ? activeItemId : viewMode
+  const navigationSections = platformView
+    ? krakenNavigationSections
+    : workbenchNavigationSections
+  const navigationActiveItemId = platformView
+    ? krakenActiveItemId
+    : workbenchActiveItemId
   const setViewMode = (nextMode: PlaygroundViewMode) => {
     updatePlaygroundState({ viewMode: nextMode })
 
@@ -1237,16 +1324,54 @@ export function App() {
         collapsed={sidebar.collapsed}
         drawerCollapsed={sidebar.drawerCollapsed}
         sidebarTransitioning={sidebar.transitioning}
+        header={
+          <div className="flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6">
+            <strong className="truncate text-ui-title font-medium">
+              {platformView ? "Kraken Intelligence" : viewCopy.title}
+            </strong>
+            <div className="flex shrink-0 items-center gap-2">
+              {!platformView && !inspectorVisible ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    updatePlaygroundState({ inspectorVisible: true })
+                  }
+                >
+                  <PanelRightOpen data-icon="inline-start" />
+                  Inspect
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Settings"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <Settings />
+              </Button>
+            </div>
+          </div>
+        }
         sidebar={
           <NavigationPanel
-            brand="Nextide UI"
-            eyebrow="System workbench"
-            activeItemId={workbenchActiveItemId}
+            brand={platformView ? "Kraken" : "Nextide UI"}
+            eyebrow={platformView ? "Data Platform" : "System workbench"}
+            activeItemId={navigationActiveItemId}
             collapsed={sidebar.iconsCollapsed}
             drawerCollapsed={sidebar.drawerCollapsed}
             drawerTransitioning={sidebar.transitioning}
-            sections={workbenchNavigationSections}
-            commandLabel="Search library"
+            sections={navigationSections}
+            commandLabel={platformView ? "Search navigation" : "Search library"}
+            logo={
+              platformView ? (
+                <Radar
+                  aria-hidden="true"
+                  className="size-10 text-nextide-tide"
+                />
+              ) : undefined
+            }
             userMenu={
               playgroundSessionActive
                 ? {
@@ -1258,12 +1383,22 @@ export function App() {
                   }
                 : undefined
             }
-            onSelectItem={(item) => selectWorkbenchItem(item.id)}
+            onSelectItem={(item) => {
+              if (!platformView) {
+                selectWorkbenchItem(item.id)
+                return
+              }
+              if (item.id === "shared-ui") {
+                setViewMode("report")
+                return
+              }
+              setKrakenActiveItemId(item.id)
+            }}
             onToggle={sidebar.toggleCollapsed}
           />
         }
         aside={
-          inspectorVisible ? (
+          inspectorVisible && !platformView ? (
             <Inspector
               density={density}
               confidence={confidence[0] ?? 0}
@@ -1273,51 +1408,10 @@ export function App() {
           ) : null
         }
       >
-        <div className="grid gap-4">
-          <Surface variant="strong" className="grid gap-4 overflow-hidden">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <SurfaceHeader>
-                <ComponentReference names={["AppShell", "NavigationPanel"]} />
-                <SurfaceDescription>{viewCopy.eyebrow}</SurfaceDescription>
-                <h1
-                  className={cn(
-                    "max-w-3xl text-ui-headline font-medium",
-                    viewMode === "report" &&
-                      "font-display text-ui-display font-bold"
-                  )}
-                >
-                  {viewCopy.title}
-                </h1>
-                <p className="max-w-[65ch] text-ui-body text-muted-foreground">
-                  {viewCopy.description}
-                </p>
-              </SurfaceHeader>
-              <div className="flex flex-wrap gap-2">
-                {!inspectorVisible ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      updatePlaygroundState({ inspectorVisible: true })
-                    }
-                  >
-                    <PanelRightOpen data-icon="inline-start" />
-                    Inspect
-                  </Button>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label="Settings"
-                  onClick={() => setSettingsOpen(true)}
-                >
-                  <Settings />
-                </Button>
-              </div>
-            </div>
-          </Surface>
-
+        {platformView ? (
+          <KrakenDiscoveryPreview activeItemId={krakenActiveItemId} />
+        ) : null}
+        <div className="grid gap-4 p-4 sm:px-8 sm:py-6" hidden={platformView}>
           {intelligenceView ? (
             <IntelligencePlayground
               selectedCreatorIds={intelligenceCreatorIds}
@@ -1501,6 +1595,82 @@ export function App() {
         </SettingsModalSection>
       </SettingsModal>
     </>
+  )
+}
+
+function KrakenDiscoveryPreview({ activeItemId }: { activeItemId: string }) {
+  const [query, setQuery] = useState("")
+  const [submittedQuery, setSubmittedQuery] = useState("")
+  const activeLabel = krakenNavigationSections
+    .flatMap((section) => section.items)
+    .find((item) => item.id === activeItemId)?.label
+
+  return (
+    <section className="grid min-h-full place-items-center bg-background px-4 py-12 sm:px-10">
+      <div className="grid w-full max-w-3xl gap-6">
+        <header className="grid gap-3">
+          <h1 className="text-4xl font-medium tracking-[-0.035em] text-balance sm:text-6xl">
+            {activeLabel ?? "Discovery"}
+          </h1>
+          <p className="max-w-[65ch] text-ui-body text-muted-foreground">
+            Search creators, brands, products, and categories across the Kraken
+            intelligence workspace.
+          </p>
+        </header>
+
+        <form
+          className="grid grid-cols-[minmax(0,1fr)_3.5rem] overflow-hidden rounded-lg border border-nextide-line bg-nextide-panel transition-colors focus-within:border-nextide-tide/60"
+          onSubmit={(event) => {
+            event.preventDefault()
+            setSubmittedQuery(query.trim())
+          }}
+        >
+          <label className="grid min-w-0 grid-cols-[3.5rem_minmax(0,1fr)] items-center">
+            <span className="grid size-14 place-items-center text-nextide-tide">
+              <Search aria-hidden="true" className="size-5" />
+            </span>
+            <span className="sr-only">Search Kraken</span>
+            <Input
+              className="h-14 rounded-none border-0 bg-transparent px-0 text-lg focus-visible:ring-0 dark:bg-transparent"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search..."
+              value={query}
+            />
+          </label>
+          <Button
+            type="submit"
+            size="icon-lg"
+            className="size-14 rounded-none border-l border-primary-foreground/20"
+            aria-label="Search"
+          >
+            <ArrowRight data-icon="inline-start" />
+          </Button>
+        </form>
+
+        <div className="flex flex-wrap items-center gap-2 border-t border-nextide-line pt-4">
+          {["Applebee's", "Monster", "Starforge"].map((suggestion) => (
+            <Button
+              key={suggestion}
+              type="button"
+              variant="ghost"
+              size="xs"
+              className="border border-nextide-line"
+              onClick={() => setQuery(suggestion)}
+            >
+              {suggestion}
+            </Button>
+          ))}
+          {submittedQuery ? (
+            <span
+              aria-live="polite"
+              className="ml-auto text-ui-caption text-muted-foreground"
+            >
+              Searching for {submittedQuery}
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </section>
   )
 }
 
