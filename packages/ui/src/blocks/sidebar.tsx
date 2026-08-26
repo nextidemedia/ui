@@ -153,17 +153,17 @@ function SidebarBrand({
         <span
           data-slot="sidebar-brand-text-inner"
           className={cn(
-            "grid gap-0.5 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+            "grid gap-px transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
             drawerCollapsed ? "-translate-x-56" : "translate-x-0"
           )}
         >
           <strong className="font-display text-ui-brand font-bold [text-shadow:0_0_1px_rgb(255_255_255/0.72),0_0_18px_rgb(30_228_188/0.34)]">
             {brand}
           </strong>
-          <small className="truncate text-ui-caption font-semibold text-nextide-tide uppercase">
+          <small className="-mt-1 truncate text-ui-caption font-semibold text-nextide-tide uppercase">
             {eyebrow}
           </small>
-          <span className="mt-1 flex items-center gap-1.5 uppercase">
+          <span className="flex items-center gap-1.5 uppercase">
             <b className="-translate-y-1.5 text-ui-caption font-semibold text-muted-foreground">
               By
             </b>
