@@ -1608,9 +1608,38 @@ test("signal ridge and impression details share compact overview and exact detai
   await hiddenSeries.evaluate((element) => (element as HTMLElement).click())
   await expect(hiddenSeries).toHaveAttribute("aria-pressed", "false")
   await expect(tooltip).toBeHidden()
-  await impressions.locator("svg > rect").first().hover()
+  const hoverZones = impressions.locator("svg > rect")
+  await hoverZones.first().hover()
   await expect(tooltip).toContainText("Day breakdown")
   await expect(tooltip).not.toContainText("Immersive frame impressions")
+  await page.waitForTimeout(32)
+  await tooltip.evaluate((element) => {
+    const fail = () => {
+      throw new Error("Anchor movement repeated tooltip measurement setup")
+    }
+    Object.defineProperties(element, {
+      offsetWidth: { configurable: true, get: fail },
+      offsetHeight: { configurable: true, get: fail },
+    })
+    Reflect.set(window, "graphTooltipResizeObserver", window.ResizeObserver)
+    window.ResizeObserver = class {
+      constructor() {
+        fail()
+      }
+    } as typeof ResizeObserver
+  })
+  const translateBefore = await tooltip.evaluate(
+    (element) => element.style.translate
+  )
+  for (const index of [1, 2, 3]) await hoverZones.nth(index).hover()
+  await expect
+    .poll(() => tooltip.evaluate((element) => element.style.translate))
+    .not.toBe(translateBefore)
+  await tooltip.evaluate((element) => {
+    for (const property of ["offsetWidth", "offsetHeight"])
+      Reflect.deleteProperty(element, property)
+    window.ResizeObserver = Reflect.get(window, "graphTooltipResizeObserver")
+  })
   const lastPoint = impressions.getByRole("img").last()
   await lastPoint.focus()
 
