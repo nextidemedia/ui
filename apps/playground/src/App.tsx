@@ -922,12 +922,6 @@ const workbenchNavigationSections = [
     label: "Product proofs",
     items: [
       {
-        id: "platform",
-        label: "Platform shell",
-        meta: "Shared application frame",
-        icon: <PanelLeft />,
-      },
-      {
         id: "daedalus",
         label: "Daedalus",
         meta: "Campaign operations",
@@ -962,6 +956,19 @@ const workbenchNavigationSections = [
         label: "Report reader",
         meta: "History and documents",
         icon: <BookOpenText />,
+      },
+    ],
+  },
+  {
+    id: "swap-workspace",
+    label: "Swap workspace",
+    pinned: true,
+    items: [
+      {
+        id: "platform",
+        label: "Platform shell",
+        meta: "Shared application frame",
+        icon: <PanelLeft />,
       },
     ],
   },
@@ -1029,11 +1036,14 @@ const krakenNavigationSections = [
     ],
   },
   {
-    id: "playground",
+    id: "swap-workspace",
+    label: "Swap workspace",
+    pinned: true,
     items: [
       {
-        id: "shared-ui",
-        label: "Shared UI",
+        id: "system-workbench",
+        label: "System workbench",
+        meta: "Shared UI reference",
         icon: <PanelLeft />,
       },
     ],
@@ -1363,7 +1373,7 @@ export function App() {
             drawerCollapsed={sidebar.drawerCollapsed}
             drawerTransitioning={sidebar.transitioning}
             sections={navigationSections}
-            commandLabel={platformView ? "Search navigation" : "Search library"}
+            commandLabel="Search Navigation"
             logo={
               platformView ? (
                 <Radar
@@ -1388,7 +1398,7 @@ export function App() {
                 selectWorkbenchItem(item.id)
                 return
               }
-              if (item.id === "shared-ui") {
+              if (item.id === "system-workbench") {
                 setViewMode("report")
                 return
               }

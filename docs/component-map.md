@@ -111,17 +111,21 @@ fill and can also render the active item as a rail, outline, or dot.
 
 `blocks/navigation-panel` includes section-aware search through the shared
 autocomplete surface. The Search field is the input itself; focusing it or
-pressing Command/Ctrl+K filters navigation results directly beneath the field.
+using an explicitly supplied `commandShortcut` filters navigation results
+directly beneath the field.
 In compact mode the icon opens that same field beside the rail without expanding
 the full sidebar. Matching is deliberately conservative and requires direct text
 matches across labels and their visible context. Selection navigates through
-`onSelectItem`, while Escape and outside clicks clear the query. Pass an empty
-`commandShortcut` when a secondary panel must not register the global shortcut.
+`onSelectItem`, while Escape and outside clicks clear the query. Navigation does
+not register or display a keyboard shortcut by default.
 
 Navigation items can expose one level of `children`, an `expanded` state, and a
 separate `action`. Use `onToggleItem` for disclosure and `onActionItem` for the
 item action so opening a saved destination, opening its workspace, and creating
 a new record remain distinct controls. Closed children remain searchable.
+Set a section's `pinned` flag when a workspace switch must remain at the bottom
+of the desktop navigation, directly above its footer. Narrow layouts keep that
+section in the existing horizontal navigation flow.
 
 Collapsed navigation controls use the same 44px icon track and hit area. Their
 final positions are measured before the layout changes so every control follows

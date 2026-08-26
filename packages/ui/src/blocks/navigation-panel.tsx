@@ -64,6 +64,7 @@ type NavigationPanelItem = {
 type NavigationPanelSection = {
   id: string
   label?: string
+  pinned?: boolean
   items: NavigationPanelItem[]
 }
 
@@ -197,7 +198,7 @@ function NavigationPanelCommandRow({
   const [searchValue, setSearchValue] = React.useState("")
   const commandRowRef = React.useRef<HTMLDivElement | null>(null)
   const inputRef = React.useRef<HTMLInputElement | null>(null)
-  const commandShortcutLabel = commandShortcut ?? getDefaultCommandShortcut()
+  const commandShortcutLabel = commandShortcut ?? ""
   const showCommandShortcut = commandShortcutLabel.length > 0
   const compactSearchOpen = collapsed && searchFocused
   const commandFieldVisible = !drawerCollapsed || compactSearchOpen
@@ -366,7 +367,7 @@ function NavigationPanelCommandRow({
             {showCommandShortcut && !compactSearchOpen ? (
               <Kbd
                 className={cn(
-                  "mr-2.5 hidden h-auto shrink-0 rounded-md border border-nextide-line bg-background/40 px-1.5 py-0.5 text-ui-caption leading-none sm:inline-flex",
+                  "mr-2.5 hidden h-auto min-w-0 shrink-0 rounded-none bg-transparent p-0 font-sans text-ui-caption leading-none text-muted-foreground/45 sm:inline-flex",
                   collapsed && "opacity-0"
                 )}
               >
@@ -705,7 +706,7 @@ function NavigationPanelNav({
     <nav
       ref={navRef}
       onWheel={onWheel}
-      className="nextide-scrollbar-none relative grid min-h-0 w-full flex-1 content-start gap-4 overflow-y-auto max-lg:flex max-lg:flex-none max-lg:gap-2 max-lg:overflow-x-auto max-lg:overflow-y-hidden max-lg:pb-1"
+      className="nextide-scrollbar-none relative flex min-h-0 w-full flex-1 flex-col gap-4 overflow-y-auto max-lg:flex-none max-lg:flex-row max-lg:gap-2 max-lg:overflow-x-auto max-lg:overflow-y-hidden max-lg:pb-1"
     >
       <span
         aria-hidden="true"
@@ -757,9 +758,12 @@ function NavigationPanelNav({
       {sections.map((section) => (
         <React.Fragment key={section.id}>
           <section
+            data-pinned={section.pinned || undefined}
             className={cn(
-              "relative z-10 grid gap-2 before:absolute before:-top-2 before:left-1/2 before:h-px before:w-8 before:-translate-x-1/2 before:rounded-full before:bg-nextide-line before:transition-opacity before:duration-[var(--nextide-drawer-icon-duration)] before:ease-[var(--nextide-drawer-ease)] max-lg:shrink-0 max-lg:before:hidden",
-              collapsed ? "before:opacity-100" : "before:opacity-0"
+              "relative z-10 grid shrink-0 gap-2 before:absolute before:-top-2 before:left-1/2 before:h-px before:w-8 before:-translate-x-1/2 before:rounded-full before:bg-nextide-line before:transition-opacity before:duration-[var(--nextide-drawer-icon-duration)] before:ease-[var(--nextide-drawer-ease)] max-lg:before:hidden",
+              collapsed ? "before:opacity-100" : "before:opacity-0",
+              section.pinned &&
+                "sticky bottom-0 z-30 mt-auto bg-nextide-panel max-lg:static max-lg:mt-0 max-lg:bg-transparent"
             )}
           >
             {section.label ? (
@@ -1187,15 +1191,6 @@ function NavigationPanel({
       </div>
     </Surface>
   )
-}
-
-function getDefaultCommandShortcut() {
-  if (typeof navigator === "undefined") {
-    return "CMD K"
-  }
-
-  const platform = `${navigator.platform} ${navigator.userAgent}`
-  return /win/i.test(platform) ? "CTRL K" : "CMD K"
 }
 
 function matchesNavigationPanelSearch(
