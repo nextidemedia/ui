@@ -528,6 +528,15 @@ function NavigationPanelNav({
     activeItemId,
     compact
   )
+  const activeInPinnedSection = sections.some(
+    (section) =>
+      section.pinned &&
+      section.items.some(
+        (item) =>
+          item.id === effectiveActiveItemId ||
+          item.children?.some((child) => child.id === effectiveActiveItemId)
+      )
+  )
   const previousCompactRef = React.useRef(compact)
   const writeOutlineVars = React.useCallback(
     (
@@ -766,7 +775,8 @@ function NavigationPanelNav({
         aria-hidden="true"
         data-slot="navigation-panel-selection"
         className={cn(
-          "pointer-events-none absolute z-0 rounded-lg ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
+          "pointer-events-none absolute rounded-lg ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
+          activeInPinnedSection ? "z-40" : "z-0",
           selectionStyle === "rail" && "bg-nextide-tide/[0.07]",
           selectionStyle === "fill" && "nextide-navigation-selection-wave",
           selectionStyle === "outline" &&
@@ -791,7 +801,8 @@ function NavigationPanelNav({
         aria-hidden="true"
         data-slot="navigation-panel-rail"
         className={cn(
-          "pointer-events-none absolute z-20 ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
+          "pointer-events-none absolute ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
+          activeInPinnedSection ? "z-40" : "z-20",
           selectionStyle === "rail" &&
             "rounded-full bg-nextide-tide shadow-[0_0_14px_rgb(30_228_188/0.34)]",
           selectionStyle === "dot" &&

@@ -1472,6 +1472,7 @@ export function App() {
           <KrakenDiscoveryPreview activeItemId={krakenActiveItemId} />
         ) : null}
         <div className="grid gap-4 p-4 sm:px-8 sm:py-6" hidden={platformView}>
+          <ComponentReference names={["AppShell", "NavigationPanel"]} />
           {intelligenceView ? (
             <IntelligencePlayground
               selectedCreatorIds={intelligenceCreatorIds}

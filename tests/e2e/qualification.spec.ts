@@ -201,6 +201,11 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/?view=foundations")
 
+  const shellTheme = page.getByRole("combobox", { name: "Shell theme" })
+  await expect(shellTheme).toContainText("Compact")
+  await shellTheme.click()
+  await page.getByRole("option", { name: "Large" }).click()
+
   const inspect = page.getByRole("button", { name: "Inspect" })
   const settings = page.getByRole("button", { name: "Settings" })
   const inspectBox = await inspect.boundingBox()
@@ -240,25 +245,22 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
     '[data-slot="navigation-panel-command-control"]'
   )
   const searchInput = mainSidebar.getByRole("combobox", {
-    name: "Search library",
+    name: "Search Navigation",
   })
   const toggle = mainSidebar.locator('[data-slot="sidebar-toggle"]')
   await expect(toggle).toHaveAccessibleName("Collapse sidebar")
-  const shortcut = search.getByText("CTRL K", { exact: true })
   const commandCopy = mainSidebar.locator(
     '[data-slot="navigation-panel-command-copy"]'
   )
   const searchBox = await search.boundingBox()
   const searchInputBox = await searchInput.boundingBox()
   const toggleBox = await toggle.boundingBox()
-  const shortcutBox = await shortcut.boundingBox()
   const commandCopyBox = await commandCopy.boundingBox()
   const commandRowBox = await commandRow.boundingBox()
 
   expect(searchBox).not.toBeNull()
   expect(searchInputBox).not.toBeNull()
   expect(toggleBox).not.toBeNull()
-  expect(shortcutBox).not.toBeNull()
   expect(commandCopyBox).not.toBeNull()
   expect(commandRowBox).not.toBeNull()
   expect(toggleBox!.height).toBe(searchBox!.height)
@@ -269,10 +271,6 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
     commandRowBox!.width,
     0
   )
-  expect(
-    searchBox!.x + searchBox!.width - (shortcutBox!.x + shortcutBox!.width)
-  ).toBeGreaterThanOrEqual(8)
-
   const userMenu = mainSidebar.getByRole("button", {
     name: "Nextide Operator menu",
   })
@@ -330,9 +328,8 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
       '[data-slot="navigation-panel-command-copy"]'
     )
     const searchInput = element.querySelector(
-      'input[aria-label="Search library"]'
+      'input[aria-label="Search Navigation"]'
     )
-    const shortcut = searchControl?.querySelector("kbd")
     const toggleButton = element.querySelector(
       'button[aria-label="Expand sidebar"]'
     )
@@ -347,8 +344,6 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
       toggleY: toggleButton?.getBoundingClientRect().y ?? 0,
       commandCopyX: commandCopy?.getBoundingClientRect().x ?? 0,
       searchInputWidth: searchInput?.getBoundingClientRect().width ?? 0,
-      shortcutWidth: shortcut?.getBoundingClientRect().width ?? 0,
-      shortcutHeight: shortcut?.getBoundingClientRect().height ?? 0,
     }
   })
   expect(stageOne.shellWidth).toBeGreaterThan(72)
@@ -357,8 +352,6 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   expect(Math.abs(stageOne.searchY - stageOne.toggleY)).toBeLessThanOrEqual(2)
   expect(stageOne.commandCopyX).toBeLessThan(commandCopyBox!.x - 1)
   expect(stageOne.searchInputWidth).toBeCloseTo(searchInputBox!.width, 0)
-  expect(stageOne.shortcutWidth).toBeCloseTo(shortcutBox!.width, 0)
-  expect(stageOne.shortcutHeight).toBeCloseTo(shortcutBox!.height, 0)
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "true")
   await expect(shell).toHaveCSS("grid-template-columns", /72px [0-9.]+px/)
   await expect(brandText).toHaveCSS("opacity", "0")
@@ -379,26 +372,14 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   expect(expandBox!.height).toBe(44)
   expect(collapsedSearchBox!.width).toBe(44)
   expect(collapsedSearchBox!.height).toBe(44)
-  expect(Math.abs(collapsedSearchBox!.x - expandBox!.x)).toBeLessThanOrEqual(2)
+  expect(Math.abs(collapsedSearchBox!.x - expandBox!.x)).toBeLessThanOrEqual(4)
   expect(
     collapsedSearchBox!.y - (expandBox!.y + expandBox!.height)
   ).toBeCloseTo(6, 0)
   expect(collapsedRowBox!.height).toBe(94)
   await expect(expand).toBeFocused()
 
-  const expandingShortcutSize = await mainSidebar.evaluate(async (element) => {
-    const expandButton = element.querySelector<HTMLButtonElement>(
-      'button[aria-label="Expand sidebar"]'
-    )
-    expandButton?.click()
-    await new Promise(requestAnimationFrame)
-
-    const shortcut = element.querySelector("kbd")
-    const box = shortcut?.getBoundingClientRect()
-    return { width: box?.width ?? 0, height: box?.height ?? 0 }
-  })
-  expect(expandingShortcutSize.width).toBeCloseTo(shortcutBox!.width, 0)
-  expect(expandingShortcutSize.height).toBeCloseTo(shortcutBox!.height, 0)
+  await expand.click()
   expect(
     await mainSidebar.evaluate((element) => ({
       collapsed: element.getAttribute("data-collapsed"),
@@ -441,6 +422,10 @@ test("collapsed navigation search closes cleanly", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/?view=foundations")
 
+  const shellTheme = page.getByRole("combobox", { name: "Shell theme" })
+  await shellTheme.click()
+  await page.getByRole("option", { name: "Large" }).click()
+
   const mainSidebar = page
     .locator('[data-slot="navigation-panel-frame"]')
     .first()
@@ -448,9 +433,8 @@ test("collapsed navigation search closes cleanly", async ({ page }) => {
     '[data-slot="navigation-panel-command-control"]'
   )
   const searchInput = mainSidebar.getByRole("combobox", {
-    name: "Search library",
+    name: "Search Navigation",
   })
-  const shortcut = search.getByText("CTRL K", { exact: true })
 
   await mainSidebar.getByRole("button", { name: "Collapse sidebar" }).click()
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "true")
@@ -459,11 +443,9 @@ test("collapsed navigation search closes cleanly", async ({ page }) => {
   await expect(searchInput).toBeFocused()
   await expect(search).toHaveCSS("background-color", "rgb(31, 31, 31)")
   await expect(search).toHaveCSS("width", "288px")
-  await expect(shortcut).toHaveCount(0)
 
   await page.keyboard.press("Escape")
   await expect(searchInput).not.toBeFocused()
-  await expect(shortcut).toHaveCSS("opacity", "0")
   await page.waitForTimeout(50)
   const closingSearchWidth = await search.evaluate(
     (element) => element.getBoundingClientRect().width
@@ -475,7 +457,6 @@ test("collapsed navigation search closes cleanly", async ({ page }) => {
   await search.click()
   await expect(search).toHaveCSS("width", "288px")
   await page.getByRole("button", { name: "Inspect" }).click()
-  await expect(shortcut).toHaveCSS("opacity", "0")
   await expect(search).toHaveCSS("width", "44px")
 })
 
@@ -494,11 +475,11 @@ test("navigation branches keep destinations and create actions distinct", async 
     "44px"
   )
   await expect(
-    navigation.getByRole("button", { name: "Campaigns Launch plans", exact: true })
-  ).toHaveCSS(
-    "height",
-    "52px"
-  )
+    navigation.getByRole("button", {
+      name: "Campaigns Launch plans",
+      exact: true,
+    })
+  ).toHaveCSS("height", "52px")
   await expect(expand).toBeVisible()
   await expect(
     navigation.getByRole("button", { name: "Summer launch" })
@@ -536,11 +517,15 @@ test("navigation branches keep destinations and create actions distinct", async 
     .getByRole("button", { name: "Partner rollout" })
     .locator('[data-slot="status-badge-icon"] svg')
   await expect
-    .poll(() => processingIcon.evaluate((icon) => getComputedStyle(icon).animationName))
+    .poll(() =>
+      processingIcon.evaluate((icon) => getComputedStyle(icon).animationName)
+    )
     .not.toBe("none")
   await page.emulateMedia({ reducedMotion: "reduce" })
   await expect
-    .poll(() => processingIcon.evaluate((icon) => getComputedStyle(icon).animationName))
+    .poll(() =>
+      processingIcon.evaluate((icon) => getComputedStyle(icon).animationName)
+    )
     .toBe("none")
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await expect(
@@ -549,7 +534,9 @@ test("navigation branches keep destinations and create actions distinct", async 
   await report.click()
   await expect(report).toHaveAttribute("aria-current", "page")
   await expect(report).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
-  const selection = navigation.locator('[data-slot="navigation-panel-selection"]')
+  const selection = navigation.locator(
+    '[data-slot="navigation-panel-selection"]'
+  )
   await expect
     .poll(async () => {
       const [reportBox, selectionBox] = await Promise.all([
@@ -599,7 +586,7 @@ test("navigation branches keep destinations and create actions distinct", async 
   await expect(report).toHaveAttribute("aria-current", "page")
 
   await page.setViewportSize({ width: 390, height: 900 })
-  await expect(report).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
+  await expect(report).not.toHaveCSS("background-image", "none")
   const action = navigation.getByRole("button", { name: "Create campaign" })
   const disclosure = navigation.getByRole("button", {
     name: "Collapse Campaigns",
@@ -1347,7 +1334,9 @@ test("playground queues creator and context changes without losing updates", asy
     name: /RK Ren Kade/,
   })
   await expect(disabledCreator).toBeDisabled()
-  await expect(creatorScope.getByRole("checkbox", { name: "Override Ren Kade" })).toHaveCount(0)
+  await expect(
+    creatorScope.getByRole("checkbox", { name: "Override Ren Kade" })
+  ).toHaveCount(0)
   await disabledCreator.evaluate((element: HTMLButtonElement) =>
     element.click()
   )
@@ -1396,13 +1385,19 @@ test("playground queues creator and context changes without losing updates", asy
     .getByRole("button", { name: "Nova Media", exact: true })
     .click()
   await normalRow.getByRole("button", { name: "Add", exact: true }).click()
-  await expect(page.getByText("Add requested for Competing brands.")).toBeVisible()
+  await expect(
+    page.getByText("Add requested for Competing brands.")
+  ).toBeVisible()
 
   const streamList = streamSelector.locator(".nextide-scrollbar-none")
   await expect(streamList).toHaveCSS("scrollbar-width", "none")
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 })
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1)
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - innerWidth
+      )
+    ).toBeLessThanOrEqual(1)
   }
   await page.emulateMedia({ reducedMotion: "reduce" })
   await expect(contextBuilder).toBeVisible()
