@@ -785,7 +785,9 @@ function NavigationPanelNav({
             "ring-1 ring-nextide-tide/50 ring-inset",
           drawerTransitioning
             ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
-            : "transition-[top,height,left,width,opacity] duration-[var(--nextide-motion-state)]",
+            : activeInPinnedSection
+              ? "transition-none"
+              : "transition-[top,height,left,width,opacity] duration-[var(--nextide-motion-state)]",
           selectionSurfaceVisible
             ? "opacity-100"
             : "opacity-0 duration-[var(--nextide-drawer-icon-duration)]",
@@ -811,7 +813,9 @@ function NavigationPanelNav({
             "bg-transparent after:absolute after:top-1/2 after:left-1/2 after:size-1.5 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full after:bg-nextide-tide after:shadow-[0_0_12px_rgb(30_228_188/0.4)] after:content-['']",
           drawerTransitioning
             ? "transition-opacity duration-[var(--nextide-drawer-icon-duration)]"
-            : "transition-[top,height,opacity] duration-[var(--nextide-motion-state)]",
+            : activeInPinnedSection
+              ? "transition-none"
+              : "transition-[top,height,opacity] duration-[var(--nextide-motion-state)]",
           selectionMarkerVisible ? "opacity-100" : "opacity-0"
         )}
         style={{
