@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 
 import { SidebarBrand, SidebarToggleButton } from "@nextide/ui/blocks/sidebar"
+import type { ShellDensity } from "@nextide/ui/blocks/app-shell"
 import {
   NavigationUserMenu,
   type NavigationUserMenuProps,
@@ -139,6 +140,7 @@ type NavigationPanelProps = React.ComponentProps<typeof Surface> & {
   sections?: NavigationPanelSection[]
   activeItemId?: string
   selectionStyle?: NavigationPanelSelectionStyle
+  density?: ShellDensity
   collapsed?: boolean
   drawerCollapsed?: boolean
   drawerTransitioning?: boolean
@@ -153,6 +155,7 @@ type NavigationPanelProps = React.ComponentProps<typeof Surface> & {
 }
 
 type NavigationPanelCommandRowProps = {
+  density: ShellDensity
   collapsed: boolean
   drawerCollapsed: boolean
   sections: NavigationPanelSection[]
@@ -168,6 +171,7 @@ type NavigationPanelNavProps = {
   sections: NavigationPanelSection[]
   activeItemId?: string
   selectionStyle: NavigationPanelSelectionStyle
+  density: ShellDensity
   collapsed: boolean
   drawerCollapsed: boolean
   drawerTransitioning: boolean
@@ -184,6 +188,7 @@ type NavigationPanelFooterProps = {
 }
 
 function NavigationPanelCommandRow({
+  density,
   collapsed,
   drawerCollapsed,
   sections,
@@ -313,22 +318,53 @@ function NavigationPanelCommandRow({
         data-slot="navigation-panel-command-row"
         className={cn(
           "relative h-11 w-full self-start overflow-visible",
-          collapsed && "h-[5.875rem]"
+          density === "compact" && "lg:h-10",
+          density === "ops" && "lg:h-[2.375rem]",
+          collapsed &&
+            (density === "current"
+              ? "h-[5.875rem]"
+              : density === "compact"
+                ? "h-[5.875rem] lg:h-[5.375rem]"
+                : "h-[5.875rem] lg:h-20")
         )}
       >
         <AutocompleteInputGroup
           data-slot="navigation-panel-command-control"
           className={cn(
-            "absolute top-0 left-0 flex h-11 min-w-0 items-center gap-0 overflow-hidden rounded-lg border px-0 text-left text-sm text-muted-foreground/65 transition-[top,width,padding,color,background-color,border-color,box-shadow] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] hover:bg-nextide-panel-strong motion-reduce:transition-none max-lg:static max-lg:w-full",
+            "absolute top-0 left-0 flex h-11 min-w-0 items-center gap-0 overflow-hidden rounded-lg border px-0 text-left text-sm text-muted-foreground/65 transition-[top,width,height,padding,color,background-color,border-color,box-shadow] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] hover:bg-nextide-panel-strong motion-reduce:transition-none max-lg:static max-lg:w-full",
+            density === "compact" && "lg:h-10",
+            density === "ops" && "lg:h-[2.375rem] lg:rounded-[7px]",
             compactSearchOpen
               ? "z-50 w-[min(18rem,calc(100vw-6rem))] border-nextide-line bg-popover! shadow-md focus-within:border-nextide-tide/55 focus-within:ring-0"
               : collapsed
                 ? "z-30 w-11"
                 : "w-[calc(100%-3.25rem)]",
+            !compactSearchOpen &&
+              collapsed &&
+              density === "compact" &&
+              "lg:w-10",
+            !compactSearchOpen &&
+              collapsed &&
+              density === "ops" &&
+              "lg:w-[2.375rem]",
+            !compactSearchOpen &&
+              !collapsed &&
+              density === "compact" &&
+              "lg:w-[calc(100%-2.875rem)]",
+            !compactSearchOpen &&
+              !collapsed &&
+              density === "ops" &&
+              "lg:w-[calc(100%-2.625rem)]",
             !compactSearchOpen && drawerCollapsed
               ? "border-transparent bg-transparent shadow-none ring-0 focus-within:border-transparent focus-within:ring-0 hover:bg-nextide-panel-strong/70 dark:border-transparent dark:bg-transparent"
               : !compactSearchOpen && "border-nextide-line bg-nextide-panel",
-            collapsed ? "top-[3.125rem] p-0" : "top-0 p-0"
+            collapsed
+              ? cn(
+                  "top-[3.125rem] p-0",
+                  density === "compact" && "lg:top-[2.875rem]",
+                  density === "ops" && "lg:top-[2.625rem]"
+                )
+              : "top-0 p-0"
           )}
           onPointerDown={(event) => {
             if (event.button !== 0 || event.target === inputRef.current) return
@@ -340,7 +376,11 @@ function NavigationPanelCommandRow({
           <span
             aria-hidden="true"
             data-slot="navigation-panel-command-icon"
-            className="relative z-10 grid size-11 shrink-0 place-items-center text-nextide-tide [&_svg]:size-4"
+            className={cn(
+              "relative z-10 grid size-11 shrink-0 place-items-center text-nextide-tide [&_svg]:size-4",
+              density === "compact" && "lg:size-10",
+              density === "ops" && "lg:size-[2.375rem]"
+            )}
           >
             <Search />
           </span>
@@ -348,6 +388,10 @@ function NavigationPanelCommandRow({
             data-slot="navigation-panel-command-copy"
             className={cn(
               "absolute inset-y-0 left-11 flex w-[calc(100%-2.75rem)] min-w-[10.25rem] items-center transition-[opacity,translate] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+              density === "compact" &&
+                "lg:left-10 lg:w-[calc(100%-2.5rem)] lg:min-w-0",
+              density === "ops" &&
+                "lg:left-[2.375rem] lg:w-[calc(100%-2.375rem)] lg:min-w-0",
               commandFieldVisible
                 ? "translate-x-0 opacity-100"
                 : "pointer-events-none -translate-x-[calc(100%+2.75rem)] opacity-0"
@@ -359,7 +403,11 @@ function NavigationPanelCommandRow({
               autoComplete="off"
               placeholder={commandLabel}
               spellCheck={false}
-              className="h-11 min-w-0 px-0 text-sm text-muted-foreground/80 placeholder:text-muted-foreground/55"
+              className={cn(
+                "h-11 min-w-0 px-0 text-sm text-muted-foreground/80 placeholder:text-muted-foreground/55",
+                density === "compact" && "lg:h-10",
+                density === "ops" && "lg:h-[2.375rem] lg:text-[13px]"
+              )}
               onFocus={() => {
                 setSearchFocused(true)
               }}
@@ -385,6 +433,8 @@ function NavigationPanelCommandRow({
             }}
             className={cn(
               "absolute top-0 right-0 size-11 rounded-lg text-nextide-tide max-lg:hidden",
+              density === "compact" && "lg:size-10",
+              density === "ops" && "lg:size-[2.375rem] lg:rounded-[7px]",
               drawerCollapsed
                 ? "border-transparent bg-transparent shadow-none hover:bg-nextide-panel-strong/70 dark:border-transparent dark:bg-transparent"
                 : "shadow-[0_0_18px_rgb(30_228_188/0.12)]"
@@ -449,6 +499,7 @@ function NavigationPanelNav({
   sections,
   activeItemId,
   selectionStyle,
+  density,
   collapsed,
   drawerCollapsed,
   drawerTransitioning,
@@ -706,7 +757,10 @@ function NavigationPanelNav({
     <nav
       ref={navRef}
       onWheel={onWheel}
-      className="nextide-scrollbar-none relative flex min-h-0 w-full flex-1 flex-col gap-4 overflow-y-auto max-lg:flex-none max-lg:flex-row max-lg:gap-2 max-lg:overflow-x-auto max-lg:overflow-y-hidden max-lg:pb-1"
+      className={cn(
+        "nextide-scrollbar-none relative flex min-h-0 w-full flex-1 flex-col gap-4 overflow-y-auto max-lg:flex-none max-lg:flex-row max-lg:gap-2 max-lg:overflow-x-auto max-lg:overflow-y-hidden max-lg:pb-1",
+        density !== "current" && "lg:gap-3"
+      )}
     >
       <span
         aria-hidden="true"
@@ -714,8 +768,7 @@ function NavigationPanelNav({
         className={cn(
           "pointer-events-none absolute z-0 rounded-lg ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:hidden",
           selectionStyle === "rail" && "bg-nextide-tide/[0.07]",
-          selectionStyle === "fill" &&
-            "nextide-navigation-selection-wave",
+          selectionStyle === "fill" && "nextide-navigation-selection-wave",
           selectionStyle === "outline" &&
             "ring-1 ring-nextide-tide/50 ring-inset",
           drawerTransitioning
@@ -761,6 +814,8 @@ function NavigationPanelNav({
             data-pinned={section.pinned || undefined}
             className={cn(
               "relative z-10 grid shrink-0 gap-2 before:absolute before:-top-2 before:left-1/2 before:h-px before:w-8 before:-translate-x-1/2 before:rounded-full before:bg-nextide-line before:transition-opacity before:duration-[var(--nextide-drawer-icon-duration)] before:ease-[var(--nextide-drawer-ease)] max-lg:before:hidden",
+              density === "compact" && "lg:gap-1.5",
+              density === "ops" && "lg:gap-1",
               collapsed ? "before:opacity-100" : "before:opacity-0",
               section.pinned &&
                 "sticky bottom-0 z-30 mt-auto bg-nextide-panel max-lg:static max-lg:mt-0 max-lg:bg-transparent"
@@ -771,6 +826,9 @@ function NavigationPanelNav({
                 aria-hidden={collapsed || drawerCollapsed}
                 className={cn(
                   "text-ui-caption font-medium tracking-[0.08em] text-muted-foreground uppercase max-lg:hidden",
+                  density === "compact" && "text-xs leading-4",
+                  density === "ops" &&
+                    "text-[13px] leading-5 font-semibold tracking-normal normal-case",
                   collapsed
                     ? "max-h-0 overflow-visible"
                     : "max-h-6 overflow-hidden"
@@ -779,6 +837,8 @@ function NavigationPanelNav({
                 <span
                   className={cn(
                     "block px-2 transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+                    density === "compact" && "lg:px-1.5",
+                    density === "ops" && "lg:px-2",
                     drawerCollapsed ? "w-52 -translate-x-72" : "translate-x-0"
                   )}
                 >
@@ -786,7 +846,12 @@ function NavigationPanelNav({
                 </span>
               </h3>
             ) : null}
-            <div className="grid gap-1.5 max-lg:flex">
+            <div
+              className={cn(
+                "grid gap-1.5 max-lg:flex",
+                density !== "current" && "lg:gap-0.5"
+              )}
+            >
               {section.items.map((item) => {
                 const active = item.id === activeItemId
                 const activeChild = item.children?.find(
@@ -825,11 +890,33 @@ function NavigationPanelNav({
                         className={cn(
                           "group relative grid min-h-11 w-full items-center gap-2 rounded-lg border border-transparent text-left transition-[color,background-color] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none max-lg:h-11 max-lg:w-auto max-lg:min-w-max max-lg:grid-cols-[2rem_minmax(0,1fr)] max-lg:pr-3",
                           collapsed || (!item.meta && !item.status)
-                            ? "h-11"
-                            : "h-[3.25rem]",
+                            ? cn(
+                                "h-11",
+                                density === "compact" && "lg:h-10 lg:min-h-10",
+                                density === "ops" &&
+                                  "lg:h-[2.375rem] lg:min-h-[2.375rem] lg:rounded-[7px]"
+                              )
+                            : cn(
+                                "h-[3.25rem]",
+                                density === "compact" && "lg:h-12 lg:min-h-12",
+                                density === "ops" &&
+                                  "lg:h-11 lg:min-h-11 lg:rounded-[7px]"
+                              ),
                           collapsed
-                            ? "mr-auto w-11 grid-cols-[2.75rem_0fr] gap-0 p-0"
-                            : "grid-cols-[2.75rem_minmax(0,1fr)] p-0",
+                            ? cn(
+                                "mr-auto w-11 grid-cols-[2.75rem_0fr] gap-0 p-0",
+                                density === "compact" &&
+                                  "lg:w-10 lg:grid-cols-[2.5rem_0fr]",
+                                density === "ops" &&
+                                  "lg:w-[2.375rem] lg:grid-cols-[2.375rem_0fr]"
+                              )
+                            : cn(
+                                "grid-cols-[2.75rem_minmax(0,1fr)] p-0",
+                                density === "compact" &&
+                                  "lg:grid-cols-[2.5rem_minmax(0,1fr)] lg:gap-1",
+                                density === "ops" &&
+                                  "lg:grid-cols-[2.375rem_minmax(0,1fr)] lg:gap-0"
+                              ),
                           active
                             ? cn(
                                 "text-foreground",
@@ -866,12 +953,17 @@ function NavigationPanelNav({
                       >
                         <span
                           data-slot="navigation-panel-item-icon"
-                          className="grid size-11 place-items-center justify-self-center"
+                          className={cn(
+                            "grid size-11 place-items-center justify-self-center",
+                            density === "compact" && "lg:size-10",
+                            density === "ops" && "lg:size-[2.375rem]"
+                          )}
                         >
                           <span
                             data-slot="navigation-panel-item-glyph"
                             className={cn(
                               "grid size-7 place-items-center justify-self-center text-nextide-tide transition-[color,filter] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] [&_svg]:block [&_svg]:size-4",
+                              density !== "current" && "lg:size-6",
                               (active || branchActive) &&
                                 "drop-shadow-[0_0_8px_rgb(30_228_188/0.24)]"
                             )}
@@ -1109,6 +1201,7 @@ function NavigationPanel({
   sections = defaultNavigationPanelSections,
   activeItemId,
   selectionStyle = "fill",
+  density = "current",
   collapsed = false,
   drawerCollapsed = collapsed,
   drawerTransitioning = false,
@@ -1129,6 +1222,7 @@ function NavigationPanel({
       data-slot="navigation-panel-frame"
       data-collapsed={collapsed}
       data-drawer-collapsed={drawerCollapsed}
+      data-density={density}
       padding="none"
       className={cn(
         "relative z-20 flex h-full min-h-0 flex-col overflow-visible rounded-none border-x-0 border-t-0 border-nextide-line bg-nextide-panel max-lg:h-auto max-lg:border-b lg:border-r lg:border-b-0",
@@ -1144,9 +1238,20 @@ function NavigationPanel({
         collapsed={collapsed}
         drawerCollapsed={drawerCollapsed}
         drawerTransitioning={drawerTransitioning}
+        density={density}
         className={cn(
           "shrink-0 border-b border-nextide-line",
-          collapsed ? "py-2" : "p-4"
+          density === "current"
+            ? collapsed
+              ? "py-2"
+              : "p-4"
+            : density === "compact"
+              ? collapsed
+                ? "p-3"
+                : "py-3 pr-3 pl-[18px]"
+              : collapsed
+                ? "px-[9px] py-3"
+                : "py-3 pr-2.5 pl-[18px]"
         )}
       />
       <div
@@ -1155,12 +1260,23 @@ function NavigationPanel({
         data-drawer-collapsed={drawerCollapsed}
         className={cn(
           "flex min-h-0 flex-1 flex-col overflow-visible transition-[padding,background-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:flex-none",
-          collapsed
-            ? "items-center gap-1.5 overflow-visible p-3"
-            : "gap-4 px-4 py-4"
+          density === "current"
+            ? collapsed
+              ? "items-center gap-1.5 overflow-visible p-3"
+              : "gap-4 px-4 py-4"
+            : density === "compact"
+              ? cn(
+                  "gap-3 p-3",
+                  collapsed && "items-center gap-1.5 overflow-visible"
+                )
+              : cn(
+                  "gap-3 px-2.5 py-3",
+                  collapsed && "items-center gap-1 overflow-visible"
+                )
         )}
       >
         <NavigationPanelCommandRow
+          density={density}
           collapsed={collapsed}
           drawerCollapsed={drawerCollapsed}
           sections={sections}
@@ -1175,6 +1291,7 @@ function NavigationPanel({
           sections={sections}
           activeItemId={activeItemId}
           selectionStyle={selectionStyle}
+          density={density}
           collapsed={collapsed}
           drawerCollapsed={drawerCollapsed}
           drawerTransitioning={drawerTransitioning}

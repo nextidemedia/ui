@@ -41,7 +41,7 @@ import {
   X,
 } from "lucide-react"
 
-import { AppShell } from "@nextide/ui/blocks/app-shell"
+import { AppShell, type ShellDensity } from "@nextide/ui/blocks/app-shell"
 import { CreatorScopePanel } from "@nextide/ui/blocks/creator-scope-panel"
 import { CreatorTransfer } from "@nextide/ui/blocks/creator-transfer"
 import {
@@ -1073,6 +1073,12 @@ const blockPreviewNavigationLabels: Record<string, string> = {
   "partner-rollout": "Partner rollout",
 }
 
+const shellDensityOptions = [
+  { value: "current", label: "Large" },
+  { value: "compact", label: "Compact" },
+  { value: "ops", label: "Ops" },
+]
+
 type PlaygroundState = {
   viewMode: PlaygroundViewMode
   activeItemId: string
@@ -1092,6 +1098,7 @@ type PlaygroundState = {
   checked: boolean
   enabled: boolean
   slowAnimations: boolean
+  shellDensity: ShellDensity
 }
 
 const initialPlaygroundState: PlaygroundState = {
@@ -1125,6 +1132,7 @@ const initialPlaygroundState: PlaygroundState = {
   checked: true,
   enabled: true,
   slowAnimations: false,
+  shellDensity: "compact",
 }
 
 function createInitialPlaygroundState(state: PlaygroundState) {
@@ -1268,6 +1276,7 @@ export function App() {
     checked,
     enabled,
     slowAnimations,
+    shellDensity,
   } = playgroundState
 
   useEffect(() => {
@@ -1309,6 +1318,17 @@ export function App() {
   const navigationActiveItemId = platformView
     ? krakenActiveItemId
     : workbenchActiveItemId
+  const navigationActiveLabel =
+    navigationSections
+      .flatMap((section) => section.items)
+      .find((item) => item.id === navigationActiveItemId)?.label ??
+    viewCopy.title
+  const shellHeaderTitle =
+    shellDensity === "current"
+      ? platformView
+        ? "Kraken Intelligence"
+        : viewCopy.title
+      : `${platformView ? "Kraken" : "Nextide UI"} / ${navigationActiveLabel}`
   const setViewMode = (nextMode: PlaygroundViewMode) => {
     updatePlaygroundState({ viewMode: nextMode })
 
@@ -1332,18 +1352,43 @@ export function App() {
     <>
       <AppShell
         collapsed={sidebar.collapsed}
+        density={shellDensity}
         drawerCollapsed={sidebar.drawerCollapsed}
         sidebarTransitioning={sidebar.transitioning}
         header={
-          <div className="flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6">
-            <strong className="truncate text-ui-title font-medium">
-              {platformView ? "Kraken Intelligence" : viewCopy.title}
+          <div
+            className={cn(
+              "flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6",
+              shellDensity !== "current" && "lg:min-h-[3.25rem]"
+            )}
+          >
+            <strong
+              className={cn(
+                "truncate font-medium max-[520px]:hidden",
+                shellDensity === "current" ? "text-ui-title" : "text-sm"
+              )}
+            >
+              {shellHeaderTitle}
             </strong>
             <div className="flex shrink-0 items-center gap-2">
+              <SelectMenu
+                aria-label="Shell theme"
+                value={shellDensity}
+                onValueChange={(nextDensity) =>
+                  updatePlaygroundState({
+                    shellDensity: nextDensity as ShellDensity,
+                  })
+                }
+                options={shellDensityOptions}
+                contentMinWidth={144}
+                className="w-28 sm:w-32"
+                triggerClassName={cn(shellDensity !== "current" && "lg:h-9")}
+              />
               {!platformView && !inspectorVisible ? (
                 <Button
                   type="button"
                   variant="outline"
+                  size={shellDensity === "current" ? "default" : "sm"}
                   onClick={() =>
                     updatePlaygroundState({ inspectorVisible: true })
                   }
@@ -1356,6 +1401,7 @@ export function App() {
                 type="button"
                 variant="outline"
                 size="icon"
+                className={cn(shellDensity !== "current" && "lg:size-9")}
                 aria-label="Settings"
                 onClick={() => setSettingsOpen(true)}
               >
@@ -1372,13 +1418,17 @@ export function App() {
             collapsed={sidebar.iconsCollapsed}
             drawerCollapsed={sidebar.drawerCollapsed}
             drawerTransitioning={sidebar.transitioning}
+            density={shellDensity}
             sections={navigationSections}
             commandLabel="Search Navigation"
             logo={
               platformView ? (
                 <Radar
                   aria-hidden="true"
-                  className="size-10 text-nextide-tide"
+                  className={cn(
+                    "text-nextide-tide",
+                    shellDensity === "current" ? "size-10" : "size-6"
+                  )}
                 />
               ) : undefined
             }

@@ -104,10 +104,16 @@ shell. The product lockup and navigation share a full-height rectangular left
 rail. `AppShell` can place a rectangular top bar above the rectangular main
 body through its `header` prop. Borders separate these three layout regions;
 mobile composition remains the responsibility of each product workflow.
-The navigation rail uses a 16-pixel content inset and section gap. Its brand
-uses the same 16-pixel inset; product bodies use their own task-appropriate
-gutters. `NavigationPanel.selectionStyle` defaults to a slowly animated soft
-fill and can also render the active item as a rail, outline, or dot.
+Both blocks accept the same `density`: `current` is presented as Large and
+preserves the spacious Nextide lockup, `compact` is the playground default,
+and `ops` matches the denser control-dashboard rail and navigation rhythm. All
+three retain the three-line brand lockup. Density does not change product-body
+components or the selected navigation treatment. The Large navigation rail
+uses a 16-pixel inset and section gap. Compact uses 12 pixels; Ops uses a
+10-pixel horizontal inset with 12-pixel section spacing.
+Product bodies keep their own task-appropriate gutters.
+`NavigationPanel.selectionStyle` defaults to a slowly animated soft fill and
+can also render the active item as a rail, outline, or dot.
 
 `blocks/navigation-panel` includes section-aware search through the shared
 autocomplete surface. The Search field is the input itself; focusing it or
