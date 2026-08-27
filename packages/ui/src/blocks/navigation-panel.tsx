@@ -746,11 +746,13 @@ function NavigationPanelNav({
     const resizeObserver = new ResizeObserver(scheduleMeasureOutline)
     resizeObserver.observe(nav)
     resizeObserver.observe(activeItem)
+    nav.addEventListener("scroll", scheduleMeasureOutline)
     window.addEventListener("resize", scheduleMeasureOutline)
 
     return () => {
       window.cancelAnimationFrame(frame)
       resizeObserver.disconnect()
+      nav.removeEventListener("scroll", scheduleMeasureOutline)
       window.removeEventListener("resize", scheduleMeasureOutline)
     }
   }, [
