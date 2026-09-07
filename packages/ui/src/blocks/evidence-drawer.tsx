@@ -135,7 +135,7 @@ function EvidenceChoice({
   label: React.ReactNode
 }) {
   return (
-    <span className="flex min-w-0 items-center justify-center gap-1.5 max-[24rem]:[&_svg]:hidden [&_svg]:size-3.5">
+    <span className="flex min-w-0 items-center justify-center gap-1.5 [&_svg]:size-3.5 max-[24rem]:[&_svg]:hidden">
       {icon}
       <span className="min-w-0 truncate">{label}</span>
     </span>

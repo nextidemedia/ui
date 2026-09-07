@@ -45,6 +45,7 @@ type DurationLimits = Required<DurationValue>
 
 const emptyDuration: DurationValue = { hours: 0, minutes: 0 }
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `DurationPicker` has a complexity of 32; The function `DurationPicker` has too many lines (200); extract this function in the follow-up refactor.
 function DurationPicker({
   value,
   defaultValue = emptyDuration,

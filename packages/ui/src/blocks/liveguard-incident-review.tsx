@@ -34,6 +34,7 @@ const eventToneClasses = {
   danger: "border-nextide-red/45 bg-nextide-red/10",
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `LiveguardIncidentReview` has too many lines (128); extract this function in the follow-up refactor.
 function LiveguardIncidentReview({
   title = "LiveGuard incident review",
   description = "Creator timeline, transcript proof, and score threshold evidence.",

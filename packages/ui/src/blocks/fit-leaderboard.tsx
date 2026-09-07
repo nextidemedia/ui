@@ -88,16 +88,8 @@ function FitLeaderboard({
                 ) : null}
               </span>
             </span>
-            <ScorePlate
-              label="Fit"
-              value={item.fit}
-              max={maxScore}
-            />
-            <ScorePlate
-              label="Safety"
-              value={item.safety}
-              max={maxScore}
-            />
+            <ScorePlate label="Fit" value={item.fit} max={maxScore} />
+            <ScorePlate label="Safety" value={item.safety} max={maxScore} />
             <SentimentMeter
               className="col-span-2 @xl:col-span-1"
               value={item.sentiment}
@@ -110,12 +102,16 @@ function FitLeaderboard({
   )
 }
 
-type ScorePlateTone = "success" | "processing" | "warning" | "danger" | "neutral"
+type ScorePlateTone =
+  | "success"
+  | "processing"
+  | "warning"
+  | "danger"
+  | "neutral"
 
 const scorePlateClasses: Record<ScorePlateTone, string> = {
   success: "border-nextide-tide/35 [--score-plate:var(--nextide-tide)]",
-  processing:
-    "border-nextide-purple/35 [--score-plate:var(--nextide-purple)]",
+  processing: "border-nextide-purple/35 [--score-plate:var(--nextide-purple)]",
   warning: "border-nextide-yellow/35 [--score-plate:var(--nextide-yellow)]",
   danger: "border-nextide-red/35 [--score-plate:var(--nextide-red)]",
   neutral: "border-nextide-line [--score-plate:var(--muted-foreground)]",
@@ -130,8 +126,7 @@ function ScorePlate({
   value?: number
   max: number
 }) {
-  const valid =
-    typeof value === "number" && Number.isFinite(value) && max > 0
+  const valid = typeof value === "number" && Number.isFinite(value) && max > 0
   const boundedValue = valid ? Math.max(0, Math.min(max, value)) : 0
   const progress = max > 0 ? (boundedValue / max) * 100 : 0
   const tone = scoreTone(value, max)

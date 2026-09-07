@@ -25,6 +25,7 @@ const toneStroke: Record<DonutChartTone, string> = {
   neutral: "color-mix(in srgb, var(--foreground) 42%, transparent)",
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `DonutChart` has too many lines (135); extract this function in the follow-up refactor.
 function DonutChart({
   segments,
   totalLabel,
@@ -100,6 +101,7 @@ function DonutChart({
       <div className="relative grid min-h-44 place-items-center">
         <svg
           viewBox="0 0 120 120"
+          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
           role="img"
           aria-label="Donut chart"
           className="size-44"

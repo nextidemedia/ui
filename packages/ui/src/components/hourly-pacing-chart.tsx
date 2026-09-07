@@ -21,6 +21,7 @@ const toneClasses: Record<HourlyPacingTone, string> = {
   critical: "from-nextide-red via-nextide-red/80 to-nextide-red/30",
 }
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `HourlyPacingChart` has a complexity of 18; The function `HourlyPacingChart` has too many lines (213); extract this function in the follow-up refactor.
 function HourlyPacingChart({
   buckets,
   targetValue = 100,

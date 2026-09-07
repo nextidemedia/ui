@@ -80,6 +80,7 @@ const toneColors: Record<LineItemGraphTone, string> = {
   neutral: "rgb(210 214 222)",
 }
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `LineItemGraph` has a complexity of 48; The function `LineItemGraph` has too many lines (618); extract this function in the follow-up refactor.
 function LineItemGraph({
   title,
   rangeLabel,
@@ -483,6 +484,7 @@ function LineItemGraph({
         >
           <svg
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+            // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
             role="group"
             aria-label={typeof title === "string" ? title : "Line item graph"}
             className="h-full w-full overflow-visible text-muted-foreground"
@@ -635,6 +637,7 @@ function LineItemGraph({
             {interactivePoints.map(({ item, point }) => (
               <g
                 key={`${item.id}-${point.dayId}`}
+                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
                 role="img"
                 tabIndex={0}
                 aria-label={`${stringifyNode(item.label)} ${stringifyNode(
@@ -741,6 +744,7 @@ function getAxisLabelIndices(count: number, stride: number) {
   return indices
 }
 
+// oxlint-disable-next-line complexity -- Legacy baseline: function `LineItemTooltip` has a complexity of 14; extract this function in the follow-up refactor.
 function LineItemTooltip({
   hover,
   day,

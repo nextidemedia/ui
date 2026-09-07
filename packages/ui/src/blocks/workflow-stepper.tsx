@@ -12,6 +12,7 @@ type WorkflowStep = {
   completed?: boolean
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `WorkflowStepper` has too many lines (135); extract this function in the follow-up refactor.
 function WorkflowStepper({
   steps,
   activeStepId,

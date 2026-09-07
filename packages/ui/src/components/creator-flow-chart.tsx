@@ -37,6 +37,7 @@ const toneClasses: Record<CreatorFlowTone, string> = {
   danger: "border-nextide-red/60 bg-nextide-red/16 text-nextide-red",
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `CreatorFlowChart` has too many lines (219); extract this function in the follow-up refactor.
 function CreatorFlowChart({
   creators,
   days,

@@ -33,6 +33,7 @@ type SelectMenuProps = Omit<React.ComponentProps<"div">, "onChange"> & {
   disabled?: boolean
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `SelectMenu` has too many lines (117); extract this function in the follow-up refactor.
 function SelectMenu({
   value,
   options,

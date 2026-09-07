@@ -127,10 +127,7 @@ function ProgressiveSummaryRailSectionView({
         </strong>
       ) : null}
       {hasRows ? (
-        <div
-          data-slot="progressive-summary-rail-rows"
-          className="grid gap-1.5"
-        >
+        <div data-slot="progressive-summary-rail-rows" className="grid gap-1.5">
           {rows.map((row) => (
             <div
               key={row.id}

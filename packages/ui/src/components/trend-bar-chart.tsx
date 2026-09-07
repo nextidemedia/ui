@@ -31,6 +31,7 @@ const toneClasses: Record<TrendBarChartTone, string> = {
   danger: "from-nextide-red via-nextide-red/80 to-nextide-red/30",
 }
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `TrendBarChart` has a complexity of 16; The function `TrendBarChart` has too many lines (136); extract this function in the follow-up refactor.
 function TrendBarChart({
   rows,
   maxValue,
@@ -246,7 +247,7 @@ function BarValue({
   return (
     <span
       className={cn(
-        "pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 whitespace-nowrap text-ui-caption leading-none font-medium",
+        "pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 text-ui-caption leading-none font-medium whitespace-nowrap",
         inside ? "top-2 text-black/80" : "-top-5 text-foreground"
       )}
       data-height={Math.round(height)}

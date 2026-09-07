@@ -10,6 +10,7 @@ type LineGraphPoint = {
   meta?: React.ReactNode
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `LineGraph` has too many lines (149); extract this function in the follow-up refactor.
 function LineGraph({
   points,
   minValue,
@@ -89,6 +90,7 @@ function LineGraph({
       <div className="relative min-h-52">
         <svg
           viewBox="0 0 100 82"
+          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
           role="img"
           aria-label="Line graph"
           className="h-full min-h-52 w-full overflow-visible"

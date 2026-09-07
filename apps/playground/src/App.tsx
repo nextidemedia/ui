@@ -1239,6 +1239,7 @@ function formatLargeMetricValue(value: number) {
 
 const formatCompactMetricValue = formatCompactNumber
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `App` has a complexity of 33; The function `App` has too many lines (412); extract this function in the follow-up refactor.
 export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [playgroundSessionActive, setPlaygroundSessionActive] = useState(true)
@@ -1735,6 +1736,7 @@ function KrakenDiscoveryPreview({ activeItemId }: { activeItemId: string }) {
   )
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `IntelligencePlayground` has too many lines (219); extract this function in the follow-up refactor.
 function IntelligencePlayground({
   selectedCreatorIds,
   dateRange,
@@ -1962,6 +1964,7 @@ function IntelligencePlayground({
   )
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `DaedalusPlayground` has too many lines (293); extract this function in the follow-up refactor.
 function DaedalusPlayground({
   filterGroupId,
   selectedFilterId,
@@ -2293,6 +2296,7 @@ function ChartDirection({
   )
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `FoundationsPreview` has too many lines (154); extract this function in the follow-up refactor.
 function FoundationsPreview() {
   return (
     <section className="grid gap-4 2xl:grid-cols-2">
@@ -2636,6 +2640,7 @@ function FoundationSwatch({
   )
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `ComponentMatrix` has too many lines (562); extract this function in the follow-up refactor.
 function ComponentMatrix({
   density,
   confidence,
@@ -3209,6 +3214,7 @@ function ComponentMatrix({
   )
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `BlockPreview` has too many lines (238); extract this function in the follow-up refactor.
 function BlockPreview({ motionScale }: { motionScale: number }) {
   const navigationDrawer = useStagedDrawer({
     durationMs: DRAWER_STAGE_DURATION_MS * motionScale,

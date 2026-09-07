@@ -80,6 +80,7 @@ function animateRows(
   })
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `CreatorTransfer` has too many lines (357); extract this function in the follow-up refactor.
 function CreatorTransfer({
   creators,
   selectedIds,
@@ -264,6 +265,7 @@ function CreatorTransfer({
     onSelectedIdsChange(nextAddedIds)
   }
 
+  // oxlint-disable-next-line complexity -- Legacy baseline: function has a complexity of 13; extract this function in the follow-up refactor.
   const transferCreator = (id: string, direction: "add" | "remove") => {
     if (motionLocked) {
       const alreadyQueued = queuedTransfers.current.some(
