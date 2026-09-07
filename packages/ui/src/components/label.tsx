@@ -6,6 +6,7 @@ import { cn } from "@nextide/ui/lib/utils"
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
+    // oxlint-disable-next-line jsx-a11y/label-has-associated-control -- The reusable label forwards htmlFor and children from its caller.
     <label
       data-slot="label"
       className={cn(

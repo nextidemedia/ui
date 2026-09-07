@@ -48,6 +48,7 @@ const severityClasses: Record<LiveEventTimelineSeverity, string> = {
   critical: "border-nextide-red bg-nextide-red/15 text-nextide-red",
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `LiveEventTimeline` has too many lines (122); extract this function in the follow-up refactor.
 function LiveEventTimeline({
   incidents,
   activeIncidentId,

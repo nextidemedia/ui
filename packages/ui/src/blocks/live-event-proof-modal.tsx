@@ -29,6 +29,7 @@ type LiveEventProofEvidenceField = {
   value: React.ReactNode
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `LiveEventProofModal` has too many lines (161); extract this function in the follow-up refactor.
 function LiveEventProofModal({
   creatorLabel,
   creatorMark,

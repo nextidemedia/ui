@@ -79,6 +79,7 @@ const progressionEdges = [
 
 const initialGeometry: ChartGeometry = { width: 1, height: 1, nodes: {} }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `IntelligenceProgressionChart` has too many lines (246); extract this function in the follow-up refactor.
 function IntelligenceProgressionChart({
   stages,
   title = "Intelligence progression",
@@ -259,6 +260,7 @@ function IntelligenceProgressionChart({
             ))}
           </g>
         </svg>
+        {/* oxlint-disable-next-line complexity -- Legacy baseline: function has a complexity of 14; extract this function in the follow-up refactor. */}
         {stages.map((stage, index) => {
           const position = stagePositions[stage.id] ?? { x: 50, y: 50 }
           const processingTextSyncLength =

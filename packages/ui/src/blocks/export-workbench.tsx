@@ -35,6 +35,7 @@ type ExportSessionRow = {
   status: React.ReactNode
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `ExportWorkbench` has too many lines (163); extract this function in the follow-up refactor.
 function ExportWorkbench({
   schedule,
   onScheduleChange,

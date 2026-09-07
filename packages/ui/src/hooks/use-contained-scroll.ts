@@ -2,6 +2,7 @@ import * as React from "react"
 
 type ContainedScrollAxis = "x" | "y" | "both" | "auto"
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `useContainedScroll` has too many lines (102); extract this function in the follow-up refactor.
 function useContainedScroll<T extends HTMLElement>({
   axis = "x",
 }: {
@@ -10,6 +11,7 @@ function useContainedScroll<T extends HTMLElement>({
   const ref = React.useRef<T | null>(null)
 
   const containWheel = React.useCallback(
+    // oxlint-disable-next-line complexity -- Legacy baseline: function has a complexity of 23; extract this function in the follow-up refactor.
     (
       node: T,
       event: Pick<

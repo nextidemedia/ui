@@ -16,6 +16,7 @@ type SignalRidgeChartPoint = {
   valueLabel?: string | number
 }
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `SignalRidgeChart` has a complexity of 14; The function `SignalRidgeChart` has too many lines (204); extract this function in the follow-up refactor.
 function SignalRidgeChart({
   points,
   valueFormatter = formatCompactNumber,
@@ -85,9 +86,11 @@ function SignalRidgeChart({
       className={cn("relative min-w-0", className)}
       {...props}
     >
+      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Mouse leave only clears the tooltip; each point exposes the same tooltip on focus and blur. */}
       <svg
         ref={svgRef}
         viewBox="0 0 600 190"
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
         role="group"
         aria-label="Signal ridge trend"
         className="h-auto min-h-48 w-full overflow-visible"
@@ -149,6 +152,7 @@ function SignalRidgeChart({
         {positions.map((position, index) => (
           <g
             key={points[index].id}
+            // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
             role="img"
             tabIndex={0}
             aria-label={`${stringifyNode(points[index].label)}: ${stringifyNode(

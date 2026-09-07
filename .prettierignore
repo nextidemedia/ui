@@ -4,3 +4,9 @@ node_modules/
 coverage/
 pnpm-lock.yaml
 .pnpm-store/
+output/
+.ask-pro/
+.playwright-cli/
+.impeccable/
+# Upstream-owned copy from meta; preserve its original formatting.
+docs/brand_assets/NEXTIDE_BRAND_AGENT_GUIDE.md

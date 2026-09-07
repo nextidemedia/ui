@@ -12,6 +12,7 @@ const toneClasses: Record<ScoreRingTone, string> = {
   neutral: "[--score-ring-color:var(--muted-foreground)]",
 }
 
+// oxlint-disable-next-line complexity -- Legacy baseline: function `ScoreRing` has a complexity of 19; extract this function in the follow-up refactor.
 function ScoreRing({
   value,
   min = 0,

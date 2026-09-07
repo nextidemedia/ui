@@ -195,6 +195,7 @@ for (const width of [320, 390, 768, 1440]) {
   })
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The async function has too many lines (208); extract this function in the follow-up refactor.
 test("playground keeps control sizing, Typeset presets, and sidebar motion coherent", async ({
   page,
 }) => {
@@ -316,6 +317,7 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   await expect(shell).toHaveAttribute("data-collapsed", "true")
 
   await page.waitForTimeout(600)
+  // oxlint-disable-next-line complexity -- Legacy baseline: function has a complexity of 14; extract this function in the follow-up refactor.
   const stageOne = await mainSidebar.evaluate((element) => {
     const shell = document.querySelector('[data-slot="app-shell"]')
     const row = element.querySelector(
@@ -460,6 +462,7 @@ test("collapsed navigation search closes cleanly", async ({ page }) => {
   await expect(search).toHaveCSS("width", "44px")
 })
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The async function has too many lines (163); extract this function in the follow-up refactor.
 test("navigation branches keep destinations and create actions distinct", async ({
   page,
 }) => {
@@ -631,6 +634,7 @@ test("navigation branches keep destinations and create actions distinct", async 
   ).toBeVisible()
 })
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The async function has too many lines (166); extract this function in the follow-up refactor.
 test("playground shows exact public names beside component examples", async ({
   page,
 }) => {
@@ -809,6 +813,7 @@ test("playground shows exact public names beside component examples", async ({
   ])
 })
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The async function has too many lines (107); extract this function in the follow-up refactor.
 test("campaign schedule interactions start only inside the board", async ({
   page,
 }) => {
@@ -1414,6 +1419,7 @@ test("playground queues creator and context changes without losing updates", asy
   await expect(progression.locator("div.absolute.z-20")).toHaveCount(7)
 })
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The async function has too many lines (126); extract this function in the follow-up refactor.
 test("dashboard filter bar scrolls campaigns and disables clear without a selection", async ({
   page,
 }) => {
@@ -1550,6 +1556,7 @@ test("dashboard filter bar scrolls campaigns and disables clear without a select
   )
 })
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The async function has too many lines (105); extract this function in the follow-up refactor.
 test("signal ridge and impression details share compact overview and exact detail", async ({
   page,
 }) => {

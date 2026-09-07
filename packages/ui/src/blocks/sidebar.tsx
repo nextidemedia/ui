@@ -81,6 +81,7 @@ function SidebarToggleButton({
   )
 }
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `SidebarBrand` has a complexity of 33; The function `SidebarBrand` has too many lines (182); extract this function in the follow-up refactor.
 function SidebarBrand({
   brand = "Nextide UI",
   eyebrow = "Package",

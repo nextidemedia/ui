@@ -187,6 +187,7 @@ type NavigationPanelFooterProps = {
   userMenu?: NavigationPanelUserMenu
 }
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `NavigationPanelCommandRow` has a complexity of 46; The function `NavigationPanelCommandRow` has too many lines (293); extract this function in the follow-up refactor.
 function NavigationPanelCommandRow({
   density,
   collapsed,
@@ -495,6 +496,7 @@ function NavigationPanelCommandRow({
   )
 }
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `NavigationPanelNav` has a complexity of 23; The function `NavigationPanelNav` has too many lines (619); extract this function in the follow-up refactor.
 function NavigationPanelNav({
   sections,
   activeItemId,
@@ -594,6 +596,7 @@ function NavigationPanelNav({
     [collapsed, navRef, writeOutlineVars]
   )
 
+  // oxlint-disable-next-line complexity -- Legacy baseline: function has a complexity of 22; extract this function in the follow-up refactor.
   React.useLayoutEffect(() => {
     const nav = navRef.current
     if (!nav) return
@@ -825,6 +828,7 @@ function NavigationPanelNav({
           height: "var(--navigation-rail-height, 0px)",
         }}
       />
+      {/* oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function has a complexity of 15; The function has too many lines (310); extract this function in the follow-up refactor. */}
       {sections.map((section) => (
         <React.Fragment key={section.id}>
           <section
@@ -869,6 +873,7 @@ function NavigationPanelNav({
                 density !== "current" && "lg:gap-0.5"
               )}
             >
+              {/* oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function has a complexity of 63; The function has too many lines (262); extract this function in the follow-up refactor. */}
               {section.items.map((item) => {
                 const active = item.id === activeItemId
                 const activeChild = item.children?.find(
@@ -1209,6 +1214,7 @@ function NavigationPanelFooter({
   )
 }
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `NavigationPanel` has a complexity of 21; The function `NavigationPanel` has too many lines (117); extract this function in the follow-up refactor.
 function NavigationPanel({
   brand = "Nextide",
   eyebrow = "Workspace",

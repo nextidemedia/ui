@@ -197,6 +197,7 @@ const reportHistory: ReportRailItem[] = [
   },
 ]
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `WebMiningPage` has too many lines (218); extract this function in the follow-up refactor.
 function WebMiningPage() {
   const [activeBookingId, setActiveBookingId] = useState("booking-2")
   const [activePresetId, setActivePresetId] = useState("7d")
@@ -421,6 +422,7 @@ function WebMiningPage() {
   )
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `KrakenMiningPage` has too many lines (137); extract this function in the follow-up refactor.
 function KrakenMiningPage() {
   const [activeRunId, setActiveRunId] = useState("run-2")
   const activeRun = runRows.find((row) => row.id === activeRunId) ?? runRows[0]
@@ -563,6 +565,7 @@ function KrakenMiningPage() {
   )
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `IntelligenceReportMiningPage` has too many lines (173); extract this function in the follow-up refactor.
 function IntelligenceReportMiningPage() {
   const [activeReportId, setActiveReportId] = useState("report-current")
 

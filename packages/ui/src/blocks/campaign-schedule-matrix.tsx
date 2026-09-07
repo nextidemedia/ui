@@ -125,6 +125,7 @@ const monthFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 })
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `CampaignScheduleMatrix` has a complexity of 17; The function `CampaignScheduleMatrix` has too many lines (596); extract this function in the follow-up refactor.
 function CampaignScheduleMatrix({
   creators,
   days,
@@ -327,6 +328,7 @@ function CampaignScheduleMatrix({
     const node = scrollRef.current
     if (!node) return
 
+    // oxlint-disable-next-line complexity -- Legacy baseline: function has a complexity of 21; extract this function in the follow-up refactor.
     const handleWheel = (event: WheelEvent) => {
       const target = event.target
       const overBoard =
@@ -593,10 +595,13 @@ function CampaignScheduleMatrix({
       </div>
 
       {/* oxlint-disable-next-line react-doctor/click-events-have-key-events -- This region only cancels bubbled child clicks after a pointer drag; it is not an activation target. */}
+      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Named scroll region supports keyboard scrolling and pointer panning; it is not an activation target. */}
       <div
         ref={scrollRef}
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Named scroll region supports keyboard scrolling and pointer panning; it is not an activation target.
         role="region"
         aria-label="Campaign schedule timeline"
+        // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Named scroll region supports keyboard scrolling and pointer panning; it is not an activation target.
         tabIndex={0}
         data-zoom={zoom}
         data-dragging={dragging ? "true" : "false"}

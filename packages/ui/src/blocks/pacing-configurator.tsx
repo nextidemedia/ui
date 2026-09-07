@@ -23,6 +23,7 @@ type PacingPreset = {
   meta?: React.ReactNode
 }
 
+// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `PacingConfigurator` has a complexity of 15; The function `PacingConfigurator` has too many lines (108); extract this function in the follow-up refactor.
 function PacingConfigurator({
   presets,
   activePresetId,

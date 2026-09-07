@@ -30,6 +30,7 @@ type DashboardFilterItem = {
   live?: boolean
 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `DashboardFilterBar` has too many lines (208); extract this function in the follow-up refactor.
 function DashboardFilterBar({
   groups,
   items,

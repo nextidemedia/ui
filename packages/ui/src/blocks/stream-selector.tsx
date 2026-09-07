@@ -34,6 +34,7 @@ type StreamSelectorCreatorScopeProps = Pick<
 const filterEase = "cubic-bezier(0.76, 0, 0.24, 1)"
 const defaultFilterMotion = { exit: 220, move: 300, enter: 220 }
 
+// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `StreamSelector` has too many lines (302); extract this function in the follow-up refactor.
 function StreamSelector({
   creators,
   streams,

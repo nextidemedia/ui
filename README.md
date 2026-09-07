@@ -4,6 +4,33 @@ Shared Nextide shadcn/ui components with a Vite playground.
 
 Run `pnpm dev`, then open [http://127.0.0.1:5174](http://127.0.0.1:5174) to view the component catalogue.
 
+## Development checks
+
+Install Node 22.14+, pnpm 11.10.0, `just`, and uv. On Windows, add Git for
+Windows' `bin` directory to PATH so `just` can find `sh`.
+
+- `just setup` installs the frozen workspace lockfile.
+- `just check` runs Prettier, Oxlint, existing ESLint, the supply-chain watchlist,
+  LOC budgets, strict TypeScript checks, and packed-consumer qualification.
+- `just fmt`, `just fmt-check`, `just lint`, and `just typecheck` run separately.
+- `just test` runs the packed-consumer check through Node's test runner; native
+  flags and file selection work, e.g. `just test --test-reporter=spec scripts/check-packed-consumer.mjs`.
+  This check builds and packs the library and installs an isolated consumer, so
+  it needs npm registry access. There is currently one local test file.
+- `just test-integration` builds both workspaces and runs Playwright. First run
+  `pnpm exec playwright install chromium` (Linux CI also uses `--with-deps`).
+  Port 4173 must be free. Focus with `just test-integration -g "campaign schedule"`.
+
+The [shared baseline](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md)
+sets complexity 12, function length 100, and source/test LOC limits. `.loc.json`
+records exact legacy file budgets; reduce them after extraction and never grow
+or regenerate them to accept new code. Narrow function comments record each
+existing metric and the extraction debt; they are not permission to grow those
+functions. Accessibility exceptions explain specific SVG, forwarded-prop, or
+scroll-region semantics. Existing ESLint/React Hooks rules remain until parity
+with Oxlint is verified. Oxlint 1.80.0 was the newest stable npm release at least
+seven days old on 2026-09-08; the existing formatter and TypeScript remain pinned.
+
 ## Brand
 
 The implementation guide from `nextide-saas-meta` is copied into `docs/brand_assets/NEXTIDE_BRAND_AGENT_GUIDE.md`. The large PDF and font zip stay in the meta repo for now.
