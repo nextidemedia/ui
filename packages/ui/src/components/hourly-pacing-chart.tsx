@@ -21,7 +21,6 @@ const toneClasses: Record<HourlyPacingTone, string> = {
   critical: "from-nextide-red via-nextide-red/80 to-nextide-red/30",
 }
 
-// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `HourlyPacingChart` has a complexity of 18; The function `HourlyPacingChart` has too many lines (213); extract this function in the follow-up refactor.
 function HourlyPacingChart({
   buckets,
   targetValue = 100,
@@ -61,22 +60,12 @@ function HourlyPacingChart({
         .sort((a, b) => a.hour - b.hour),
     [buckets]
   )
-  const resolvedAverage =
-    typeof averageValue === "number" && Number.isFinite(averageValue)
-      ? Math.max(0, averageValue)
-      : average(normalizedBuckets.map((bucket) => bucket.value))
-  const peak = normalizedBuckets.reduce(
-    (max, bucket) => Math.max(max, bucket.value),
-    0
+  const { resolvedAverage, peak, low, scaleMax } = getPacingStats(
+    normalizedBuckets,
+    averageValue,
+    targetValue,
+    maxValue
   )
-  const low = normalizedBuckets.reduce(
-    (min, bucket) => Math.min(min, bucket.value),
-    normalizedBuckets.length > 0 ? normalizedBuckets[0].value : 0
-  )
-  const scaleMax =
-    typeof maxValue === "number" && Number.isFinite(maxValue)
-      ? Math.max(1, maxValue)
-      : niceScaleMax(Math.max(peak * 1.12, targetValue * 1.28, 200))
   const resolvedActiveHour = activeHour ?? internalActiveHour
   const activeBucket =
     resolvedActiveHour === null || resolvedActiveHour === undefined
@@ -108,137 +97,266 @@ function HourlyPacingChart({
       )}
       {...props}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="grid gap-1">
-          <strong className="text-sm">{title}</strong>
-          {description ? (
-            <span className="max-w-xl text-xs leading-snug text-muted-foreground">
-              {description}
-            </span>
-          ) : null}
-        </div>
-        <div className="rounded-md border border-nextide-tide/35 bg-nextide-tide/10 px-2.5 py-1 text-xs font-medium text-nextide-tide">
-          Avg {formatPercent(resolvedAverage)}
-        </div>
-      </div>
+      {renderPacingHeader(title, description, resolvedAverage)}
 
       <div
         ref={chartScrollRef}
         onWheel={onChartWheel}
         className="nextide-contained-scroll nextide-scrollbar-none overflow-x-auto"
       >
-        <div className="grid min-w-[48rem] grid-cols-[3.6rem_minmax(0,1fr)] gap-3">
-          <div className="relative h-80 text-ui-caption font-medium text-muted-foreground">
-            <div className="absolute inset-x-0 top-0 bottom-7">
-              {ticks.map((tick) => (
-                <span
-                  key={tick}
-                  className="absolute right-0 translate-y-1/2 whitespace-nowrap"
-                  style={{ bottom: `${percentOf(tick, scaleMax)}%` }}
-                >
-                  {formatPercent(tick)}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="relative h-80 rounded-md border-b border-l border-nextide-line bg-[linear-gradient(90deg,rgb(30_228_188/0.035),transparent_22%,transparent_74%,rgb(245_184_61/0.035)),linear-gradient(180deg,rgb(255_255_255/0.035),transparent_46%,rgb(0_0_0/0.16))]">
-            <div className="absolute inset-x-0 top-0 bottom-7">
-              {ticks.map((tick) => (
-                <span
-                  key={tick}
-                  className="absolute inset-x-0 border-t border-dashed border-nextide-line/70"
-                  style={{ bottom: `${percentOf(tick, scaleMax)}%` }}
-                />
-              ))}
-              <span
-                className="absolute inset-x-0 z-10 border-t border-dashed border-foreground/70 shadow-[0_0_18px_rgb(245_250_252/0.16)]"
-                style={{ bottom: `${percentOf(targetValue, scaleMax)}%` }}
-              />
-              <div className="absolute inset-x-3 top-0 bottom-0 grid [grid-template-columns:repeat(24,minmax(0,1fr))] items-end gap-1.5">
-                {normalizedBuckets.map((bucket) => {
-                  const height = Math.max(2, percentOf(bucket.value, scaleMax))
-                  const tone =
-                    bucket.tone ?? toneForValue(bucket.value, targetValue)
-                  const selected = activeBucket?.hour === bucket.hour
-
-                  return (
-                    <button
-                      key={bucket.id ?? bucket.hour}
-                      type="button"
-                      className="group relative flex h-full min-w-0 cursor-pointer items-end justify-center rounded-sm px-0.5 focus-visible:outline-none"
-                      aria-label={`${padHour(bucket.hour)}:00 pacing ${formatPercent(bucket.value)}`}
-                      onClick={() => {
-                        setInternalActiveHour(bucket.hour)
-                        onActiveHourChange?.(bucket)
-                      }}
-                      onFocus={() => {
-                        setInternalActiveHour(bucket.hour)
-                        onActiveHourChange?.(bucket)
-                      }}
-                    >
-                      <span
-                        className={cn(
-                          "relative block w-full max-w-7 rounded-t-[0.35rem] rounded-b-[0.16rem] bg-linear-to-b shadow-[0_10px_24px_rgb(30_228_188/0.18)] transition-[height,filter] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-out-quart)] group-hover:brightness-110 group-focus-visible:brightness-110 before:absolute before:inset-0 before:rounded-[inherit] before:bg-linear-to-b before:from-white/35 before:to-transparent before:opacity-45",
-                          toneClasses[tone],
-                          selected && "brightness-110"
-                        )}
-                        style={{ height: `${height}%` }}
-                      />
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-            <div className="absolute inset-x-3 bottom-2 grid [grid-template-columns:repeat(24,minmax(0,1fr))] gap-1.5">
-              {normalizedBuckets.map((bucket) => (
-                <span
-                  key={bucket.id ?? bucket.hour}
-                  className="text-center text-ui-caption leading-none font-medium text-muted-foreground"
-                >
-                  {padHour(bucket.hour)}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
+        {renderPacingPlot(
+          ticks,
+          scaleMax,
+          targetValue,
+          normalizedBuckets,
+          activeBucket,
+          setInternalActiveHour,
+          onActiveHourChange
+        )}
       </div>
 
-      <div className="flex min-h-8 flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span>
-          Peak{" "}
-          <strong className="text-foreground">{formatPercent(peak)}</strong>
-        </span>
-        <span className="text-muted-foreground/45">/</span>
-        <span>
-          Low <strong className="text-foreground">{formatPercent(low)}</strong>
-        </span>
-        {activeBucket ? (
-          <>
-            <span className="text-muted-foreground/45">/</span>
-            <span className="rounded-md border border-nextide-line bg-background/30 px-2 py-1">
-              <strong className="text-foreground">
-                {padHour(activeBucket.hour)}:00
-              </strong>{" "}
-              {activeBucket.valueLabel ?? formatPercent(activeBucket.value)}
-              {activeBucket.detail ? (
-                <span className="text-muted-foreground">
-                  {" "}
-                  · {activeBucket.detail}
-                </span>
-              ) : null}
-            </span>
-          </>
-        ) : (
-          <>
-            <span className="text-muted-foreground/45">/</span>
-            <span className="rounded-md border border-nextide-line bg-background/30 px-2 py-1 text-muted-foreground/70">
-              Select an hour for detail
-            </span>
-          </>
-        )}
+      {renderPacingDetail(peak, low, activeBucket)}
+    </div>
+  )
+}
+
+function renderPacingHeader(
+  title: React.ReactNode,
+  description: React.ReactNode,
+  resolvedAverage: number
+) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="grid gap-1">
+        <strong className="text-sm">{title}</strong>
+        {description ? (
+          <span className="max-w-xl text-xs leading-snug text-muted-foreground">
+            {description}
+          </span>
+        ) : null}
+      </div>
+      <div className="rounded-md border border-nextide-tide/35 bg-nextide-tide/10 px-2.5 py-1 text-xs font-medium text-nextide-tide">
+        Avg {formatPercent(resolvedAverage)}
       </div>
     </div>
   )
+}
+
+function renderPacingPlot(
+  ticks: number[],
+  scaleMax: number,
+  targetValue: number,
+  normalizedBuckets: {
+    hour: number
+    value: number
+    id?: string
+    valueLabel?: React.ReactNode
+    detail?: React.ReactNode
+    tone?: HourlyPacingTone
+  }[],
+  activeBucket:
+    | {
+        hour: number
+        value: number
+        id?: string
+        valueLabel?: React.ReactNode
+        detail?: React.ReactNode
+        tone?: HourlyPacingTone
+      }
+    | null
+    | undefined,
+  setInternalActiveHour: React.Dispatch<React.SetStateAction<number | null>>,
+  onActiveHourChange: ((bucket: HourlyPacingBucket) => void) | undefined
+) {
+  return (
+    <div className="grid min-w-[48rem] grid-cols-[3.6rem_minmax(0,1fr)] gap-3">
+      <div className="relative h-80 text-ui-caption font-medium text-muted-foreground">
+        <div className="absolute inset-x-0 top-0 bottom-7">
+          {ticks.map((tick) => (
+            <span
+              key={tick}
+              className="absolute right-0 translate-y-1/2 whitespace-nowrap"
+              style={{ bottom: `${percentOf(tick, scaleMax)}%` }}
+            >
+              {formatPercent(tick)}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="relative h-80 rounded-md border-b border-l border-nextide-line bg-[linear-gradient(90deg,rgb(30_228_188/0.035),transparent_22%,transparent_74%,rgb(245_184_61/0.035)),linear-gradient(180deg,rgb(255_255_255/0.035),transparent_46%,rgb(0_0_0/0.16))]">
+        <div className="absolute inset-x-0 top-0 bottom-7">
+          {ticks.map((tick) => (
+            <span
+              key={tick}
+              className="absolute inset-x-0 border-t border-dashed border-nextide-line/70"
+              style={{ bottom: `${percentOf(tick, scaleMax)}%` }}
+            />
+          ))}
+          <span
+            className="absolute inset-x-0 z-10 border-t border-dashed border-foreground/70 shadow-[0_0_18px_rgb(245_250_252/0.16)]"
+            style={{ bottom: `${percentOf(targetValue, scaleMax)}%` }}
+          />
+          {renderPacingBars(
+            normalizedBuckets,
+            scaleMax,
+            targetValue,
+            activeBucket,
+            setInternalActiveHour,
+            onActiveHourChange
+          )}
+        </div>
+        <div className="absolute inset-x-3 bottom-2 grid [grid-template-columns:repeat(24,minmax(0,1fr))] gap-1.5">
+          {normalizedBuckets.map((bucket) => (
+            <span
+              key={bucket.id ?? bucket.hour}
+              className="text-center text-ui-caption leading-none font-medium text-muted-foreground"
+            >
+              {padHour(bucket.hour)}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function renderPacingBars(
+  normalizedBuckets: {
+    hour: number
+    value: number
+    id?: string
+    valueLabel?: React.ReactNode
+    detail?: React.ReactNode
+    tone?: HourlyPacingTone
+  }[],
+  scaleMax: number,
+  targetValue: number,
+  activeBucket:
+    | {
+        hour: number
+        value: number
+        id?: string
+        valueLabel?: React.ReactNode
+        detail?: React.ReactNode
+        tone?: HourlyPacingTone
+      }
+    | null
+    | undefined,
+  setInternalActiveHour: React.Dispatch<React.SetStateAction<number | null>>,
+  onActiveHourChange: ((bucket: HourlyPacingBucket) => void) | undefined
+) {
+  return (
+    <div className="absolute inset-x-3 top-0 bottom-0 grid [grid-template-columns:repeat(24,minmax(0,1fr))] items-end gap-1.5">
+      {normalizedBuckets.map((bucket) => {
+        const height = Math.max(2, percentOf(bucket.value, scaleMax))
+        const tone = bucket.tone ?? toneForValue(bucket.value, targetValue)
+        const selected = activeBucket?.hour === bucket.hour
+
+        return (
+          <button
+            key={bucket.id ?? bucket.hour}
+            type="button"
+            className="group relative flex h-full min-w-0 cursor-pointer items-end justify-center rounded-sm px-0.5 focus-visible:outline-none"
+            aria-label={`${padHour(bucket.hour)}:00 pacing ${formatPercent(bucket.value)}`}
+            onClick={() => {
+              setInternalActiveHour(bucket.hour)
+              onActiveHourChange?.(bucket)
+            }}
+            onFocus={() => {
+              setInternalActiveHour(bucket.hour)
+              onActiveHourChange?.(bucket)
+            }}
+          >
+            <span
+              className={cn(
+                "relative block w-full max-w-7 rounded-t-[0.35rem] rounded-b-[0.16rem] bg-linear-to-b shadow-[0_10px_24px_rgb(30_228_188/0.18)] transition-[height,filter] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-out-quart)] group-hover:brightness-110 group-focus-visible:brightness-110 before:absolute before:inset-0 before:rounded-[inherit] before:bg-linear-to-b before:from-white/35 before:to-transparent before:opacity-45",
+                toneClasses[tone],
+                selected && "brightness-110"
+              )}
+              style={{ height: `${height}%` }}
+            />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function renderPacingDetail(
+  peak: number,
+  low: number,
+  activeBucket:
+    | {
+        hour: number
+        value: number
+        id?: string
+        valueLabel?: React.ReactNode
+        detail?: React.ReactNode
+        tone?: HourlyPacingTone
+      }
+    | null
+    | undefined
+) {
+  return (
+    <div className="flex min-h-8 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+      <span>
+        Peak <strong className="text-foreground">{formatPercent(peak)}</strong>
+      </span>
+      <span className="text-muted-foreground/45">/</span>
+      <span>
+        Low <strong className="text-foreground">{formatPercent(low)}</strong>
+      </span>
+      {activeBucket ? (
+        <>
+          <span className="text-muted-foreground/45">/</span>
+          <span className="rounded-md border border-nextide-line bg-background/30 px-2 py-1">
+            <strong className="text-foreground">
+              {padHour(activeBucket.hour)}:00
+            </strong>{" "}
+            {activeBucket.valueLabel ?? formatPercent(activeBucket.value)}
+            {activeBucket.detail ? (
+              <span className="text-muted-foreground">
+                {" "}
+                · {activeBucket.detail}
+              </span>
+            ) : null}
+          </span>
+        </>
+      ) : (
+        <>
+          <span className="text-muted-foreground/45">/</span>
+          <span className="rounded-md border border-nextide-line bg-background/30 px-2 py-1 text-muted-foreground/70">
+            Select an hour for detail
+          </span>
+        </>
+      )}
+    </div>
+  )
+}
+
+function getPacingStats(
+  normalizedBuckets: HourlyPacingBucket[],
+  averageValue: number | undefined,
+  targetValue: number,
+  maxValue: number | undefined
+) {
+  const resolvedAverage =
+    typeof averageValue === "number" && Number.isFinite(averageValue)
+      ? Math.max(0, averageValue)
+      : average(normalizedBuckets.map((bucket) => bucket.value))
+  const peak = normalizedBuckets.reduce(
+    (max, bucket) => Math.max(max, bucket.value),
+    0
+  )
+  const low = normalizedBuckets.reduce(
+    (min, bucket) => Math.min(min, bucket.value),
+    normalizedBuckets.length > 0 ? normalizedBuckets[0].value : 0
+  )
+  const scaleMax =
+    typeof maxValue === "number" && Number.isFinite(maxValue)
+      ? Math.max(1, maxValue)
+      : niceScaleMax(Math.max(peak * 1.12, targetValue * 1.28, 200))
+  return { resolvedAverage, peak, low, scaleMax }
 }
 
 function clamp(value: number, min: number, max: number) {

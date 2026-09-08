@@ -37,6 +37,11 @@ above the rendered component. Use that identifier in requests and handoffs:
 `DurationPicker`, `LineItemGraph`, or `ProgressiveSummaryRail`, rather than a
 description of where the component happens to appear.
 
+Large controls keep their public import paths above. Adjacent modules divide
+navigation and schedule rendering from motion, transfer state from animation,
+and line-item chart data from plotting. Consumers should continue importing
+the named public component rather than its supporting modules.
+
 ## Components
 
 | Need                       | Start with                                                                                                                                                                                                                                                                                                                                                                                        |

@@ -29,7 +29,6 @@ type LiveEventProofEvidenceField = {
   value: React.ReactNode
 }
 
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `LiveEventProofModal` has too many lines (161); extract this function in the follow-up refactor.
 function LiveEventProofModal({
   creatorLabel,
   creatorMark,
@@ -75,41 +74,7 @@ function LiveEventProofModal({
         overlayClassName="bg-black/75"
         className="max-w-[70rem] grid-rows-[auto_minmax(0,1fr)] gap-0 rounded-lg border-nextide-tide/20 shadow-2xl"
       >
-        <header className="flex min-w-0 items-center justify-between gap-4 border-b border-nextide-line px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-nextide-tide/25 bg-nextide-tide/10 text-xs font-medium text-nextide-tide">
-              {creatorMark ?? "LI"}
-            </span>
-            <span className="grid min-w-0 gap-0.5">
-              <small className="text-xs font-medium text-muted-foreground uppercase">
-                Live evidence
-              </small>
-              <strong className="truncate text-lg leading-none">
-                {creatorLabel}
-              </strong>
-            </span>
-            <StatusBadge
-              tone={isFlagged ? "danger" : "success"}
-              size="compact"
-              indicator="dot"
-            >
-              {isFlagged ? "Flagged" : "Clean"}
-            </StatusBadge>
-          </div>
-          <DialogClose
-            render={
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label="Close"
-                className="bg-card/60 text-muted-foreground hover:text-foreground"
-              />
-            }
-          >
-            <X aria-hidden="true" />
-          </DialogClose>
-        </header>
+        {renderProofHeader(creatorMark, creatorLabel, isFlagged)}
         <div className="grid min-h-0 lg:grid-cols-[21rem_minmax(0,1fr)]">
           <aside className="min-h-0 overflow-y-auto border-b border-nextide-line bg-black/15 p-4 lg:border-r lg:border-b-0">
             <h3 className="mb-3 text-xs font-medium tracking-wide uppercase">
@@ -126,69 +91,135 @@ function LiveEventProofModal({
               ))}
             </div>
           </aside>
-          <main className="grid min-h-0 content-start gap-3 overflow-y-auto p-4">
-            <div className="grid gap-1">
-              <span className="text-xs font-medium text-muted-foreground uppercase">
-                Incident proof
-              </span>
-              <DialogTitle className="text-2xl leading-none font-medium">
-                {incidentTitle}
-              </DialogTitle>
-              {incidentMeta ? (
-                <p className="text-sm text-muted-foreground">{incidentMeta}</p>
-              ) : null}
-            </div>
-            <ProofPanel title="Transcript">
-              <div className="grid grid-cols-[3.75rem_minmax(0,1fr)] gap-3 font-mono text-sm">
-                <span className="text-nextide-tide">0:00</span>
-                <strong>{transcript}</strong>
-              </div>
-            </ProofPanel>
-            <ProofPanel title="Audio">
-              <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-3 rounded-lg border border-nextide-line bg-black/20 p-2 sm:grid-cols-[2.75rem_minmax(0,1fr)_4.5rem]">
-                <Button
-                  type="button"
-                  aria-label="Play audio proof"
-                  size="icon"
-                  className="rounded-full"
-                  onClick={onAudioPlay}
-                >
-                  <Play aria-hidden="true" />
-                </Button>
-                <div className="relative grid h-14 min-w-0 grid-cols-[repeat(72,minmax(0,1fr))] items-center gap-px before:absolute before:inset-x-0 before:top-1/2 before:h-px before:bg-nextide-tide/20 sm:gap-0.5">
-                  {waveform.map((height, index) => (
-                    <span
-                      className="relative z-10 min-h-1 rounded bg-nextide-tide/35"
-                      key={index}
-                      style={{ height: `${height}%` }}
-                    />
-                  ))}
-                </div>
-                <span className="col-span-2 text-right text-xs text-muted-foreground tabular-nums sm:col-span-1">
-                  0:00 / 0:19
-                </span>
-              </div>
-            </ProofPanel>
-            <ProofPanel title="Evidence">
-              <dl className="grid gap-2 sm:grid-cols-3">
-                {evidenceFields.map((field) => (
-                  <div
-                    className="min-w-0 rounded-lg border border-nextide-line bg-black/15 p-2"
-                    key={field.id}
-                  >
-                    <dt className="text-ui-caption font-medium text-muted-foreground uppercase">
-                      {field.label}
-                    </dt>
-                    <dd className="mt-1 truncate text-sm">{field.value}</dd>
-                  </div>
-                ))}
-              </dl>
-              <p className="text-sm text-muted-foreground">{evidenceSummary}</p>
-            </ProofPanel>
-          </main>
+          {renderIncidentProof(
+            incidentTitle,
+            incidentMeta,
+            transcript,
+            onAudioPlay,
+            waveform,
+            evidenceFields,
+            evidenceSummary
+          )}
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function renderProofHeader(
+  creatorMark: React.ReactNode,
+  creatorLabel: React.ReactNode,
+  isFlagged: boolean
+) {
+  return (
+    <header className="flex min-w-0 items-center justify-between gap-4 border-b border-nextide-line px-4 py-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-nextide-tide/25 bg-nextide-tide/10 text-xs font-medium text-nextide-tide">
+          {creatorMark ?? "LI"}
+        </span>
+        <span className="grid min-w-0 gap-0.5">
+          <small className="text-xs font-medium text-muted-foreground uppercase">
+            Live evidence
+          </small>
+          <strong className="truncate text-lg leading-none">
+            {creatorLabel}
+          </strong>
+        </span>
+        <StatusBadge
+          tone={isFlagged ? "danger" : "success"}
+          size="compact"
+          indicator="dot"
+        >
+          {isFlagged ? "Flagged" : "Clean"}
+        </StatusBadge>
+      </div>
+      <DialogClose
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Close"
+            className="bg-card/60 text-muted-foreground hover:text-foreground"
+          />
+        }
+      >
+        <X aria-hidden="true" />
+      </DialogClose>
+    </header>
+  )
+}
+
+function renderIncidentProof(
+  incidentTitle: React.ReactNode,
+  incidentMeta: React.ReactNode,
+  transcript: React.ReactNode,
+  onAudioPlay: () => void,
+  waveform: number[],
+  evidenceFields: LiveEventProofEvidenceField[],
+  evidenceSummary: React.ReactNode
+) {
+  return (
+    <main className="grid min-h-0 content-start gap-3 overflow-y-auto p-4">
+      <div className="grid gap-1">
+        <span className="text-xs font-medium text-muted-foreground uppercase">
+          Incident proof
+        </span>
+        <DialogTitle className="text-2xl leading-none font-medium">
+          {incidentTitle}
+        </DialogTitle>
+        {incidentMeta ? (
+          <p className="text-sm text-muted-foreground">{incidentMeta}</p>
+        ) : null}
+      </div>
+      <ProofPanel title="Transcript">
+        <div className="grid grid-cols-[3.75rem_minmax(0,1fr)] gap-3 font-mono text-sm">
+          <span className="text-nextide-tide">0:00</span>
+          <strong>{transcript}</strong>
+        </div>
+      </ProofPanel>
+      <ProofPanel title="Audio">
+        <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-3 rounded-lg border border-nextide-line bg-black/20 p-2 sm:grid-cols-[2.75rem_minmax(0,1fr)_4.5rem]">
+          <Button
+            type="button"
+            aria-label="Play audio proof"
+            size="icon"
+            className="rounded-full"
+            onClick={onAudioPlay}
+          >
+            <Play aria-hidden="true" />
+          </Button>
+          <div className="relative grid h-14 min-w-0 grid-cols-[repeat(72,minmax(0,1fr))] items-center gap-px before:absolute before:inset-x-0 before:top-1/2 before:h-px before:bg-nextide-tide/20 sm:gap-0.5">
+            {waveform.map((height, index) => (
+              <span
+                className="relative z-10 min-h-1 rounded bg-nextide-tide/35"
+                key={index}
+                style={{ height: `${height}%` }}
+              />
+            ))}
+          </div>
+          <span className="col-span-2 text-right text-xs text-muted-foreground tabular-nums sm:col-span-1">
+            0:00 / 0:19
+          </span>
+        </div>
+      </ProofPanel>
+      <ProofPanel title="Evidence">
+        <dl className="grid gap-2 sm:grid-cols-3">
+          {evidenceFields.map((field) => (
+            <div
+              className="min-w-0 rounded-lg border border-nextide-line bg-black/15 p-2"
+              key={field.id}
+            >
+              <dt className="text-ui-caption font-medium text-muted-foreground uppercase">
+                {field.label}
+              </dt>
+              <dd className="mt-1 truncate text-sm">{field.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="text-sm text-muted-foreground">{evidenceSummary}</p>
+      </ProofPanel>
+    </main>
   )
 }
 

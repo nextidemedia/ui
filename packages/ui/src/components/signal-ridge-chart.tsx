@@ -16,7 +16,6 @@ type SignalRidgeChartPoint = {
   valueLabel?: string | number
 }
 
-// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `SignalRidgeChart` has a complexity of 14; The function `SignalRidgeChart` has too many lines (204); extract this function in the follow-up refactor.
 function SignalRidgeChart({
   points,
   valueFormatter = formatCompactNumber,
@@ -86,146 +85,260 @@ function SignalRidgeChart({
       className={cn("relative min-w-0", className)}
       {...props}
     >
-      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Mouse leave only clears the tooltip; each point exposes the same tooltip on focus and blur. */}
-      <svg
-        ref={svgRef}
-        viewBox="0 0 600 190"
-        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
-        role="group"
-        aria-label="Signal ridge trend"
-        className="h-auto min-h-48 w-full overflow-visible"
-        onMouseLeave={() => setHover(null)}
-      >
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop
-              offset="0"
-              stopColor="var(--nextide-tide)"
-              stopOpacity="0.32"
-            />
-            <stop
-              offset="0.72"
-              stopColor="var(--nextide-tide)"
-              stopOpacity="0.04"
-            />
-            <stop offset="1" stopColor="var(--nextide-tide)" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {[52, 102, 152].map((y) => (
-          <line
-            key={y}
-            x1="28"
-            x2="572"
-            y1={y}
-            y2={y}
-            stroke="currentColor"
-            strokeOpacity="0.1"
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
-        <path d={area} fill={`url(#${gradientId})`} />
-        <path
-          d={line}
-          className="nextide-line-draw"
-          fill="none"
-          pathLength="1"
-          stroke="var(--nextide-tide)"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2.5"
-          vectorEffect="non-scaling-stroke"
-        />
-        {hoveredPosition ? (
-          <line
-            x1={hoveredPosition.x}
-            x2={hoveredPosition.x}
-            y1="40"
-            y2="152"
-            stroke="var(--nextide-tide)"
-            strokeDasharray="2 3"
-            strokeOpacity="0.42"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-            pointerEvents="none"
-          />
-        ) : null}
-        {positions.map((position, index) => (
-          <g
-            key={points[index].id}
-            // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
-            role="img"
-            tabIndex={0}
-            aria-label={`${stringifyNode(points[index].label)}: ${stringifyNode(
-              points[index].valueLabel ?? valueFormatter(points[index].value)
-            )}`}
-            className="cursor-crosshair outline-none"
-            onFocus={() => showPointTooltip(points[index], position)}
-            onBlur={() => setHover(null)}
-            onMouseEnter={(event) =>
-              showPointTooltip(points[index], position, event.clientY)
-            }
-            onMouseMove={(event) =>
-              showPointTooltip(points[index], position, event.clientY)
-            }
-            onMouseLeave={() => setHover(null)}
-          >
-            <circle cx={position.x} cy={position.y} r="16" fill="transparent" />
-            <circle
-              cx={position.x}
-              cy={position.y}
-              r="4"
-              fill="var(--background)"
-              stroke="var(--nextide-tide)"
-              strokeWidth="2"
-              vectorEffect="non-scaling-stroke"
-            />
-            <text
-              x={position.x}
-              y={Math.max(16, position.y - 12)}
-              textAnchor="middle"
-              className="fill-foreground text-xs font-medium"
-            >
-              {stringifyNode(
-                points[index].valueLabel ?? valueFormatter(points[index].value)
-              )}
-            </text>
-            <text
-              x={position.x}
-              y="178"
-              textAnchor="middle"
-              className="fill-muted-foreground text-ui-caption font-medium"
-            >
-              {stringifyNode(points[index].label)}
-            </text>
-          </g>
-        ))}
-      </svg>
+      <RidgePlot
+        svgRef={svgRef}
+        setHover={setHover}
+        gradientId={gradientId}
+        area={area}
+        line={line}
+        hoveredPosition={hoveredPosition}
+        positions={positions}
+        points={points}
+        valueFormatter={valueFormatter}
+        showPointTooltip={showPointTooltip}
+      />
       {hover && hoveredPoint ? (
-        <GraphTooltip
-          anchor={{ x: hover.viewportX, y: hover.viewportY }}
-          data-chart="signal-ridge"
-          onDismiss={() => setHover(null)}
-        >
-          <div className="grid gap-1">
-            <span className="text-ui-caption font-medium text-muted-foreground">
-              Signal ridge
-            </span>
-            <strong className="text-sm leading-tight text-foreground">
-              {hoveredPoint.label}
-            </strong>
-          </div>
-          <div className="mt-2 grid gap-1.5">
-            <GraphTooltipRow
-              color="var(--nextide-tide)"
-              label={hoveredPoint.label}
-              value={
-                hoveredPoint.valueLabel ?? valueFormatter(hoveredPoint.value)
-              }
-            />
-          </div>
-        </GraphTooltip>
+        <RidgeTooltip
+          hover={hover}
+          setHover={setHover}
+          hoveredPoint={hoveredPoint}
+          valueFormatter={valueFormatter}
+        />
       ) : null}
     </div>
+  )
+}
+
+function RidgePlot({
+  svgRef,
+  setHover,
+  gradientId,
+  area,
+  line,
+  hoveredPosition,
+  positions,
+  points,
+  valueFormatter,
+  showPointTooltip,
+}: {
+  svgRef: React.RefObject<SVGSVGElement | null>
+  setHover: React.Dispatch<
+    React.SetStateAction<{
+      pointId: string
+      viewportX: number
+      viewportY: number
+    } | null>
+  >
+  gradientId: string
+  area: string
+  line: string
+  hoveredPosition: { x: number; y: number } | undefined
+  positions: { x: number; y: number }[]
+  points: SignalRidgeChartPoint[]
+  valueFormatter: (value: number) => string | number
+  showPointTooltip: (
+    point: SignalRidgeChartPoint,
+    position: { x: number; y: number },
+    viewportY?: number
+  ) => void
+}) {
+  return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Mouse leave only clears the tooltip; each point exposes the same tooltip on focus and blur.
+    <svg
+      ref={svgRef}
+      viewBox="0 0 600 190"
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
+      role="group"
+      aria-label="Signal ridge trend"
+      className="h-auto min-h-48 w-full overflow-visible"
+      onMouseLeave={() => setHover(null)}
+    >
+      <RidgeGradient gradientId={gradientId} />
+      {[52, 102, 152].map((y) => (
+        <line
+          key={y}
+          x1="28"
+          x2="572"
+          y1={y}
+          y2={y}
+          stroke="currentColor"
+          strokeOpacity="0.1"
+          vectorEffect="non-scaling-stroke"
+        />
+      ))}
+      <path d={area} fill={`url(#${gradientId})`} />
+      <path
+        d={line}
+        className="nextide-line-draw"
+        fill="none"
+        pathLength="1"
+        stroke="var(--nextide-tide)"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.5"
+        vectorEffect="non-scaling-stroke"
+      />
+      {hoveredPosition ? (
+        <line
+          x1={hoveredPosition.x}
+          x2={hoveredPosition.x}
+          y1="40"
+          y2="152"
+          stroke="var(--nextide-tide)"
+          strokeDasharray="2 3"
+          strokeOpacity="0.42"
+          strokeWidth="1"
+          vectorEffect="non-scaling-stroke"
+          pointerEvents="none"
+        />
+      ) : null}
+      {positions.map((position, index) => (
+        <RidgePoint
+          key={points[index].id}
+          points={points}
+          index={index}
+          valueFormatter={valueFormatter}
+          showPointTooltip={showPointTooltip}
+          position={position}
+          setHover={setHover}
+        />
+      ))}
+    </svg>
+  )
+}
+
+function RidgeGradient({ gradientId }: { gradientId: string }) {
+  return (
+    <defs>
+      <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="var(--nextide-tide)" stopOpacity="0.32" />
+        <stop
+          offset="0.72"
+          stopColor="var(--nextide-tide)"
+          stopOpacity="0.04"
+        />
+        <stop offset="1" stopColor="var(--nextide-tide)" stopOpacity="0" />
+      </linearGradient>
+    </defs>
+  )
+}
+
+function RidgePoint({
+  points,
+  index,
+  valueFormatter,
+  showPointTooltip,
+  position,
+  setHover,
+}: {
+  points: SignalRidgeChartPoint[]
+  index: number
+  valueFormatter: (value: number) => string | number
+  showPointTooltip: (
+    point: SignalRidgeChartPoint,
+    position: { x: number; y: number },
+    viewportY?: number
+  ) => void
+  position: { x: number; y: number }
+  setHover: React.Dispatch<
+    React.SetStateAction<{
+      pointId: string
+      viewportX: number
+      viewportY: number
+    } | null>
+  >
+}): React.JSX.Element {
+  return (
+    <g
+      key={points[index].id}
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
+      role="img"
+      tabIndex={0}
+      aria-label={`${stringifyNode(points[index].label)}: ${stringifyNode(
+        points[index].valueLabel ?? valueFormatter(points[index].value)
+      )}`}
+      className="cursor-crosshair outline-none"
+      onFocus={() => showPointTooltip(points[index], position)}
+      onBlur={() => setHover(null)}
+      onMouseEnter={(event) =>
+        showPointTooltip(points[index], position, event.clientY)
+      }
+      onMouseMove={(event) =>
+        showPointTooltip(points[index], position, event.clientY)
+      }
+      onMouseLeave={() => setHover(null)}
+    >
+      <circle cx={position.x} cy={position.y} r="16" fill="transparent" />
+      <circle
+        cx={position.x}
+        cy={position.y}
+        r="4"
+        fill="var(--background)"
+        stroke="var(--nextide-tide)"
+        strokeWidth="2"
+        vectorEffect="non-scaling-stroke"
+      />
+      <text
+        x={position.x}
+        y={Math.max(16, position.y - 12)}
+        textAnchor="middle"
+        className="fill-foreground text-xs font-medium"
+      >
+        {stringifyNode(
+          points[index].valueLabel ?? valueFormatter(points[index].value)
+        )}
+      </text>
+      <text
+        x={position.x}
+        y="178"
+        textAnchor="middle"
+        className="fill-muted-foreground text-ui-caption font-medium"
+      >
+        {stringifyNode(points[index].label)}
+      </text>
+    </g>
+  )
+}
+
+function RidgeTooltip({
+  hover,
+  setHover,
+  hoveredPoint,
+  valueFormatter,
+}: {
+  hover: { pointId: string; viewportX: number; viewportY: number }
+  setHover: React.Dispatch<
+    React.SetStateAction<{
+      pointId: string
+      viewportX: number
+      viewportY: number
+    } | null>
+  >
+  hoveredPoint: SignalRidgeChartPoint
+  valueFormatter: (value: number) => string | number
+}): React.ReactNode {
+  return (
+    <GraphTooltip
+      anchor={{ x: hover.viewportX, y: hover.viewportY }}
+      data-chart="signal-ridge"
+      onDismiss={() => setHover(null)}
+    >
+      <div className="grid gap-1">
+        <span className="text-ui-caption font-medium text-muted-foreground">
+          Signal ridge
+        </span>
+        <strong className="text-sm leading-tight text-foreground">
+          {hoveredPoint.label}
+        </strong>
+      </div>
+      <div className="mt-2 grid gap-1.5">
+        <GraphTooltipRow
+          color="var(--nextide-tide)"
+          label={hoveredPoint.label}
+          value={hoveredPoint.valueLabel ?? valueFormatter(hoveredPoint.value)}
+        />
+      </div>
+    </GraphTooltip>
   )
 }
 

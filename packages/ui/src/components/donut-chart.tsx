@@ -25,7 +25,6 @@ const toneStroke: Record<DonutChartTone, string> = {
   neutral: "color-mix(in srgb, var(--foreground) 42%, transparent)",
 }
 
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `DonutChart` has too many lines (135); extract this function in the follow-up refactor.
 function DonutChart({
   segments,
   totalLabel,
@@ -98,51 +97,14 @@ function DonutChart({
       )}
       {...props}
     >
-      <div className="relative grid min-h-44 place-items-center">
-        <svg
-          viewBox="0 0 120 120"
-          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
-          role="img"
-          aria-label="Donut chart"
-          className="size-44"
-        >
-          <circle
-            cx="60"
-            cy="60"
-            r={radius}
-            fill="none"
-            stroke="color-mix(in srgb, var(--foreground) 10%, transparent)"
-            strokeWidth="14"
-          />
-          {plottedSegments.map(({ segment, length, dashOffset }) => {
-            return (
-              <circle
-                key={segment.id}
-                cx="60"
-                cy="60"
-                r={radius}
-                fill="none"
-                stroke={toneStroke[segment.tone ?? "success"]}
-                strokeDasharray={`${length} ${circumference}`}
-                strokeDashoffset={dashOffset}
-                strokeLinecap="round"
-                strokeWidth="14"
-                transform="rotate(-90 60 60)"
-              />
-            )
-          })}
-        </svg>
-        <div className="absolute inset-0 grid place-items-center text-center">
-          <div className="grid gap-0.5">
-            <strong className="text-2xl leading-none font-medium">
-              {totalLabel ?? total}
-            </strong>
-            <span className="text-xs font-medium text-muted-foreground">
-              {centerLabel}
-            </span>
-          </div>
-        </div>
-      </div>
+      {renderDonutPlot(
+        radius,
+        plottedSegments,
+        circumference,
+        totalLabel,
+        total,
+        centerLabel
+      )}
       <div className="grid content-center gap-2">
         {segments.map((segment) => (
           <div
@@ -167,3 +129,64 @@ function DonutChart({
 }
 
 export { DonutChart, type DonutChartSegment, type DonutChartTone }
+
+function renderDonutPlot(
+  radius: number,
+  plottedSegments: {
+    segment: DonutChartSegment
+    length: number
+    dashOffset: number
+  }[],
+  circumference: number,
+  totalLabel: React.ReactNode,
+  total: number,
+  centerLabel: React.ReactNode
+) {
+  return (
+    <div className="relative grid min-h-44 place-items-center">
+      <svg
+        viewBox="0 0 120 120"
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
+        role="img"
+        aria-label="Donut chart"
+        className="size-44"
+      >
+        <circle
+          cx="60"
+          cy="60"
+          r={radius}
+          fill="none"
+          stroke="color-mix(in srgb, var(--foreground) 10%, transparent)"
+          strokeWidth="14"
+        />
+        {plottedSegments.map(({ segment, length, dashOffset }) => {
+          return (
+            <circle
+              key={segment.id}
+              cx="60"
+              cy="60"
+              r={radius}
+              fill="none"
+              stroke={toneStroke[segment.tone ?? "success"]}
+              strokeDasharray={`${length} ${circumference}`}
+              strokeDashoffset={dashOffset}
+              strokeLinecap="round"
+              strokeWidth="14"
+              transform="rotate(-90 60 60)"
+            />
+          )
+        })}
+      </svg>
+      <div className="absolute inset-0 grid place-items-center text-center">
+        <div className="grid gap-0.5">
+          <strong className="text-2xl leading-none font-medium">
+            {totalLabel ?? total}
+          </strong>
+          <span className="text-xs font-medium text-muted-foreground">
+            {centerLabel}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}

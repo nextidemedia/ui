@@ -1,86 +1,19 @@
+import { ArrowRight, Plus, Search, X } from "lucide-react"
 import * as React from "react"
 import { createPortal } from "react-dom"
-import { ArrowRight, Plus, Search, X } from "lucide-react"
 
 import { Empty, EmptyDescription } from "@nextide/ui/components/empty"
 import { Input } from "@nextide/ui/components/input"
 import { cn } from "@nextide/ui/lib/utils"
 
-type CreatorTransferItem = {
-  id: string
-  name: string
-  meta?: React.ReactNode
-  avatar?: React.ReactNode
-}
-
-type CreatorTransferSide = "available" | "selected"
-
-type CreatorTransferTarget = {
-  id: string
-  side: CreatorTransferSide
-}
-
-type CreatorTransferFlyer = CreatorTransferTarget & {
-  source: CreatorTransferSide
-  from: DOMRect
-  to: DOMRect
-}
-
-type CreatorPanelResize = {
-  height: number
-  duration: number
-}
-
-type CreatorTransferRequest = {
-  id: string
-  direction: "add" | "remove"
-}
-
-const transferSpaceMs = 120
-const transferMoveMs = 360
-const transferReflowMs = 312
-const transferEase = "cubic-bezier(0.76, 0, 0.24, 1)"
-
-function captureRows(
-  ids: string[],
-  refs: React.MutableRefObject<Record<string, HTMLButtonElement | null>>
-) {
-  const rects = new Map<string, DOMRect>()
-  ids.forEach((id) => {
-    const row = refs.current[id]
-    if (row) rects.set(id, row.getBoundingClientRect())
-  })
-  return rects
-}
-
-function animateRows(
-  ids: string[],
-  refs: React.MutableRefObject<Record<string, HTMLButtonElement | null>>,
-  previousRects: Map<string, DOMRect> | null
-) {
-  if (!previousRects) return
-
-  ids.forEach((id) => {
-    const row = refs.current[id]
-    const previousRect = previousRects.get(id)
-    if (!row || !previousRect) return
-
-    const nextRect = row.getBoundingClientRect()
-    const deltaX = previousRect.left - nextRect.left
-    const deltaY = previousRect.top - nextRect.top
-    if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) return
-
-    row.animate(
-      [
-        { transform: `translate3d(${deltaX}px, ${deltaY}px, 0)`, opacity: 1 },
-        { transform: "translate3d(0, 0, 0)", opacity: 1 },
-      ],
-      { duration: transferReflowMs, easing: transferEase }
-    )
-  })
-}
-
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `CreatorTransfer` has too many lines (357); extract this function in the follow-up refactor.
+import { useCreatorTransfer } from "./creator-transfer-state.js"
+import {
+  type CreatorTransferFlyer,
+  type CreatorTransferItem,
+  type CreatorTransferProps,
+  type CreatorTransferSide,
+  type CreatorTransferTarget,
+} from "./creator-transfer-types.js"
 function CreatorTransfer({
   creators,
   selectedIds,
@@ -89,321 +22,25 @@ function CreatorTransfer({
   selectedTitle = "Added creators",
   className,
   ...props
-}: React.ComponentProps<"section"> & {
-  creators: CreatorTransferItem[]
-  selectedIds: string[]
-  onSelectedIdsChange: (ids: string[]) => void
-  availableTitle?: React.ReactNode
-  selectedTitle?: React.ReactNode
-}) {
-  const [availableQuery, setAvailableQuery] = React.useState("")
-  const [selectedQuery, setSelectedQuery] = React.useState("")
-  const [availableIds, setAvailableIds] = React.useReducer(
-    creatorIdsReducer,
-    { creators, selectedIds },
-    ({ creators, selectedIds }) =>
-      sortCreatorIds(availableIdsFor(creators, selectedIds), creators)
-  )
-  const [addedIds, setAddedIds] = React.useReducer(
-    creatorIdsReducer,
-    selectedIds
-  )
-  const [motionLocked, setMotionLocked] = React.useState(false)
-  const [transferTarget, setTransferTarget] =
-    React.useState<CreatorTransferTarget | null>(null)
-  const [transferFlyer, setTransferFlyer] =
-    React.useState<CreatorTransferFlyer | null>(null)
-  const queuedTransfers = React.useRef<CreatorTransferRequest[]>([])
-  const [queueVersion, setQueueVersion] = React.useState(0)
-  const transferCreatorRef = React.useRef<
-    (id: string, direction: "add" | "remove") => void
-  >(() => undefined)
-  const availablePanelRef = React.useRef<HTMLElement | null>(null)
-  const addedPanelRef = React.useRef<HTMLElement | null>(null)
-  const availableRefs = React.useRef<Record<string, HTMLButtonElement | null>>(
-    {}
-  )
-  const addedRefs = React.useRef<Record<string, HTMLButtonElement | null>>({})
-  const flyerRef = React.useRef<HTMLDivElement | null>(null)
-  const availableReflow = React.useRef<Map<string, DOMRect> | null>(null)
-  const addedReflow = React.useRef<Map<string, DOMRect> | null>(null)
-  const availableResize = React.useRef<CreatorPanelResize | null>(null)
-  const addedResize = React.useRef<CreatorPanelResize | null>(null)
-  const transferTimers = React.useRef<number[]>([])
-  const resizeTimers = React.useRef<Record<CreatorTransferSide, number | null>>(
-    { available: null, selected: null }
-  )
-  const creatorIds = React.useMemo(
-    () => new Set(creators.map((creator) => creator.id)),
-    [creators]
-  )
-  const creatorById = React.useMemo(
-    () => new Map(creators.map((creator) => [creator.id, creator])),
-    [creators]
-  )
-  const visibleAvailableIds = React.useMemo(
-    () => filterCreatorIds(availableIds, creatorById, availableQuery),
-    [availableIds, availableQuery, creatorById]
-  )
-  const visibleAddedIds = React.useMemo(
-    () => filterCreatorIds(addedIds, creatorById, selectedQuery),
-    [addedIds, creatorById, selectedQuery]
-  )
-
-  const clearTransferTimers = React.useCallback(() => {
-    transferTimers.current.forEach((timer) => window.clearTimeout(timer))
-    transferTimers.current = []
-  }, [])
-
-  const clearResizeTimer = React.useCallback((side: CreatorTransferSide) => {
-    const timer = resizeTimers.current[side]
-    if (timer) {
-      window.clearTimeout(timer)
-      resizeTimers.current[side] = null
-    }
-  }, [])
-
-  const queueTransferTimer = React.useCallback(
-    (callback: () => void, delay: number) => {
-      const timer = window.setTimeout(callback, delay)
-      transferTimers.current.push(timer)
-    },
-    []
-  )
-
-  const capturePanelResize = (side: CreatorTransferSide, duration: number) => {
-    const node =
-      side === "available" ? availablePanelRef.current : addedPanelRef.current
-    const resizeRef = side === "available" ? availableResize : addedResize
-    if (node) {
-      resizeRef.current = {
-        height: node.getBoundingClientRect().height,
-        duration,
-      }
-    }
-  }
-
-  const animatePanelResize = React.useCallback(
-    (
-      side: CreatorTransferSide,
-      ref: React.MutableRefObject<HTMLElement | null>,
-      resizeRef: React.MutableRefObject<CreatorPanelResize | null>
-    ) => {
-      const node = ref.current
-      const resize = resizeRef.current
-      resizeRef.current = null
-      if (!node || !resize) return
-
-      const nextHeight = node.getBoundingClientRect().height
-      if (Math.abs(resize.height - nextHeight) < 0.5) return
-
-      clearResizeTimer(side)
-      const originalStyle = node.getAttribute("style") ?? ""
-      node.setAttribute(
-        "style",
-        mergeInlineStyle(originalStyle, {
-          transition: "none",
-          height: `${resize.height}px`,
-        })
-      )
-      void node.offsetHeight
-      node.setAttribute(
-        "style",
-        mergeInlineStyle(originalStyle, {
-          transition: `height ${resize.duration}ms ${transferEase}`,
-          height: `${nextHeight}px`,
-        })
-      )
-
-      resizeTimers.current[side] = window.setTimeout(() => {
-        restoreInlineStyle(node, originalStyle)
-        resizeTimers.current[side] = null
-      }, resize.duration)
-    },
-    [clearResizeTimer]
-  )
-
-  const startFlyer = (
-    id: string,
-    source: CreatorTransferSide,
-    target: CreatorTransferSide
-  ) => {
-    const sourceRow = (source === "available" ? availableRefs : addedRefs)
-      .current[id]
-    const targetRow = (target === "available" ? availableRefs : addedRefs)
-      .current[id]
-    if (!sourceRow || !targetRow) return false
-
-    setTransferFlyer({
-      id,
-      source,
-      side: target,
-      from: sourceRow.getBoundingClientRect(),
-      to: targetRow.getBoundingClientRect(),
-    })
-    return true
-  }
-
-  const completeTransfer = (
-    nextAvailableIds: string[],
-    nextAddedIds: string[],
-    collapseSide: CreatorTransferSide
-  ) => {
-    capturePanelResize(collapseSide, transferReflowMs)
-
-    if (collapseSide === "available") {
-      availableReflow.current = captureRows(visibleAvailableIds, availableRefs)
-      setAvailableIds(nextAvailableIds)
-    } else {
-      addedReflow.current = captureRows(visibleAddedIds, addedRefs)
-      setAddedIds(nextAddedIds)
-    }
-
-    setTransferTarget(null)
-    setTransferFlyer(null)
-    setMotionLocked(false)
-    onSelectedIdsChange(nextAddedIds)
-  }
-
-  // oxlint-disable-next-line complexity -- Legacy baseline: function has a complexity of 13; extract this function in the follow-up refactor.
-  const transferCreator = (id: string, direction: "add" | "remove") => {
-    if (motionLocked) {
-      const alreadyQueued = queuedTransfers.current.some(
-        (request) => request.id === id && request.direction === direction
-      )
-      if (!alreadyQueued) {
-        queuedTransfers.current.push({ id, direction })
-        setQueueVersion((version) => version + 1)
-      }
-      return
-    }
-
-    if (
-      (direction === "add" && !availableIds.includes(id)) ||
-      (direction === "remove" && !addedIds.includes(id))
-    ) {
-      return
-    }
-
-    const source: CreatorTransferSide =
-      direction === "add" ? "available" : "selected"
-    const target: CreatorTransferSide =
-      direction === "add" ? "selected" : "available"
-    const nextAddedIds: string[] =
-      direction === "add"
-        ? [...addedIds, id]
-        : addedIds.filter((creatorId) => creatorId !== id)
-    const nextAvailableIds: string[] =
-      direction === "add"
-        ? availableIds.filter((creatorId) => creatorId !== id)
-        : sortCreatorIds([...availableIds, id], creators)
-
-    setMotionLocked(true)
-    setTransferTarget({ id, side: target })
-    capturePanelResize(
-      target,
-      target === "available" ? transferReflowMs : transferSpaceMs
-    )
-
-    if (target === "selected") {
-      addedReflow.current = captureRows(visibleAddedIds, addedRefs)
-      setAddedIds(nextAddedIds)
-    } else {
-      availableReflow.current = captureRows(visibleAvailableIds, availableRefs)
-      setAvailableIds(nextAvailableIds)
-    }
-
-    queueTransferTimer(() => {
-      const didStart = startFlyer(id, source, target)
-      queueTransferTimer(
-        () => {
-          completeTransfer(nextAvailableIds, nextAddedIds, source)
-        },
-        didStart ? transferMoveMs : 0
-      )
-    }, transferSpaceMs)
-  }
-
-  React.useEffect(() => {
-    transferCreatorRef.current = transferCreator
-  })
-
-  React.useEffect(() => {
-    if (motionLocked || queuedTransfers.current.length === 0) return
-
-    const nextTransfer = queuedTransfers.current.shift()
-    if (!nextTransfer) return
-
-    const frame = window.requestAnimationFrame(() => {
-      transferCreatorRef.current(nextTransfer.id, nextTransfer.direction)
-    })
-
-    return () => window.cancelAnimationFrame(frame)
-  }, [motionLocked, queueVersion])
-
-  React.useEffect(() => {
-    if (motionLocked) return
-
-    const syncTimer = window.setTimeout(() => {
-      setAddedIds(selectedIds.filter((id) => creatorIds.has(id)))
-      setAvailableIds(
-        sortCreatorIds(availableIdsFor(creators, selectedIds), creators)
-      )
-    }, 0)
-
-    return () => window.clearTimeout(syncTimer)
-  }, [creatorIds, creators, motionLocked, selectedIds])
-
-  React.useEffect(
-    () => () => {
-      clearTransferTimers()
-      clearResizeTimer("available")
-      clearResizeTimer("selected")
-    },
-    [clearResizeTimer, clearTransferTimers]
-  )
-
-  React.useLayoutEffect(() => {
-    animateRows(visibleAvailableIds, availableRefs, availableReflow.current)
-    animatePanelResize("available", availablePanelRef, availableResize)
-    availableReflow.current = null
-  }, [animatePanelResize, visibleAvailableIds])
-
-  React.useLayoutEffect(() => {
-    animateRows(visibleAddedIds, addedRefs, addedReflow.current)
-    animatePanelResize("selected", addedPanelRef, addedResize)
-    addedReflow.current = null
-  }, [animatePanelResize, visibleAddedIds])
-
-  React.useLayoutEffect(() => {
-    const node = flyerRef.current
-    if (!node || !transferFlyer) return
-
-    node.animate(
-      [
-        { transform: "translate3d(0, 0, 0) scale(1)", opacity: 1 },
-        {
-          transform: `translate3d(${transferFlyer.to.left - transferFlyer.from.left}px, ${transferFlyer.to.top - transferFlyer.from.top}px, 0) scale(1)`,
-          opacity: 1,
-        },
-      ],
-      {
-        duration: transferMoveMs,
-        easing: transferEase,
-        fill: "forwards",
-      }
-    )
-  }, [transferFlyer])
-
-  const flyerCreator = transferFlyer ? creatorById.get(transferFlyer.id) : null
-  const flyerStyle = transferFlyer
-    ? ({
-        left: `${transferFlyer.from.left}px`,
-        top: `${transferFlyer.from.top}px`,
-        width: `${transferFlyer.from.width}px`,
-        height: `${transferFlyer.from.height}px`,
-      } satisfies React.CSSProperties)
-    : undefined
+}: CreatorTransferProps) {
+  const {
+    availableQuery,
+    setAvailableQuery,
+    selectedQuery,
+    setSelectedQuery,
+    addedIds,
+    transferTarget,
+    transferFlyer,
+    creatorById,
+    visibleAvailableIds,
+    visibleAddedIds,
+    availablePanelRef,
+    addedPanelRef,
+    availableRefs,
+    addedRefs,
+    flyerRef,
+    transferCreator,
+  } = useCreatorTransfer({ creators, selectedIds, onSelectedIdsChange })
 
   return (
     <section
@@ -453,27 +90,51 @@ function CreatorTransfer({
         action="remove"
         onTransfer={transferCreator}
       />
-      {transferFlyer && flyerCreator && typeof document !== "undefined"
-        ? createPortal(
-            <div
-              aria-hidden="true"
-              className="pointer-events-none fixed z-[1001] will-change-transform"
-              ref={flyerRef}
-              style={flyerStyle}
-            >
-              <CreatorTransferRow
-                creator={flyerCreator}
-                action={transferFlyer.side === "selected" ? "remove" : "add"}
-                className="h-full shadow-[0_18px_42px_rgb(0_0_0/0.42),0_0_22px_rgb(30_228_188/0.18)]"
-              />
-            </div>,
-            document.body
-          )
-        : null}
+      <CreatorTransferOverlay
+        transferFlyer={transferFlyer}
+        creatorById={creatorById}
+        flyerRef={flyerRef}
+      />
     </section>
   )
 }
 
+function CreatorTransferOverlay({
+  transferFlyer,
+  creatorById,
+  flyerRef,
+}: {
+  transferFlyer: CreatorTransferFlyer | null
+  creatorById: Map<string, CreatorTransferItem>
+  flyerRef: React.RefObject<HTMLDivElement | null>
+}) {
+  const flyerCreator = transferFlyer ? creatorById.get(transferFlyer.id) : null
+  const flyerStyle = transferFlyer
+    ? ({
+        left: `${transferFlyer.from.left}px`,
+        top: `${transferFlyer.from.top}px`,
+        width: `${transferFlyer.from.width}px`,
+        height: `${transferFlyer.from.height}px`,
+      } satisfies React.CSSProperties)
+    : undefined
+  return transferFlyer && flyerCreator && typeof document !== "undefined"
+    ? createPortal(
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed z-[1001] will-change-transform"
+          ref={flyerRef}
+          style={flyerStyle}
+        >
+          <CreatorTransferRow
+            creator={flyerCreator}
+            action={transferFlyer.side === "selected" ? "remove" : "add"}
+            className="h-full shadow-[0_18px_42px_rgb(0_0_0/0.42),0_0_22px_rgb(30_228_188/0.18)]"
+          />
+        </div>,
+        document.body
+      )
+    : null
+}
 function CreatorTransferPanel({
   panelRef,
   title,
@@ -611,55 +272,6 @@ function CreatorTransferRow({
   )
 }
 
-function filterCreatorIds(
-  ids: string[],
-  creators: Map<string, CreatorTransferItem>,
-  query: string
-) {
-  const normalizedQuery = query.trim().toLowerCase()
-  if (!normalizedQuery) return ids
-  return ids.filter((id) =>
-    creators.get(id)?.name.toLowerCase().includes(normalizedQuery)
-  )
-}
-
-function sortCreatorIds(ids: string[], creators: CreatorTransferItem[]) {
-  const order = new Map(creators.map((creator, index) => [creator.id, index]))
-  const sortedIds = [...ids]
-  sortedIds.sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0))
-  return sortedIds
-}
-
-function creatorIdsReducer(current: string[], next: string[]) {
-  return sameStringArray(current, next) ? current : next
-}
-
-function sameStringArray(left: string[], right: string[]) {
-  if (left.length !== right.length) return false
-
-  for (let index = 0; index < left.length; index += 1) {
-    if (left[index] !== right[index]) return false
-  }
-
-  return true
-}
-
-function availableIdsFor(
-  creators: CreatorTransferItem[],
-  selectedIds: string[]
-) {
-  const selected = new Set(selectedIds)
-  const ids: string[] = []
-
-  creators.forEach((creator) => {
-    if (!selected.has(creator.id)) {
-      ids.push(creator.id)
-    }
-  })
-
-  return ids
-}
-
 function initials(name: string) {
   let result = ""
 
@@ -670,26 +282,6 @@ function initials(name: string) {
   }
 
   return result.toUpperCase()
-}
-
-function mergeInlineStyle(
-  originalStyle: string,
-  styles: Record<string, string>
-) {
-  const suffix = Object.entries(styles)
-    .map(([property, value]) => `${property}: ${value}`)
-    .join("; ")
-
-  return originalStyle ? `${originalStyle}; ${suffix}` : suffix
-}
-
-function restoreInlineStyle(node: HTMLElement, originalStyle: string) {
-  if (originalStyle) {
-    node.setAttribute("style", originalStyle)
-    return
-  }
-
-  node.removeAttribute("style")
 }
 
 export { CreatorTransfer, type CreatorTransferItem }

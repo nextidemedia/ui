@@ -10,7 +10,6 @@ type LineGraphPoint = {
   meta?: React.ReactNode
 }
 
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `LineGraph` has too many lines (149); extract this function in the follow-up refactor.
 function LineGraph({
   points,
   minValue,
@@ -87,65 +86,7 @@ function LineGraph({
       )}
       {...props}
     >
-      <div className="relative min-h-52">
-        <svg
-          viewBox="0 0 100 82"
-          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
-          role="img"
-          aria-label="Line graph"
-          className="h-full min-h-52 w-full overflow-visible"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-              <stop
-                offset="0%"
-                stopColor="var(--nextide-tide)"
-                stopOpacity="0.3"
-              />
-              <stop
-                offset="100%"
-                stopColor="var(--nextide-tide)"
-                stopOpacity="0"
-              />
-            </linearGradient>
-          </defs>
-          {[16, 34, 52].map((y) => (
-            <line
-              key={y}
-              x1="5"
-              x2="95"
-              y1={y}
-              y2={y}
-              stroke="currentColor"
-              strokeOpacity="0.1"
-              strokeWidth="0.5"
-            />
-          ))}
-          <path d={areaPath} fill={`url(#${gradientId})`} />
-          <path
-            d={path}
-            fill="none"
-            stroke="var(--nextide-tide)"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2.2"
-            vectorEffect="non-scaling-stroke"
-          />
-          {plottedPoints.map((point) => (
-            <circle
-              key={point.id}
-              cx={point.x}
-              cy={point.y}
-              r={point.id === lastPoint?.id ? 2.7 : 2.1}
-              fill="var(--background)"
-              stroke="var(--nextide-tide)"
-              strokeWidth="1.5"
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
-        </svg>
-      </div>
+      {renderLinePlot(gradientId, areaPath, path, plottedPoints, lastPoint)}
       <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,4.25rem),1fr))] gap-2">
         {points.map((point) => (
           <div key={point.id} className="grid min-w-0 gap-0.5">
@@ -168,3 +109,89 @@ function LineGraph({
 }
 
 export { LineGraph, type LineGraphPoint }
+
+function renderLinePlot(
+  gradientId: string,
+  areaPath: string,
+  path: string,
+  plottedPoints: {
+    x: number
+    y: number
+    id: string
+    label: React.ReactNode
+    value: number
+    valueLabel?: React.ReactNode
+    meta?: React.ReactNode
+  }[],
+  lastPoint: {
+    x: number
+    y: number
+    id: string
+    label: React.ReactNode
+    value: number
+    valueLabel?: React.ReactNode
+    meta?: React.ReactNode
+  }
+) {
+  return (
+    <div className="relative min-h-52">
+      <svg
+        viewBox="0 0 100 82"
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG semantics require an explicit ARIA role; HTML replacement elements cannot contain these graphics.
+        role="img"
+        aria-label="Line graph"
+        className="h-full min-h-52 w-full overflow-visible"
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+            <stop
+              offset="0%"
+              stopColor="var(--nextide-tide)"
+              stopOpacity="0.3"
+            />
+            <stop
+              offset="100%"
+              stopColor="var(--nextide-tide)"
+              stopOpacity="0"
+            />
+          </linearGradient>
+        </defs>
+        {[16, 34, 52].map((y) => (
+          <line
+            key={y}
+            x1="5"
+            x2="95"
+            y1={y}
+            y2={y}
+            stroke="currentColor"
+            strokeOpacity="0.1"
+            strokeWidth="0.5"
+          />
+        ))}
+        <path d={areaPath} fill={`url(#${gradientId})`} />
+        <path
+          d={path}
+          fill="none"
+          stroke="var(--nextide-tide)"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2.2"
+          vectorEffect="non-scaling-stroke"
+        />
+        {plottedPoints.map((point) => (
+          <circle
+            key={point.id}
+            cx={point.x}
+            cy={point.y}
+            r={point.id === lastPoint?.id ? 2.7 : 2.1}
+            fill="var(--background)"
+            stroke="var(--nextide-tide)"
+            strokeWidth="1.5"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+      </svg>
+    </div>
+  )
+}

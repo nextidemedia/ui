@@ -12,7 +12,6 @@ type WorkflowStep = {
   completed?: boolean
 }
 
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `WorkflowStepper` has too many lines (135); extract this function in the follow-up refactor.
 function WorkflowStepper({
   steps,
   activeStepId,
@@ -39,61 +38,7 @@ function WorkflowStepper({
     onContainedWheel(event)
   }
 
-  React.useLayoutEffect(() => {
-    const stepper = stepperRef.current
-    if (!stepper) return
-
-    const setOutline = (left: number, width: number) => {
-      stepper.style.setProperty("--workflow-outline-left", `${left}px`)
-      stepper.style.setProperty("--workflow-outline-width", `${width}px`)
-    }
-
-    if (activeIndex < 0) {
-      const left =
-        Number.parseFloat(
-          stepper.style.getPropertyValue("--workflow-outline-left")
-        ) || 8
-      const width =
-        Number.parseFloat(
-          stepper.style.getPropertyValue("--workflow-outline-width")
-        ) || 0
-      setOutline(left + width / 2, 0)
-      return
-    }
-
-    const activeStepElement = stepRefs.current[activeIndex]
-    if (!activeStepElement) return
-
-    let frame = 0
-    const measureOutline = () => {
-      setOutline(activeStepElement.offsetLeft, activeStepElement.offsetWidth)
-    }
-    const scheduleMeasureOutline = () => {
-      window.cancelAnimationFrame(frame)
-      frame = window.requestAnimationFrame(measureOutline)
-    }
-
-    measureOutline()
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches
-    activeStepElement.scrollIntoView({
-      block: "nearest",
-      inline: "nearest",
-      behavior: reduceMotion ? "auto" : "smooth",
-    })
-
-    const resizeObserver = new ResizeObserver(scheduleMeasureOutline)
-    resizeObserver.observe(stepper)
-    resizeObserver.observe(activeStepElement)
-    window.addEventListener("resize", scheduleMeasureOutline)
-
-    return () => {
-      window.cancelAnimationFrame(frame)
-      resizeObserver.disconnect()
-      window.removeEventListener("resize", scheduleMeasureOutline)
-    }
-  }, [activeIndex, stepperRef])
+  useWorkflowOutline(activeIndex, stepperRef, stepRefs)
 
   return (
     <nav
@@ -158,6 +103,68 @@ function WorkflowStepper({
       })}
     </nav>
   )
+}
+
+function useWorkflowOutline(
+  activeIndex: number,
+  stepperRef: React.RefObject<HTMLElement | null>,
+  stepRefs: React.RefObject<Array<HTMLButtonElement | null>>
+) {
+  React.useLayoutEffect(() => {
+    const stepper = stepperRef.current
+    if (!stepper) return
+
+    const setOutline = (left: number, width: number) => {
+      stepper.style.setProperty("--workflow-outline-left", `${left}px`)
+      stepper.style.setProperty("--workflow-outline-width", `${width}px`)
+    }
+
+    if (activeIndex < 0) {
+      const left =
+        Number.parseFloat(
+          stepper.style.getPropertyValue("--workflow-outline-left")
+        ) || 8
+      const width =
+        Number.parseFloat(
+          stepper.style.getPropertyValue("--workflow-outline-width")
+        ) || 0
+      setOutline(left + width / 2, 0)
+      return
+    }
+
+    const activeStepElement = stepRefs.current[activeIndex]
+    if (!activeStepElement) return
+
+    let frame = 0
+    const measureOutline = () => {
+      setOutline(activeStepElement.offsetLeft, activeStepElement.offsetWidth)
+    }
+    const scheduleMeasureOutline = () => {
+      window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(measureOutline)
+    }
+
+    measureOutline()
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+    activeStepElement.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+      behavior: reduceMotion ? "auto" : "smooth",
+    })
+
+    const resizeObserver = new ResizeObserver(scheduleMeasureOutline)
+    resizeObserver.observe(stepper)
+    resizeObserver.observe(activeStepElement)
+    window.addEventListener("resize", scheduleMeasureOutline)
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      resizeObserver.disconnect()
+      window.removeEventListener("resize", scheduleMeasureOutline)
+    }
+  }, [activeIndex, stepperRef, stepRefs])
 }
 
 function StepNumber({

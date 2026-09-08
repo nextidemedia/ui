@@ -22,12 +22,10 @@ Windows' `bin` directory to PATH so `just` can find `sh`.
   Port 4173 must be free. Focus with `just test-integration -g "campaign schedule"`.
 
 The [shared baseline](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md)
-sets complexity 12, function length 100, and source/test LOC limits. `.loc.json`
-records exact legacy file budgets; reduce them after extraction and never grow
-or regenerate them to accept new code. Narrow function comments record each
-existing metric and the extraction debt; they are not permission to grow those
-functions. Accessibility exceptions explain specific SVG, forwarded-prop, or
-scroll-region semantics. Existing ESLint/React Hooks rules remain until parity
+sets complexity 12, function length 100, and source/test LOC limits. All source
+files meet the 600-line limit and browser suites meet the 900-line test limit;
+`.loc.json` has no exceptions. Accessibility exceptions explain specific SVG,
+forwarded-prop, or scroll-region semantics. Existing ESLint/React Hooks rules remain until parity
 with Oxlint is verified. Oxlint 1.80.0 was the newest stable npm release at least
 seven days old on 2026-09-08; the existing formatter and TypeScript remain pinned.
 

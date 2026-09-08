@@ -81,7 +81,6 @@ function SidebarToggleButton({
   )
 }
 
-// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `SidebarBrand` has a complexity of 33; The function `SidebarBrand` has too many lines (182); extract this function in the follow-up refactor.
 function SidebarBrand({
   brand = "Nextide UI",
   eyebrow = "Package",
@@ -95,8 +94,6 @@ function SidebarBrand({
   onToggle,
   className,
 }: SidebarBrandProps) {
-  const clipBrandText = drawerCollapsed || drawerTransitioning
-  const condensed = density !== "current"
   const toggleButton = onToggle ? (
     <SidebarToggleButton
       drawerCollapsed={drawerCollapsed}
@@ -104,7 +101,55 @@ function SidebarBrand({
     />
   ) : null
 
-  const brandMark = (
+  return (
+    <header
+      data-slot="sidebar-brand"
+      data-collapsed={collapsed}
+      data-drawer-collapsed={drawerCollapsed}
+      data-density={density}
+      className={cn(
+        "relative z-30 grid w-full items-center overflow-visible transition-[grid-template-columns,gap,min-height,padding] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+        density === "current"
+          ? collapsed
+            ? "grid-cols-[4rem_0fr_0fr] gap-x-0 py-1 pr-0 pl-1"
+            : "grid-cols-[4rem_minmax(0,1fr)_auto] gap-x-0 py-1 pr-2 pl-1"
+          : collapsed
+            ? "grid-cols-[2.5rem_0fr_0fr] gap-x-0"
+            : "grid-cols-[2.5rem_minmax(0,1fr)_auto] gap-x-2",
+        className
+      )}
+    >
+      <SidebarBrandMark density={density} logo={logo} />
+      <SidebarBrandText
+        brand={brand}
+        eyebrow={eyebrow}
+        byline={byline}
+        bylineLogo={bylineLogo}
+        collapsed={collapsed}
+        drawerCollapsed={drawerCollapsed}
+        drawerTransitioning={drawerTransitioning}
+        density={density}
+      />
+      {toggleButton}
+    </header>
+  )
+}
+
+export {
+  SidebarBrand,
+  SidebarToggleButton,
+  type SidebarBrandProps,
+  type SidebarToggleButtonProps,
+}
+
+function SidebarBrandMark({
+  density,
+  logo,
+}: {
+  density: ShellDensity
+  logo: React.ReactNode
+}) {
+  return (
     <span
       className={cn(
         "relative z-30 grid shrink-0 place-items-center overflow-visible transition-[width,height] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
@@ -147,6 +192,32 @@ function SidebarBrand({
       </span>
     </span>
   )
+}
+
+type BrandTextProps = Required<
+  Pick<
+    SidebarBrandProps,
+    | "brand"
+    | "eyebrow"
+    | "byline"
+    | "collapsed"
+    | "drawerCollapsed"
+    | "drawerTransitioning"
+    | "density"
+  >
+> &
+  Pick<SidebarBrandProps, "bylineLogo">
+function SidebarBrandText({
+  brand,
+  eyebrow,
+  byline,
+  bylineLogo,
+  collapsed,
+  drawerCollapsed,
+  drawerTransitioning,
+  density,
+}: BrandTextProps) {
+  const clipBrandText = drawerCollapsed || drawerTransitioning
   const bylineMark = bylineLogo ?? (
     <img
       src={defaultBylineLogoUrl}
@@ -158,118 +229,101 @@ function SidebarBrand({
       )}
     />
   )
-
   return (
-    <header
-      data-slot="sidebar-brand"
-      data-collapsed={collapsed}
-      data-drawer-collapsed={drawerCollapsed}
-      data-density={density}
+    <span
+      data-slot="sidebar-brand-text"
+      aria-hidden={collapsed}
       className={cn(
-        "relative z-30 grid w-full items-center overflow-visible transition-[grid-template-columns,gap,min-height,padding] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-        density === "current"
-          ? collapsed
-            ? "grid-cols-[4rem_0fr_0fr] gap-x-0 py-1 pr-0 pl-1"
-            : "grid-cols-[4rem_minmax(0,1fr)_auto] gap-x-0 py-1 pr-2 pl-1"
-          : collapsed
-            ? "grid-cols-[2.5rem_0fr_0fr] gap-x-0"
-            : "grid-cols-[2.5rem_minmax(0,1fr)_auto] gap-x-2",
-        className
+        "relative z-10 min-w-0 whitespace-nowrap transition-[max-width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+        density === "current" ? "-my-3 py-3 pr-3 pl-3" : "py-1 pr-1",
+        drawerCollapsed ? "max-w-0 opacity-0" : "max-w-56 opacity-100",
+        clipBrandText ? "overflow-hidden" : "overflow-visible"
       )}
     >
-      {brandMark}
       <span
-        data-slot="sidebar-brand-text"
-        aria-hidden={collapsed}
+        data-slot="sidebar-brand-text-inner"
         className={cn(
-          "relative z-10 min-w-0 whitespace-nowrap transition-[max-width,opacity] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-          density === "current" ? "-my-3 py-3 pr-3 pl-3" : "py-1 pr-1",
-          drawerCollapsed ? "max-w-0 opacity-0" : "max-w-56 opacity-100",
-          clipBrandText ? "overflow-hidden" : "overflow-visible"
+          "grid transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+          density === "current" ? "gap-px" : "gap-0",
+          drawerCollapsed ? "-translate-x-56" : "translate-x-0"
         )}
       >
-        <span
-          data-slot="sidebar-brand-text-inner"
-          className={cn(
-            "grid transition-transform duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
-            density === "current" ? "gap-px" : "gap-0",
-            drawerCollapsed ? "-translate-x-56" : "translate-x-0"
-          )}
-        >
-          {condensed ? (
-            <>
-              <strong
-                className={cn(
-                  "truncate font-display font-bold [text-shadow:0_0_1px_rgb(255_255_255/0.72),0_0_12px_rgb(30_228_188/0.24)]",
-                  density === "compact"
-                    ? "text-[20px]/[20px]"
-                    : "text-[15px]/[15px]"
-                )}
-              >
-                {brand}
-              </strong>
-              <small
-                className={cn(
-                  "truncate font-semibold text-nextide-tide uppercase",
-                  density === "compact"
-                    ? "text-[11px] leading-4"
-                    : "text-[10px] leading-3.5"
-                )}
-              >
-                {eyebrow}
-              </small>
-              <span className="flex items-start gap-1 uppercase">
-                <b
-                  className={cn(
-                    "font-semibold text-muted-foreground",
-                    density === "compact"
-                      ? "text-[11px]/[16px]"
-                      : "text-[10px]/[14px]"
-                  )}
-                >
-                  By
-                </b>
-                {/* The wordmark's lowercase cap begins 28% below the image edge. */}
-                <span
-                  className={cn(
-                    "grid min-w-0 place-items-start overflow-visible pt-[calc(.5lh-.28em)]",
-                    density === "compact"
-                      ? "text-[16px]/[16px]"
-                      : "text-[14px]/[14px]"
-                  )}
-                >
-                  {bylineMark}
-                </span>
-              </span>
-            </>
-          ) : (
-            <>
-              <strong className="font-display text-ui-brand font-bold [text-shadow:0_0_1px_rgb(255_255_255/0.72),0_0_18px_rgb(30_228_188/0.34)]">
-                {brand}
-              </strong>
-              <small className="-mt-1 truncate text-ui-caption font-semibold text-nextide-tide uppercase">
-                {eyebrow}
-              </small>
-              <span className="flex items-center gap-1.5 uppercase">
-                <b className="-translate-y-1.5 text-ui-caption font-semibold text-muted-foreground">
-                  By
-                </b>
-                <span className="grid h-5 min-w-0 place-items-start overflow-visible">
-                  {bylineMark}
-                </span>
-              </span>
-            </>
-          )}
-        </span>
+        <SidebarBrandCopy
+          brand={brand}
+          eyebrow={eyebrow}
+          density={density}
+          bylineMark={bylineMark}
+        />
       </span>
-      {toggleButton}
-    </header>
+    </span>
   )
 }
 
-export {
-  SidebarBrand,
-  SidebarToggleButton,
-  type SidebarBrandProps,
-  type SidebarToggleButtonProps,
+function SidebarBrandCopy({
+  brand,
+  eyebrow,
+  density,
+  bylineMark,
+}: Pick<BrandTextProps, "brand" | "eyebrow" | "density"> & {
+  bylineMark: React.ReactNode
+}) {
+  const condensed = density !== "current"
+  return condensed ? (
+    <>
+      <strong
+        className={cn(
+          "truncate font-display font-bold [text-shadow:0_0_1px_rgb(255_255_255/0.72),0_0_12px_rgb(30_228_188/0.24)]",
+          density === "compact" ? "text-[20px]/[20px]" : "text-[15px]/[15px]"
+        )}
+      >
+        {brand}
+      </strong>
+      <small
+        className={cn(
+          "truncate font-semibold text-nextide-tide uppercase",
+          density === "compact"
+            ? "text-[11px] leading-4"
+            : "text-[10px] leading-3.5"
+        )}
+      >
+        {eyebrow}
+      </small>
+      <span className="flex items-start gap-1 uppercase">
+        <b
+          className={cn(
+            "font-semibold text-muted-foreground",
+            density === "compact" ? "text-[11px]/[16px]" : "text-[10px]/[14px]"
+          )}
+        >
+          By
+        </b>
+        {/* The wordmark's lowercase cap begins 28% below the image edge. */}
+        <span
+          className={cn(
+            "grid min-w-0 place-items-start overflow-visible pt-[calc(.5lh-.28em)]",
+            density === "compact" ? "text-[16px]/[16px]" : "text-[14px]/[14px]"
+          )}
+        >
+          {bylineMark}
+        </span>
+      </span>
+    </>
+  ) : (
+    <>
+      <strong className="font-display text-ui-brand font-bold [text-shadow:0_0_1px_rgb(255_255_255/0.72),0_0_18px_rgb(30_228_188/0.34)]">
+        {brand}
+      </strong>
+      <small className="-mt-1 truncate text-ui-caption font-semibold text-nextide-tide uppercase">
+        {eyebrow}
+      </small>
+      <span className="flex items-center gap-1.5 uppercase">
+        <b className="-translate-y-1.5 text-ui-caption font-semibold text-muted-foreground">
+          By
+        </b>
+        <span className="grid h-5 min-w-0 place-items-start overflow-visible">
+          {bylineMark}
+        </span>
+      </span>
+    </>
+  )
 }

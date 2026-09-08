@@ -48,7 +48,6 @@ const severityClasses: Record<LiveEventTimelineSeverity, string> = {
   critical: "border-nextide-red bg-nextide-red/15 text-nextide-red",
 }
 
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `LiveEventTimeline` has too many lines (122); extract this function in the follow-up refactor.
 function LiveEventTimeline({
   incidents,
   activeIncidentId,
@@ -143,34 +142,38 @@ function LiveEventTimeline({
           )
         })}
       </div>
-      <aside className="grid content-start gap-3 rounded-md border border-nextide-line bg-nextide-panel/80 p-4">
-        {activeIncident ? (
-          <>
-            <span className="text-xs font-medium text-nextide-tide">
-              {activeIncident.kind}
-            </span>
-            <h3 className="text-xl font-medium">{activeIncident.title}</h3>
-            <p className="text-sm text-muted-foreground">
-              {activeIncident.detail}
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <TimelineMetric label="Score">
-                {activeIncident.score.toFixed(2)}
-              </TimelineMetric>
-              <TimelineMetric label="Threshold">
-                {activeIncident.threshold.toFixed(2)}
-              </TimelineMetric>
-              <TimelineMetric label="Tier">
-                {activeIncident.tier}
-              </TimelineMetric>
-            </div>
-            <blockquote className="rounded-md border border-nextide-line bg-background/25 p-3 text-sm">
-              {activeIncident.transcript}
-            </blockquote>
-          </>
-        ) : null}
-      </aside>
+      {renderIncidentDetail(activeIncident)}
     </section>
+  )
+}
+
+function renderIncidentDetail(activeIncident: LiveEventTimelineIncident) {
+  return (
+    <aside className="grid content-start gap-3 rounded-md border border-nextide-line bg-nextide-panel/80 p-4">
+      {activeIncident ? (
+        <>
+          <span className="text-xs font-medium text-nextide-tide">
+            {activeIncident.kind}
+          </span>
+          <h3 className="text-xl font-medium">{activeIncident.title}</h3>
+          <p className="text-sm text-muted-foreground">
+            {activeIncident.detail}
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <TimelineMetric label="Score">
+              {activeIncident.score.toFixed(2)}
+            </TimelineMetric>
+            <TimelineMetric label="Threshold">
+              {activeIncident.threshold.toFixed(2)}
+            </TimelineMetric>
+            <TimelineMetric label="Tier">{activeIncident.tier}</TimelineMetric>
+          </div>
+          <blockquote className="rounded-md border border-nextide-line bg-background/25 p-3 text-sm">
+            {activeIncident.transcript}
+          </blockquote>
+        </>
+      ) : null}
+    </aside>
   )
 }
 

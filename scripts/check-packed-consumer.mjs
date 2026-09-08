@@ -32,6 +32,22 @@ const npmArgs =
 const tempRoot = await mkdtemp(join(tmpdir(), "nextide-ui-consumer-"))
 const consumerRoot = join(tempRoot, "consumer")
 
+const qualifiedExports = [
+  ["@nextide/ui/blocks/app-shell", "AppShell"],
+  ["@nextide/ui/blocks/navigation-panel", "NavigationPanel"],
+  ["@nextide/ui/blocks/campaign-schedule-matrix", "CampaignScheduleMatrix"],
+  ["@nextide/ui/blocks/creator-transfer", "CreatorTransfer"],
+  ["@nextide/ui/blocks/stream-selector", "StreamSelector"],
+  ["@nextide/ui/components/button", "Button"],
+  ["@nextide/ui/components/segmented-control", "SegmentedControl"],
+  ["@nextide/ui/components/signal-ridge-chart", "SignalRidgeChart"],
+  ["@nextide/ui/components/line-item-graph", "LineItemGraph"],
+  ["@nextide/ui/components/duration-picker", "DurationPicker"],
+  ["@nextide/ui/hooks/use-contained-scroll", "useContainedScroll"],
+  ["@nextide/ui/lib/format-number", "formatCompactNumber"],
+  ["@nextide/ui/lib/utils", "cn"],
+]
+
 function run(command, args, options = {}) {
   execFileSync(command, args, {
     stdio: "inherit",
@@ -106,14 +122,10 @@ try {
   await writeFile(
     join(consumerRoot, "consumer.ts"),
     [
-      'import { AppShell } from "@nextide/ui/blocks/app-shell"',
-      'import { Button } from "@nextide/ui/components/button"',
-      'import { SegmentedControl } from "@nextide/ui/components/segmented-control"',
-      'import { SignalRidgeChart } from "@nextide/ui/components/signal-ridge-chart"',
-      'import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"',
-      'import { formatCompactNumber } from "@nextide/ui/lib/format-number"',
-      'import { cn } from "@nextide/ui/lib/utils"',
-      "void [AppShell, Button, SegmentedControl, SignalRidgeChart, useContainedScroll, formatCompactNumber, cn]",
+      ...qualifiedExports.map(
+        ([path, name]) => `import { ${name} } from "${path}"`
+      ),
+      `void [${qualifiedExports.map(([, name]) => name).join(", ")}]`,
     ].join("\n")
   )
   run(
@@ -141,15 +153,7 @@ import { access, readFile } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
-for (const [path, name] of ${JSON.stringify([
-      ["@nextide/ui/blocks/app-shell", "AppShell"],
-      ["@nextide/ui/components/button", "Button"],
-      ["@nextide/ui/components/segmented-control", "SegmentedControl"],
-      ["@nextide/ui/components/signal-ridge-chart", "SignalRidgeChart"],
-      ["@nextide/ui/hooks/use-contained-scroll", "useContainedScroll"],
-      ["@nextide/ui/lib/format-number", "formatCompactNumber"],
-      ["@nextide/ui/lib/utils", "cn"],
-    ])}) {
+for (const [path, name] of ${JSON.stringify(qualifiedExports)}) {
   assert(name in (await import(path)), path + " must export " + name)
 }
 
