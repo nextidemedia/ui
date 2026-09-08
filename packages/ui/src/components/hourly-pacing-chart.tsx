@@ -146,25 +146,8 @@ function renderPacingPlot(
   ticks: number[],
   scaleMax: number,
   targetValue: number,
-  normalizedBuckets: {
-    hour: number
-    value: number
-    id?: string
-    valueLabel?: React.ReactNode
-    detail?: React.ReactNode
-    tone?: HourlyPacingTone
-  }[],
-  activeBucket:
-    | {
-        hour: number
-        value: number
-        id?: string
-        valueLabel?: React.ReactNode
-        detail?: React.ReactNode
-        tone?: HourlyPacingTone
-      }
-    | null
-    | undefined,
+  normalizedBuckets: HourlyPacingBucket[],
+  activeBucket: HourlyPacingBucket | null | undefined,
   setInternalActiveHour: React.Dispatch<React.SetStateAction<number | null>>,
   onActiveHourChange: ((bucket: HourlyPacingBucket) => void) | undefined
 ) {
@@ -221,27 +204,10 @@ function renderPacingPlot(
 }
 
 function renderPacingBars(
-  normalizedBuckets: {
-    hour: number
-    value: number
-    id?: string
-    valueLabel?: React.ReactNode
-    detail?: React.ReactNode
-    tone?: HourlyPacingTone
-  }[],
+  normalizedBuckets: HourlyPacingBucket[],
   scaleMax: number,
   targetValue: number,
-  activeBucket:
-    | {
-        hour: number
-        value: number
-        id?: string
-        valueLabel?: React.ReactNode
-        detail?: React.ReactNode
-        tone?: HourlyPacingTone
-      }
-    | null
-    | undefined,
+  activeBucket: HourlyPacingBucket | null | undefined,
   setInternalActiveHour: React.Dispatch<React.SetStateAction<number | null>>,
   onActiveHourChange: ((bucket: HourlyPacingBucket) => void) | undefined
 ) {
@@ -285,17 +251,7 @@ function renderPacingBars(
 function renderPacingDetail(
   peak: number,
   low: number,
-  activeBucket:
-    | {
-        hour: number
-        value: number
-        id?: string
-        valueLabel?: React.ReactNode
-        detail?: React.ReactNode
-        tone?: HourlyPacingTone
-      }
-    | null
-    | undefined
+  activeBucket: HourlyPacingBucket | null | undefined
 ) {
   return (
     <div className="flex min-h-8 flex-wrap items-center gap-2 text-xs text-muted-foreground">

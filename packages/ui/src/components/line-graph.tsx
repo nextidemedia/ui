@@ -114,24 +114,8 @@ function renderLinePlot(
   gradientId: string,
   areaPath: string,
   path: string,
-  plottedPoints: {
-    x: number
-    y: number
-    id: string
-    label: React.ReactNode
-    value: number
-    valueLabel?: React.ReactNode
-    meta?: React.ReactNode
-  }[],
-  lastPoint: {
-    x: number
-    y: number
-    id: string
-    label: React.ReactNode
-    value: number
-    valueLabel?: React.ReactNode
-    meta?: React.ReactNode
-  }
+  plottedPoints: (LineGraphPoint & { x: number; y: number })[],
+  lastPoint: LineGraphPoint & { x: number; y: number }
 ) {
   return (
     <div className="relative min-h-52">
