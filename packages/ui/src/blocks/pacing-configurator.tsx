@@ -23,7 +23,6 @@ type PacingPreset = {
   meta?: React.ReactNode
 }
 
-// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `PacingConfigurator` has a complexity of 15; The function `PacingConfigurator` has too many lines (108); extract this function in the follow-up refactor.
 function PacingConfigurator({
   presets,
   activePresetId,
@@ -70,33 +69,7 @@ function PacingConfigurator({
       </SurfaceHeader>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="nextide-contained-scroll nextide-scrollbar-none max-w-full overflow-x-auto">
-          <SegmentedControl
-            value={activePreset?.id ?? ""}
-            size="tall"
-            className="min-w-[30rem]"
-            aria-label="Pacing preset"
-            options={presets.map((preset) => ({
-              value: preset.id,
-              label: (
-                <span className="grid min-w-0 gap-0.5 text-left">
-                  <strong className="truncate font-medium">
-                    {preset.label}
-                  </strong>
-                  {preset.meta ? (
-                    <span className="truncate text-ui-caption opacity-75">
-                      {preset.meta}
-                    </span>
-                  ) : null}
-                </span>
-              ),
-            }))}
-            onValueChange={(presetId) => {
-              const preset = presets.find((item) => item.id === presetId)
-              if (preset) onPresetChange(preset)
-            }}
-          />
-        </div>
+        {renderPacingPresets(activePreset, presets, onPresetChange)}
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" onClick={onRevert}>
             <RotateCcw />
@@ -109,19 +82,13 @@ function PacingConfigurator({
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <Metric
-          value={rangeLabel ?? activePreset?.label ?? "Custom"}
-          label="Range"
-          detail={activePreset?.meta ?? "Viewport preset"}
-        />
-        <Metric value={targetLabel ?? `${targetValue}%`} label="Target" />
-        <Metric
-          value={actualLabel ?? "Live"}
-          label="Delivery"
-          detail="Current pacing"
-        />
-      </div>
+      {renderPacingMetrics(
+        rangeLabel,
+        activePreset,
+        targetLabel,
+        targetValue,
+        actualLabel
+      )}
 
       <HourlyPacingChart
         buckets={buckets}
@@ -139,3 +106,61 @@ function PacingConfigurator({
 }
 
 export { PacingConfigurator, type PacingPreset }
+
+function renderPacingPresets(
+  activePreset: PacingPreset,
+  presets: PacingPreset[],
+  onPresetChange: (preset: PacingPreset) => void
+) {
+  return (
+    <div className="nextide-contained-scroll nextide-scrollbar-none max-w-full overflow-x-auto">
+      <SegmentedControl
+        value={activePreset?.id ?? ""}
+        size="tall"
+        className="min-w-[30rem]"
+        aria-label="Pacing preset"
+        options={presets.map((preset) => ({
+          value: preset.id,
+          label: (
+            <span className="grid min-w-0 gap-0.5 text-left">
+              <strong className="truncate font-medium">{preset.label}</strong>
+              {preset.meta ? (
+                <span className="truncate text-ui-caption opacity-75">
+                  {preset.meta}
+                </span>
+              ) : null}
+            </span>
+          ),
+        }))}
+        onValueChange={(presetId) => {
+          const preset = presets.find((item) => item.id === presetId)
+          if (preset) onPresetChange(preset)
+        }}
+      />
+    </div>
+  )
+}
+
+function renderPacingMetrics(
+  rangeLabel: React.ReactNode,
+  activePreset: PacingPreset | undefined,
+  targetLabel: React.ReactNode,
+  targetValue: number,
+  actualLabel: React.ReactNode
+) {
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      <Metric
+        value={rangeLabel ?? activePreset?.label ?? "Custom"}
+        label="Range"
+        detail={activePreset?.meta ?? "Viewport preset"}
+      />
+      <Metric value={targetLabel ?? `${targetValue}%`} label="Target" />
+      <Metric
+        value={actualLabel ?? "Live"}
+        label="Delivery"
+        detail="Current pacing"
+      />
+    </div>
+  )
+}

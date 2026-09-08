@@ -34,7 +34,6 @@ const eventToneClasses = {
   danger: "border-nextide-red/45 bg-nextide-red/10",
 }
 
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `LiveguardIncidentReview` has too many lines (128); extract this function in the follow-up refactor.
 function LiveguardIncidentReview({
   title = "LiveGuard incident review",
   description = "Creator timeline, transcript proof, and score threshold evidence.",
@@ -95,37 +94,7 @@ function LiveguardIncidentReview({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <Surface variant="plain" className="grid content-start gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <strong className="text-sm">Evidence timeline</strong>
-            <StatusBadge tone="warning">Review</StatusBadge>
-          </div>
-          <div className="grid gap-2">
-            {events.map((event) => (
-              <div
-                key={event.id}
-                className={cn(
-                  "grid grid-cols-[4.25rem_minmax(0,1fr)] gap-3 rounded-lg border p-2 text-sm",
-                  eventToneClasses[event.tone ?? "neutral"]
-                )}
-              >
-                <span className="text-xs font-medium text-nextide-tide">
-                  {event.time}
-                </span>
-                <span className="grid min-w-0 gap-1">
-                  <strong className="truncate leading-tight">
-                    {event.label}
-                  </strong>
-                  {event.detail ? (
-                    <span className="text-xs text-muted-foreground">
-                      {event.detail}
-                    </span>
-                  ) : null}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Surface>
+        {renderIncidentTimeline(events)}
 
         <div className="grid gap-4">
           <Surface variant="plain" className="grid gap-3">
@@ -172,4 +141,38 @@ export {
   LiveguardIncidentReview,
   type LiveguardProofRow,
   type LiveguardTimelineEvent,
+}
+
+function renderIncidentTimeline(events: LiveguardTimelineEvent[]) {
+  return (
+    <Surface variant="plain" className="grid content-start gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <strong className="text-sm">Evidence timeline</strong>
+        <StatusBadge tone="warning">Review</StatusBadge>
+      </div>
+      <div className="grid gap-2">
+        {events.map((event) => (
+          <div
+            key={event.id}
+            className={cn(
+              "grid grid-cols-[4.25rem_minmax(0,1fr)] gap-3 rounded-lg border p-2 text-sm",
+              eventToneClasses[event.tone ?? "neutral"]
+            )}
+          >
+            <span className="text-xs font-medium text-nextide-tide">
+              {event.time}
+            </span>
+            <span className="grid min-w-0 gap-1">
+              <strong className="truncate leading-tight">{event.label}</strong>
+              {event.detail ? (
+                <span className="text-xs text-muted-foreground">
+                  {event.detail}
+                </span>
+              ) : null}
+            </span>
+          </div>
+        ))}
+      </div>
+    </Surface>
+  )
 }

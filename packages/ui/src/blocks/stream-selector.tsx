@@ -7,7 +7,7 @@ import {
 } from "@nextide/ui/blocks/creator-scope-panel"
 import { Empty, EmptyDescription } from "@nextide/ui/components/empty"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
-import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
+import { useStreamFilterMotion } from "./stream-selector-motion.js"
 import { cn } from "@nextide/ui/lib/utils"
 
 type StreamSelectorTone = "success" | "processing" | "warning" | "danger"
@@ -31,10 +31,6 @@ type StreamSelectorCreatorScopeProps = Pick<
   "beforeHeader" | "children" | "getAction" | "title" | "allLabel"
 >
 
-const filterEase = "cubic-bezier(0.76, 0, 0.24, 1)"
-const defaultFilterMotion = { exit: 220, move: 300, enter: 220 }
-
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `StreamSelector` has too many lines (302); extract this function in the follow-up refactor.
 function StreamSelector({
   creators,
   streams,
@@ -54,207 +50,17 @@ function StreamSelector({
   creatorScopeProps?: StreamSelectorCreatorScopeProps
   emptyLabel?: React.ReactNode
 }) {
-  const [activeCreatorId, setActiveCreatorId] = React.useState("all")
-  const sortedStreams = React.useMemo(() => streams, [streams])
-  const [renderedStreams, setRenderedStreams] = React.useState(sortedStreams)
-  const [enteringStreamIds, setEnteringStreamIds] = React.useState<Set<string>>(
-    () => new Set()
-  )
-  const [motionLocked, setMotionLocked] = React.useState(false)
+  const {
+    activeCreatorId,
+    renderedStreams,
+    enteringStreamIds,
+    motionLocked,
+    setRowRef,
+    listRef,
+    onWheel,
+    changeCreatorFilter,
+  } = useStreamFilterMotion(creators, streams)
   const selectedIdSet = React.useMemo(() => new Set(selectedIds), [selectedIds])
-  const rowRefs = React.useRef<Record<string, HTMLButtonElement | null>>({})
-  const motionTimers = React.useRef<number[]>([])
-  const filterMotion = React.useRef(defaultFilterMotion)
-  const reflowMotion = React.useRef<{
-    previousRects: Map<string, DOMRect>
-    enteringIds: Set<string>
-  } | null>(null)
-  const { ref: listRef, onWheel } = useContainedScroll<HTMLDivElement>({
-    axis: "y",
-  })
-  const visibleStreams = React.useMemo(
-    () =>
-      activeCreatorId === "all"
-        ? sortedStreams
-        : sortedStreams.filter(
-            (stream) => stream.creatorId === activeCreatorId
-          ),
-    [activeCreatorId, sortedStreams]
-  )
-
-  const clearMotionTimers = React.useCallback(() => {
-    motionTimers.current.forEach((timer) => window.clearTimeout(timer))
-    motionTimers.current = []
-  }, [])
-
-  const queueMotionTimer = React.useCallback(
-    (callback: () => void, delay: number) => {
-      const timer = window.setTimeout(callback, delay)
-      motionTimers.current.push(timer)
-    },
-    []
-  )
-
-  const changeCreatorFilter = (nextCreatorId: string) => {
-    if (motionLocked || nextCreatorId === activeCreatorId) return
-
-    filterMotion.current = readFilterMotion(listRef.current)
-    const motion = filterMotion.current
-    const stateScale = motion.exit / defaultFilterMotion.exit
-
-    const nextStreams =
-      nextCreatorId === "all"
-        ? sortedStreams
-        : sortedStreams.filter((stream) => stream.creatorId === nextCreatorId)
-    const previousIds = new Set(renderedStreams.map((stream) => stream.id))
-    const nextIds = new Set(nextStreams.map((stream) => stream.id))
-    const exitingIds = new Set(
-      [...previousIds].filter((streamId) => !nextIds.has(streamId))
-    )
-    const enteringIds = new Set<string>()
-    nextStreams.forEach((stream) => {
-      if (!previousIds.has(stream.id)) {
-        enteringIds.add(stream.id)
-      }
-    })
-    const previousRects = new Map<string, DOMRect>()
-
-    renderedStreams.forEach((stream) => {
-      const row = rowRefs.current[stream.id]
-      if (row) {
-        row.getAnimations().forEach((animation) => animation.cancel())
-        previousRects.set(stream.id, row.getBoundingClientRect())
-      }
-    })
-
-    setActiveCreatorId(nextCreatorId)
-    setMotionLocked(true)
-    ;[...exitingIds].forEach((streamId, index) => {
-      const row = rowRefs.current[streamId]
-      if (!row) return
-
-      row.animate(
-        [
-          { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
-          { opacity: 0, transform: "translate3d(108%, 0, 0) scale(0.985)" },
-        ],
-        {
-          delay: Math.min(index * 17, 50) * stateScale,
-          duration: motion.exit,
-          easing: filterEase,
-          fill: "forwards",
-        }
-      )
-    })
-
-    const exitDelay =
-      exitingIds.size > 0
-        ? motion.exit + Math.min((exitingIds.size - 1) * 17, 50) * stateScale
-        : 0
-    queueMotionTimer(() => {
-      reflowMotion.current = { previousRects, enteringIds }
-      setEnteringStreamIds(enteringIds)
-      setRenderedStreams(nextStreams)
-    }, exitDelay)
-  }
-
-  React.useEffect(() => () => clearMotionTimers(), [clearMotionTimers])
-
-  React.useLayoutEffect(() => {
-    const motion = reflowMotion.current
-    if (!motion) return
-    const durations = filterMotion.current
-    const stateScale = durations.enter / defaultFilterMotion.enter
-
-    reflowMotion.current = null
-    const survivors = renderedStreams.filter(
-      (stream) =>
-        motion.previousRects.has(stream.id) &&
-        !motion.enteringIds.has(stream.id)
-    )
-
-    survivors.forEach((stream) => {
-      const row = rowRefs.current[stream.id]
-      const previousRect = motion.previousRects.get(stream.id)
-      if (!row || !previousRect) return
-
-      const nextRect = row.getBoundingClientRect()
-      const deltaX = previousRect.left - nextRect.left
-      const deltaY = previousRect.top - nextRect.top
-
-      if (Math.abs(deltaX) > 0.5 || Math.abs(deltaY) > 0.5) {
-        row.animate(
-          [
-            {
-              transform: `translate3d(${deltaX}px, ${deltaY}px, 0)`,
-              opacity: 1,
-            },
-            { transform: "translate3d(0, 0, 0)", opacity: 1 },
-          ],
-          { duration: durations.move, easing: filterEase }
-        )
-      }
-    })
-
-    queueMotionTimer(
-      () => {
-        const enteringIds = [...motion.enteringIds]
-        enteringIds.forEach((streamId, index) => {
-          const row = rowRefs.current[streamId]
-          if (!row) return
-
-          row.animate(
-            [
-              { opacity: 0, transform: "translate3d(108%, 0, 0) scale(0.985)" },
-              { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
-            ],
-            {
-              delay: Math.min(index * 20, 61) * stateScale,
-              duration: durations.enter,
-              easing: filterEase,
-              fill: "both",
-            }
-          )
-        })
-
-        const enterDelay =
-          enteringIds.length > 0
-            ? durations.enter +
-              Math.min((enteringIds.length - 1) * 20, 61) * stateScale
-            : 0
-        queueMotionTimer(() => {
-          setEnteringStreamIds(new Set())
-          setMotionLocked(false)
-        }, enterDelay)
-      },
-      survivors.length > 0 ? durations.move : 0
-    )
-  }, [queueMotionTimer, renderedStreams])
-
-  React.useEffect(() => {
-    if (motionLocked) return
-
-    const renderedIds = renderedStreams.map((stream) => stream.id).join("|")
-    const visibleIds = visibleStreams.map((stream) => stream.id).join("|")
-    if (renderedIds === visibleIds) return
-
-    const syncTimer = window.setTimeout(() => {
-      setRenderedStreams(visibleStreams)
-    }, 0)
-
-    return () => window.clearTimeout(syncTimer)
-  }, [motionLocked, renderedStreams, visibleStreams])
-
-  React.useEffect(() => {
-    if (activeCreatorId === "all") return
-    if (creators.some((creator) => creator.id === activeCreatorId)) return
-
-    const syncTimer = window.setTimeout(() => {
-      setActiveCreatorId("all")
-    }, 0)
-
-    return () => window.clearTimeout(syncTimer)
-  }, [activeCreatorId, creators])
 
   return (
     <section
@@ -283,114 +89,109 @@ function StreamSelector({
             <EmptyDescription>{emptyLabel}</EmptyDescription>
           </Empty>
         ) : null}
-        {renderedStreams.map((stream) => {
-          const selected = selectedIdSet.has(stream.id)
-          const entering = enteringStreamIds.has(stream.id)
-
-          return (
-            <button
-              key={stream.id}
-              type="button"
-              disabled={stream.disabled}
-              aria-pressed={selected}
-              ref={(node) => {
-                if (node) {
-                  rowRefs.current[stream.id] = node
-                } else {
-                  delete rowRefs.current[stream.id]
-                }
-              }}
-              className={cn(
-                "grid min-h-[4.9rem] w-full min-w-0 grid-cols-[5.5rem_minmax(0,1fr)_7rem_auto_1.75rem] items-center gap-3 rounded-lg border border-nextide-line bg-nextide-panel px-3 py-2 text-left transition-[background-color,border-color,box-shadow]",
-                selected &&
-                  "border-nextide-tide/55 bg-nextide-tide/10 shadow-[0_0_24px_rgb(30_228_188/0.13)]",
-                "disabled:cursor-not-allowed disabled:opacity-45"
-              )}
-              style={
-                entering
-                  ? {
-                      opacity: 0,
-                      transform: "translate3d(108%, 0, 0) scale(0.985)",
-                    }
-                  : undefined
-              }
-              onClick={() =>
-                onSelectedIdsChange(
-                  selected
-                    ? selectedIds.filter((id) => id !== stream.id)
-                    : [...selectedIds, stream.id]
-                )
-              }
-            >
-              <span
-                className="grid h-14 place-items-center rounded-md bg-nextide-panel-strong text-nextide-tide"
-                style={
-                  stream.thumbnail
-                    ? { background: stream.thumbnail }
-                    : undefined
-                }
-              >
-                {!stream.thumbnail ? <Video className="size-5" /> : null}
-              </span>
-              <span className="grid min-w-0 gap-1">
-                <strong className="truncate text-sm">{stream.title}</strong>
-                <small className="truncate text-xs text-muted-foreground">
-                  {stream.creatorName}
-                  {stream.meta ? <> - {stream.meta}</> : null}
-                </small>
-              </span>
-              <span className="grid justify-items-end gap-1 text-xs text-muted-foreground">
-                {stream.dateLabel ? <span>{stream.dateLabel}</span> : null}
-                {stream.durationLabel ? (
-                  <small>{stream.durationLabel}</small>
-                ) : null}
-              </span>
-              <StatusBadge tone={stream.readinessTone ?? "success"}>
-                {stream.readinessLabel ?? "Ready"}
-              </StatusBadge>
-              <span
-                className={cn(
-                  "grid size-6 place-items-center rounded-md border border-nextide-line",
-                  selected &&
-                    "border-nextide-tide bg-nextide-tide text-background"
-                )}
-              >
-                {selected ? <Check className="size-3.5" /> : null}
-              </span>
-            </button>
-          )
-        })}
+        {renderedStreams.map((stream) => (
+          <StreamRow
+            key={stream.id}
+            stream={stream}
+            selected={selectedIdSet.has(stream.id)}
+            entering={enteringStreamIds.has(stream.id)}
+            setRowRef={setRowRef}
+            selectedIds={selectedIds}
+            onSelectedIdsChange={onSelectedIdsChange}
+          />
+        ))}
       </div>
     </section>
   )
 }
 
-function readFilterMotion(node: HTMLElement | null) {
-  if (!node || typeof window === "undefined") return defaultFilterMotion
-
-  const styles = window.getComputedStyle(node)
-  return {
-    exit: readCssTime(
-      styles.getPropertyValue("--nextide-motion-state"),
-      defaultFilterMotion.exit
-    ),
-    move: readCssTime(
-      styles.getPropertyValue("--nextide-motion-layout"),
-      defaultFilterMotion.move
-    ),
-    enter: readCssTime(
-      styles.getPropertyValue("--nextide-motion-state"),
-      defaultFilterMotion.enter
-    ),
-  }
+function StreamRow({
+  stream,
+  selected,
+  entering,
+  setRowRef,
+  selectedIds,
+  onSelectedIdsChange,
+}: {
+  stream: StreamSelectorItem
+  selected: boolean
+  entering: boolean
+  setRowRef: (id: string, node: HTMLButtonElement | null) => void
+  selectedIds: string[]
+  onSelectedIdsChange: (ids: string[]) => void
+}) {
+  return (
+    <button
+      type="button"
+      disabled={stream.disabled}
+      aria-pressed={selected}
+      ref={(node) => setRowRef(stream.id, node)}
+      className={cn(
+        "grid min-h-[4.9rem] w-full min-w-0 grid-cols-[5.5rem_minmax(0,1fr)_7rem_auto_1.75rem] items-center gap-3 rounded-lg border border-nextide-line bg-nextide-panel px-3 py-2 text-left transition-[background-color,border-color,box-shadow]",
+        selected &&
+          "border-nextide-tide/55 bg-nextide-tide/10 shadow-[0_0_24px_rgb(30_228_188/0.13)]",
+        "disabled:cursor-not-allowed disabled:opacity-45"
+      )}
+      style={
+        entering
+          ? {
+              opacity: 0,
+              transform: "translate3d(108%, 0, 0) scale(0.985)",
+            }
+          : undefined
+      }
+      onClick={() =>
+        onSelectedIdsChange(
+          selected
+            ? selectedIds.filter((id) => id !== stream.id)
+            : [...selectedIds, stream.id]
+        )
+      }
+    >
+      <StreamRowContents stream={stream} selected={selected} />
+    </button>
+  )
 }
 
-function readCssTime(value: string, fallback: number) {
-  const parsed = Number.parseFloat(value)
-  if (!Number.isFinite(parsed)) return fallback
-  return value.trim().endsWith("s") && !value.trim().endsWith("ms")
-    ? parsed * 1000
-    : parsed
+function StreamRowContents({
+  stream,
+  selected,
+}: {
+  stream: StreamSelectorItem
+  selected: boolean
+}) {
+  return (
+    <>
+      <span
+        className="grid h-14 place-items-center rounded-md bg-nextide-panel-strong text-nextide-tide"
+        style={stream.thumbnail ? { background: stream.thumbnail } : undefined}
+      >
+        {!stream.thumbnail ? <Video className="size-5" /> : null}
+      </span>
+      <span className="grid min-w-0 gap-1">
+        <strong className="truncate text-sm">{stream.title}</strong>
+        <small className="truncate text-xs text-muted-foreground">
+          {stream.creatorName}
+          {stream.meta ? <> - {stream.meta}</> : null}
+        </small>
+      </span>
+      <span className="grid justify-items-end gap-1 text-xs text-muted-foreground">
+        {stream.dateLabel ? <span>{stream.dateLabel}</span> : null}
+        {stream.durationLabel ? <small>{stream.durationLabel}</small> : null}
+      </span>
+      <StatusBadge tone={stream.readinessTone ?? "success"}>
+        {stream.readinessLabel ?? "Ready"}
+      </StatusBadge>
+      <span
+        className={cn(
+          "grid size-6 place-items-center rounded-md border border-nextide-line",
+          selected && "border-nextide-tide bg-nextide-tide text-background"
+        )}
+      >
+        {selected ? <Check className="size-3.5" /> : null}
+      </span>
+    </>
+  )
 }
 
 export {

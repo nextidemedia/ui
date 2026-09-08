@@ -12,7 +12,6 @@ const toneClasses: Record<ScoreRingTone, string> = {
   neutral: "[--score-ring-color:var(--muted-foreground)]",
 }
 
-// oxlint-disable-next-line complexity -- Legacy baseline: function `ScoreRing` has a complexity of 19; extract this function in the follow-up refactor.
 function ScoreRing({
   value,
   min = 0,
@@ -37,20 +36,14 @@ function ScoreRing({
   tone?: ScoreRingTone
   size?: "sm" | "default" | "lg"
 }) {
-  const hasValidRange =
-    Number.isFinite(min) && Number.isFinite(max) && max > min
-  const hasValue =
-    typeof value === "number" && Number.isFinite(value) && hasValidRange
-  const normalizedValue = hasValue ? clamp(value, min, max) : undefined
-  const progress =
-    normalizedValue === undefined
-      ? 0
-      : ((normalizedValue - min) / (max - min)) * 100
-  const fallbackValueLabel = formatValue(normalizedValue)
-  const accessibleValue =
-    normalizedValue === undefined ? "Unavailable" : fallbackValueLabel
-  const meterMin = hasValidRange ? min : 0
-  const meterMax = hasValidRange ? max : 1
+  const {
+    normalizedValue,
+    progress,
+    fallbackValueLabel,
+    accessibleValue,
+    meterMin,
+    meterMax,
+  } = getScore(value, min, max)
 
   return (
     <span
@@ -92,6 +85,32 @@ function ScoreRing({
       </span>
     </span>
   )
+}
+
+function getScore(value: number | undefined, min: number, max: number) {
+  const hasValidRange =
+    Number.isFinite(min) && Number.isFinite(max) && max > min
+  const hasValue =
+    typeof value === "number" && Number.isFinite(value) && hasValidRange
+  const normalizedValue = hasValue ? clamp(value, min, max) : undefined
+  const progress =
+    normalizedValue === undefined
+      ? 0
+      : ((normalizedValue - min) / (max - min)) * 100
+  const fallbackValueLabel = formatValue(normalizedValue)
+  const accessibleValue =
+    normalizedValue === undefined ? "Unavailable" : fallbackValueLabel
+  const meterMin = hasValidRange ? min : 0
+  const meterMax = hasValidRange ? max : 1
+
+  return {
+    normalizedValue,
+    progress,
+    fallbackValueLabel,
+    accessibleValue,
+    meterMin,
+    meterMax,
+  }
 }
 
 function clamp(value: number | undefined, min: number, max: number) {

@@ -37,7 +37,6 @@ const toneClasses: Record<CreatorFlowTone, string> = {
   danger: "border-nextide-red/60 bg-nextide-red/16 text-nextide-red",
 }
 
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `CreatorFlowChart` has too many lines (219); extract this function in the follow-up refactor.
 function CreatorFlowChart({
   creators,
   days,
@@ -51,94 +50,11 @@ function CreatorFlowChart({
   sessions: CreatorFlowSession[]
   onSessionsChange?: (sessions: CreatorFlowSession[]) => void
 }) {
-  const gridRef = React.useRef<HTMLDivElement | null>(null)
-  const dragState = React.useRef<DragState | null>(null)
   const { ref: scrollRef, onWheel } = useContainedScroll<HTMLDivElement>({
     axis: "x",
   })
-  const columnCount = Math.max(1, days.length)
-
-  const updateSession = React.useCallback(
-    (sessionId: string, startIndex: number, endIndex: number) => {
-      onSessionsChange?.(
-        sessions.map((session) =>
-          session.id === sessionId
-            ? {
-                ...session,
-                startIndex: clamp(startIndex, 0, columnCount - 1),
-                endIndex: clamp(endIndex, 0, columnCount - 1),
-              }
-            : session
-        )
-      )
-    },
-    [columnCount, onSessionsChange, sessions]
-  )
-
-  const beginDrag = (
-    event: React.PointerEvent,
-    session: CreatorFlowSession,
-    mode: DragState["mode"]
-  ) => {
-    const grid = gridRef.current
-    if (!grid || !onSessionsChange) return
-
-    const rect = grid.getBoundingClientRect()
-    dragState.current = {
-      id: session.id,
-      mode,
-      pointerStartX: event.clientX,
-      originalStart: session.startIndex,
-      originalEnd: session.endIndex,
-      columnWidth: rect.width / columnCount,
-    }
-    event.currentTarget.setPointerCapture(event.pointerId)
-  }
-
-  const moveDrag = (event: React.PointerEvent) => {
-    const drag = dragState.current
-    if (!drag) return
-
-    const deltaColumns = Math.round(
-      (event.clientX - drag.pointerStartX) / drag.columnWidth
-    )
-    const span = drag.originalEnd - drag.originalStart
-    if (drag.mode === "move") {
-      const nextStart = clamp(
-        drag.originalStart + deltaColumns,
-        0,
-        columnCount - span - 1
-      )
-      updateSession(drag.id, nextStart, nextStart + span)
-      return
-    }
-    if (drag.mode === "start") {
-      updateSession(
-        drag.id,
-        clamp(drag.originalStart + deltaColumns, 0, drag.originalEnd),
-        drag.originalEnd
-      )
-      return
-    }
-    updateSession(
-      drag.id,
-      drag.originalStart,
-      clamp(
-        drag.originalEnd + deltaColumns,
-        drag.originalStart,
-        columnCount - 1
-      )
-    )
-  }
-
-  const endDrag = (event: React.PointerEvent) => {
-    dragState.current = null
-    try {
-      event.currentTarget.releasePointerCapture(event.pointerId)
-    } catch {
-      // The resize handles own pointer capture, while the row handles bubbling.
-    }
-  }
+  const { gridRef, columnCount, beginDrag, moveDrag, endDrag } =
+    useFlowInteraction(days.length, sessions, onSessionsChange)
 
   return (
     <section
@@ -193,78 +109,198 @@ function CreatorFlowChart({
                 </span>
               ))}
             </div>
-            <div ref={gridRef} className="grid">
-              {creators.map((creator) => {
-                const creatorSessions = sessions.filter(
-                  (session) => session.creatorId === creator.id
-                )
-                return (
-                  <div
-                    key={creator.id}
-                    className="relative h-14 border-t border-nextide-line/70 bg-[linear-gradient(90deg,rgb(255_255_255/0.035)_1px,transparent_1px)]"
-                    style={{
-                      backgroundSize: `${100 / columnCount}% 100%`,
-                    }}
-                  >
-                    {creatorSessions.map((session) => {
-                      const start = clamp(
-                        session.startIndex,
-                        0,
-                        columnCount - 1
-                      )
-                      const end = clamp(
-                        session.endIndex,
-                        start,
-                        columnCount - 1
-                      )
-                      const left = (start / columnCount) * 100
-                      const width = ((end - start + 1) / columnCount) * 100
-
-                      return (
-                        <button
-                          key={session.id}
-                          type="button"
-                          className={cn(
-                            "absolute top-2 bottom-2 grid min-w-12 grid-cols-[0.75rem_minmax(0,1fr)_0.75rem] items-center rounded-lg border px-1 text-left text-xs font-medium shadow-[0_0_24px_rgb(30_228_188/0.12)] transition-[filter] hover:brightness-110",
-                            toneClasses[session.tone ?? "success"],
-                            onSessionsChange &&
-                              "cursor-grab active:cursor-grabbing"
-                          )}
-                          style={{ left: `${left}%`, width: `${width}%` }}
-                          onPointerDown={(event) =>
-                            beginDrag(event, session, "move")
-                          }
-                          onPointerMove={moveDrag}
-                          onPointerUp={endDrag}
-                          onPointerCancel={endDrag}
-                        >
-                          <span
-                            className="h-full cursor-ew-resize rounded-l-md"
-                            onPointerDown={(event) => {
-                              event.stopPropagation()
-                              beginDrag(event, session, "start")
-                            }}
-                          />
-                          <span className="truncate px-1">{session.label}</span>
-                          <span
-                            className="h-full cursor-ew-resize rounded-r-md"
-                            onPointerDown={(event) => {
-                              event.stopPropagation()
-                              beginDrag(event, session, "end")
-                            }}
-                          />
-                        </button>
-                      )
-                    })}
-                  </div>
-                )
-              })}
-            </div>
+            <FlowRows
+              gridRef={gridRef}
+              creators={creators}
+              sessions={sessions}
+              columnCount={columnCount}
+              onSessionsChange={onSessionsChange}
+              beginDrag={beginDrag}
+              moveDrag={moveDrag}
+              endDrag={endDrag}
+            />
           </div>
         </div>
       </div>
     </section>
   )
+}
+
+function FlowRows({
+  gridRef,
+  creators,
+  sessions,
+  columnCount,
+  onSessionsChange,
+  beginDrag,
+  moveDrag,
+  endDrag,
+}: {
+  gridRef: React.RefObject<HTMLDivElement | null>
+  creators: CreatorFlowCreator[]
+  sessions: CreatorFlowSession[]
+  columnCount: number
+  onSessionsChange: ((sessions: CreatorFlowSession[]) => void) | undefined
+  beginDrag: (
+    event: React.PointerEvent,
+    session: CreatorFlowSession,
+    mode: DragState["mode"]
+  ) => void
+  moveDrag: (event: React.PointerEvent) => void
+  endDrag: (event: React.PointerEvent) => void
+}) {
+  return (
+    <div ref={gridRef} className="grid">
+      {creators.map((creator) => {
+        const creatorSessions = sessions.filter(
+          (session) => session.creatorId === creator.id
+        )
+        return (
+          <div
+            key={creator.id}
+            className="relative h-14 border-t border-nextide-line/70 bg-[linear-gradient(90deg,rgb(255_255_255/0.035)_1px,transparent_1px)]"
+            style={{
+              backgroundSize: `${100 / columnCount}% 100%`,
+            }}
+          >
+            {creatorSessions.map((session) => {
+              const start = clamp(session.startIndex, 0, columnCount - 1)
+              const end = clamp(session.endIndex, start, columnCount - 1)
+              const left = (start / columnCount) * 100
+              const width = ((end - start + 1) / columnCount) * 100
+
+              return (
+                <FlowSession
+                  key={session.id}
+                  session={session}
+                  onSessionsChange={onSessionsChange}
+                  left={left}
+                  width={width}
+                  beginDrag={beginDrag}
+                  moveDrag={moveDrag}
+                  endDrag={endDrag}
+                />
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function FlowSession({
+  session,
+  onSessionsChange,
+  left,
+  width,
+  beginDrag,
+  moveDrag,
+  endDrag,
+}: {
+  session: CreatorFlowSession
+  onSessionsChange: ((sessions: CreatorFlowSession[]) => void) | undefined
+  left: number
+  width: number
+  beginDrag: (
+    event: React.PointerEvent,
+    session: CreatorFlowSession,
+    mode: DragState["mode"]
+  ) => void
+  moveDrag: (event: React.PointerEvent) => void
+  endDrag: (event: React.PointerEvent) => void
+}): React.JSX.Element {
+  return (
+    <button
+      key={session.id}
+      type="button"
+      className={cn(
+        "absolute top-2 bottom-2 grid min-w-12 grid-cols-[0.75rem_minmax(0,1fr)_0.75rem] items-center rounded-lg border px-1 text-left text-xs font-medium shadow-[0_0_24px_rgb(30_228_188/0.12)] transition-[filter] hover:brightness-110",
+        toneClasses[session.tone ?? "success"],
+        onSessionsChange && "cursor-grab active:cursor-grabbing"
+      )}
+      style={{ left: `${left}%`, width: `${width}%` }}
+      onPointerDown={(event) => beginDrag(event, session, "move")}
+      onPointerMove={moveDrag}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+    >
+      <span
+        className="h-full cursor-ew-resize rounded-l-md"
+        onPointerDown={(event) => {
+          event.stopPropagation()
+          beginDrag(event, session, "start")
+        }}
+      />
+      <span className="truncate px-1">{session.label}</span>
+      <span
+        className="h-full cursor-ew-resize rounded-r-md"
+        onPointerDown={(event) => {
+          event.stopPropagation()
+          beginDrag(event, session, "end")
+        }}
+      />
+    </button>
+  )
+}
+
+function moveFlowDrag(
+  event: React.PointerEvent,
+  drag: DragState | null,
+  columnCount: number,
+  updateSession: (id: string, start: number, end: number) => void
+) {
+  if (!drag) return
+
+  const deltaColumns = Math.round(
+    (event.clientX - drag.pointerStartX) / drag.columnWidth
+  )
+  const span = drag.originalEnd - drag.originalStart
+  if (drag.mode === "move") {
+    const nextStart = clamp(
+      drag.originalStart + deltaColumns,
+      0,
+      columnCount - span - 1
+    )
+    updateSession(drag.id, nextStart, nextStart + span)
+    return
+  }
+  if (drag.mode === "start") {
+    updateSession(
+      drag.id,
+      clamp(drag.originalStart + deltaColumns, 0, drag.originalEnd),
+      drag.originalEnd
+    )
+    return
+  }
+  updateSession(
+    drag.id,
+    drag.originalStart,
+    clamp(drag.originalEnd + deltaColumns, drag.originalStart, columnCount - 1)
+  )
+}
+
+function beginFlowDrag(
+  event: React.PointerEvent,
+  session: CreatorFlowSession,
+  mode: DragState["mode"],
+  grid: HTMLDivElement | null,
+  dragState: React.RefObject<DragState | null>,
+  columnCount: number,
+  onSessionsChange: ((sessions: CreatorFlowSession[]) => void) | undefined
+) {
+  if (!grid || !onSessionsChange) return
+
+  const rect = grid.getBoundingClientRect()
+  dragState.current = {
+    id: session.id,
+    mode,
+    pointerStartX: event.clientX,
+    originalStart: session.startIndex,
+    originalEnd: session.endIndex,
+    columnWidth: rect.width / columnCount,
+  }
+  event.currentTarget.setPointerCapture(event.pointerId)
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -284,4 +320,60 @@ export {
   type CreatorFlowCreator,
   type CreatorFlowSession,
   type CreatorFlowTone,
+}
+
+function useFlowInteraction(
+  dayCount: number,
+  sessions: CreatorFlowSession[],
+  onSessionsChange: ((sessions: CreatorFlowSession[]) => void) | undefined
+) {
+  const gridRef = React.useRef<HTMLDivElement | null>(null)
+  const dragState = React.useRef<DragState | null>(null)
+  const columnCount = Math.max(1, dayCount)
+
+  const updateSession = React.useCallback(
+    (sessionId: string, startIndex: number, endIndex: number) => {
+      onSessionsChange?.(
+        sessions.map((session) =>
+          session.id === sessionId
+            ? {
+                ...session,
+                startIndex: clamp(startIndex, 0, columnCount - 1),
+                endIndex: clamp(endIndex, 0, columnCount - 1),
+              }
+            : session
+        )
+      )
+    },
+    [columnCount, onSessionsChange, sessions]
+  )
+
+  const beginDrag = (
+    event: React.PointerEvent,
+    session: CreatorFlowSession,
+    mode: DragState["mode"]
+  ) =>
+    beginFlowDrag(
+      event,
+      session,
+      mode,
+      gridRef.current,
+      dragState,
+      columnCount,
+      onSessionsChange
+    )
+
+  const moveDrag = (event: React.PointerEvent) =>
+    moveFlowDrag(event, dragState.current, columnCount, updateSession)
+
+  const endDrag = (event: React.PointerEvent) => {
+    dragState.current = null
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    } catch {
+      // The resize handles own pointer capture, while the row handles bubbling.
+    }
+  }
+
+  return { gridRef, columnCount, beginDrag, moveDrag, endDrag }
 }

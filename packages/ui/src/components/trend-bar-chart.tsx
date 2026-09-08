@@ -31,7 +31,6 @@ const toneClasses: Record<TrendBarChartTone, string> = {
   danger: "from-nextide-red via-nextide-red/80 to-nextide-red/30",
 }
 
-// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `TrendBarChart` has a complexity of 16; The function `TrendBarChart` has too many lines (136); extract this function in the follow-up refactor.
 function TrendBarChart({
   rows,
   maxValue,
@@ -61,38 +60,7 @@ function TrendBarChart({
     return rows.reduce((max, row) => Math.max(max, row.value), 0)
   }, [maxValue, rows])
   const formatValue = valueFormatter ?? formatChartValue
-  const total = rows.reduce((sum, row) => sum + row.value, 0)
-  const average = rows.length > 0 ? total / rows.length : 0
-  const peakRow = rows.reduce<TrendBarChartRow | null>(
-    (peak, row) => (!peak || row.value > peak.value ? row : peak),
-    null
-  )
-  const resolvedLegend = legend ?? [
-    {
-      id: "peak",
-      label: "Peak",
-      value: peakRow ? (
-        <>
-          {peakRow.label} {peakRow.valueLabel ?? formatValue(peakRow.value)}
-        </>
-      ) : (
-        "-"
-      ),
-      tone: peakRow?.tone ?? "success",
-    },
-    {
-      id: "avg",
-      label: "Average",
-      value: formatValue(average),
-      tone: "neutral" as const,
-    },
-    {
-      id: "count",
-      label: "Buckets",
-      value: rows.length.toLocaleString("en-US"),
-      tone: "neutral" as const,
-    },
-  ]
+  const resolvedLegend = legend ?? buildTrendLegend(rows, formatValue)
 
   if (rows.length === 0 || resolvedMax <= 0) {
     return (
@@ -123,54 +91,99 @@ function TrendBarChart({
         onWheel={onChartWheel}
         className="nextide-contained-scroll nextide-scrollbar-none overflow-x-auto"
       >
-        <div
-          className={cn(
-            "flex min-w-full items-end justify-between gap-2",
-            variant === "signal" && "gap-3",
-            variant === "block" && "gap-1.5"
-          )}
-        >
-          {rows.map((row) => {
-            const height = Math.max(
-              4,
-              Math.min(84, (row.value / resolvedMax) * 84)
-            )
-            const tone = row.tone ?? "success"
-
-            return (
-              <div
-                key={row.id}
-                className="group grid min-w-0 flex-1 justify-items-center gap-2"
-                aria-label={
-                  typeof row.label === "string"
-                    ? `${row.label}: ${row.valueLabel ?? row.value}`
-                    : undefined
-                }
-              >
-                <BarGlyph
-                  height={height}
-                  tone={tone}
-                  variant={variant}
-                  valueLabel={row.valueLabel ?? row.value}
-                />
-                <div className="grid gap-0.5 text-center">
-                  <span className="text-ui-caption leading-tight font-medium text-muted-foreground">
-                    {row.label}
-                  </span>
-                  {row.meta ? (
-                    <span className="text-ui-caption leading-none text-muted-foreground/70">
-                      {row.meta}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        {renderTrendBars(variant, rows, resolvedMax)}
       </div>
       {showLegend ? <ChartLegend items={resolvedLegend} /> : null}
     </div>
   )
+}
+
+function renderTrendBars(
+  variant: TrendBarChartVariant,
+  rows: TrendBarChartRow[],
+  resolvedMax: number
+) {
+  return (
+    <div
+      className={cn(
+        "flex min-w-full items-end justify-between gap-2",
+        variant === "signal" && "gap-3",
+        variant === "block" && "gap-1.5"
+      )}
+    >
+      {rows.map((row) => {
+        const height = Math.max(4, Math.min(84, (row.value / resolvedMax) * 84))
+        const tone = row.tone ?? "success"
+
+        return (
+          <div
+            key={row.id}
+            className="group grid min-w-0 flex-1 justify-items-center gap-2"
+            aria-label={
+              typeof row.label === "string"
+                ? `${row.label}: ${row.valueLabel ?? row.value}`
+                : undefined
+            }
+          >
+            <BarGlyph
+              height={height}
+              tone={tone}
+              variant={variant}
+              valueLabel={row.valueLabel ?? row.value}
+            />
+            <div className="grid gap-0.5 text-center">
+              <span className="text-ui-caption leading-tight font-medium text-muted-foreground">
+                {row.label}
+              </span>
+              {row.meta ? (
+                <span className="text-ui-caption leading-none text-muted-foreground/70">
+                  {row.meta}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function buildTrendLegend(
+  rows: TrendBarChartRow[],
+  formatValue: (value: number) => React.ReactNode
+): TrendBarChartLegendItem[] {
+  const total = rows.reduce((sum, row) => sum + row.value, 0)
+  const average = rows.length > 0 ? total / rows.length : 0
+  const peakRow = rows.reduce<TrendBarChartRow | null>(
+    (peak, row) => (!peak || row.value > peak.value ? row : peak),
+    null
+  )
+  return [
+    {
+      id: "peak",
+      label: "Peak",
+      value: peakRow ? (
+        <>
+          {peakRow.label} {peakRow.valueLabel ?? formatValue(peakRow.value)}
+        </>
+      ) : (
+        "-"
+      ),
+      tone: peakRow?.tone ?? "success",
+    },
+    {
+      id: "avg",
+      label: "Average",
+      value: formatValue(average),
+      tone: "neutral" as const,
+    },
+    {
+      id: "count",
+      label: "Buckets",
+      value: rows.length.toLocaleString("en-US"),
+      tone: "neutral" as const,
+    },
+  ]
 }
 
 function BarGlyph({

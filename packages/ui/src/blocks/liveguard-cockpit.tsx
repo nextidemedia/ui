@@ -35,7 +35,6 @@ type LiveguardIncidentRow = {
   summary: React.ReactNode
 }
 
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `LiveguardCockpit` has too many lines (139); extract this function in the follow-up refactor.
 function LiveguardCockpit({
   enabled,
   activeRules,
@@ -121,59 +120,9 @@ function LiveguardCockpit({
         </Surface>
 
         <div className="grid gap-4">
-          <DataLedger
-            title="Scheduled creators"
-            description="Runtime safety states by creator."
-            countLabel={`${creators.length} creators`}
-          >
-            <div className="grid min-w-[34rem] gap-2">
-              {creators.map((creator) => (
-                <div
-                  key={creator.id}
-                  className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-sm"
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <PlatformCluster platforms={creator.platforms} size="sm" />
-                    <span className="min-w-0 truncate">{creator.name}</span>
-                  </span>
-                  <span>{creator.state}</span>
-                  <span className="text-muted-foreground">
-                    {creator.lastEvent}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </DataLedger>
+          {renderCreatorLedger(creators)}
 
-          <DataLedger
-            title="Incident history"
-            description="Recent proof rows with policy outcome."
-            countLabel={`${incidents.length} incidents`}
-          >
-            <div className="grid min-w-[42rem] gap-2">
-              <div className="grid grid-cols-[0.7fr_1fr_1fr_0.8fr_1.6fr] gap-3 px-2 text-xs font-medium text-muted-foreground">
-                <span>Time</span>
-                <span>Creator</span>
-                <span>Type</span>
-                <span>Severity</span>
-                <span>Summary</span>
-              </div>
-              {incidents.map((incident) => (
-                <div
-                  key={incident.id}
-                  className="grid grid-cols-[0.7fr_1fr_1fr_0.8fr_1.6fr] items-center gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-sm"
-                >
-                  <span className="text-muted-foreground">{incident.time}</span>
-                  <span className="truncate">{incident.creator}</span>
-                  <span>{incident.type}</span>
-                  <span>{incident.severity}</span>
-                  <span className="truncate text-muted-foreground">
-                    {incident.summary}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </DataLedger>
+          {renderIncidentLedger(incidents)}
         </div>
       </div>
     </Surface>
@@ -181,3 +130,63 @@ function LiveguardCockpit({
 }
 
 export { LiveguardCockpit, type LiveguardCreatorRow, type LiveguardIncidentRow }
+
+function renderCreatorLedger(creators: LiveguardCreatorRow[]) {
+  return (
+    <DataLedger
+      title="Scheduled creators"
+      description="Runtime safety states by creator."
+      countLabel={`${creators.length} creators`}
+    >
+      <div className="grid min-w-[34rem] gap-2">
+        {creators.map((creator) => (
+          <div
+            key={creator.id}
+            className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-sm"
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <PlatformCluster platforms={creator.platforms} size="sm" />
+              <span className="min-w-0 truncate">{creator.name}</span>
+            </span>
+            <span>{creator.state}</span>
+            <span className="text-muted-foreground">{creator.lastEvent}</span>
+          </div>
+        ))}
+      </div>
+    </DataLedger>
+  )
+}
+
+function renderIncidentLedger(incidents: LiveguardIncidentRow[]) {
+  return (
+    <DataLedger
+      title="Incident history"
+      description="Recent proof rows with policy outcome."
+      countLabel={`${incidents.length} incidents`}
+    >
+      <div className="grid min-w-[42rem] gap-2">
+        <div className="grid grid-cols-[0.7fr_1fr_1fr_0.8fr_1.6fr] gap-3 px-2 text-xs font-medium text-muted-foreground">
+          <span>Time</span>
+          <span>Creator</span>
+          <span>Type</span>
+          <span>Severity</span>
+          <span>Summary</span>
+        </div>
+        {incidents.map((incident) => (
+          <div
+            key={incident.id}
+            className="grid grid-cols-[0.7fr_1fr_1fr_0.8fr_1.6fr] items-center gap-3 rounded-lg border border-nextide-line bg-background/25 p-2 text-sm"
+          >
+            <span className="text-muted-foreground">{incident.time}</span>
+            <span className="truncate">{incident.creator}</span>
+            <span>{incident.type}</span>
+            <span>{incident.severity}</span>
+            <span className="truncate text-muted-foreground">
+              {incident.summary}
+            </span>
+          </div>
+        ))}
+      </div>
+    </DataLedger>
+  )
+}

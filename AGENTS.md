@@ -14,4 +14,4 @@ This repo is the shared `@nextide/ui` package. The playground exists only as a l
 - Do not assume backwards compatibility. If compatibility expectations are unclear, ask before locking the direction.
 - Never write product decisions, implementation details, API routing, fallback mechanics, or other internal plumbing into user-facing or agent-facing text. UI copy, notices, docs, prompts, labels, and tool messages should describe the user goal, required action, or visible state, not how the system is internally wired.
 
-Use `just setup` and `just check` for the shared development baseline; see README.md for focused tests and browser prerequisites. Keep named LOC budgets and function debt exceptions from growing.
+Use `just setup` and `just check` for the shared development baseline; see README.md for focused tests and browser prerequisites. Keep source files within 600 lines, tests within 900 lines, functions within 100 lines, and complexity within 12; do not add legacy debt exceptions.

@@ -45,18 +45,31 @@ type DurationLimits = Required<DurationValue>
 
 const emptyDuration: DurationValue = { hours: 0, minutes: 0 }
 
-// oxlint-disable-next-line complexity, max-lines-per-function -- Legacy baseline: function `DurationPicker` has a complexity of 32; The function `DurationPicker` has too many lines (200); extract this function in the follow-up refactor.
+type DurationPresentation = Required<
+  Pick<
+    DurationPickerProps,
+    | "showDays"
+    | "disabled"
+    | "daysLabel"
+    | "hoursLabel"
+    | "minutesLabel"
+    | "daysInputLabel"
+    | "hoursInputLabel"
+    | "minutesInputLabel"
+  >
+>
+
 function DurationPicker({
   value,
-  defaultValue = emptyDuration,
+  defaultValue,
   onValueChange,
   onConfirm,
   onEditingChange,
-  defaultEditing = false,
+  defaultEditing,
   showDays = false,
-  maxDays = 999,
-  maxHours = 24,
-  maxMinutes = 59,
+  maxDays,
+  maxHours,
+  maxMinutes,
   daysLabel = "Day",
   hoursLabel = "Hr.",
   minutesLabel = "Min.",
@@ -69,6 +82,50 @@ function DurationPicker({
   onClick,
   onKeyDown,
   ...props
+}: DurationPickerProps) {
+  const state = useDurationPickerState({
+    value,
+    defaultValue,
+    onValueChange,
+    onConfirm,
+    onEditingChange,
+    defaultEditing,
+    showDays,
+    maxDays,
+    maxHours,
+    maxMinutes,
+    disabled,
+  })
+  return (
+    <DurationPickerView
+      state={state}
+      options={{
+        showDays,
+        disabled,
+        daysLabel,
+        hoursLabel,
+        minutesLabel,
+        daysInputLabel,
+        hoursInputLabel,
+        minutesInputLabel,
+      }}
+      rootProps={{ className, onBlur, onClick, onKeyDown, ...props }}
+    />
+  )
+}
+
+function useDurationPickerState({
+  value,
+  defaultValue = emptyDuration,
+  onValueChange,
+  onConfirm,
+  onEditingChange,
+  defaultEditing = false,
+  showDays = false,
+  maxDays = 999,
+  maxHours = 24,
+  maxMinutes = 59,
+  disabled = false,
 }: DurationPickerProps) {
   const controlled = value !== undefined
   const limits: DurationLimits = {
@@ -93,24 +150,14 @@ function DurationPicker({
   const firstInputRef = React.useRef<HTMLInputElement>(null)
   const toggleRef = React.useRef<HTMLButtonElement>(null)
 
-  React.useEffect(() => {
-    if (editing) firstInputRef.current?.focus()
-  }, [editing, showDays])
-
-  React.useEffect(() => {
-    if (!editing || editSettled) return
-
-    const root = rootRef.current
-    if (!root) return
-
-    const duration = readCssTime(
-      window.getComputedStyle(root).getPropertyValue("--nextide-motion-layout"),
-      300
-    )
-    const timer = window.setTimeout(() => setEditSettled(true), duration)
-
-    return () => window.clearTimeout(timer)
-  }, [editSettled, editing])
+  useDurationEditFocus({
+    editing,
+    showDays,
+    editSettled,
+    setEditSettled,
+    rootRef,
+    firstInputRef,
+  })
 
   const publish = (nextValue: DurationValue) => {
     if (!controlled) setInternalValue(nextValue)
@@ -149,6 +196,67 @@ function DurationPicker({
 
   const shownDraft = editing ? draft : durationToDraft(currentValue)
 
+  return {
+    limits,
+    editing,
+    editSettled,
+    rootRef,
+    firstInputRef,
+    toggleRef,
+    shownDraft,
+    updateField,
+    startEditing,
+    confirm,
+  }
+}
+
+function useDurationEditFocus({
+  editing,
+  showDays,
+  editSettled,
+  setEditSettled,
+  rootRef,
+  firstInputRef,
+}: {
+  editing: boolean
+  showDays: boolean
+  editSettled: boolean
+  setEditSettled: React.Dispatch<React.SetStateAction<boolean>>
+  rootRef: React.RefObject<HTMLDivElement | null>
+  firstInputRef: React.RefObject<HTMLInputElement | null>
+}) {
+  React.useEffect(() => {
+    if (editing) firstInputRef.current?.focus()
+  }, [editing, showDays, firstInputRef])
+
+  React.useEffect(() => {
+    if (!editing || editSettled) return
+
+    const root = rootRef.current
+    if (!root) return
+
+    const duration = readCssTime(
+      window.getComputedStyle(root).getPropertyValue("--nextide-motion-layout"),
+      300
+    )
+    const timer = window.setTimeout(() => setEditSettled(true), duration)
+
+    return () => window.clearTimeout(timer)
+  }, [editSettled, editing, rootRef, setEditSettled])
+}
+
+function DurationPickerView({
+  state,
+  options,
+  rootProps,
+}: {
+  state: ReturnType<typeof useDurationPickerState>
+  options: DurationPresentation
+  rootProps: React.ComponentProps<"div">
+}) {
+  const { rootRef, editing, editSettled, startEditing, confirm } = state
+  const { showDays, disabled } = options
+  const { className, onBlur, onClick, onKeyDown, ...props } = rootProps
   return (
     // oxlint-disable-next-line react-doctor/no-static-element-interactions -- The wrapper expands the pointer hit area; the nested Edit duration button provides semantic keyboard activation.
     <div
@@ -190,6 +298,39 @@ function DurationPicker({
       }}
       {...props}
     >
+      <DurationFields state={state} options={options} />
+      <DurationToggle state={state} disabled={disabled} />
+    </div>
+  )
+}
+
+function DurationFields({
+  state,
+  options,
+}: {
+  state: ReturnType<typeof useDurationPickerState>
+  options: DurationPresentation
+}) {
+  const {
+    limits,
+    editing,
+    editSettled,
+    firstInputRef,
+    shownDraft,
+    updateField,
+  } = state
+  const {
+    showDays,
+    disabled,
+    daysLabel,
+    hoursLabel,
+    minutesLabel,
+    daysInputLabel,
+    hoursInputLabel,
+    minutesInputLabel,
+  } = options
+  return (
+    <>
       {showDays && (
         <DurationField
           ref={firstInputRef}
@@ -230,35 +371,47 @@ function DurationPicker({
         position="middle"
         onValueChange={(nextValue) => updateField("minutes", nextValue)}
       />
-      <Button
-        ref={toggleRef}
-        type="button"
-        variant="secondary"
-        size="icon-lg"
-        aria-label={editing ? "Save duration" : "Edit duration"}
-        disabled={disabled}
+    </>
+  )
+}
+
+function DurationToggle({
+  state,
+  disabled,
+}: {
+  state: ReturnType<typeof useDurationPickerState>
+  disabled: boolean
+}) {
+  const { editing, confirm, toggleRef } = state
+  return (
+    <Button
+      ref={toggleRef}
+      type="button"
+      variant="secondary"
+      size="icon-lg"
+      aria-label={editing ? "Save duration" : "Edit duration"}
+      disabled={disabled}
+      className={cn(
+        "relative size-12 overflow-hidden transition-[border-radius,transform] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
+        editing ? "rounded-xl" : "rounded-l-none rounded-r-xl"
+      )}
+      onClick={editing ? () => confirm() : undefined}
+    >
+      <Pencil
+        aria-hidden="true"
         className={cn(
-          "relative size-12 overflow-hidden transition-[border-radius,transform] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
-          editing ? "rounded-xl" : "rounded-l-none rounded-r-xl"
+          "absolute transition-[opacity,transform] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none",
+          editing ? "scale-75 rotate-45 opacity-0" : "scale-100 opacity-100"
         )}
-        onClick={editing ? () => confirm() : undefined}
-      >
-        <Pencil
-          aria-hidden="true"
-          className={cn(
-            "absolute transition-[opacity,transform] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none",
-            editing ? "scale-75 rotate-45 opacity-0" : "scale-100 opacity-100"
-          )}
-        />
-        <Check
-          aria-hidden="true"
-          className={cn(
-            "absolute transition-[opacity,transform] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none",
-            editing ? "scale-100 opacity-100" : "scale-75 -rotate-45 opacity-0"
-          )}
-        />
-      </Button>
-    </div>
+      />
+      <Check
+        aria-hidden="true"
+        className={cn(
+          "absolute transition-[opacity,transform] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none",
+          editing ? "scale-100 opacity-100" : "scale-75 -rotate-45 opacity-0"
+        )}
+      />
+    </Button>
   )
 }
 

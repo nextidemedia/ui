@@ -93,7 +93,6 @@ function ReportContextBuilder({
   )
 }
 
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `ContextBucketRow` has too many lines (134); extract this function in the follow-up refactor.
 function ContextBucketRow({
   bucket,
   onSelect,
@@ -149,59 +148,17 @@ function ContextBucketRow({
 
   return (
     <section className="grid gap-3 rounded-lg border border-nextide-line bg-background/20 p-3 md:grid-cols-[10rem_minmax(0,1fr)]">
-      <div className="flex items-center gap-2">
-        <Layers3 className="size-4 text-nextide-tide" />
-        <span className="grid min-w-0 gap-0.5">
-          <strong className="truncate text-sm">{bucket.label}</strong>
-          <small className="text-xs text-muted-foreground">
-            {bucket.required ? "Required" : "Optional"}
-            {bucket.locked ? " · Locked" : null}
-            {bucket.disabled ? " · Disabled" : null}
-          </small>
-        </span>
-      </div>
+      <ContextBucketHeading bucket={bucket} />
       <div className="grid min-w-0 gap-2">
-        <div className="relative min-w-0 overflow-hidden">
-          <div
-            ref={selectedRef}
-            onWheel={onSelectedWheel}
-            className="nextide-contained-scroll nextide-scrollbar-none flex gap-1.5 overflow-x-auto pb-0.5"
-          >
-            {bucket.selected.map((item) => (
-              <Button
-                key={item}
-                type="button"
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "shrink-0 border-nextide-tide/35 bg-nextide-tide/10 text-nextide-tide",
-                  chipMotionClass(chipMotions[item])
-                )}
-                disabled={
-                  bucket.locked ||
-                  bucket.disabled ||
-                  (bucket.required && bucket.selected.length <= 1)
-                }
-                onClick={() => moveChip(item, "remove", () => onRemove(item))}
-              >
-                {item}
-                <X className="size-3.5" />
-              </Button>
-            ))}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="shrink-0 text-muted-foreground"
-              disabled={!onAdd || bucket.locked || bucket.disabled}
-              onClick={onAdd}
-            >
-              <Plus className="size-3.5" />
-              Add
-            </Button>
-          </div>
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-linear-to-r from-transparent to-background/90" />
-        </div>
+        <SelectedContext
+          selectedRef={selectedRef}
+          onSelectedWheel={onSelectedWheel}
+          bucket={bucket}
+          chipMotions={chipMotions}
+          moveChip={moveChip}
+          onRemove={onRemove}
+          onAdd={onAdd}
+        />
         <div className="relative min-w-0 overflow-hidden">
           <div
             ref={suggestionRef}
@@ -231,6 +188,88 @@ function ContextBucketRow({
         </div>
       </div>
     </section>
+  )
+}
+
+function ContextBucketHeading({ bucket }: { bucket: ReportContextBucket }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Layers3 className="size-4 text-nextide-tide" />
+      <span className="grid min-w-0 gap-0.5">
+        <strong className="truncate text-sm">{bucket.label}</strong>
+        <small className="text-xs text-muted-foreground">
+          {bucket.required ? "Required" : "Optional"}
+          {bucket.locked ? " · Locked" : null}
+          {bucket.disabled ? " · Disabled" : null}
+        </small>
+      </span>
+    </div>
+  )
+}
+
+function SelectedContext({
+  selectedRef,
+  onSelectedWheel,
+  bucket,
+  chipMotions,
+  moveChip,
+  onRemove,
+  onAdd,
+}: {
+  selectedRef: React.RefObject<HTMLDivElement | null>
+  onSelectedWheel: (event: React.WheelEvent<HTMLDivElement>) => void
+  bucket: ReportContextBucket
+  chipMotions: Record<string, ContextChipMotion>
+  moveChip: (
+    value: string,
+    direction: ContextChipMotion["direction"],
+    commit: () => void
+  ) => void
+  onRemove: (value: string) => void
+  onAdd: (() => void) | undefined
+}) {
+  return (
+    <div className="relative min-w-0 overflow-hidden">
+      <div
+        ref={selectedRef}
+        onWheel={onSelectedWheel}
+        className="nextide-contained-scroll nextide-scrollbar-none flex gap-1.5 overflow-x-auto pb-0.5"
+      >
+        {bucket.selected.map((item) => (
+          <Button
+            key={item}
+            type="button"
+            variant="outline"
+            size="sm"
+            className={cn(
+              "shrink-0 border-nextide-tide/35 bg-nextide-tide/10 text-nextide-tide",
+              chipMotionClass(chipMotions[item])
+            )}
+            disabled={
+              bucket.locked ||
+              bucket.disabled ||
+              (bucket.required && bucket.selected.length <= 1)
+            }
+            onClick={() => moveChip(item, "remove", () => onRemove(item))}
+          >
+            {item}
+            <X className="size-3.5" />
+          </Button>
+        ))}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="shrink-0 text-muted-foreground"
+          disabled={!onAdd || bucket.locked || bucket.disabled}
+          onClick={onAdd}
+        >
+          <Plus className="size-3.5" />
+          Add
+        </Button>
+      </div>
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-linear-to-r from-transparent to-background/90" />
+    </div>
   )
 }
 

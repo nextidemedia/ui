@@ -1,33 +1,4 @@
 {
-  "exceptions": {
-    "apps/playground/src/App.tsx": {
-      "max": 3413,
-      "reason": "Existing component and demo responsibilities; extract cohesive modules in the follow-up refactor. No growth."
-    },
-    "apps/playground/src/mining-pages.tsx": {
-      "max": 720,
-      "reason": "Existing component and demo responsibilities; extract cohesive modules in the follow-up refactor. No growth."
-    },
-    "packages/ui/src/blocks/campaign-schedule-matrix.tsx": {
-      "max": 994,
-      "reason": "Existing component and demo responsibilities; extract cohesive modules in the follow-up refactor. No growth."
-    },
-    "packages/ui/src/blocks/creator-transfer.tsx": {
-      "max": 626,
-      "reason": "Existing component and demo responsibilities; extract cohesive modules in the follow-up refactor. No growth."
-    },
-    "packages/ui/src/blocks/navigation-panel.tsx": {
-      "max": 1349,
-      "reason": "Existing component and demo responsibilities; extract cohesive modules in the follow-up refactor. No growth."
-    },
-    "packages/ui/src/components/line-item-graph.tsx": {
-      "max": 896,
-      "reason": "Existing component and demo responsibilities; extract cohesive modules in the follow-up refactor. No growth."
-    },
-    "tests/e2e/qualification.spec.ts": {
-      "max": 1540,
-      "reason": "Existing browser qualification scenarios; split by tested feature in the follow-up refactor. No growth."
-    }
-  },
+  "exceptions": {},
   "excluded": {}
 }

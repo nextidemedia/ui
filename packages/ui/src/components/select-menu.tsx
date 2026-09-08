@@ -33,7 +33,6 @@ type SelectMenuProps = Omit<React.ComponentProps<"div">, "onChange"> & {
   disabled?: boolean
 }
 
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `SelectMenu` has too many lines (117); extract this function in the follow-up refactor.
 function SelectMenu({
   value,
   options,
@@ -125,29 +124,7 @@ function SelectMenu({
             contentClassName
           )}
         >
-          <SelectGroup>
-            {options.map((option) => (
-              <SelectItem
-                key={option.value}
-                value={option.value}
-                disabled={option.disabled}
-                className={cn("py-2", optionClassName)}
-              >
-                <span className="grid min-w-0 gap-0.5">
-                  <span
-                    className={cn("truncate font-medium", optionLabelClassName)}
-                  >
-                    {option.label}
-                  </span>
-                  {option.description ? (
-                    <span className="truncate text-xs text-muted-foreground">
-                      {option.description}
-                    </span>
-                  ) : null}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectGroup>
+          {renderSelectOptions(options, optionClassName, optionLabelClassName)}
         </SelectContent>
       </Select>
     </div>
@@ -155,3 +132,33 @@ function SelectMenu({
 }
 
 export { SelectMenu, type SelectMenuOption }
+
+function renderSelectOptions(
+  options: SelectMenuOption[],
+  optionClassName: string | undefined,
+  optionLabelClassName: string | undefined
+) {
+  return (
+    <SelectGroup>
+      {options.map((option) => (
+        <SelectItem
+          key={option.value}
+          value={option.value}
+          disabled={option.disabled}
+          className={cn("py-2", optionClassName)}
+        >
+          <span className="grid min-w-0 gap-0.5">
+            <span className={cn("truncate font-medium", optionLabelClassName)}>
+              {option.label}
+            </span>
+            {option.description ? (
+              <span className="truncate text-xs text-muted-foreground">
+                {option.description}
+              </span>
+            ) : null}
+          </span>
+        </SelectItem>
+      ))}
+    </SelectGroup>
+  )
+}

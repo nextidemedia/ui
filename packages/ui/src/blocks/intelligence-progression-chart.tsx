@@ -79,7 +79,6 @@ const progressionEdges = [
 
 const initialGeometry: ChartGeometry = { width: 1, height: 1, nodes: {} }
 
-// oxlint-disable-next-line max-lines-per-function -- Legacy baseline: The function `IntelligenceProgressionChart` has too many lines (246); extract this function in the follow-up refactor.
 function IntelligenceProgressionChart({
   stages,
   title = "Intelligence progression",
@@ -115,6 +114,84 @@ function IntelligenceProgressionChart({
     [geometry]
   )
 
+  useProgressionMeasurement(
+    chartRef,
+    setCompact,
+    stages,
+    nodeRefs,
+    setGeometry,
+    compact
+  )
+
+  return (
+    <section
+      data-slot="intelligence-progression-chart"
+      className={cn(
+        "grid gap-3 rounded-lg border border-nextide-line bg-nextide-panel p-4",
+        className
+      )}
+      {...props}
+    >
+      <div className="grid gap-1">
+        <strong className="text-sm">{title}</strong>
+        {description ? (
+          <span className="text-xs text-muted-foreground">{description}</span>
+        ) : null}
+      </div>
+      <div
+        ref={chartRef}
+        data-layout={compact ? "compact" : "wide"}
+        className={cn(
+          "relative isolate w-full",
+          compact ? "min-h-[48rem]" : "min-h-[clamp(20rem,32vw,28rem)]"
+        )}
+      >
+        <ProgressionConnections
+          geometry={geometry}
+          renderedEdges={renderedEdges}
+          statusByStage={statusByStage}
+          rawId={rawId}
+          maskId={maskId}
+        />
+        {stages.map((stage, index) => {
+          const position = stagePositions[stage.id] ?? { x: 50, y: 50 }
+          const processingTextSyncLength =
+            stage.status === "processing"
+              ? Math.max(
+                  typeof stage.label === "string"
+                    ? stage.label.trim().length
+                    : 0,
+                  typeof stage.detail === "string"
+                    ? stage.detail.trim().length
+                    : 0
+                ) || undefined
+              : undefined
+
+          return (
+            <ProgressionStage
+              key={stage.id}
+              stage={stage}
+              compact={compact}
+              position={position}
+              nodeRefs={nodeRefs}
+              processingTextSyncLength={processingTextSyncLength}
+              index={index}
+            />
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function useProgressionMeasurement(
+  chartRef: React.RefObject<HTMLDivElement | null>,
+  setCompact: React.Dispatch<React.SetStateAction<boolean>>,
+  stages: IntelligenceProgressionStage[],
+  nodeRefs: React.RefObject<Map<string, HTMLSpanElement>>,
+  setGeometry: React.Dispatch<React.SetStateAction<ChartGeometry>>,
+  compact: boolean
+) {
   React.useLayoutEffect(() => {
     const chart = chartRef.current
     if (!chart) return
@@ -167,175 +244,160 @@ function IntelligenceProgressionChart({
       resizeObserver?.disconnect()
       window.removeEventListener("resize", scheduleMeasure)
     }
-  }, [compact, stages])
+  }, [chartRef, compact, nodeRefs, setCompact, setGeometry, stages])
+}
 
+function ProgressionConnections({
+  geometry,
+  renderedEdges,
+  statusByStage,
+  rawId,
+  maskId,
+}: {
+  geometry: ChartGeometry
+  renderedEdges: Array<
+    (typeof progressionEdges)[number] & ReturnType<typeof connectNodeEdges>
+  >
+  statusByStage: Map<string, IntelligenceStageStatus>
+  rawId: string
+  maskId: string
+}) {
   return (
-    <section
-      data-slot="intelligence-progression-chart"
-      className={cn(
-        "grid gap-3 rounded-lg border border-nextide-line bg-nextide-panel p-4",
-        className
-      )}
-      {...props}
+    <svg
+      className="absolute inset-0 z-0 h-full w-full overflow-visible"
+      viewBox={`0 0 ${geometry.width} ${geometry.height}`}
+      preserveAspectRatio="none"
+      aria-hidden="true"
     >
-      <div className="grid gap-1">
-        <strong className="text-sm">{title}</strong>
-        {description ? (
-          <span className="text-xs text-muted-foreground">{description}</span>
-        ) : null}
-      </div>
-      <div
-        ref={chartRef}
-        data-layout={compact ? "compact" : "wide"}
-        className={cn(
-          "relative isolate w-full",
-          compact ? "min-h-[48rem]" : "min-h-[clamp(20rem,32vw,28rem)]"
-        )}
-      >
-        <svg
-          className="absolute inset-0 z-0 h-full w-full overflow-visible"
-          viewBox={`0 0 ${geometry.width} ${geometry.height}`}
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <defs>
-            {renderedEdges.map((edge) => {
-              const sourceStatus = statusByStage.get(edge.from) ?? "queued"
-              const targetStatus = statusByStage.get(edge.to) ?? "queued"
-
-              return (
-                <linearGradient
-                  key={edge.id}
-                  id={`${rawId}-${edge.id}`}
-                  gradientUnits="userSpaceOnUse"
-                  x1={edge.start.x}
-                  y1={edge.start.y}
-                  x2={edge.end.x}
-                  y2={edge.end.y}
-                >
-                  <stop offset="0" stopColor={statusColors[sourceStatus]} />
-                  <stop offset="1" stopColor={statusColors[targetStatus]} />
-                </linearGradient>
-              )
-            })}
-            <mask
-              id={maskId}
-              maskUnits="userSpaceOnUse"
-              x="0"
-              y="0"
-              width={geometry.width}
-              height={geometry.height}
-            >
-              <rect
-                width={geometry.width}
-                height={geometry.height}
-                fill="white"
-              />
-              {Object.entries(geometry.nodes).map(([id, node]) => (
-                <ellipse
-                  key={id}
-                  cx={node.x}
-                  cy={node.y}
-                  rx={Math.max(node.radiusX - 1, 0)}
-                  ry={Math.max(node.radiusY - 1, 0)}
-                  fill="black"
-                />
-              ))}
-            </mask>
-          </defs>
-          <g
-            data-slot="progression-flow-lines"
-            mask={`url(#${maskId})`}
-            className="[&>path]:fill-none [&>path]:stroke-[1.05] [&>path]:[filter:drop-shadow(0_0_7px_rgb(30_228_188/0.42))] [&>path]:[vector-effect:non-scaling-stroke]"
-          >
-            {renderedEdges.map((edge) => (
-              <path
-                key={`line-${edge.id}`}
-                d={edge.path}
-                className="nextide-flow-line"
-                stroke={`url(#${rawId}-${edge.id})`}
-                strokeDasharray="5 4"
-                strokeLinecap="round"
-              />
-            ))}
-          </g>
-        </svg>
-        {/* oxlint-disable-next-line complexity -- Legacy baseline: function has a complexity of 14; extract this function in the follow-up refactor. */}
-        {stages.map((stage, index) => {
-          const position = stagePositions[stage.id] ?? { x: 50, y: 50 }
-          const processingTextSyncLength =
-            stage.status === "processing"
-              ? Math.max(
-                  typeof stage.label === "string"
-                    ? stage.label.trim().length
-                    : 0,
-                  typeof stage.detail === "string"
-                    ? stage.detail.trim().length
-                    : 0
-                ) || undefined
-              : undefined
+      <defs>
+        {renderedEdges.map((edge) => {
+          const sourceStatus = statusByStage.get(edge.from) ?? "queued"
+          const targetStatus = statusByStage.get(edge.to) ?? "queued"
 
           return (
-            <div
-              key={stage.id}
-              className={cn(
-                "absolute z-20 grid -translate-x-1/2 translate-y-[calc(var(--orbit-size)/-2)] justify-items-center gap-2 text-center",
-                compact
-                  ? "w-28 [--orbit-size:4.75rem]"
-                  : "w-36 [--orbit-size:5.5rem]",
-                stage.status === "queued" && "text-muted-foreground/60"
-              )}
-              style={{ left: `${position.x}%`, top: `${position.y}%` }}
+            <linearGradient
+              key={edge.id}
+              id={`${rawId}-${edge.id}`}
+              gradientUnits="userSpaceOnUse"
+              x1={edge.start.x}
+              y1={edge.start.y}
+              x2={edge.end.x}
+              y2={edge.end.y}
             >
-              <span
-                ref={(node) => {
-                  if (node) nodeRefs.current.set(stage.id, node)
-                  else nodeRefs.current.delete(stage.id)
-                }}
-                data-stage-id={stage.id}
-                className={cn(
-                  "relative isolate grid size-[var(--orbit-size)] place-items-center overflow-hidden rounded-full border-2 bg-[#050508]",
-                  statusClasses[stage.status]
-                )}
-              >
-                {stage.status === "degraded" ? (
-                  <CircleAlert className="size-7" />
-                ) : (
-                  (stage.icon ?? <Check className="size-7" />)
-                )}
-              </span>
-              <strong className="text-xs leading-tight">
-                {stage.status === "processing" &&
-                typeof stage.label === "string" ? (
-                  <ProcessingText
-                    syncLength={processingTextSyncLength}
-                    tone="processing"
-                  >
-                    {stage.label}
-                  </ProcessingText>
-                ) : (
-                  stage.label
-                )}
-              </strong>
-              <small className="max-w-24 text-ui-caption leading-tight text-muted-foreground">
-                {stage.status === "processing" &&
-                typeof stage.detail === "string" ? (
-                  <ProcessingText
-                    syncLength={processingTextSyncLength}
-                    tone="processing"
-                  >
-                    {stage.detail}
-                  </ProcessingText>
-                ) : (
-                  stage.detail
-                )}
-              </small>
-              <span className="sr-only">Step {index + 1}</span>
-            </div>
+              <stop offset="0" stopColor={statusColors[sourceStatus]} />
+              <stop offset="1" stopColor={statusColors[targetStatus]} />
+            </linearGradient>
           )
         })}
-      </div>
-    </section>
+        <mask
+          id={maskId}
+          maskUnits="userSpaceOnUse"
+          x="0"
+          y="0"
+          width={geometry.width}
+          height={geometry.height}
+        >
+          <rect width={geometry.width} height={geometry.height} fill="white" />
+          {Object.entries(geometry.nodes).map(([id, node]) => (
+            <ellipse
+              key={id}
+              cx={node.x}
+              cy={node.y}
+              rx={Math.max(node.radiusX - 1, 0)}
+              ry={Math.max(node.radiusY - 1, 0)}
+              fill="black"
+            />
+          ))}
+        </mask>
+      </defs>
+      <g
+        data-slot="progression-flow-lines"
+        mask={`url(#${maskId})`}
+        className="[&>path]:fill-none [&>path]:stroke-[1.05] [&>path]:[filter:drop-shadow(0_0_7px_rgb(30_228_188/0.42))] [&>path]:[vector-effect:non-scaling-stroke]"
+      >
+        {renderedEdges.map((edge) => (
+          <path
+            key={`line-${edge.id}`}
+            d={edge.path}
+            className="nextide-flow-line"
+            stroke={`url(#${rawId}-${edge.id})`}
+            strokeDasharray="5 4"
+            strokeLinecap="round"
+          />
+        ))}
+      </g>
+    </svg>
+  )
+}
+
+function ProgressionStage({
+  stage,
+  compact,
+  position,
+  nodeRefs,
+  processingTextSyncLength,
+  index,
+}: {
+  stage: IntelligenceProgressionStage
+  compact: boolean
+  position: StagePosition
+  nodeRefs: React.RefObject<Map<string, HTMLSpanElement>>
+  processingTextSyncLength: number | undefined
+  index: number
+}): React.JSX.Element {
+  return (
+    <div
+      key={stage.id}
+      className={cn(
+        "absolute z-20 grid -translate-x-1/2 translate-y-[calc(var(--orbit-size)/-2)] justify-items-center gap-2 text-center",
+        compact ? "w-28 [--orbit-size:4.75rem]" : "w-36 [--orbit-size:5.5rem]",
+        stage.status === "queued" && "text-muted-foreground/60"
+      )}
+      style={{ left: `${position.x}%`, top: `${position.y}%` }}
+    >
+      <span
+        ref={(node) => {
+          if (node) nodeRefs.current.set(stage.id, node)
+          else nodeRefs.current.delete(stage.id)
+        }}
+        data-stage-id={stage.id}
+        className={cn(
+          "relative isolate grid size-[var(--orbit-size)] place-items-center overflow-hidden rounded-full border-2 bg-[#050508]",
+          statusClasses[stage.status]
+        )}
+      >
+        {stage.status === "degraded" ? (
+          <CircleAlert className="size-7" />
+        ) : (
+          (stage.icon ?? <Check className="size-7" />)
+        )}
+      </span>
+      <strong className="text-xs leading-tight">
+        {stage.status === "processing" && typeof stage.label === "string" ? (
+          <ProcessingText
+            syncLength={processingTextSyncLength}
+            tone="processing"
+          >
+            {stage.label}
+          </ProcessingText>
+        ) : (
+          stage.label
+        )}
+      </strong>
+      <small className="max-w-24 text-ui-caption leading-tight text-muted-foreground">
+        {stage.status === "processing" && typeof stage.detail === "string" ? (
+          <ProcessingText
+            syncLength={processingTextSyncLength}
+            tone="processing"
+          >
+            {stage.detail}
+          </ProcessingText>
+        ) : (
+          stage.detail
+        )}
+      </small>
+      <span className="sr-only">Step {index + 1}</span>
+    </div>
   )
 }
 
