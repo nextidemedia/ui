@@ -1,4 +1,9 @@
+set unstable
+_ps7 := if os() == "windows" { if which("pwsh") == "" { error("motherfucker, install ps7 what are you doing") } else { "" } } else { "" }
 set positional-arguments
+# Raw argv avoids PowerShell splitting --option=C:/path. With these flags, index 5 is the command; arguments start at 7.
+set windows-shell := ["pwsh", "-NoLogo", "-NoProfile", "-CommandWithArgs", "$ErrorActionPreference = 'Stop'; $raw = [Environment]::GetCommandLineArgs(); $command = $raw[5]; $forwarded = @($raw | Select-Object -Skip 7); & ([scriptblock]::Create($command)) @forwarded; exit $LASTEXITCODE"]
+_forward_args := if os() == "windows" { "@forwarded" } else { '"$@"' }
 
 setup:
     pnpm install --frozen-lockfile
@@ -17,10 +22,10 @@ typecheck:
     pnpm run typecheck
 
 test *args="scripts/check-packed-consumer.mjs":
-    node --test "$@"
+    node --test {{_forward_args}}
 
 test-integration *args:
     pnpm run build
-    pnpm exec playwright test "$@"
+    pnpm exec playwright test {{_forward_args}}
 
 check: fmt-check lint typecheck test
