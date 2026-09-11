@@ -1,0 +1,8 @@
+{
+  "commands": [
+    {
+      "name": "knip",
+      "argv": ["pnpm", "exec", "knip", "--no-exit-code"]
+    }
+  ]
+}

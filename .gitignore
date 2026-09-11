@@ -39,3 +39,5 @@ npm-debug.log*
 
 # Python tooling cache
 __pycache__/
+
+.artifacts/

@@ -142,3 +142,12 @@ release-age and build-script guardrails.
 2. Run `pnpm run check`, `pnpm run qualify`, and the package dry run above.
 3. Merge the release commit and create a matching `v<version>` tag on that merge.
 4. Run **Publish @nextide/ui** manually with the exact tag.
+
+## Dead-code report
+
+Run `just deadcode-setup` once, then `just deadcode`. Reports are written to
+`.artifacts/deadcode/` and uploaded by the monthly/manual Dead-code report workflow.
+Findings are advisory candidates for review; the command never deletes code.
+Tool execution failures return a nonzero exit status. Knip can report recoverable
+plugin loading errors without failing, so read diagnostics before trusting a report.
+`@nextide/ui` public export paths are Knip entrypoints, including exports unused by the playground.

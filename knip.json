@@ -1,0 +1,16 @@
+{
+  "workspaces": {
+    "apps/playground": {
+      "entry": ["src/main.tsx", "vite.config.ts"],
+      "project": ["src/**/*.{ts,tsx}", "vite.config.ts"]
+    },
+    "packages/ui": {
+      "entry": [
+        "src/{blocks,components,hooks,lib}/*.{ts,tsx}",
+        "src/styles/*.css",
+        "scripts/*.mjs"
+      ],
+      "project": ["src/**/*.{ts,tsx,css}", "scripts/*.mjs"]
+    }
+  }
+}

@@ -28,3 +28,9 @@ test-integration *args:
     pnpm exec playwright test {{_forward_args}}
 
 check: fmt-check lint typecheck test
+
+# Advisory report; findings do not fail the command.
+deadcode-setup: setup
+
+deadcode:
+    uv run --no-project --python 3.12 python scripts/deadcode.py
