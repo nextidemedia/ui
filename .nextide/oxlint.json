@@ -2,6 +2,7 @@
   "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y"],
   "categories": { "correctness": "error" },
   "rules": {
+    "oxc/no-accumulating-spread": "error",
     "complexity": ["error", 12],
     "max-lines-per-function": [
       "error",
