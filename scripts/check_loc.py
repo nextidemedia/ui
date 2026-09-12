@@ -7,6 +7,8 @@ SOURCE = {".py", ".rs", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".ps1", ".
 SKIP = {
     ".git",
     ".venv",
+    ".tmp",
+    ".uv-cache",
     "node_modules",
     "target",
     "dist",
@@ -23,7 +25,8 @@ def check(root: Path) -> int:
     exceptions = config["exceptions"]
     excluded = config["excluded"]
     for name, entry in exceptions.items():
-        if not entry["reason"].strip() or type(entry["max"]) is not int or entry["max"] < 1:
+        valid_limit = type(entry["max"]) is int and entry["max"] > 0
+        if not entry["reason"].strip() or not valid_limit:
             raise ValueError(f"Invalid LOC exception: {name}")
     for name, reason in excluded.items():
         if not reason.strip():
@@ -39,9 +42,8 @@ def check(root: Path) -> int:
             if path.suffix not in SOURCE or path.is_symlink() or relative in excluded:
                 continue
             seen.add(relative)
-            count = sum(
-                bool(line.strip()) for line in path.read_text(encoding="utf-8").splitlines()
-            )
+            lines = path.read_text(encoding="utf-8").splitlines()
+            count = sum(bool(line.strip()) for line in lines)
             test = (
                 "tests" in path.relative_to(root).parts
                 or "__tests__" in path.relative_to(root).parts
@@ -53,10 +55,12 @@ def check(root: Path) -> int:
             limit = exceptions.get(relative, {}).get("max", 900 if test else 600)
             checked += 1
             if count > limit:
-                print(f"error: {json.dumps(f'{relative}: {count} nonblank lines exceeds {limit}')}")
+                message = f"{relative}: {count} nonblank lines exceeds {limit}"
+                print(f"error: {json.dumps(message)}")
                 errors += 1
             elif count > 400 and not test:
-                print(f"warning: {json.dumps(f'{relative}: {count} nonblank lines (target 400)')}")
+                message = f"{relative}: {count} nonblank lines (target 400)"
+                print(f"warning: {json.dumps(message)}")
     for stale in exceptions.keys() - seen:
         print(f"error: {json.dumps(f'Remove unused LOC exception: {stale}')}")
         errors += 1

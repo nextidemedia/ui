@@ -1,20 +1,6 @@
 {
-  "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y"],
-  "categories": {
-    "correctness": "error"
-  },
+  "extends": ["./.nextide/oxlint.json"],
   "rules": {
-    "complexity": ["error", 12],
-    "max-lines-per-function": [
-      "error",
-      {
-        "max": 100,
-        "skipBlankLines": true,
-        "skipComments": true
-      }
-    ],
-    "react/rules-of-hooks": "error",
-    "react/exhaustive-deps": "error",
     "jsx-a11y/label-has-associated-control": [
       "error",
       {
