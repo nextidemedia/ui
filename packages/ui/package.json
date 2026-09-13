@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@tailwindcss/vite": "4.3.1",
+    "@tailwindcss/vite": "4.3.3",
     "@turbo/gen": "2.9.18",
     "@types/node": "25.9.3",
     "@types/react": "19.2.18",
@@ -54,7 +54,7 @@
     "globals": "17.6.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "tailwindcss": "4.3.1",
+    "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
     "typescript-eslint": "8.61.1"
   },
