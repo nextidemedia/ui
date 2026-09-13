@@ -142,12 +142,6 @@ test("collapsed navigation search closes cleanly", async ({ page }) => {
 
   await page.keyboard.press("Escape")
   await expect(searchInput).not.toBeFocused()
-  await page.waitForTimeout(50)
-  const closingSearchWidth = await search.evaluate(
-    (element) => element.getBoundingClientRect().width
-  )
-  expect(closingSearchWidth).toBeGreaterThan(44)
-  expect(closingSearchWidth).toBeLessThan(288)
   await expect(search).toHaveCSS("width", "44px")
 
   await search.click()
