@@ -6,7 +6,7 @@ import { defineConfig, type Alias } from "vite"
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
   const aliases: Alias[] = [
-    { find: "@", replacement: path.resolve(__dirname, "./src") },
+    { find: "@", replacement: path.resolve(import.meta.dirname, "./src") },
   ]
 
   if (command === "serve") {
@@ -14,20 +14,20 @@ export default defineConfig(({ command }) => {
       {
         find: "@nextide/ui/globals.css",
         replacement: path.resolve(
-          __dirname,
+          import.meta.dirname,
           "../../packages/ui/src/styles/globals.css"
         ),
       },
       {
         find: "@nextide/ui/display-font.css",
         replacement: path.resolve(
-          __dirname,
+          import.meta.dirname,
           "../../packages/ui/src/styles/display-font.css"
         ),
       },
       {
         find: /^@nextide\/ui\/(.*)$/,
-        replacement: `${path.resolve(__dirname, "../../packages/ui/src")}/$1`,
+        replacement: `${path.resolve(import.meta.dirname, "../../packages/ui/src")}/$1`,
       }
     )
   }
