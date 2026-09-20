@@ -15,19 +15,28 @@ function ScrollArea({
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
-      className={cn("relative min-h-0 min-w-0", className)}
+      className={(state) =>
+        cn(
+          "relative min-h-0 min-w-0",
+          typeof className === "function" ? className(state) : className
+        )
+      }
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
         {...viewportProps}
-        className={cn(
-          "size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-1",
-          viewportProps?.className
-        )}
+        className={(state) =>
+          cn(
+            "flex size-full flex-col rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-1",
+            typeof viewportProps?.className === "function"
+              ? viewportProps.className(state)
+              : viewportProps?.className
+          )
+        }
       >
         <ScrollAreaPrimitive.Content
-          className="flow-root"
+          className="flow-root flex-1"
           style={{ minWidth: 0 }}
         >
           {children}
@@ -51,10 +60,12 @@ function ScrollBar({
       data-orientation={orientation}
       orientation={orientation}
       keepMounted={keepMounted}
-      className={cn(
-        "pointer-events-none flex touch-none p-px opacity-0 transition-opacity duration-150 ease-out select-none motion-reduce:transition-none data-horizontal:h-2.5 data-horizontal:flex-col data-horizontal:border-t data-horizontal:border-t-transparent data-[has-overflow-x]:data-horizontal:pointer-events-auto data-[has-overflow-x]:data-horizontal:opacity-100 data-vertical:h-full data-vertical:w-2.5 data-vertical:border-l data-vertical:border-l-transparent data-[has-overflow-y]:data-vertical:pointer-events-auto data-[has-overflow-y]:data-vertical:opacity-100",
-        className
-      )}
+      className={(state) =>
+        cn(
+          "pointer-events-none flex touch-none p-px opacity-0 transition-opacity duration-150 ease-out select-none motion-reduce:transition-none data-horizontal:h-2.5 data-horizontal:flex-col data-horizontal:border-t data-horizontal:border-t-transparent data-[has-overflow-x]:data-horizontal:pointer-events-auto data-[has-overflow-x]:data-horizontal:opacity-100 data-vertical:h-full data-vertical:w-2.5 data-vertical:border-l data-vertical:border-l-transparent data-[has-overflow-y]:data-vertical:pointer-events-auto data-[has-overflow-y]:data-vertical:opacity-100",
+          typeof className === "function" ? className(state) : className
+        )
+      }
       {...props}
     >
       <ScrollAreaPrimitive.Thumb

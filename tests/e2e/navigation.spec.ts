@@ -91,6 +91,18 @@ test("shell scrollbars fade with overflow while scrolling stays keyboard and poi
   expect(
     await scrollbar.evaluate((element) => element.getAnimations().length)
   ).toBe(0)
+  await page.goto("/?view=platform")
+  await expect(
+    page.getByRole("textbox", { name: "Search Kraken" })
+  ).toBeVisible()
+  const viewportHeight = await viewport.evaluate(
+    (element) => element.clientHeight
+  )
+  const sectionHeight = await viewport
+    .locator("section")
+    .first()
+    .evaluate((element) => element.getBoundingClientRect().height)
+  expect(sectionHeight).toBeGreaterThanOrEqual(viewportHeight)
 })
 
 test("playground keeps control sizing, Typeset presets, and sidebar motion coherent", async ({

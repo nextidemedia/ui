@@ -162,6 +162,18 @@ assert.equal(formatCompactNumber(1320), "1.32k")
 assert.equal(formatCompactNumber(10300), "10.3k")
 assert.equal(formatCompactNumber(100100000), "100m")
 
+const { createElement } = await import("react")
+const { renderToStaticMarkup } = await import("react-dom/server")
+const { ScrollArea } = await import("@nextide/ui/components/scroll-area")
+const scrollMarkup = renderToStaticMarkup(createElement(ScrollArea, {
+  className: state => state.hasOverflowY ? "overflowing-root" : "fitting-root",
+  viewportProps: {
+    className: state => state.hasOverflowY ? "overflowing-viewport" : "fitting-viewport",
+  },
+}, "Content"))
+assert(scrollMarkup.includes("fitting-root"))
+assert(scrollMarkup.includes("fitting-viewport"))
+
 const cssPath = fileURLToPath(import.meta.resolve("@nextide/ui/globals.css"))
 const css = await readFile(cssPath, "utf8")
 assert(!css.includes("@font-face"), "v2 must not load a bundled UI font")
