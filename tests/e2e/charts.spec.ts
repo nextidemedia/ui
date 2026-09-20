@@ -280,6 +280,14 @@ async function expectCompactLineGeometry(page: Page) {
     await graph.scrollIntoViewIfNeeded()
     const bounds = await graph.boundingBox()
     expect(bounds!.height).toBe(180)
+    for (const label of await graph
+      .locator('[data-slot="line-item-axis-label"]')
+      .all()) {
+      const labelBounds = await label.boundingBox()
+      expect(labelBounds!.y + labelBounds!.height).toBeLessThanOrEqual(
+        bounds!.y + bounds!.height
+      )
+    }
     const points = graph.getByRole("img")
     for (const point of await points.all()) {
       const pointBounds = await point.boundingBox()

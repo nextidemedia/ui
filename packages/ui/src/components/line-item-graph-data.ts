@@ -137,11 +137,11 @@ export function getLineItemLayout(
   measuredChartWidth: number,
   visibleDays: LineItemGraphDay[],
   axisLabelMode: LineItemGraphAxisLabelMode,
-  height?: number
+  height?: number,
+  compact = false
 ) {
   const chartWidth = measuredChartWidth || 760
   const compactAxis = chartWidth < 520
-  const plotTop = 22
   const plotLeft = compactAxis ? 48 : 58
   const plotRight = chartWidth - (compactAxis ? 12 : 22)
   const plotWidth = plotRight - plotLeft
@@ -154,16 +154,12 @@ export function getLineItemLayout(
         ? 58
         : 52
   const shouldAngleLabels = visibleDays.length > 1 && step < angleThreshold
-  const [defaultHeight, bottomMargin] = shouldAngleLabels
-    ? [306, 92]
-    : [274, 70]
-  // Five value ticks need four 16px intervals in addition to the axis margins.
-  const chartHeight = Math.max(
-    height ?? defaultHeight,
-    plotTop + bottomMargin + 64
+  const vertical = getLineItemVerticalLayout(
+    shouldAngleLabels,
+    axisLabelMode,
+    height,
+    compact
   )
-  const plotBottom = chartHeight - bottomMargin
-  const plotHeight = plotBottom - plotTop
   const minimumLabelGap = shouldAngleLabels
     ? 52
     : axisLabelMode === "weekday-day"
@@ -176,16 +172,45 @@ export function getLineItemLayout(
 
   return {
     chartWidth,
-    chartHeight,
-    plotTop,
+    ...vertical,
     plotLeft,
     plotRight,
     plotWidth,
     step,
     shouldAngleLabels,
-    plotBottom,
-    plotHeight,
     axisLabelIndices,
+  }
+}
+
+function getLineItemVerticalLayout(
+  angled: boolean,
+  axisLabelMode: LineItemGraphAxisLabelMode,
+  height: number | undefined,
+  compact: boolean
+) {
+  const plotTop = 22
+  const [defaultHeight, defaultMargin, defaultLabelOffset] = angled
+    ? [306, 92, 32]
+    : [274, 70, 25]
+  const compactMargin = angled
+    ? axisLabelMode === "weekday-day"
+      ? 76
+      : 60
+    : 38
+  const bottomMargin = compact ? compactMargin : defaultMargin
+  const axisLabelOffset = compact ? 18 : defaultLabelOffset
+  // Five value ticks need four 16px intervals in addition to the axis margins.
+  const chartHeight = Math.max(
+    height ?? defaultHeight,
+    plotTop + bottomMargin + 64
+  )
+  const plotBottom = chartHeight - bottomMargin
+  return {
+    chartHeight,
+    plotTop,
+    plotBottom,
+    plotHeight: plotBottom - plotTop,
+    axisLabelOffset,
   }
 }
 
@@ -330,7 +355,8 @@ export function useLineItemData(
   totalLine: LineItemGraphTotalLine | undefined,
   minValue: number | undefined,
   maxValue: number | undefined,
-  height?: number
+  height?: number,
+  compact = false
 ) {
   const pointMaps = React.useMemo(
     () =>
@@ -355,7 +381,8 @@ export function useLineItemData(
     measuredChartWidth,
     visibleDays,
     axisLabelMode,
-    height
+    height,
+    compact
   )
   const { plotLeft, plotRight, step } = layout
   const dayX = useLineItemDayPositions(days, plotLeft, plotRight, step)

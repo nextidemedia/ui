@@ -233,6 +233,9 @@ function DaedalusTrends() {
           <LineItemGraph
             title="Weekly total impressions"
             height={180}
+            compact
+            showPoints={false}
+            glow={false}
             rangeLabel="Last 7 days"
             days={weeklyImpressionDays}
             series={weeklyImpressionSeries}
@@ -246,6 +249,9 @@ function DaedalusTrends() {
           <LineItemGraph
             title="Banner impressions"
             height={220}
+            compact
+            showPoints={false}
+            glow={false}
             rangeLabel="Last 30 days"
             days={bannerImpressionDays}
             series={bannerImpressionSeries}

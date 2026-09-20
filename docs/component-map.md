@@ -286,6 +286,10 @@ Without `onSessionsChange`, sessions are read-only; `onSessionSelect(session)`
 optionally makes them keyboard-accessible actions. Editing retains move and resize.
 
 `LineItemGraph` accepts a canvas `height` in pixels, preserving the existing
-274px/306px defaults when omitted. Heights retain room for the axes and five
+274px/306px defaults when omitted. Without compact, heights retain room for the axes and five
 value ticks (minimum 156px, or 178px with angled labels). Series controls expose
 `data-slot="line-item-graph-controls"` for scoped layout styling.
+
+`LineItemGraph` also accepts `compact` to reduce axis whitespace, `glow={false}`
+to remove series halos and control shadows, and `showPoints={false}` to hide
+painted point markers while retaining point/day tooltips and keyboard access.

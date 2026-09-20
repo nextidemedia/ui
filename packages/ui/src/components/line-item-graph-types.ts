@@ -76,6 +76,9 @@ export type LineItemGraphProps = React.ComponentProps<"section"> & {
   totalLine?: LineItemGraphTotalLine
   axisLabelMode?: LineItemGraphAxisLabelMode
   height?: number
+  compact?: boolean
+  showPoints?: boolean
+  glow?: boolean
   minValue?: number
   maxValue?: number
   activeSeriesIds?: string[]
@@ -103,6 +106,8 @@ export type LineItemPlotProps = Omit<
   "pointMaps"
 > & {
   title: React.ReactNode
+  showPoints: boolean
+  glow: boolean
   clipId: string
   tickFormatter: (value: number) => React.ReactNode
   showDayHover: (
@@ -142,17 +147,20 @@ export type LineItemAxisTickProps = {
 }
 
 export type LineItemControlsProps = {
+  glow: boolean
   selectableSeries: LineItemGraphSeries[]
   activeIdSet: Set<string>
   toggleSeries: (id: string) => void
 }
 
 export type LineItemSeriesProps = {
+  glow: boolean
   item: LineItemSeriesPlot
   clipId: string
 }
 
 export type LineItemPointProps = {
+  showPoints: boolean
   item: LineItemSeriesPlot
   point: PlottedLineItemPoint
   dayById: Map<string, LineItemGraphDay>

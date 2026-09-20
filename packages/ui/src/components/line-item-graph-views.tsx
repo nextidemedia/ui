@@ -59,6 +59,7 @@ export function LineItemCanvas({
 }
 
 export function LineItemControls({
+  glow,
   selectableSeries,
   activeIdSet,
   toggleSeries,
@@ -85,7 +86,9 @@ export function LineItemControls({
               active
                 ? {
                     borderColor: color,
-                    boxShadow: `0 0 20px ${withAlpha(color, 0.18)}`,
+                    boxShadow: glow
+                      ? `0 0 20px ${withAlpha(color, 0.18)}`
+                      : undefined,
                   }
                 : undefined
             }

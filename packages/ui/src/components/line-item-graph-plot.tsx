@@ -29,6 +29,8 @@ export function LineItemPlot(props: LineItemPlotProps) {
     valueFormatter,
     showPointHover,
     setHover,
+    showPoints,
+    glow,
   } = props
   return (
     <svg
@@ -73,10 +75,11 @@ export function LineItemPlot(props: LineItemPlotProps) {
         />
       ) : null}
       {seriesPlots.map((item) => (
-        <LineItemSeries key={item.id} item={item} clipId={clipId} />
+        <LineItemSeries key={item.id} item={item} clipId={clipId} glow={glow} />
       ))}
       {interactivePoints.map(({ item, point }) => (
         <LineItemPoint
+          showPoints={showPoints}
           key={`${item.id}-${point.dayId}`}
           item={item}
           point={point}
@@ -146,29 +149,32 @@ export function LineItemAxisTick({
 }
 
 export function LineItemSeries({
+  glow,
   item,
   clipId,
 }: LineItemSeriesProps): React.JSX.Element {
   return (
     <g key={item.id} clipPath={`url(#${clipId})`}>
-      <path
-        d={buildSmoothPath(item.plottedPoints)}
-        className={item.active ? "nextide-line-draw" : undefined}
-        fill="none"
-        pathLength={1}
-        stroke={item.color}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeOpacity={item.active ? "0.28" : "0"}
-        strokeDasharray="1"
-        strokeDashoffset={item.active ? "0" : "1"}
-        strokeWidth="7"
-        vectorEffect="non-scaling-stroke"
-        style={{
-          transition:
-            "stroke-dashoffset var(--nextide-motion-layout) var(--nextide-ease-out-quart), opacity var(--nextide-motion-state) linear",
-        }}
-      />
+      {glow ? (
+        <path
+          d={buildSmoothPath(item.plottedPoints)}
+          className={item.active ? "nextide-line-draw" : undefined}
+          fill="none"
+          pathLength={1}
+          stroke={item.color}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeOpacity={item.active ? "0.28" : "0"}
+          strokeDasharray="1"
+          strokeDashoffset={item.active ? "0" : "1"}
+          strokeWidth="7"
+          vectorEffect="non-scaling-stroke"
+          style={{
+            transition:
+              "stroke-dashoffset var(--nextide-motion-layout) var(--nextide-ease-out-quart), opacity var(--nextide-motion-state) linear",
+          }}
+        />
+      ) : null}
       <path
         d={buildSmoothPath(item.plottedPoints)}
         className={item.active ? "nextide-line-draw" : undefined}
@@ -192,6 +198,7 @@ export function LineItemSeries({
 }
 
 export function LineItemPoint({
+  showPoints,
   item,
   point,
   dayById,
@@ -219,15 +226,17 @@ export function LineItemPoint({
       }
     >
       <circle cx={point.x} cy={point.y} r="8" fill="transparent" />
-      <circle
-        cx={point.x}
-        cy={point.y}
-        r="3"
-        fill="var(--background)"
-        stroke={item.color}
-        strokeWidth="1.75"
-        vectorEffect="non-scaling-stroke"
-      />
+      {showPoints ? (
+        <circle
+          cx={point.x}
+          cy={point.y}
+          r="3"
+          fill="var(--background)"
+          stroke={item.color}
+          strokeWidth="1.75"
+          vectorEffect="non-scaling-stroke"
+        />
+      ) : null}
     </g>
   )
 }
@@ -361,6 +370,7 @@ export function LineItemXAxis({
   plotLeft,
   axisLabelMode,
   plotBottom,
+  axisLabelOffset,
   shouldAngleLabels,
 }: Pick<
   LineItemPlotProps,
@@ -370,6 +380,7 @@ export function LineItemXAxis({
   | "plotLeft"
   | "axisLabelMode"
   | "plotBottom"
+  | "axisLabelOffset"
   | "shouldAngleLabels"
 >) {
   return (
@@ -379,7 +390,7 @@ export function LineItemXAxis({
 
         const x = dayX.get(day.id) ?? plotLeft
         const label = <AxisLabel day={day} axisLabelMode={axisLabelMode} />
-        const labelY = plotBottom + (shouldAngleLabels ? 32 : 25)
+        const labelY = plotBottom + axisLabelOffset
         const textAnchor = shouldAngleLabels ? "end" : "middle"
 
         return (
