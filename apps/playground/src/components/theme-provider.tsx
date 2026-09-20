@@ -84,6 +84,7 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const themeRef = React.useRef<Theme | null>(null)
   if (themeRef.current === null) {
+    // react-doctor-disable-next-line react-doctor/no-ref-current-in-render -- Initialize once; subsequent writes happen in event handlers.
     themeRef.current = getStoredTheme(storageKey, defaultTheme)
   }
 

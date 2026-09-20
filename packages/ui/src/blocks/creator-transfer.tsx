@@ -121,6 +121,7 @@ function CreatorTransferOverlay({
     ? createPortal(
         <div
           aria-hidden="true"
+          // react-doctor-disable-next-line react-doctor/no-permanent-will-change -- This overlay mounts only for the transfer animation.
           className="pointer-events-none fixed z-[1001] will-change-transform"
           ref={flyerRef}
           style={flyerStyle}
@@ -169,7 +170,7 @@ function CreatorTransferPanel({
   return (
     <section
       ref={panelRef}
-      className="grid content-start gap-3 overflow-hidden rounded-lg border border-nextide-line bg-background/20 p-3 will-change-[height]"
+      className="grid content-start gap-3 overflow-hidden rounded-lg border border-nextide-line bg-background/20 p-3"
     >
       <h3 className="text-sm">{title}</h3>
       <label
@@ -211,7 +212,6 @@ function CreatorTransferPanel({
               }}
               type="button"
               className={cn(
-                "will-change-transform",
                 (isPlaceholder || isSource) && "pointer-events-none opacity-0"
               )}
               onClick={() => onTransfer(id, action)}
