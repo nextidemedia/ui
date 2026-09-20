@@ -180,7 +180,7 @@ function CreatorTransferPanel({
       <h3 className="text-sm">{title}</h3>
       <label
         htmlFor={searchId}
-        className="grid h-10 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-lg border border-nextide-line bg-nextide-panel px-3 text-nextide-tide"
+        className="grid h-10 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-lg border border-nextide-line bg-nextide-panel px-3 text-nextide-tide focus-within:border-ring focus-within:ring-1 focus-within:ring-ring focus-within:ring-inset"
       >
         <Search className="size-4" />
         <Input
@@ -204,7 +204,7 @@ function CreatorTransferPanel({
           }}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search creators..."
-          className="h-auto border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
+          className="h-auto border-0 bg-transparent p-0 text-sm shadow-none focus-visible:shadow-none focus-visible:not-data-[pointer-focus]:ring-0 dark:bg-transparent"
         />
       </label>
       <div
