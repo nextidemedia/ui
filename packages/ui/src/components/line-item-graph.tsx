@@ -33,6 +33,7 @@ function LineItemGraph({
   series,
   totalLine,
   axisLabelMode = "day",
+  height,
   minValue,
   maxValue,
   activeSeriesIds,
@@ -66,7 +67,8 @@ function LineItemGraph({
     axisLabelMode,
     totalLine,
     minValue,
-    maxValue
+    maxValue,
+    height
   )
   const { resolvedHover, hoveredDay, hoveredSeries } = resolveLineItemHover(
     hover,

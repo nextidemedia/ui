@@ -64,7 +64,7 @@ export function LineItemControls({
   toggleSeries,
 }: LineItemControlsProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div data-slot="line-item-graph-controls" className="flex flex-wrap gap-2">
       {selectableSeries.map((item) => {
         const color = resolveSeriesColor(item)
         const active = activeIdSet.has(item.id)

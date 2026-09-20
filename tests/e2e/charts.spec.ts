@@ -148,7 +148,9 @@ test("signal ridge and impression details share compact overview and exact detai
   const canvasBox = await graphCanvas.boundingBox()
   expect(viewportBox).not.toBeNull()
   expect(canvasBox).not.toBeNull()
+  expect(canvasBox!.height).toBe(220)
   expect(Math.abs(viewportBox!.width - canvasBox!.width)).toBeLessThanOrEqual(1)
+  await expectCompactLineGeometry(page)
   const hiddenSeries = impressions.getByRole("button", {
     name: "Immersive frame impressions",
     exact: true,
@@ -259,7 +261,8 @@ async function expectTooltipAnchorMovesWithoutRemeasuring(
   const translateBefore = await tooltip.evaluate(
     (element) => element.style.translate
   )
-  for (const index of [1, 2, 3]) await hoverZones.nth(index).hover()
+  for (const index of [1, 2, 3])
+    await hoverZones.nth(index).hover({ position: { x: 2, y: 2 } })
   await expect
     .poll(() => tooltip.evaluate((element) => element.style.translate))
     .not.toBe(translateBefore)
@@ -268,4 +271,27 @@ async function expectTooltipAnchorMovesWithoutRemeasuring(
       Reflect.deleteProperty(element, property)
     window.ResizeObserver = Reflect.get(window, "graphTooltipResizeObserver")
   })
+}
+
+async function expectCompactLineGeometry(page: Page) {
+  const graph = page.getByRole("group", { name: "Weekly total impressions" })
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await graph.scrollIntoViewIfNeeded()
+    const bounds = await graph.boundingBox()
+    expect(bounds!.height).toBe(180)
+    const points = graph.getByRole("img")
+    for (const point of await points.all()) {
+      const pointBounds = await point.boundingBox()
+      expect(pointBounds!.y).toBeGreaterThanOrEqual(bounds!.y)
+      expect(pointBounds!.y + pointBounds!.height).toBeLessThanOrEqual(
+        bounds!.y + bounds!.height
+      )
+    }
+    await points.last().focus()
+    await expect(page.locator('[data-slot="graph-tooltip"]')).toBeVisible()
+    await points.last().press("Tab")
+    await expect(page.locator('[data-slot="graph-tooltip"]')).toBeHidden()
+    await graph.screenshot({ path: `output/compact-line-graph-${width}.png` })
+  }
 }

@@ -142,7 +142,8 @@ export function withAlpha(color: string, alpha: number) {
 export function getLineItemLayout(
   measuredChartWidth: number,
   visibleDays: LineItemGraphDay[],
-  axisLabelMode: LineItemGraphAxisLabelMode
+  axisLabelMode: LineItemGraphAxisLabelMode,
+  height?: number
 ) {
   const chartWidth = measuredChartWidth || 760
   const compactAxis = chartWidth < 520
@@ -159,8 +160,15 @@ export function getLineItemLayout(
         ? 58
         : 52
   const shouldAngleLabels = visibleDays.length > 1 && step < angleThreshold
-  const chartHeight = shouldAngleLabels ? 306 : 274
-  const plotBottom = shouldAngleLabels ? 214 : 204
+  const [defaultHeight, bottomMargin] = shouldAngleLabels
+    ? [306, 92]
+    : [274, 70]
+  // Five value ticks need four 16px intervals in addition to the axis margins.
+  const chartHeight = Math.max(
+    height ?? defaultHeight,
+    plotTop + bottomMargin + 64
+  )
+  const plotBottom = chartHeight - bottomMargin
   const plotHeight = plotBottom - plotTop
   const minimumLabelGap = shouldAngleLabels
     ? 52
@@ -327,7 +335,8 @@ export function useLineItemData(
   axisLabelMode: LineItemGraphAxisLabelMode,
   totalLine: LineItemGraphTotalLine | undefined,
   minValue: number | undefined,
-  maxValue: number | undefined
+  maxValue: number | undefined,
+  height?: number
 ) {
   const pointMaps = React.useMemo(
     () =>
@@ -351,7 +360,8 @@ export function useLineItemData(
   const layout = getLineItemLayout(
     measuredChartWidth,
     visibleDays,
-    axisLabelMode
+    axisLabelMode,
+    height
   )
   const { plotLeft, plotRight, step } = layout
   const dayX = useLineItemDayPositions(days, plotLeft, plotRight, step)

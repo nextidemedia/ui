@@ -75,6 +75,7 @@ export type LineItemGraphProps = React.ComponentProps<"section"> & {
   series: LineItemGraphSeries[]
   totalLine?: LineItemGraphTotalLine
   axisLabelMode?: LineItemGraphAxisLabelMode
+  height?: number
   minValue?: number
   maxValue?: number
   activeSeriesIds?: string[]
