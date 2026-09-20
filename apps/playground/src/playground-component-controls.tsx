@@ -294,7 +294,6 @@ export function FieldStatesPreview() {
           <FieldLabel htmlFor="preview-timezone">Campaign time zone</FieldLabel>
           <SelectMenu
             triggerId="preview-timezone"
-            aria-label="Campaign time zone"
             options={timezones.map((value) => ({ value, label: value }))}
             value={timezone}
             onValueChange={setTimezone}

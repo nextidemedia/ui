@@ -51,7 +51,7 @@ function SelectMenu({
   optionClassName,
   optionLabelClassName,
   disabled,
-  "aria-label": ariaLabel = "Select option",
+  "aria-label": ariaLabel,
   ...props
 }: SelectMenuProps) {
   const triggerRef = React.useRef<HTMLButtonElement | null>(null)
@@ -98,7 +98,7 @@ function SelectMenu({
         <SelectTrigger
           ref={triggerRef}
           id={triggerId}
-          aria-label={ariaLabel}
+          aria-label={ariaLabel ?? (triggerId ? undefined : "Select option")}
           className={cn(
             "w-full border-nextide-line bg-nextide-panel px-3 text-left font-medium hover:bg-nextide-panel-strong",
             triggerClassName

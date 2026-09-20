@@ -73,16 +73,17 @@ test("dashboard filter bar scrolls campaigns and disables clear without a select
   const selectedScopeOption = page.getByRole("option", {
     name: "Campaigns 10 available",
   })
+  const selectedCheck = selectedScopeOption.locator("svg")
   const otherScopeOption = page.getByRole("option", {
     name: "Creators 2 available",
   })
   await expect(scope).toHaveCSS("background-color", "rgb(30, 228, 188)")
   await expect(scope).toHaveCSS("color", "rgb(0, 0, 0)")
-  await expect(selectedScopeOption).toHaveCSS("color", "rgb(30, 228, 188)")
+  await expect(selectedCheck).toHaveCSS("color", "rgb(30, 228, 188)")
   await otherScopeOption.hover()
-  await expect(selectedScopeOption).toHaveCSS("color", "rgb(30, 228, 188)")
+  await expect(selectedCheck).toHaveCSS("color", "rgb(30, 228, 188)")
   await selectedScopeOption.hover()
-  await expect(selectedScopeOption).toHaveCSS("color", "rgb(30, 228, 188)")
+  await expect(selectedCheck).toHaveCSS("color", "rgb(30, 228, 188)")
   await page.keyboard.press("Escape")
 
   await scroller.hover()
