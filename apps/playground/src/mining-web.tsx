@@ -1,4 +1,7 @@
-import { CampaignScheduleMatrix } from "@nextide/ui/blocks/campaign-schedule-matrix"
+import {
+  CampaignScheduleMatrix,
+  type CampaignScheduleBooking,
+} from "@nextide/ui/blocks/campaign-schedule-matrix"
 import { ExportWorkbench } from "@nextide/ui/blocks/export-workbench"
 import { LiveEventProofModal } from "@nextide/ui/blocks/live-event-proof-modal"
 import { LiveguardIncidentReview } from "@nextide/ui/blocks/liveguard-incident-review"
@@ -17,7 +20,6 @@ import {
   scheduleDays,
 } from "./mining-data"
 function WebMiningPage() {
-  const [activeBookingId, setActiveBookingId] = useState("booking-2")
   const [activePresetId, setActivePresetId] = useState("7d")
   const [pacingAction, setPacingAction] = useState("Preset ready")
 
@@ -55,13 +57,7 @@ function WebMiningPage() {
 
       <div className="grid gap-2">
         <ComponentReference names="CampaignScheduleMatrix" />
-        <CampaignScheduleMatrix
-          creators={scheduleCreators}
-          days={scheduleDays}
-          bookings={scheduleBookings}
-          activeBookingId={activeBookingId}
-          onBookingSelect={(booking) => setActiveBookingId(booking.id)}
-        />
+        <ScheduleEditorDemo />
       </div>
 
       <div className="grid gap-2">
@@ -151,6 +147,65 @@ function WebIncidentProof() {
         ]}
         evidenceSummary={audioProofStatus}
         onAudioPlay={() => setAudioProofStatus("Audio proof started.")}
+      />
+    </div>
+  )
+}
+
+function ScheduleEditorDemo() {
+  const [activeBookingId, setActiveBookingId] = useState("booking-2")
+  const [creators, setCreators] = useState(scheduleCreators)
+  const [bookings, setBookings] = useState(() =>
+    scheduleBookings.map((booking) => ({
+      ...booking,
+      startIndex: Math.max(booking.startIndex, 4),
+    }))
+  )
+  const split = (booking: CampaignScheduleBooking, splitIndex: number) =>
+    setBookings((current) =>
+      current.flatMap((item) =>
+        item.id === booking.id
+          ? [
+              { ...item, endIndex: splitIndex - 1 },
+              { ...item, id: crypto.randomUUID(), startIndex: splitIndex },
+            ]
+          : [item]
+      )
+    )
+  return (
+    <div className="grid gap-3">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          onClick={() =>
+            setCreators((current) => (current.length ? [] : scheduleCreators))
+          }
+        >
+          {creators.length ? "Clear creators" : "Restore creators"}
+        </Button>
+      </div>
+      <CampaignScheduleMatrix
+        creators={creators}
+        days={scheduleDays}
+        bookings={bookings}
+        activeBookingId={activeBookingId}
+        onBookingSelect={(booking) => setActiveBookingId(booking.id)}
+        minimumRows={5}
+        campaignStartIndex={4}
+        campaignEndIndex={86}
+        editableStartIndex={4}
+        editableEndIndex={86}
+        onBookingChange={(booking) =>
+          setBookings((current) =>
+            current.map((item) => (item.id === booking.id ? booking : item))
+          )
+        }
+        onBookingSplit={split}
+        onCreatorOrderChange={(ids) =>
+          setCreators((current) =>
+            ids.map((id) => current.find((creator) => creator.id === id)!)
+          )
+        }
       />
     </div>
   )

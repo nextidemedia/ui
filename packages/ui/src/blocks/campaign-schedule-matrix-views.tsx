@@ -1,8 +1,13 @@
+import { ScheduleBooking } from "./campaign-schedule-matrix-booking.js"
+import type { ScheduleEditing } from "./campaign-schedule-matrix-edit.js"
+import {
+  ScheduleReorderHandle,
+  type ScheduleReorder,
+} from "./campaign-schedule-matrix-reorder.js"
 import * as React from "react"
 import { CalendarClock, Clock3, ZoomIn, ZoomOut } from "lucide-react"
 import { Button } from "@nextide/ui/components/button"
 import { Metric } from "@nextide/ui/components/metric"
-import { StatusBadge } from "@nextide/ui/components/status-badge"
 import {
   SurfaceDescription,
   SurfaceHeader,
@@ -10,7 +15,6 @@ import {
 } from "@nextide/ui/components/surface"
 import { cn } from "@nextide/ui/lib/utils"
 import {
-  bookingToneClasses,
   headerTierClasses,
   zoomOrder,
   zoomLabels,
@@ -18,7 +22,6 @@ import {
   contextTierForZoom,
   scheduleTransitionClass,
   initialsFromNode,
-  clamp,
   type CampaignScheduleZoom,
   type CampaignScheduleCreator,
   type CampaignScheduleBooking,
@@ -197,6 +200,8 @@ function ScheduleCornerLegend({
 
 function ScheduleCreatorRow({
   creator,
+  editing,
+  reorder,
   bookings,
   activeBookingId,
   onBookingSelect,
@@ -206,6 +211,8 @@ function ScheduleCreatorRow({
   boundedDays,
 }: ScheduleViewState & {
   creator: CampaignScheduleCreator
+  editing: ScheduleEditing
+  reorder: ScheduleReorder
   bookings: CampaignScheduleBooking[]
   activeBookingId?: string
   onBookingSelect: (booking: CampaignScheduleBooking) => void
@@ -215,7 +222,7 @@ function ScheduleCreatorRow({
   )
   return (
     <>
-      <ScheduleCreatorLegend creator={creator} />
+      <ScheduleCreatorLegend creator={creator} reorder={reorder} />
       <div
         data-slot="campaign-schedule-board-row"
         className="relative grid min-h-16 cursor-grab border-b border-nextide-line/70 in-data-[dragging=true]:cursor-grabbing"
@@ -242,6 +249,7 @@ function ScheduleCreatorRow({
         {creatorBookings.map((booking) => (
           <ScheduleBooking
             key={booking.id}
+            editing={editing}
             booking={booking}
             boundedDays={boundedDays}
             active={booking.id === activeBookingId}
@@ -255,14 +263,17 @@ function ScheduleCreatorRow({
 
 function ScheduleCreatorLegend({
   creator,
+  reorder,
 }: {
   creator: CampaignScheduleCreator
+  reorder: ScheduleReorder
 }) {
   return (
     <div
       data-slot="campaign-schedule-creator-legend"
       className="sticky left-0 z-20 flex min-w-0 items-center gap-2 border-r border-b border-nextide-line bg-nextide-panel p-3"
     >
+      <ScheduleReorderHandle creator={creator} reorder={reorder} />
       <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-nextide-line bg-background/35 text-xs font-medium text-nextide-tide">
         {creator.avatar ?? initialsFromNode(creator.name)}
       </span>
@@ -277,59 +288,6 @@ function ScheduleCreatorLegend({
         ) : null}
       </span>
     </div>
-  )
-}
-
-function ScheduleBooking({
-  booking,
-  boundedDays,
-  active,
-  onBookingSelect,
-}: {
-  booking: CampaignScheduleBooking
-  boundedDays: number
-  active: boolean
-  onBookingSelect: (booking: CampaignScheduleBooking) => void
-}) {
-  const start = clamp(booking.startIndex, 0, boundedDays - 1)
-  const end = clamp(booking.endIndex, start, boundedDays - 1)
-  return (
-    <button
-      type="button"
-      data-slot="campaign-schedule-booking"
-      className={cn(
-        "absolute top-2 bottom-2 flex min-w-0 cursor-pointer items-center rounded-lg border py-2 pr-16 pl-4 text-left shadow-[inset_0_1px_0_rgb(255_255_255/0.04)] transition-[background-color,border-color,box-shadow] duration-[var(--nextide-motion-state)] before:absolute before:inset-y-2 before:left-1.5 before:w-0.5 before:rounded-sm focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-none in-data-[dragging=true]:cursor-grabbing",
-        bookingToneClasses[booking.tone ?? "success"],
-        active &&
-          "border-nextide-tide bg-nextide-tide/12 shadow-[0_0_0_1px_rgb(30_228_188/0.38),0_0_24px_rgb(30_228_188/0.14)]"
-      )}
-      style={{
-        left: `${(start / boundedDays) * 100}%`,
-        width: `${((end - start + 1) / boundedDays) * 100}%`,
-      }}
-      onClick={() => onBookingSelect(booking)}
-    >
-      <span className="grid min-w-0 gap-0.5 self-center">
-        <span className="truncate text-sm leading-tight font-medium">
-          {booking.title}
-        </span>
-        {booking.meta ? (
-          <span className="truncate text-ui-caption text-muted-foreground">
-            {booking.meta}
-          </span>
-        ) : null}
-      </span>
-      {booking.status ? (
-        <StatusBadge
-          tone={booking.tone ?? "success"}
-          size="compact"
-          indicator={booking.statusIndicator ?? "none"}
-          className="absolute top-1.5 right-2 uppercase"
-        >
-          {booking.status}
-        </StatusBadge>
-      ) : null}
-    </button>
   )
 }
 

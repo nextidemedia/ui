@@ -3,9 +3,7 @@ import {
   transferEase,
   transferMoveMs,
   transferReflowMs,
-  type CreatorPanelResize,
   type CreatorTransferFlyer,
-  type CreatorTransferSide,
 } from "./creator-transfer-types.js"
 function useTransferMotion() {
   const availablePanelRef = React.useRef<HTMLElement | null>(null)
@@ -17,23 +15,10 @@ function useTransferMotion() {
   const flyerRef = React.useRef<HTMLDivElement | null>(null)
   const availableReflowRef = React.useRef<Map<string, DOMRect> | null>(null)
   const addedReflowRef = React.useRef<Map<string, DOMRect> | null>(null)
-  const availableResize = React.useRef<CreatorPanelResize | null>(null)
-  const addedResize = React.useRef<CreatorPanelResize | null>(null)
   const transferTimers = React.useRef<number[]>([])
-  const resizeTimersRef = React.useRef<
-    Record<CreatorTransferSide, number | null>
-  >({ available: null, selected: null })
   const clearTransferTimers = React.useCallback(() => {
     transferTimers.current.forEach((timer) => window.clearTimeout(timer))
     transferTimers.current = []
-  }, [])
-
-  const clearResizeTimer = React.useCallback((side: CreatorTransferSide) => {
-    const timer = resizeTimersRef.current[side]
-    if (timer) {
-      window.clearTimeout(timer)
-      resizeTimersRef.current[side] = null
-    }
   }, [])
 
   const queueTransferTimer = React.useCallback(
@@ -44,19 +29,6 @@ function useTransferMotion() {
     []
   )
 
-  const capturePanelResize = (side: CreatorTransferSide, duration: number) => {
-    const node =
-      side === "available" ? availablePanelRef.current : addedPanelRef.current
-    const resizeRef = side === "available" ? availableResize : addedResize
-    if (node) {
-      resizeRef.current = {
-        height: node.getBoundingClientRect().height,
-        duration,
-      }
-    }
-  }
-
-  const animatePanelResize = usePanelResize(clearResizeTimer, resizeTimersRef)
   return {
     availablePanelRef,
     addedPanelRef,
@@ -65,62 +37,11 @@ function useTransferMotion() {
     flyerRef,
     availableReflowRef,
     addedReflowRef,
-    availableResize,
-    addedResize,
     clearTransferTimers,
-    clearResizeTimer,
     queueTransferTimer,
-    capturePanelResize,
-    animatePanelResize,
   }
 }
 type TransferMotion = ReturnType<typeof useTransferMotion>
-function usePanelResize(
-  clearResizeTimer: (side: CreatorTransferSide) => void,
-  resizeTimersRef: React.RefObject<Record<CreatorTransferSide, number | null>>
-) {
-  const animatePanelResize = React.useCallback(
-    (
-      side: CreatorTransferSide,
-      ref: React.MutableRefObject<HTMLElement | null>,
-      resizeRef: React.MutableRefObject<CreatorPanelResize | null>
-    ) => {
-      const node = ref.current
-      const resize = resizeRef.current
-      resizeRef.current = null
-      if (!node || !resize) return
-
-      const nextHeight = node.getBoundingClientRect().height
-      if (Math.abs(resize.height - nextHeight) < 0.5) return
-
-      clearResizeTimer(side)
-      const originalStyle = node.getAttribute("style") ?? ""
-      node.setAttribute(
-        "style",
-        mergeInlineStyle(originalStyle, {
-          transition: "none",
-          height: `${resize.height}px`,
-        })
-      )
-      void node.offsetHeight
-      node.setAttribute(
-        "style",
-        mergeInlineStyle(originalStyle, {
-          transition: `height ${resize.duration}ms ${transferEase}`,
-          height: `${nextHeight}px`,
-        })
-      )
-
-      resizeTimersRef.current[side] = window.setTimeout(() => {
-        restoreInlineStyle(node, originalStyle)
-        resizeTimersRef.current[side] = null
-      }, resize.duration)
-    },
-    [clearResizeTimer, resizeTimersRef]
-  )
-
-  return animatePanelResize
-}
 function useTransferMotionEffects(
   motion: TransferMotion,
   visibleAvailableIds: string[],
@@ -128,53 +49,29 @@ function useTransferMotionEffects(
   transferFlyer: CreatorTransferFlyer | null
 ) {
   const {
-    availablePanelRef,
-    addedPanelRef,
     availableRefs,
     addedRefs,
     flyerRef,
     availableReflowRef,
     addedReflowRef,
-    availableResize,
-    addedResize,
     clearTransferTimers,
-    clearResizeTimer,
-    animatePanelResize,
   } = motion
   React.useEffect(
     () => () => {
       clearTransferTimers()
-      clearResizeTimer("available")
-      clearResizeTimer("selected")
     },
-    [clearResizeTimer, clearTransferTimers]
+    [clearTransferTimers]
   )
 
   React.useLayoutEffect(() => {
     animateRows(visibleAvailableIds, availableRefs, availableReflowRef.current)
-    animatePanelResize("available", availablePanelRef, availableResize)
     availableReflowRef.current = null
-  }, [
-    animatePanelResize,
-    visibleAvailableIds,
-    availableReflowRef,
-    availablePanelRef,
-    availableRefs,
-    availableResize,
-  ])
+  }, [visibleAvailableIds, availableReflowRef, availableRefs])
 
   React.useLayoutEffect(() => {
     animateRows(visibleAddedIds, addedRefs, addedReflowRef.current)
-    animatePanelResize("selected", addedPanelRef, addedResize)
     addedReflowRef.current = null
-  }, [
-    animatePanelResize,
-    visibleAddedIds,
-    addedRefs,
-    addedResize,
-    addedPanelRef,
-    addedReflowRef,
-  ])
+  }, [visibleAddedIds, addedRefs, addedReflowRef])
 
   React.useLayoutEffect(() => {
     const node = flyerRef.current
@@ -233,26 +130,6 @@ function animateRows(
       { duration: transferReflowMs, easing: transferEase }
     )
   })
-}
-
-function mergeInlineStyle(
-  originalStyle: string,
-  styles: Record<string, string>
-) {
-  const suffix = Object.entries(styles)
-    .map(([property, value]) => `${property}: ${value}`)
-    .join("; ")
-
-  return originalStyle ? `${originalStyle}; ${suffix}` : suffix
-}
-
-function restoreInlineStyle(node: HTMLElement, originalStyle: string) {
-  if (originalStyle) {
-    node.setAttribute("style", originalStyle)
-    return
-  }
-
-  node.removeAttribute("style")
 }
 
 export {

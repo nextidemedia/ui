@@ -7,7 +7,6 @@ import {
 } from "./creator-transfer-motion.js"
 import {
   transferMoveMs,
-  transferReflowMs,
   transferSpaceMs,
   type CreatorTransferFlyer,
   type CreatorTransferItem,
@@ -183,7 +182,6 @@ function createTransferCreator(
     setAvailableIds,
   } = state
   const {
-    capturePanelResize,
     addedReflowRef,
     addedRefs,
     availableReflowRef,
@@ -191,6 +189,7 @@ function createTransferCreator(
     queueTransferTimer,
   } = motion
   return (id: string, direction: "add" | "remove") => {
+    if (transferDisabled(direction, state.creatorById.get(id))) return
     if (motionLocked) {
       enqueueTransfer(queue, id, direction)
       return
@@ -218,10 +217,6 @@ function createTransferCreator(
 
     setMotionLocked(true)
     setTransferTarget({ id, side: target })
-    capturePanelResize(
-      target,
-      target === "available" ? transferReflowMs : transferSpaceMs
-    )
 
     if (target === "selected") {
       addedReflowRef.current = captureRows(visibleAddedIds, addedRefs)
@@ -239,6 +234,7 @@ function createTransferCreator(
       queueTransferTimer(
         () => {
           completeTransfer(
+            id,
             nextAvailableIds,
             nextAddedIds,
             source,
@@ -267,6 +263,8 @@ function startFlyer(
     .current[id]
   if (!sourceRow || !targetRow) return false
 
+  revealTransferRow(sourceRow)
+  revealTransferRow(targetRow)
   setTransferFlyer({
     id,
     source,
@@ -278,6 +276,7 @@ function startFlyer(
 }
 
 function completeTransfer(
+  id: string,
   nextAvailableIds: string[],
   nextAddedIds: string[],
   collapseSide: CreatorTransferSide,
@@ -285,13 +284,8 @@ function completeTransfer(
   motion: TransferMotion,
   onSelectedIdsChange: CreatorTransferProps["onSelectedIdsChange"]
 ) {
-  const {
-    capturePanelResize,
-    availableReflowRef,
-    availableRefs,
-    addedReflowRef,
-    addedRefs,
-  } = motion
+  const { availableReflowRef, availableRefs, addedReflowRef, addedRefs } =
+    motion
   const {
     visibleAvailableIds,
     setAvailableIds,
@@ -301,7 +295,6 @@ function completeTransfer(
     setTransferFlyer,
     setMotionLocked,
   } = state
-  capturePanelResize(collapseSide, transferReflowMs)
 
   if (collapseSide === "available") {
     availableReflowRef.current = captureRows(visibleAvailableIds, availableRefs)
@@ -311,6 +304,14 @@ function completeTransfer(
     setAddedIds(nextAddedIds)
   }
 
+  const sourceRefs = collapseSide === "available" ? availableRefs : addedRefs
+  const activeRow = document.activeElement
+  if (sourceRefs.current[id] === activeRow) {
+    activeRow
+      ?.closest("section")
+      ?.querySelector("input")
+      ?.focus({ preventScroll: true })
+  }
   setTransferTarget(null)
   setTransferFlyer(null)
   setMotionLocked(false)
@@ -380,4 +381,21 @@ function enqueueTransfer(
     queuedTransfersRef.current.push({ id, direction })
     setQueueVersion((version) => version + 1)
   }
+}
+
+function revealTransferRow(row: HTMLButtonElement) {
+  const list = row.parentElement
+  if (!list) return
+  const rowBox = row.getBoundingClientRect()
+  const listBox = list.getBoundingClientRect()
+  if (rowBox.top < listBox.top) list.scrollTop -= listBox.top - rowBox.top
+  if (rowBox.bottom > listBox.bottom)
+    list.scrollTop += rowBox.bottom - listBox.bottom
+}
+
+function transferDisabled(
+  direction: "add" | "remove",
+  creator: CreatorTransferItem | undefined
+) {
+  return direction === "add" && Boolean(creator?.disabledReason)
 }

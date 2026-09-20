@@ -20,6 +20,7 @@ function CreatorTransfer({
   onSelectedIdsChange,
   availableTitle = "Available creators",
   selectedTitle = "Added creators",
+  listHeight = "20rem",
   className,
   ...props
 }: CreatorTransferProps) {
@@ -52,6 +53,7 @@ function CreatorTransfer({
       {...props}
     >
       <CreatorTransferPanel
+        listHeight={listHeight}
         panelRef={availablePanelRef}
         title={availableTitle}
         query={availableQuery}
@@ -72,6 +74,7 @@ function CreatorTransfer({
         </span>
       </div>
       <CreatorTransferPanel
+        listHeight={listHeight}
         panelRef={addedPanelRef}
         title={
           <>
@@ -137,6 +140,7 @@ function CreatorTransferOverlay({
     : null
 }
 function CreatorTransferPanel({
+  listHeight,
   panelRef,
   title,
   query,
@@ -151,6 +155,7 @@ function CreatorTransferPanel({
   action,
   onTransfer,
 }: {
+  listHeight: React.CSSProperties["height"]
   panelRef: React.RefObject<HTMLElement | null>
   title: React.ReactNode
   query: string
@@ -180,49 +185,102 @@ function CreatorTransferPanel({
         <Search className="size-4" />
         <Input
           id={searchId}
+          aria-label={
+            side === "available"
+              ? "Search available creators"
+              : "Search added creators"
+          }
           value={query}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" || event.nativeEvent.isComposing) return
+            const id = items.find(
+              (itemId) =>
+                action === "remove" || !itemById.get(itemId)?.disabledReason
+            )
+            if (!id) return
+            event.preventDefault()
+            onTransfer(id, action)
+            onQueryChange("")
+          }}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search creators..."
           className="h-auto border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
         />
       </label>
-      <div className="grid gap-2">
+      <div
+        data-slot="creator-transfer-list"
+        className="grid content-start gap-2 overflow-y-auto overscroll-contain"
+        style={{ height: listHeight }}
+      >
         {items.length === 0 ? (
           <Empty className="border border-nextide-line px-3 py-4">
             <EmptyDescription>{emptyLabel}</EmptyDescription>
           </Empty>
         ) : null}
-        {items.map((id) => {
-          const creator = itemById.get(id)
-          if (!creator) return null
-          const isPlaceholder =
-            transferTarget?.side === side && transferTarget.id === id
-          const isSource =
-            transferFlyer?.source === side && transferFlyer.id === id
-
-          return (
-            <button
-              key={id}
-              ref={(node) => {
-                if (node) {
-                  refs.current[id] = node
-                } else {
-                  delete refs.current[id]
-                }
-              }}
-              type="button"
-              className={cn(
-                (isPlaceholder || isSource) && "pointer-events-none opacity-0"
-              )}
-              onClick={() => onTransfer(id, action)}
-            >
-              <CreatorTransferRow creator={creator} action={action} />
-            </button>
-          )
-        })}
+        <CreatorTransferRows
+          {...{
+            items,
+            itemById,
+            refs,
+            transferTarget,
+            transferFlyer,
+            side,
+            action,
+            onTransfer,
+          }}
+        />
       </div>
     </section>
   )
+}
+
+function CreatorTransferRows({
+  items,
+  itemById,
+  refs,
+  transferTarget,
+  transferFlyer,
+  side,
+  action,
+  onTransfer,
+}: Pick<
+  Parameters<typeof CreatorTransferPanel>[0],
+  | "items"
+  | "itemById"
+  | "refs"
+  | "transferTarget"
+  | "transferFlyer"
+  | "side"
+  | "action"
+  | "onTransfer"
+>) {
+  return items.map((id) => {
+    const creator = itemById.get(id)
+    if (!creator) return null
+    const hidden =
+      (transferTarget?.side === side && transferTarget.id === id) ||
+      (transferFlyer?.source === side && transferFlyer.id === id)
+    return (
+      <button
+        key={id}
+        ref={(node) => {
+          if (node) refs.current[id] = node
+          else delete refs.current[id]
+        }}
+        type="button"
+        tabIndex={transferTarget?.id === id ? -1 : undefined}
+        aria-hidden={hidden || undefined}
+        disabled={action === "add" && Boolean(creator.disabledReason)}
+        className={cn(
+          "rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+          hidden && "pointer-events-none opacity-0"
+        )}
+        onClick={() => onTransfer(id, action)}
+      >
+        <CreatorTransferRow creator={creator} action={action} />
+      </button>
+    )
+  })
 }
 
 function CreatorTransferRow({
@@ -248,7 +306,14 @@ function CreatorTransferRow({
       </span>
       <span className="grid min-w-0 gap-0.5">
         <strong className="truncate text-sm">{creator.name}</strong>
-        {creator.meta ? (
+        {creator.disabledReason && action === "add" ? (
+          <small
+            className="truncate text-xs text-muted-foreground"
+            title={creator.disabledReason}
+          >
+            {creator.disabledReason}
+          </small>
+        ) : creator.meta ? (
           <small className="truncate text-xs text-muted-foreground">
             {creator.meta}
           </small>

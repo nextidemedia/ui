@@ -278,3 +278,35 @@ An explicit `alignItemWithTrigger` opts into the selected-item overlay treatment
 Navigation preserves icon positions through the drawer/text exit, then smoothly
 settles heading space, row heights, gaps and search placement. Expansion settles
 icons first, then reveals the text. Reduced motion applies the final state directly.
+
+### Creator transfer and campaign scheduling
+
+`CreatorTransfer` keeps each list independently scrollable with `listHeight`
+(default `20rem`). Search + Enter transfers the first eligible result and clears
+that search. `disabledReason` makes an available creator unavailable to add and
+shows why; selected creators can still be removed. Tab retains normal document
+focus order. Transfers animate inside a stable-height layout.
+
+`CampaignScheduleMatrix` remains controlled. Set `minimumRows={5}` for a stable
+empty board; placeholder rows do not count as creators. `showMetrics={false}`
+hides summary metrics. `campaignStartIndex` and `campaignEndIndex` mark the
+inclusive campaign range within `days`, independently of the inclusive
+`editableStartIndex`/`editableEndIndex` bounds (default: all displayed days).
+Display padding is supplied as ordinary days.
+
+With `onBookingChange`, drag a booking to move it without changing its duration,
+or drag either edge to resize by whole days. Focus the body or either edge and
+use Left/Right to preview, Enter to save, Escape or blur to cancel. Pointer
+cancellation also discards the preview. Blank rows retain timeline panning.
+The dedicated creator handle uses drag or Up/Down, Enter, and Escape and calls
+`onCreatorOrderChange` with the reordered creator IDs.
+
+`onBookingSplit(booking, splitIndex)` requests a cut before the indexed day;
+the two inclusive ranges are `[startIndex, splitIndex - 1]` and
+`[splitIndex, endIndex]`. The consuming app assigns the second booking's ID.
+The Cut menu supports keyboard activation and right-click, offers only interior
+boundaries, and labels each boundary by date. Adjacent bookings retain their
+separate identities and can be moved independently.
+
+The web-mining playground demonstrates padded bounds, edits, cuts, reordering,
+and clearing all creators while retaining five empty rows.
