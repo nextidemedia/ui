@@ -207,6 +207,7 @@ export type LineItemTooltipRowsProps = {
 }
 
 export type AxisLabelProps = {
+  compact: boolean
   day: LineItemGraphDay
   axisLabelMode: LineItemGraphAxisLabelMode
 }

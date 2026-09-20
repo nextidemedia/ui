@@ -297,3 +297,7 @@ painted point markers while retaining point/day tooltips and keyboard access.
 `LineItemGraph edgePadding={0.5}` adds half a day to each end of the horizontal
 domain without changing the plot insets. The default is zero. `angled-day`
 explicitly angles labels; `day` and `weekday-day` adapt to available spacing.
+
+For weekday prefixes, supply `day.weekday` separately from `day.label` and choose
+`weekday-day` or `angled-day`. Compact axes render the weekday and separator
+slightly smaller and quieter while preserving full-size dates and tooltips.

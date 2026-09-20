@@ -239,7 +239,7 @@ function DaedalusTrends() {
             rangeLabel="Last 7 days"
             days={weeklyImpressionDays.map((day) => ({
               ...day,
-              label: `${day.weekday}|${String(day.label).replace(" ", "")}`,
+              label: String(day.label).replace(" ", ""),
             }))}
             series={weeklyImpressionSeries}
             axisLabelMode="angled-day"

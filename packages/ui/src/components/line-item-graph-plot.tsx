@@ -241,9 +241,20 @@ export function LineItemPoint({
   )
 }
 
-export function AxisLabel({ day, axisLabelMode }: AxisLabelProps) {
-  if (axisLabelMode === "weekday-day" && day.weekday) {
-    return `${stringifyNode(day.weekday)} | ${stringifyNode(day.label)}`
+export function AxisLabel({ day, axisLabelMode, compact }: AxisLabelProps) {
+  if (axisLabelMode !== "day" && day.weekday) {
+    return (
+      <>
+        <tspan
+          fontSize={compact ? "90%" : undefined}
+          opacity={compact ? 0.8 : undefined}
+        >
+          {stringifyNode(day.weekday)}
+          {compact ? "|" : " | "}
+        </tspan>
+        {stringifyNode(day.label)}
+      </>
+    )
   }
 
   return stringifyNode(day.label)
@@ -364,6 +375,7 @@ export function LineItemDayZones({
 }
 
 export function LineItemXAxis({
+  compact,
   visibleDays,
   axisLabelIndices,
   dayX,
@@ -374,6 +386,7 @@ export function LineItemXAxis({
   shouldAngleLabels,
 }: Pick<
   LineItemPlotProps,
+  | "compact"
   | "visibleDays"
   | "axisLabelIndices"
   | "dayX"
@@ -389,7 +402,13 @@ export function LineItemXAxis({
         if (!axisLabelIndices.has(index)) return null
 
         const x = dayX.get(day.id) ?? plotLeft
-        const label = <AxisLabel day={day} axisLabelMode={axisLabelMode} />
+        const label = (
+          <AxisLabel
+            day={day}
+            axisLabelMode={axisLabelMode}
+            compact={compact}
+          />
+        )
         const labelY = plotBottom + axisLabelOffset
         const textAnchor = shouldAngleLabels ? "end" : "middle"
 

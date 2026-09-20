@@ -174,6 +174,7 @@ export function getLineItemLayout(
   )
 
   return {
+    compact,
     chartWidth,
     ...vertical,
     plotLeft,
