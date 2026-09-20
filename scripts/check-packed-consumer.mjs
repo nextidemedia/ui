@@ -162,7 +162,20 @@ assert.equal(formatCompactNumber(1320), "1.32k")
 assert.equal(formatCompactNumber(10300), "10.3k")
 assert.equal(formatCompactNumber(100100000), "100m")
 
-const { buildSmoothPath } = await import("@nextide/ui/components/line-item-graph-data")
+const { buildSmoothPath, getLineItemLayout, resolveDayPositions } = await import("@nextide/ui/components/line-item-graph-data")
+const paddedDays = Array.from({ length: 7 }, (_, index) => ({ id: String(index), label: String(index) }))
+const paddedLayout = getLineItemLayout(780, paddedDays, "day", 180, true, 0.5)
+assert.equal(paddedLayout.plotLeft, 58)
+assert.equal(paddedLayout.plotRight, 758)
+assert.equal(paddedLayout.step, 100)
+const paddedPositions = resolveDayPositions(paddedDays,
+  paddedLayout.plotLeft + paddedLayout.edgeOffset,
+  paddedLayout.plotRight - paddedLayout.edgeOffset, paddedLayout.step)
+assert.deepEqual([...paddedPositions.values()], [108, 208, 308, 408, 508, 608, 708])
+const unpaddedLayout = getLineItemLayout(780, paddedDays, "day")
+assert.equal(unpaddedLayout.edgeOffset, 0)
+assert.equal(unpaddedLayout.plotRight, 758)
+
 for (const values of [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 40, 40],
   [100, 0, 0, 0],

@@ -138,22 +138,25 @@ export function getLineItemLayout(
   visibleDays: LineItemGraphDay[],
   axisLabelMode: LineItemGraphAxisLabelMode,
   height?: number,
-  compact = false
+  compact = false,
+  edgePadding = 0
 ) {
   const chartWidth = measuredChartWidth || 760
   const compactAxis = chartWidth < 520
   const plotLeft = compactAxis ? 48 : 58
   const plotRight = chartWidth - (compactAxis ? 12 : 22)
   const plotWidth = plotRight - plotLeft
-  const step =
-    visibleDays.length > 1 ? plotWidth / (visibleDays.length - 1) : plotWidth
+  const edgeDays = Math.max(0, edgePadding)
+  const step = plotWidth / Math.max(1, visibleDays.length - 1 + 2 * edgeDays)
   const angleThreshold =
     axisLabelMode === "weekday-day"
       ? 74
       : axisLabelMode === "angled-day"
         ? 58
         : 52
-  const shouldAngleLabels = visibleDays.length > 1 && step < angleThreshold
+  const shouldAngleLabels =
+    axisLabelMode === "angled-day" ||
+    (visibleDays.length > 1 && step < angleThreshold)
   const vertical = getLineItemVerticalLayout(
     shouldAngleLabels,
     axisLabelMode,
@@ -177,6 +180,7 @@ export function getLineItemLayout(
     plotRight,
     plotWidth,
     step,
+    edgeOffset: step * edgeDays,
     shouldAngleLabels,
     axisLabelIndices,
   }
@@ -195,7 +199,7 @@ function getLineItemVerticalLayout(
   const compactMargin = angled
     ? axisLabelMode === "weekday-day"
       ? 76
-      : 60
+      : 64
     : 38
   const bottomMargin = compact ? compactMargin : defaultMargin
   const axisLabelOffset = compact ? 18 : defaultLabelOffset
@@ -355,8 +359,11 @@ export function useLineItemData(
   totalLine: LineItemGraphTotalLine | undefined,
   minValue: number | undefined,
   maxValue: number | undefined,
-  height?: number,
-  compact = false
+  {
+    height,
+    compact = false,
+    edgePadding = 0,
+  }: { height?: number; compact?: boolean; edgePadding?: number }
 ) {
   const pointMaps = React.useMemo(
     () =>
@@ -382,10 +389,16 @@ export function useLineItemData(
     visibleDays,
     axisLabelMode,
     height,
-    compact
+    compact,
+    edgePadding
   )
-  const { plotLeft, plotRight, step } = layout
-  const dayX = useLineItemDayPositions(days, plotLeft, plotRight, step)
+  const { plotLeft, plotRight, step, edgeOffset } = layout
+  const dayX = useLineItemDayPositions(
+    days,
+    plotLeft + edgeOffset,
+    plotRight - edgeOffset,
+    step
+  )
   const { totalLineConfig, totalPoints, chartValues } = useLineItemTotals(
     totalLine,
     days,

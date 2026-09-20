@@ -289,6 +289,25 @@ async function expectCompactLineGeometry(page: Page) {
       )
     }
     const points = graph.getByRole("img")
+    const edges = await graph.evaluate((element) => {
+      const zones = [...element.querySelectorAll(":scope > rect")]
+      const markers = [...element.querySelectorAll('g[role="img"] > circle')]
+      const first = Number(markers[0].getAttribute("cx"))
+      const second = Number(markers[1].getAttribute("cx"))
+      const last = Number(markers.at(-1)!.getAttribute("cx"))
+      const left = Number(zones[0].getAttribute("x"))
+      const lastZone = zones.at(-1)!
+      const right =
+        Number(lastZone.getAttribute("x")) +
+        Number(lastZone.getAttribute("width"))
+      return {
+        leftGap: first - left,
+        rightGap: right - last,
+        halfDay: (second - first) / 2,
+      }
+    })
+    expect(edges.leftGap).toBeCloseTo(edges.halfDay, 5)
+    expect(edges.rightGap).toBeCloseTo(edges.halfDay, 5)
     for (const point of await points.all()) {
       const pointBounds = await point.boundingBox()
       expect(pointBounds!.y).toBeGreaterThanOrEqual(bounds!.y)

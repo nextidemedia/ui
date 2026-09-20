@@ -76,6 +76,7 @@ export type LineItemGraphProps = React.ComponentProps<"section"> & {
   totalLine?: LineItemGraphTotalLine
   axisLabelMode?: LineItemGraphAxisLabelMode
   height?: number
+  edgePadding?: number
   compact?: boolean
   showPoints?: boolean
   glow?: boolean

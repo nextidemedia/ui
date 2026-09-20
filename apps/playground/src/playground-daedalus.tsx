@@ -237,9 +237,13 @@ function DaedalusTrends() {
             showPoints={false}
             glow={false}
             rangeLabel="Last 7 days"
-            days={weeklyImpressionDays}
+            days={weeklyImpressionDays.map((day) => ({
+              ...day,
+              label: `${day.weekday}|${String(day.label).replace(" ", "")}`,
+            }))}
             series={weeklyImpressionSeries}
-            axisLabelMode="weekday-day"
+            axisLabelMode="angled-day"
+            edgePadding={0.5}
             valueFormatter={formatLargeMetricValue}
             tickFormatter={formatCompactMetricValue}
           />
@@ -249,6 +253,7 @@ function DaedalusTrends() {
           <LineItemGraph
             title="Banner impressions"
             height={220}
+            edgePadding={0.5}
             compact
             showPoints={false}
             glow={false}

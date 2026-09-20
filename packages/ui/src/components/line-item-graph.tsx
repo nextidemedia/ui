@@ -34,6 +34,7 @@ function LineItemGraph({
   totalLine,
   axisLabelMode = "day",
   height,
+  edgePadding = 0,
   compact = false,
   showPoints = true,
   glow = true,
@@ -70,8 +71,7 @@ function LineItemGraph({
     totalLine,
     minValue,
     maxValue,
-    height,
-    compact
+    { height, compact, edgePadding }
   )
   const { resolvedHover, hoveredDay, hoveredSeries } = resolveLineItemHover(
     hover,

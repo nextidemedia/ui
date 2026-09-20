@@ -293,3 +293,7 @@ value ticks (minimum 156px, or 178px with angled labels). Series controls expose
 `LineItemGraph` also accepts `compact` to reduce axis whitespace, `glow={false}`
 to remove series halos and control shadows, and `showPoints={false}` to hide
 painted point markers while retaining point/day tooltips and keyboard access.
+
+`LineItemGraph edgePadding={0.5}` adds half a day to each end of the horizontal
+domain without changing the plot insets. The default is zero. `angled-day`
+explicitly angles labels; `day` and `weekday-day` adapt to available spacing.
