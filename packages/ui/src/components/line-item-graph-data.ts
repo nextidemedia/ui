@@ -90,16 +90,10 @@ export function buildSmoothPath(points: PlottedLineItemPoint[]) {
 
   let path = `M ${points[0].x} ${points[0].y}`
   for (let index = 0; index < points.length - 1; index += 1) {
-    const previous = points[index - 1] ?? points[index]
     const current = points[index]
     const next = points[index + 1]
-    const afterNext = points[index + 2] ?? next
-    const controlOneX = current.x + (next.x - previous.x) / 6
-    const controlOneY = current.y + (next.y - previous.y) / 6
-    const controlTwoX = next.x - (afterNext.x - current.x) / 6
-    const controlTwoY = next.y - (afterNext.y - current.y) / 6
-
-    path += ` C ${controlOneX} ${controlOneY}, ${controlTwoX} ${controlTwoY}, ${next.x} ${next.y}`
+    const midpoint = (current.x + next.x) / 2
+    path += ` C ${midpoint} ${current.y}, ${midpoint} ${next.y}, ${next.x} ${next.y}`
   }
 
   return path
