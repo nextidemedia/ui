@@ -1,6 +1,5 @@
 import {
   Children,
-  Fragment,
   createContext,
   useContext,
   useLayoutEffect,
@@ -148,9 +147,7 @@ function CarouselContent({
           <CarouselLoopClone key="carousel-loop-last">
             {items[itemCount - 1]}
           </CarouselLoopClone>,
-          ...items.map((item, index) => (
-            <Fragment key={`carousel-item-${index}`}>{item}</Fragment>
-          )),
+          ...items,
           <CarouselLoopClone key="carousel-loop-first">
             {items[0]}
           </CarouselLoopClone>,

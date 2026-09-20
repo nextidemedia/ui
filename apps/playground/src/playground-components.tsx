@@ -1,4 +1,6 @@
+import { useState } from "react"
 import { Button } from "@nextide/ui/components/button"
+import { Input } from "@nextide/ui/components/input"
 import {
   Card,
   CardContent,
@@ -129,6 +131,11 @@ function ButtonPreview() {
 }
 
 function StructurePreview() {
+  const [slides, setSlides] = useState([
+    "Campaign delivery",
+    "Creator evidence",
+    "Safety review",
+  ])
   return (
     <Card>
       <CardHeader>
@@ -173,20 +180,28 @@ function StructurePreview() {
         </div>
         <div className="grid gap-2">
           <ComponentReference names="Carousel" />
+          <Button
+            variant="outline"
+            onClick={() => setSlides([...slides].reverse())}
+          >
+            Reverse slides
+          </Button>
           <Carousel loop>
             <CarouselContent>
-              {["Campaign delivery", "Creator evidence", "Safety review"].map(
-                (label, index) => (
-                  <CarouselItem key={label}>
-                    <div
-                      id={`carousel-demo-panel-${index}`}
-                      className="grid min-h-24 place-items-center rounded-lg border border-nextide-line bg-input/30 px-12 text-sm font-medium"
-                    >
-                      {label}
-                    </div>
-                  </CarouselItem>
-                )
-              )}
+              {slides.map((label, index) => (
+                <CarouselItem key={label}>
+                  <div
+                    id={`carousel-demo-panel-${index}`}
+                    className="grid min-h-24 place-items-center rounded-lg border border-nextide-line bg-input/30 px-12 text-sm font-medium"
+                  >
+                    {label}
+                    <Input
+                      aria-label={`${label} note`}
+                      placeholder="Add a note"
+                    />
+                  </div>
+                </CarouselItem>
+              ))}
             </CarouselContent>
             <CarouselPrevious />
             <CarouselNext />

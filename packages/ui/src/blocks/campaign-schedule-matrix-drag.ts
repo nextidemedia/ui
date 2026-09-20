@@ -63,6 +63,7 @@ function usePointerDrag(
   tracking: React.RefObject<DragTracking>,
   setDragging: React.Dispatch<React.SetStateAction<boolean>>
 ) {
+  // react-doctor-disable-next-line react-doctor/effect-needs-cleanup -- useScheduleDrag owns the timer and clears it on unmount.
   React.useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
       const drag = tracking.current.drag

@@ -20,6 +20,15 @@ import { DaedalusPlayground } from "./playground-daedalus"
 import { FoundationsPreview } from "./playground-foundations"
 import { IntelligencePlayground } from "./playground-intelligence"
 function PlaygroundContent({ app }: { app: PlaygroundApplication }) {
+  return (
+    <div className="grid gap-4 p-4 sm:px-8 sm:py-6" hidden={app.platformView}>
+      <ComponentReference names={["AppShell", "NavigationPanel"]} />
+      <PlaygroundView app={app} />
+    </div>
+  )
+}
+
+function PlaygroundView({ app }: { app: PlaygroundApplication }) {
   const {
     motionScale,
     daedalusView,
@@ -27,31 +36,17 @@ function PlaygroundContent({ app }: { app: PlaygroundApplication }) {
     webMiningView,
     krakenMiningView,
     reportMiningView,
-    platformView,
     activeItemId,
   } = app
-  return (
-    <div className="grid gap-4 p-4 sm:px-8 sm:py-6" hidden={platformView}>
-      <ComponentReference names={["AppShell", "NavigationPanel"]} />
-      {intelligenceView ? (
-        <IntelligenceView app={app} />
-      ) : webMiningView ? (
-        <WebMiningPage />
-      ) : krakenMiningView ? (
-        <KrakenMiningPage />
-      ) : reportMiningView ? (
-        <IntelligenceReportMiningPage />
-      ) : daedalusView ? (
-        <DaedalusView app={app} />
-      ) : activeItemId === "theme" ? (
-        <FoundationsPreview />
-      ) : activeItemId === "blocks" ? (
-        <BlockPreview motionScale={motionScale} />
-      ) : (
-        <ComponentsView app={app} />
-      )}
-    </div>
-  )
+  if (intelligenceView) return <IntelligenceView app={app} />
+  if (webMiningView) return <WebMiningPage />
+  if (krakenMiningView) return <KrakenMiningPage />
+  if (reportMiningView) return <IntelligenceReportMiningPage />
+  if (daedalusView) return <DaedalusView app={app} />
+  if (activeItemId === "theme") return <FoundationsPreview />
+  if (activeItemId === "blocks")
+    return <BlockPreview motionScale={motionScale} />
+  return <ComponentsView app={app} />
 }
 
 function IntelligenceView({ app }: { app: PlaygroundApplication }) {

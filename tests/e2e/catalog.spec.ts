@@ -6,6 +6,20 @@ import {
 
 test.beforeEach(openQualification)
 
+test("looping carousel preserves edited slides when reordered", async ({
+  page,
+}) => {
+  await page.goto("/?view=report")
+  await page.getByRole("button", { name: /Primitives/ }).click()
+  const track = page.locator('[data-slot="carousel-content"]')
+  const slides = track.locator(':scope > [data-slot="carousel-item"]')
+  const note = slides.getByRole("textbox", { name: "Campaign delivery note" })
+  await note.fill("Keep this draft")
+  await page.getByRole("button", { name: "Reverse slides" }).click()
+  await expect(slides.first()).toContainText("Safety review")
+  await expect(note).toHaveValue("Keep this draft")
+})
+
 test("playground shows exact public names beside component examples", async ({
   page,
 }) => {
