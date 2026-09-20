@@ -1,4 +1,5 @@
 import * as React from "react"
+import { ScrollArea } from "@nextide/ui/components/scroll-area"
 
 import { cn } from "@nextide/ui/lib/utils"
 
@@ -62,19 +63,31 @@ function AppShell({
             {header}
           </header>
         ) : null}
-        <main
-          className={cn(
-            "relative z-0 min-h-0 min-w-0 [scrollbar-gutter:stable] overflow-x-hidden overflow-y-auto overscroll-y-contain",
-            stabilizeResize && sidebarTransitioning && "will-change-transform"
-          )}
+        <ScrollArea
+          className="relative z-0 overflow-hidden"
+          viewportProps={{
+            render: <main />,
+            className: cn(
+              "overscroll-y-contain pe-2.5",
+              stabilizeResize && sidebarTransitioning && "will-change-transform"
+            ),
+            style: { overflowX: "hidden" },
+          }}
         >
           {children}
-        </main>
+        </ScrollArea>
       </div>
       {aside ? (
-        <aside className="relative z-10 hidden min-h-0 min-w-0 [scrollbar-gutter:stable] overflow-x-hidden overflow-y-auto overscroll-y-contain lg:block">
+        <ScrollArea
+          className="relative z-10 hidden overflow-hidden lg:block"
+          viewportProps={{
+            render: <aside />,
+            className: "pe-2.5 overscroll-y-contain",
+            style: { overflowX: "hidden" },
+          }}
+        >
           {aside}
-        </aside>
+        </ScrollArea>
       ) : null}
     </div>
   )

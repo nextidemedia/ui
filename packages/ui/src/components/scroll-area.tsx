@@ -7,19 +7,40 @@ import { cn } from "@nextide/ui/lib/utils"
 function ScrollArea({
   className,
   children,
+  viewportProps,
   ...props
-}: ScrollAreaPrimitive.Root.Props) {
+}: ScrollAreaPrimitive.Root.Props & {
+  viewportProps?: ScrollAreaPrimitive.Viewport.Props
+}) {
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
-      className={cn("relative", className)}
+      className={(state) =>
+        cn(
+          "relative min-h-0 min-w-0",
+          typeof className === "function" ? className(state) : className
+        )
+      }
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-1"
+        {...viewportProps}
+        className={(state) =>
+          cn(
+            "flex size-full flex-col rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-1",
+            typeof viewportProps?.className === "function"
+              ? viewportProps.className(state)
+              : viewportProps?.className
+          )
+        }
       >
-        {children}
+        <ScrollAreaPrimitive.Content
+          className="flow-root flex-1"
+          style={{ minWidth: 0 }}
+        >
+          {children}
+        </ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>
       <ScrollBar />
       <ScrollAreaPrimitive.Corner />
@@ -30,6 +51,7 @@ function ScrollArea({
 function ScrollBar({
   className,
   orientation = "vertical",
+  keepMounted = true,
   ...props
 }: ScrollAreaPrimitive.Scrollbar.Props) {
   return (
@@ -37,15 +59,18 @@ function ScrollBar({
       data-slot="scroll-area-scrollbar"
       data-orientation={orientation}
       orientation={orientation}
-      className={cn(
-        "flex touch-none p-px transition-colors select-none data-horizontal:h-2.5 data-horizontal:flex-col data-horizontal:border-t data-horizontal:border-t-transparent data-vertical:h-full data-vertical:w-2.5 data-vertical:border-l data-vertical:border-l-transparent",
-        className
-      )}
+      keepMounted={keepMounted}
+      className={(state) =>
+        cn(
+          "pointer-events-none flex touch-none p-px opacity-0 transition-opacity duration-150 ease-out select-none motion-reduce:transition-none data-horizontal:h-2.5 data-horizontal:flex-col data-horizontal:border-t data-horizontal:border-t-transparent data-[has-overflow-x]:data-horizontal:pointer-events-auto data-[has-overflow-x]:data-horizontal:opacity-100 data-vertical:h-full data-vertical:w-2.5 data-vertical:border-l data-vertical:border-l-transparent data-[has-overflow-y]:data-vertical:pointer-events-auto data-[has-overflow-y]:data-vertical:opacity-100",
+          typeof className === "function" ? className(state) : className
+        )
+      }
       {...props}
     >
       <ScrollAreaPrimitive.Thumb
         data-slot="scroll-area-thumb"
-        className="relative flex-1 rounded-full bg-border"
+        className="relative flex-1 rounded-full bg-nextide-tide/50"
       />
     </ScrollAreaPrimitive.Scrollbar>
   )
