@@ -27,6 +27,7 @@ function HourlyPacingChart({
   averageValue,
   showAverage = true,
   showDetails = true,
+  size = "md",
   maxValue,
   title = "24h pacing",
   description,
@@ -41,6 +42,7 @@ function HourlyPacingChart({
   averageValue?: number
   showAverage?: boolean
   showDetails?: boolean
+  size?: "sm" | "md"
   maxValue?: number
   title?: React.ReactNode
   description?: React.ReactNode
@@ -50,9 +52,7 @@ function HourlyPacingChart({
 }) {
   const { ref: chartScrollRef, onWheel: onChartWheel } =
     useContainedScroll<HTMLDivElement>({ axis: "x" })
-  const [internalActiveHour, setInternalActiveHour] = React.useState<
-    number | null
-  >(null)
+  const [selectedHour, setSelectedHour] = React.useState<number | null>(null)
   const normalizedBuckets = React.useMemo(
     () =>
       buckets
@@ -70,12 +70,12 @@ function HourlyPacingChart({
     targetValue,
     maxValue
   )
-  const resolvedActiveHour = activeHour ?? internalActiveHour
+  const resolvedActiveHour = activeHour ?? selectedHour
   const activeBucket =
-    resolvedActiveHour === null || resolvedActiveHour === undefined
+    resolvedActiveHour === null
       ? null
       : normalizedBuckets.find((bucket) => bucket.hour === resolvedActiveHour)
-  const ticks = buildTicks(scaleMax, targetValue)
+  const ticks = buildTicks(scaleMax, targetValue, size)
 
   if (normalizedBuckets.length === 0 || scaleMax <= 0) {
     return (
@@ -102,7 +102,6 @@ function HourlyPacingChart({
       {...props}
     >
       {renderPacingHeader(title, description, resolvedAverage, showAverage)}
-
       <div
         ref={chartScrollRef}
         onWheel={onChartWheel}
@@ -110,11 +109,12 @@ function HourlyPacingChart({
       >
         {renderPacingPlot(
           ticks,
+          size,
           scaleMax,
           targetValue,
           normalizedBuckets,
           activeBucket,
-          setInternalActiveHour,
+          setSelectedHour,
           onActiveHourChange
         )}
       </div>
@@ -151,16 +151,22 @@ function renderPacingHeader(
 
 function renderPacingPlot(
   ticks: number[],
+  size: "sm" | "md",
   scaleMax: number,
   targetValue: number,
   normalizedBuckets: HourlyPacingBucket[],
   activeBucket: HourlyPacingBucket | null | undefined,
-  setInternalActiveHour: React.Dispatch<React.SetStateAction<number | null>>,
+  setSelectedHour: React.Dispatch<React.SetStateAction<number | null>>,
   onActiveHourChange: ((bucket: HourlyPacingBucket) => void) | undefined
 ) {
   return (
-    <div className="grid min-w-[48rem] grid-cols-[3.6rem_minmax(0,1fr)] gap-3">
-      <div className="relative h-80 text-ui-caption font-medium text-muted-foreground">
+    <div
+      className={cn(
+        "grid grid-cols-[3.6rem_minmax(0,1fr)] gap-3",
+        size === "sm" ? "h-48 min-w-[40rem]" : "h-80 min-w-[48rem]"
+      )}
+    >
+      <div className="relative h-full text-ui-caption font-medium text-muted-foreground">
         <div className="absolute inset-x-0 top-0 bottom-7">
           {ticks.map((tick) => (
             <span
@@ -180,7 +186,7 @@ function renderPacingPlot(
           ))}
         </div>
       </div>
-      <div className="relative h-80 rounded-md border-b border-l border-nextide-line bg-[linear-gradient(90deg,rgb(30_228_188/0.035),transparent_22%,transparent_74%,rgb(245_184_61/0.035)),linear-gradient(180deg,rgb(255_255_255/0.035),transparent_46%,rgb(0_0_0/0.16))]">
+      <div className="relative h-full rounded-md border-b border-l border-nextide-line bg-[linear-gradient(90deg,rgb(30_228_188/0.035),transparent_22%,transparent_74%,rgb(245_184_61/0.035)),linear-gradient(180deg,rgb(255_255_255/0.035),transparent_46%,rgb(0_0_0/0.16))]">
         <div className="absolute inset-x-0 top-0 bottom-7">
           {ticks.map((tick) => (
             <span
@@ -198,7 +204,7 @@ function renderPacingPlot(
             scaleMax,
             targetValue,
             activeBucket,
-            setInternalActiveHour,
+            setSelectedHour,
             onActiveHourChange
           )}
         </div>
@@ -222,7 +228,7 @@ function renderPacingBars(
   scaleMax: number,
   targetValue: number,
   activeBucket: HourlyPacingBucket | null | undefined,
-  setInternalActiveHour: React.Dispatch<React.SetStateAction<number | null>>,
+  setSelectedHour: React.Dispatch<React.SetStateAction<number | null>>,
   onActiveHourChange: ((bucket: HourlyPacingBucket) => void) | undefined
 ) {
   return (
@@ -238,11 +244,11 @@ function renderPacingBars(
             type="button"
             className="group relative flex h-full min-w-0 cursor-pointer items-end justify-center rounded-sm px-0.5 focus-visible:outline-none"
             onClick={() => {
-              setInternalActiveHour(bucket.hour)
+              setSelectedHour(bucket.hour)
               onActiveHourChange?.(bucket)
             }}
             onFocus={() => {
-              setInternalActiveHour(bucket.hour)
+              setSelectedHour(bucket.hour)
               onActiveHourChange?.(bucket)
             }}
           >
@@ -349,7 +355,13 @@ function niceScaleMax(value: number) {
   return Math.ceil(value / 100) * 100
 }
 
-function buildTicks(scaleMax: number, targetValue: number) {
+function buildTicks(scaleMax: number, targetValue: number, size: "sm" | "md") {
+  if (size === "sm") {
+    return [0, targetValue, scaleMax].filter(
+      (tick, index) =>
+        index !== 1 || (tick > scaleMax * 0.15 && tick < scaleMax * 0.85)
+    )
+  }
   const step = scaleMax <= 400 ? 50 : 100
   const ticks = new Set<number>([0, targetValue, scaleMax])
   for (let tick = step; tick < scaleMax; tick += step) {

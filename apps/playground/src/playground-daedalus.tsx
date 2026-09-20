@@ -327,6 +327,7 @@ function DaedalusBarDirections() {
             maxValue={303}
             showAverage={false}
             showDetails={false}
+            size="sm"
             title="Hourly pressure"
             description="The pacing graph bar grammar reused as a general comparison option."
           />
