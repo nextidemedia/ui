@@ -18,6 +18,7 @@ test("shell scrollbars fade with overflow while scrolling stays keyboard and poi
     await page.setViewportSize({ width, height: 800 })
     await viewport.evaluate((element) => {
       const content = element.firstElementChild as HTMLElement
+      content.style.flex = "none"
       content.style.height = "2400px"
       content.style.overflow = "hidden"
     })
