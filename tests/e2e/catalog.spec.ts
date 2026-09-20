@@ -199,3 +199,58 @@ const settingsReferences = [
   "SettingsModalSection",
   "SelectMenu",
 ] as const
+
+test("field focus stays inside the control and dropdowns preserve selection and edge alignment", async ({
+  page,
+}) => {
+  await page.goto("/?view=report")
+  await page
+    .getByRole("button", { name: "Primitives Controls and states" })
+    .click()
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    const brand = page.getByRole("textbox", { name: "Brand", exact: true })
+    await brand.click()
+    await brand.pressSequentially("Acme")
+    await expect(brand).toHaveCSS("border-color", "rgb(30, 228, 188)")
+    await expect(brand).not.toHaveCSS("box-shadow", /1px inset/)
+    await brand.press("Tab")
+    await page.keyboard.press("Shift+Tab")
+    await expect(brand).toHaveCSS("border-color", "rgb(30, 228, 188)")
+    await expect(brand).toHaveCSS("box-shadow", /inset/)
+    const trigger = page.getByRole("combobox", { name: "Campaign time zone" })
+    await trigger.focus()
+    await trigger.press("Enter")
+    const menu = page.locator('[data-slot="select-content"]')
+    await expect(menu).toBeVisible()
+    await expect(menu).toHaveCSS("opacity", "1")
+    const fieldBox = (await trigger.boundingBox())!
+    const menuBox = (await menu.boundingBox())!
+    expect(Math.abs(menuBox.x - fieldBox.x)).toBeLessThanOrEqual(1)
+    // Near the viewport edge the popup flips above the field.
+    expect(
+      menuBox.y >= fieldBox.y + fieldBox.height - 1 ||
+        menuBox.y + menuBox.height <= fieldBox.y + 1
+    ).toBe(true)
+    await expect(
+      page.getByRole("option", { name: "Europe/Berlin", exact: true })
+    ).toHaveAttribute("aria-selected", "true")
+    await page.keyboard.press("Escape")
+    await expect(trigger).toBeFocused()
+    await expect(trigger).toHaveCSS("box-shadow", /inset/)
+    const search = page.getByRole("combobox", { name: "Find a creator" })
+    await search.click()
+    await search.fill("Mina")
+    const group = page
+      .locator('[data-slot="autocomplete-input-group"]')
+      .filter({ has: search })
+    await expect(group).toHaveCSS("border-color", "rgb(30, 228, 188)")
+    await expect(group).not.toHaveCSS("box-shadow", /1px inset/)
+    await search.press("Shift+Tab")
+    await page.keyboard.press("Tab")
+    await expect(group).toHaveCSS("box-shadow", /1px inset/)
+    await expect(search).toHaveCSS("box-shadow", "none")
+    await search.press("Escape")
+    await search.fill("")
+  }
+})

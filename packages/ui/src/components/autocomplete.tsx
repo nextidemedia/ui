@@ -4,6 +4,7 @@ import { Autocomplete as AutocompletePrimitive } from "@base-ui/react/autocomple
 import { X } from "lucide-react"
 
 import { cn } from "@nextide/ui/lib/utils"
+import { useFieldFocus } from "@nextide/ui/hooks/use-field-focus"
 
 const Autocomplete = AutocompletePrimitive.Root
 const AutocompletePortal = AutocompletePrimitive.Portal
@@ -14,14 +15,16 @@ function AutocompleteInputGroup({
   className,
   ...props
 }: AutocompletePrimitive.InputGroup.Props) {
+  const focusProps = useFieldFocus(props)
   return (
     <AutocompletePrimitive.InputGroup
       data-slot="autocomplete-input-group"
       className={cn(
-        "flex h-10 w-full min-w-0 items-center gap-2 rounded-lg border border-input bg-transparent px-2.5 text-sm transition-colors outline-none focus-within:border-ring focus-within:ring-(length:--nextide-focus-ring-width) focus-within:ring-ring/45 has-aria-invalid:border-destructive has-aria-invalid:ring-2 has-aria-invalid:ring-destructive/20 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-muted-foreground",
+        "flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-background px-3 text-ui-body transition-colors outline-none focus-within:border-ring focus-within:ring-ring focus-within:ring-inset focus-within:not-data-[pointer-focus]:ring-1 has-aria-invalid:border-destructive/60 has-aria-invalid:ring-destructive/60 dark:bg-input/30 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-muted-foreground",
         className
       )}
       {...props}
+      {...focusProps}
     />
   )
 }
@@ -34,7 +37,7 @@ function AutocompleteInput({
     <AutocompletePrimitive.Input
       data-slot="autocomplete-input"
       className={cn(
-        "h-full min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "h-full min-w-0 flex-1 bg-transparent text-ui-body text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
       {...props}

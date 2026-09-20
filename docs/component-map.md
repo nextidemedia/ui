@@ -89,8 +89,9 @@ for short badges and dense chart labels; shared controls and blocks should use
 the semantic roles instead of arbitrary font sizes or baseline offsets.
 
 Shared interactive primitives use the Tide focus ring width from
-`--nextide-focus-ring-width` (0.5px by default). Validation rings may remain
-stronger so error state stays visually distinct from ordinary focus.
+`--nextide-focus-ring-width` (0.5px by default). Form fields use the inset
+keyboard-focus treatment described below. Invalid fields use a muted red border
+without an extra ring at rest; keyboard focus adds the same inset emphasis.
 
 Use `blocks/signal-plate` for a top-level summary with a current status. Its
 accent follows the semantic status tone. Use `components/surface` for ordinary
@@ -258,3 +259,22 @@ Reorganize only when there is a repeated lookup problem or repeated import ambig
 2. Keep this map current and grouped by user need.
 3. Add a lightweight generated export/catalog script only after the manual map starts drifting.
 4. Split directories further only when one folder becomes too broad to scan quickly, such as `components/data-viz`, `components/forms`, or `blocks/live`.
+
+### Form focus and popup placement
+
+Input, Select and Autocomplete use the same control radius and a single inset
+keyboard-focus edge, without an additional outer halo. Pointer focus uses only
+the turquoise border and stays quiet while typing. Autocomplete owns focus on the
+complete input group. Consumers should not add a second outline to its inner
+input or a second focus treatment to shared controls.
+
+Select popups open below the trigger and align to its starting edge by default.
+Use SelectMenu for ordinary choice fields, including campaign time zones, and
+Autocomplete for searchable suggestions. Select is the underlying composition
+primitive; SelectMenu owns the standard menu spacing and option presentation.
+Use SelectMenu's triggerId to associate a visible field label with its button.
+Selected options keep their checkmark; keyboard/pointer highlight is separate.
+An explicit `alignItemWithTrigger` opts into the selected-item overlay treatment.
+Navigation preserves icon positions through the drawer/text exit, then smoothly
+settles heading space, row heights, gaps and search placement. Expansion settles
+icons first, then reveals the text. Reduced motion applies the final state directly.

@@ -108,7 +108,7 @@ function SidebarBrand({
       data-drawer-collapsed={drawerCollapsed}
       data-density={density}
       className={cn(
-        "relative z-30 grid w-full items-center overflow-visible transition-[grid-template-columns,gap,min-height,padding] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
+        "relative z-30 grid w-full items-center overflow-visible transition-[grid-template-columns,gap,min-height,padding] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
         density === "current"
           ? collapsed
             ? "grid-cols-[4rem_0fr_0fr] gap-x-0 py-1 pr-0 pl-1"

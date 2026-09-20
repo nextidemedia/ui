@@ -53,35 +53,40 @@ function useStagedDrawer({
       const drawerDuration = reducedMotion ? 0 : durationMs
       const iconDuration = reducedMotion ? 0 : iconDurationMs
 
-      if (!nextCollapsed) {
-        setIconsCollapsed(false)
-        setCollapsedState(false)
-        setDrawerCollapsed(false)
-
-        settleTimeoutRef.current = setTimeout(
-          () => {
-            setTransitioning(false)
-            settleTimeoutRef.current = null
-          },
-          Math.max(drawerDuration, iconDuration)
-        )
+      if (reducedMotion) {
+        setIconsCollapsed(nextCollapsed)
+        setCollapsedState(nextCollapsed)
+        setDrawerCollapsed(nextCollapsed)
+        setTransitioning(false)
         return
       }
 
-      setCollapsedState(true)
-      setDrawerCollapsed(true)
-
-      const totalDuration = Math.max(drawerDuration, iconDuration)
-      const iconStageStart = Math.max(0, totalDuration - iconDuration)
-
-      stageTimeoutRef.current = setTimeout(() => {
-        setIconsCollapsed(true)
-        stageTimeoutRef.current = null
-        settleTimeoutRef.current = setTimeout(() => {
-          setTransitioning(false)
-          settleTimeoutRef.current = null
-        }, totalDuration - iconStageStart)
-      }, iconStageStart)
+      // Exit the text before moving icons; reverse that sequence on expansion.
+      if (nextCollapsed) {
+        setCollapsedState(true)
+        setDrawerCollapsed(true)
+      } else {
+        setIconsCollapsed(false)
+      }
+      stageTimeoutRef.current = setTimeout(
+        () => {
+          if (nextCollapsed) {
+            setIconsCollapsed(true)
+          } else {
+            setCollapsedState(false)
+            setDrawerCollapsed(false)
+          }
+          stageTimeoutRef.current = null
+          settleTimeoutRef.current = setTimeout(
+            () => {
+              setTransitioning(false)
+              settleTimeoutRef.current = null
+            },
+            nextCollapsed ? iconDuration : drawerDuration
+          )
+        },
+        nextCollapsed ? drawerDuration : iconDuration
+      )
     },
     [clearTimers, durationMs, iconDurationMs]
   )

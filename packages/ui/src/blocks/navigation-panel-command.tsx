@@ -75,7 +75,7 @@ function NavigationPanelCommandRow({
         ref={commandRowRef}
         data-slot="navigation-panel-command-row"
         className={cn(
-          "relative h-11 w-full self-start overflow-visible",
+          "relative h-11 w-full self-start overflow-visible transition-[height] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none",
           density === "compact" && "lg:h-10",
           density === "ops" && "lg:h-[2.375rem]",
           collapsed &&
@@ -289,9 +289,9 @@ function getCommandControlClass(
   drawerCollapsed: boolean
 ) {
   return cn(
-    "absolute top-0 left-0 flex h-11 min-w-0 items-center gap-0 overflow-hidden rounded-lg border px-0 text-left text-sm text-muted-foreground/65 transition-[top,width,height,padding,color,background-color,border-color,box-shadow] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] hover:bg-nextide-panel-strong motion-reduce:transition-none max-lg:static max-lg:w-full",
-    density === "compact" && "lg:h-10",
-    density === "ops" && "lg:h-[2.375rem] lg:rounded-[7px]",
+    "absolute top-0 left-0 flex h-11 min-w-11 items-center gap-0 overflow-hidden rounded-lg border px-0 text-left text-sm text-muted-foreground/65 transition-[top,width,height,padding,color,background-color,border-color,box-shadow] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] hover:bg-nextide-panel-strong motion-reduce:transition-none max-lg:static max-lg:w-full",
+    density === "compact" && "lg:h-10 lg:min-w-10",
+    density === "ops" && "lg:h-[2.375rem] lg:min-w-[2.375rem] lg:rounded-[7px]",
     compactSearchOpen
       ? "z-50 w-[min(18rem,calc(100vw-6rem))] border-nextide-line bg-popover! shadow-md focus-within:border-nextide-tide/55 focus-within:ring-0"
       : collapsed
