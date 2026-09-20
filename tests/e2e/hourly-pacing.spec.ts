@@ -3,7 +3,7 @@ import { expectNoSeriousAxeViolations } from "./qualification-helpers"
 
 test("hourly pacing stays readable with optional summaries hidden", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto("/?view=report")
   await page.getByRole("button", { name: /Daedalus/ }).click()
   const chart = page.locator('[data-slot="hourly-pacing-chart"]')
@@ -19,6 +19,13 @@ test("hourly pacing stays readable with optional summaries hidden", async ({
       .boundingBox()
     expect(topTick).not.toBeNull()
     expect(nextTick!.y).toBeGreaterThan(topTick!.y + topTick!.height)
+    const plot = await chart.locator(".nextide-contained-scroll").boundingBox()
+    expect(topTick!.y).toBeGreaterThanOrEqual(plot!.y)
+    const zeroTick = await chart.getByText("0%", { exact: true }).boundingBox()
+    expect(zeroTick!.y + zeroTick!.height).toBeLessThanOrEqual(
+      plot!.y + plot!.height
+    )
+    await chart.screenshot({ path: testInfo.outputPath(`pacing-${width}.png`) })
     const firstHour = chart.getByRole("button", {
       name: "00:00 pacing 70% · 70% · overnight floor",
     })

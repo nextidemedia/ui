@@ -165,7 +165,14 @@ function renderPacingPlot(
           {ticks.map((tick) => (
             <span
               key={tick}
-              className="absolute right-0 translate-y-1/2 whitespace-nowrap"
+              className={cn(
+                "absolute right-0 whitespace-nowrap",
+                tick === scaleMax
+                  ? "translate-y-full"
+                  : tick === 0
+                    ? "translate-y-0"
+                    : "translate-y-1/2"
+              )}
               style={{ bottom: `${percentOf(tick, scaleMax)}%` }}
             >
               {formatPercent(tick)}
