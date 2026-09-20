@@ -34,6 +34,7 @@ import { ComponentReference } from "./component-reference"
 import {
   AutocompletePreview,
   FilterPreview,
+  FieldStatesPreview,
   InputPreview,
 } from "./playground-component-controls"
 import {
@@ -72,6 +73,8 @@ function ComponentMatrix({
       </SurfaceHeader>
 
       <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-4">
+        <FieldStatesPreview />
+
         <ButtonPreview />
 
         <OverlayPreview />

@@ -22,6 +22,7 @@ type SelectMenuProps = Omit<React.ComponentProps<"div">, "onChange"> & {
   onValueChange: (value: string) => void
   placeholder?: React.ReactNode
   triggerContent?: React.ReactNode
+  triggerId?: string
   triggerClassName?: string
   contentClassName?: string
   contentAnchorRef?: React.RefObject<HTMLElement | null>
@@ -39,6 +40,7 @@ function SelectMenu({
   onValueChange,
   placeholder = "Select",
   triggerContent,
+  triggerId,
   className,
   triggerClassName,
   contentClassName,
@@ -49,7 +51,7 @@ function SelectMenu({
   optionClassName,
   optionLabelClassName,
   disabled,
-  "aria-label": ariaLabel = "Select option",
+  "aria-label": ariaLabel,
   ...props
 }: SelectMenuProps) {
   const triggerRef = React.useRef<HTMLButtonElement | null>(null)
@@ -95,7 +97,8 @@ function SelectMenu({
       >
         <SelectTrigger
           ref={triggerRef}
-          aria-label={ariaLabel}
+          id={triggerId}
+          aria-label={ariaLabel ?? (triggerId ? undefined : "Select option")}
           className={cn(
             "w-full border-nextide-line bg-nextide-panel px-3 text-left font-medium hover:bg-nextide-panel-strong",
             triggerClassName

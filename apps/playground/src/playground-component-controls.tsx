@@ -276,3 +276,45 @@ function AutocompletePreview() {
   )
 }
 export { AutocompletePreview, FilterPreview, InputPreview }
+
+export function FieldStatesPreview() {
+  const [timezone, setTimezone] = useState("Europe/Berlin")
+  const timezones = ["Europe/Berlin", "UTC", "America/New_York"]
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Field states</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <Field>
+          <FieldLabel htmlFor="preview-brand">Brand</FieldLabel>
+          <Input id="preview-brand" placeholder="Enter a brand" />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="preview-timezone">Campaign time zone</FieldLabel>
+          <SelectMenu
+            triggerId="preview-timezone"
+            options={timezones.map((value) => ({ value, label: value }))}
+            value={timezone}
+            onValueChange={setTimezone}
+          />
+        </Field>
+        <Field data-invalid>
+          <FieldLabel htmlFor="preview-invalid">Campaign name</FieldLabel>
+          <Input
+            id="preview-invalid"
+            aria-invalid
+            aria-describedby="preview-invalid-error"
+          />
+          <FieldDescription id="preview-invalid-error">
+            Enter a campaign name.
+          </FieldDescription>
+        </Field>
+        <Field data-disabled>
+          <FieldLabel htmlFor="preview-disabled">Owner</FieldLabel>
+          <Input id="preview-disabled" disabled value="Nextide" />
+        </Field>
+      </CardContent>
+    </Card>
+  )
+}

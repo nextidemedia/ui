@@ -236,7 +236,7 @@ function getBrandClass(density: ShellDensity, collapsed: boolean) {
 
 function getPanelClass(density: ShellDensity, collapsed: boolean) {
   return cn(
-    "flex min-h-0 flex-1 flex-col overflow-visible transition-[padding,background-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:flex-none",
+    "flex min-h-0 flex-1 flex-col overflow-visible transition-[padding,gap,background-color] duration-[var(--nextide-drawer-icon-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none max-lg:flex-none",
     density === "current"
       ? collapsed
         ? "items-center gap-1.5 overflow-visible p-3"

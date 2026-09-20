@@ -158,6 +158,7 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   await searchInput.fill("Foundations")
   await expect(searchInput).toHaveValue("Foundations")
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "false")
+  const sectionHeading = mainSidebar.locator("nav h3").first()
   await toggle.focus()
   await toggle.press("Enter")
   await expect(searchInput).toHaveValue("")
@@ -177,6 +178,7 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
   )
 
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "true")
+  await expect(sectionHeading).toHaveCSS("max-height", "0px")
   await expect(shell).toHaveCSS("grid-template-columns", /72px [0-9.]+px/)
   await expect(brandText).toHaveCSS("opacity", "0")
   await expect(brandText).toHaveCount(1)
@@ -212,7 +214,7 @@ test("playground keeps control sizing, Typeset presets, and sidebar motion coher
       node ? getComputedStyle(node).transitionDuration : null
     )
   })
-  expect(stagedDurations).toEqual(["0.3s", "0s", "0.16s", "0.16s"])
+  expect(stagedDurations).toEqual(["0.3s", "0.16s", "0.16s", "0.16s"])
 })
 
 test("collapsed navigation search closes cleanly", async ({ page }) => {
@@ -508,7 +510,7 @@ async function expectSidebarExpansion(
       collapsed: element.getAttribute("data-collapsed"),
       drawerCollapsed: element.getAttribute("data-drawer-collapsed"),
     }))
-  ).toEqual({ collapsed: "false", drawerCollapsed: "false" })
+  ).toEqual({ collapsed: "false", drawerCollapsed: "true" })
   await expect(mainSidebar).toHaveAttribute("data-collapsed", "false")
   await expect(mainSidebar).toHaveAttribute("data-drawer-collapsed", "false")
   await expect(shell).toHaveCSS("grid-template-columns", /288px [0-9.]+px/)
@@ -617,4 +619,108 @@ async function expectResponsiveBranchActions(
   await expect(
     page.getByText("Create campaign requested 2 times", { exact: true })
   ).toBeVisible()
+}
+
+test("sidebar icons hold through text exit and settle without frame jumps", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=report")
+  await page.getByRole("button", { name: "Settings", exact: true }).click()
+  await page.getByRole("switch", { name: "Slow motion", exact: true }).check()
+  await page
+    .getByRole("button", { name: "Close settings", exact: true })
+    .click()
+  await expect(page.getByRole("dialog")).toBeHidden()
+  const icons = page.locator(
+    '[data-slot="navigation-panel"] nav [data-slot="navigation-panel-item-icon"]'
+  )
+  const initial = await icons.evaluateAll((elements) =>
+    elements.map((e) => e.getBoundingClientRect().y)
+  )
+  const searchControl = page.locator(
+    '[data-slot="navigation-panel-command-control"]'
+  )
+  const searchWidth = (await searchControl.boundingBox())!.height
+  await page.screenshot({ path: "output/sidebar-motion/expanded.png" })
+  await sampleSidebarMotion(page)
+  await page
+    .getByRole("button", { name: "Collapse sidebar", exact: true })
+    .press("Enter")
+  await page.waitForTimeout(1200)
+  await page.screenshot({ path: "output/sidebar-motion/text-exit.png" })
+  const exiting = await icons.evaluateAll((elements) =>
+    elements.map((e) => e.getBoundingClientRect().y)
+  )
+  exiting.forEach((y, index) =>
+    expect(Math.abs(y - initial[index]!)).toBeLessThan(1)
+  )
+  await page.waitForTimeout(2100)
+  await page.screenshot({ path: "output/sidebar-motion/icon-settle.png" })
+  expect((await searchControl.boundingBox())!.width).toBeGreaterThanOrEqual(
+    searchWidth
+  )
+  await expect(page.locator('[data-slot="app-shell"]')).toHaveAttribute(
+    "data-sidebar-transitioning",
+    "false"
+  )
+  await page.screenshot({ path: "output/sidebar-motion/collapsed.png" })
+  await expectSmoothSidebarFrames(page)
+  await sampleSidebarMotion(page)
+  await page
+    .getByRole("button", { name: "Expand sidebar", exact: true })
+    .press("Enter")
+  await page.waitForTimeout(600)
+  await page.screenshot({ path: "output/sidebar-motion/expand-settle.png" })
+  await expect(page.locator('[data-slot="app-shell"]')).toHaveAttribute(
+    "data-sidebar-transitioning",
+    "false"
+  )
+  await expectSmoothSidebarFrames(page)
+  const expanded = await icons.evaluateAll((elements) =>
+    elements.map((e) => e.getBoundingClientRect().y)
+  )
+  expanded.forEach((y, index) =>
+    expect(Math.abs(y - initial[index]!)).toBeLessThan(1)
+  )
+})
+
+async function sampleSidebarMotion(page: Page) {
+  await page.evaluate(() => {
+    const frames: { time: number; ys: number[] }[] = []
+    const state = window as unknown as { sidebarFrames: typeof frames }
+    state.sidebarFrames = frames
+    const started = performance.now()
+    const sample = () => {
+      frames.push({
+        time: performance.now(),
+        ys: Array.from(
+          document.querySelectorAll(
+            '[data-slot="navigation-panel"] nav [data-slot="navigation-panel-item-icon"]'
+          )
+        ).map((e) => e.getBoundingClientRect().y),
+      })
+      if (performance.now() - started < 5000) requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  })
+}
+
+async function expectSmoothSidebarFrames(page: Page) {
+  const speed = await page.evaluate(() => {
+    const { sidebarFrames } = window as unknown as {
+      sidebarFrames: { time: number; ys: number[] }[]
+    }
+    return sidebarFrames
+      .slice(1)
+      .flatMap((frame, index) =>
+        frame.ys.map(
+          (y, item) =>
+            Math.abs(y - sidebarFrames[index]!.ys[item]!) /
+            Math.max(1, frame.time - sidebarFrames[index]!.time)
+        )
+      )
+  })
+  // At 10x speed the entire settle is 1600ms: a step over 1px/ms is a layout jump.
+  expect(Math.max(...speed)).toBeLessThan(1)
 }
