@@ -84,7 +84,13 @@ function IntelligencePlayground({
           </SurfaceDescription>
         </SurfaceHeader>
         <CreatorTransfer
-          creators={intelligenceCreators}
+          listHeight="10rem"
+          creators={intelligenceCreators.map((creator) => ({
+            ...creator,
+            disabledReason: creator.disabled
+              ? "Unavailable for this campaign"
+              : undefined,
+          }))}
           selectedIds={selectedCreatorIds}
           onSelectedIdsChange={onSelectedCreatorIdsChange}
         />

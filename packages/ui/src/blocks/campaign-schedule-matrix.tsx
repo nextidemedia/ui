@@ -23,6 +23,28 @@ import {
 } from "./campaign-schedule-matrix-zoom.js"
 import { useScheduleDrag } from "./campaign-schedule-matrix-drag.js"
 
+type CampaignScheduleMatrixProps = React.ComponentProps<typeof Surface> & {
+  creators: CampaignScheduleCreator[]
+  days: CampaignScheduleDay[]
+  bookings: CampaignScheduleBooking[]
+  title?: React.ReactNode
+  description?: React.ReactNode
+  activeBookingId?: string
+  onBookingSelect: (booking: CampaignScheduleBooking) => void
+  minimumRows?: number
+  showMetrics?: boolean
+  campaignStartIndex?: number
+  campaignEndIndex?: number
+  editableStartIndex?: number
+  editableEndIndex?: number
+  onBookingChange?: (booking: CampaignScheduleBooking) => void
+  onBookingSplit?: (
+    booking: CampaignScheduleBooking,
+    splitIndex: number
+  ) => void
+  onCreatorOrderChange?: (creatorIds: string[]) => void
+}
+
 function CampaignScheduleMatrix({
   creators,
   days,
@@ -31,17 +53,18 @@ function CampaignScheduleMatrix({
   description = "Creator sessions arranged across campaign slots.",
   activeBookingId,
   onBookingSelect,
+  minimumRows = 0,
+  showMetrics = true,
+  campaignStartIndex,
+  campaignEndIndex,
+  editableStartIndex = 0,
+  editableEndIndex = days.length - 1,
+  onBookingChange,
+  onBookingSplit,
+  onCreatorOrderChange,
   className,
   ...props
-}: React.ComponentProps<typeof Surface> & {
-  creators: CampaignScheduleCreator[]
-  days: CampaignScheduleDay[]
-  bookings: CampaignScheduleBooking[]
-  title?: React.ReactNode
-  description?: React.ReactNode
-  activeBookingId?: string
-  onBookingSelect: (booking: CampaignScheduleBooking) => void
-}) {
+}: CampaignScheduleMatrixProps) {
   const scrollRef = React.useRef<HTMLDivElement | null>(null)
   const datedDays = React.useMemo(
     () =>
@@ -77,12 +100,16 @@ function CampaignScheduleMatrix({
         zoom={zoom}
         zoomBy={zoomBy}
       />
-      <ScheduleMetrics
-        creatorCount={creators.length}
-        dayCount={days.length}
-        bookingCount={liveBookings.length}
-      />
+      {showMetrics && (
+        <ScheduleMetrics
+          creatorCount={creators.length}
+          dayCount={days.length}
+          bookingCount={liveBookings.length}
+        />
+      )}
       <ScheduleTimeline
+        campaignStartIndex={campaignStartIndex}
+        campaignEndIndex={campaignEndIndex}
         scrollRef={scrollRef}
         timelineMinWidth={timelineMinWidth}
         zoom={zoom}
@@ -90,25 +117,67 @@ function CampaignScheduleMatrix({
         headerLayers={headerLayers}
         boundedDays={boundedDays}
       >
-        {creators.map((creator) => (
-          <ScheduleCreatorRow
-            key={creator.id}
-            creator={creator}
-            bookings={liveBookings}
-            activeBookingId={activeBookingId}
-            onBookingSelect={onBookingSelect}
-            zoom={zoom}
-            zoomTransition={zoomTransition}
-            headerLayers={headerLayers}
-            boundedDays={boundedDays}
-          />
-        ))}
+        <ScheduleRows
+          creators={creators}
+          minimumRows={minimumRows}
+          bookings={liveBookings}
+          activeBookingId={activeBookingId}
+          onBookingSelect={onBookingSelect}
+          editing={{
+            editableStartIndex,
+            editableEndIndex,
+            onBookingChange,
+            onBookingSplit,
+            dayLabels: days.map((day) => day.date),
+          }}
+          reorder={{ creators, onCreatorOrderChange }}
+          zoom={zoom}
+          zoomTransition={zoomTransition}
+          headerLayers={headerLayers}
+          boundedDays={boundedDays}
+        />
       </ScheduleTimeline>
     </Surface>
   )
 }
 
+function ScheduleRows({
+  creators,
+  minimumRows,
+  ...rowProps
+}: Omit<React.ComponentProps<typeof ScheduleCreatorRow>, "creator"> & {
+  creators: CampaignScheduleCreator[]
+  minimumRows: number
+}) {
+  return (
+    <>
+      {creators.map((creator) => (
+        <ScheduleCreatorRow key={creator.id} creator={creator} {...rowProps} />
+      ))}
+      {Array.from(
+        { length: Math.max(0, minimumRows - creators.length) },
+        (_, index) => (
+          <React.Fragment key={`empty-${index}`}>
+            <div
+              aria-hidden="true"
+              className="sticky left-0 z-20 border-r border-b border-nextide-line bg-nextide-panel"
+            />
+            <div
+              data-slot="campaign-schedule-board-row"
+              data-placeholder="true"
+              aria-hidden="true"
+              className="min-h-16 cursor-grab border-b border-nextide-line/70"
+            />
+          </React.Fragment>
+        )
+      )}
+    </>
+  )
+}
+
 function ScheduleTimeline({
+  campaignStartIndex,
+  campaignEndIndex,
   scrollRef,
   timelineMinWidth,
   zoom,
@@ -117,6 +186,8 @@ function ScheduleTimeline({
   boundedDays,
   children,
 }: ScheduleViewState & {
+  campaignStartIndex?: number
+  campaignEndIndex?: number
   scrollRef: ScrollRef
   timelineMinWidth: number
   children: React.ReactNode
@@ -141,7 +212,7 @@ function ScheduleTimeline({
         className="nextide-scrollbar-none relative overflow-x-auto rounded-xl border border-nextide-line bg-background/20 outline-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring data-[dragging=true]:select-none"
       >
         <div
-          className="grid w-full transition-[min-width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
+          className="relative grid w-full transition-[min-width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
           style={{
             minWidth: `calc(${creatorColumnWidth}px + ${timelineMinWidth}px)`,
             gridTemplateColumns: `${creatorColumnWidth}px minmax(0, 1fr)`,
@@ -153,10 +224,59 @@ function ScheduleTimeline({
             headerLayers={headerLayers}
             boundedDays={boundedDays}
           />
+          {(campaignStartIndex !== undefined ||
+            campaignEndIndex !== undefined) && (
+            <div aria-hidden="true" className="col-span-2 h-6" />
+          )}
           {children}
+          <ScheduleCampaignMarkers
+            start={campaignStartIndex}
+            end={campaignEndIndex}
+            boundedDays={boundedDays}
+          />
         </div>
       </div>
     </>
+  )
+}
+
+function ScheduleCampaignMarkers({
+  start,
+  end,
+  boundedDays,
+}: {
+  start?: number
+  end?: number
+  boundedDays: number
+}) {
+  return (
+    <div
+      className="pointer-events-none absolute inset-y-0 right-0 z-10"
+      style={{ left: creatorColumnWidth }}
+    >
+      {start !== undefined && (
+        <div
+          data-slot="campaign-start-marker"
+          className="absolute inset-y-0 border-l border-nextide-tide/70"
+          style={{ left: `${(start / boundedDays) * 100}%` }}
+        >
+          <span className="absolute top-20 left-1 text-ui-micro whitespace-nowrap text-nextide-tide">
+            Campaign start
+          </span>
+        </div>
+      )}
+      {end !== undefined && (
+        <div
+          data-slot="campaign-end-marker"
+          className="absolute inset-y-0 border-r border-nextide-tide/70"
+          style={{ left: `${((end + 1) / boundedDays) * 100}%` }}
+        >
+          <span className="absolute top-20 right-1 text-ui-micro whitespace-nowrap text-nextide-tide">
+            Campaign end
+          </span>
+        </div>
+      )}
+    </div>
   )
 }
 

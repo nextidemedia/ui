@@ -34,6 +34,7 @@ function useScheduleDrag(scrollRef: ScrollRef) {
     if (
       !(event.target instanceof Element) ||
       !event.target.closest('[data-slot="campaign-schedule-board-row"]') ||
+      Boolean(event.target.closest("button")) ||
       event.pointerType !== "mouse" ||
       event.button !== 0 ||
       event.currentTarget.scrollWidth <= event.currentTarget.clientWidth

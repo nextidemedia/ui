@@ -285,3 +285,276 @@ async function expectScheduleDragBoundary(
     .poll(() => timeline.evaluate((element) => element.scrollLeft))
     .toBeGreaterThan(300)
 }
+
+test("campaign schedule edits preserve days, cancellation, and independent split bookings", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=web-mining")
+  const matrix = page.locator('[data-slot="campaign-schedule-matrix"]')
+  const timeline = matrix.getByRole("region", {
+    name: "Campaign schedule timeline",
+  })
+  const booking = matrix.locator('[data-booking-id="booking-1"]')
+  const move = booking.getByRole("button", { name: "Launch read", exact: true })
+  await move.focus()
+  await move.press("ArrowRight")
+  await expect(booking).toHaveAttribute("data-start-index", "5")
+  await move.press("Escape")
+  await expect(booking).toHaveAttribute("data-start-index", "4")
+  await move.press("ArrowRight")
+  await move.press("Enter")
+  await expect(booking).toHaveAttribute("data-end-index", "19")
+  const end = booking.getByRole("button", { name: "Resize end of Launch read" })
+  await end.focus()
+  await end.press("ArrowLeft")
+  await end.press("Enter")
+  await expect(booking).toHaveAttribute("data-end-index", "18")
+  const start = booking.getByRole("button", {
+    name: "Resize start of Launch read",
+  })
+  await start.focus()
+  await start.press("ArrowLeft")
+  await start.press("Enter")
+  await expect(booking).toHaveAttribute("data-start-index", "4")
+  await start.press("ArrowLeft")
+  await start.press("Enter")
+  await expect(booking).toHaveAttribute("data-start-index", "4")
+
+  await booking.getByRole("button", { name: "Cut Launch read" }).click()
+  await page
+    .getByRole("menuitem", { name: "Cut before 2026-05-22", exact: true })
+    .click()
+  const row = matrix
+    .locator('[data-slot="campaign-schedule-board-row"]')
+    .first()
+  const pieces = row.locator('[data-slot="campaign-schedule-booking"]')
+  await expect(pieces).toHaveCount(2)
+  await expect(pieces.nth(0)).toHaveAttribute("data-start-index", "4")
+  await expect(pieces.nth(0)).toHaveAttribute("data-end-index", "10")
+  await expect(pieces.nth(1)).toHaveAttribute("data-start-index", "11")
+  await expect(pieces.nth(1)).toHaveAttribute("data-end-index", "18")
+  await pieces
+    .nth(1)
+    .getByRole("button", { name: "Launch read", exact: true })
+    .press("ArrowRight")
+  await pieces
+    .nth(1)
+    .getByRole("button", { name: "Launch read", exact: true })
+    .press("Enter")
+  await expect(pieces.nth(1)).toHaveAttribute("data-start-index", "12")
+  await expect(pieces.nth(1)).toHaveAttribute("data-end-index", "19")
+  await expect(pieces.nth(0)).toHaveAttribute("data-end-index", "10")
+
+  await timeline.evaluate((element) => {
+    element.scrollLeft = 0
+  })
+  const unit = await row.evaluate(
+    (element) => element.getBoundingClientRect().width / 91
+  )
+  const body = pieces
+    .nth(1)
+    .getByRole("button", { name: "Launch read", exact: true })
+  await dragBy(page, body, unit * 2, 0)
+  await expect(pieces.nth(1)).toHaveAttribute("data-start-index", "14")
+  await expect(pieces.nth(1)).toHaveAttribute("data-end-index", "21")
+  expect(await timeline.evaluate((element) => element.scrollLeft)).toBe(0)
+  await dragBy(
+    page,
+    pieces.nth(1).getByRole("button", { name: "Resize end of Launch read" }),
+    unit,
+    0
+  )
+  await expect(pieces.nth(1)).toHaveAttribute("data-end-index", "22")
+  await dragBy(page, body, unit * 2, 0, true)
+  await expect(pieces.nth(1)).toHaveAttribute("data-start-index", "14")
+
+  await verifyCreatorReorder(page, matrix)
+  await expectNoSeriousAxeViolations(
+    page,
+    "editable schedule",
+    '[data-slot="campaign-schedule-matrix"]'
+  )
+})
+
+test("campaign schedule preserves an empty board and contained editing at every viewport", async ({
+  page,
+}) => {
+  await page.goto("/?view=web-mining")
+  const matrix = page.locator('[data-slot="campaign-schedule-matrix"]')
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page
+      .getByRole("button", { name: "Clear creators", exact: true })
+      .click()
+    await expect(matrix.locator('[data-placeholder="true"]')).toHaveCount(5)
+    await expect(
+      matrix.locator('[data-slot="campaign-schedule-creator-legend"]')
+    ).toHaveCount(0)
+    const emptyHeight = await matrix
+      .getByRole("region")
+      .evaluate((element) => element.clientHeight)
+    await page
+      .getByRole("button", { name: "Restore creators", exact: true })
+      .click()
+    expect(
+      await matrix
+        .getByRole("region")
+        .evaluate((element) => element.clientHeight)
+    ).toBe(emptyHeight)
+    const body = matrix
+      .locator('[data-booking-id="booking-1"]')
+      .getByRole("button", { name: "Launch read", exact: true })
+    await body.focus()
+    await body.press("ArrowRight")
+    await body.press("Escape")
+    await expect(
+      matrix.locator('[data-booking-id="booking-1"]')
+    ).toHaveAttribute("data-start-index", "4")
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - innerWidth
+      )
+    ).toBeLessThanOrEqual(1)
+    await matrix.screenshot({ path: `output/schedule-${width}.png` })
+  }
+})
+
+async function dragBy(
+  page: Page,
+  locator: Locator,
+  x: number,
+  y: number,
+  cancel = false
+) {
+  const box = await locator.boundingBox()
+  expect(box).not.toBeNull()
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(
+    box!.x + box!.width / 2 + x,
+    box!.y + box!.height / 2 + y,
+    { steps: 5 }
+  )
+  if (cancel) await page.keyboard.press("Escape")
+  await page.mouse.up()
+}
+
+async function verifyCreatorReorder(page: Page, matrix: Locator) {
+  const handle = matrix.getByRole("button", { name: "Reorder Mina Vale" })
+  await handle.press("ArrowDown")
+  await handle.press("Escape")
+  await expect(
+    matrix.locator('[data-slot="campaign-schedule-creator-legend"]').first()
+  ).toContainText("Mina Vale")
+  await handle.press("ArrowDown")
+  await handle.press("Enter")
+  await expect(
+    matrix.locator('[data-slot="campaign-schedule-creator-legend"]').first()
+  ).toContainText("Ren Kade")
+  await dragBy(page, handle, 0, 64)
+  await expect(
+    matrix.locator('[data-slot="campaign-schedule-creator-legend"]').nth(2)
+  ).toContainText("Mina Vale")
+}
+
+test("campaign cut menu is keyboard reachable and right-click chooses a complete-day boundary", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=web-mining")
+  const booking = page.locator('[data-booking-id="booking-1"]')
+  const cut = booking.getByRole("button", { name: "Cut Launch read" })
+  await cut.focus()
+  await cut.press("Enter")
+  await expect(
+    page.getByRole("menuitem", { name: "Cut before 2026-05-16", exact: true })
+  ).toBeFocused()
+  await page.keyboard.press("Escape")
+  await expect(cut).toBeFocused()
+  await expect(
+    page.locator('[data-slot="campaign-schedule-booking"]')
+  ).toHaveCount(4)
+  const body = booking.getByRole("button", { name: "Launch read", exact: true })
+  await body.click({ button: "right" })
+  await page
+    .getByRole("menuitem", { name: "Cut before 2026-05-16", exact: true })
+    .click()
+  const row = booking.locator("..")
+  const pieces = row.locator('[data-slot="campaign-schedule-booking"]')
+  await expect(pieces).toHaveCount(2)
+  await expect(pieces.first()).toHaveAttribute("data-end-index", "4")
+  await expect(pieces.nth(1)).toHaveAttribute("data-start-index", "5")
+  await expect(pieces.nth(1)).toHaveAttribute("data-end-index", "18")
+  // A one-day piece remains pointer-movable without another booking's controls covering it.
+  const unit = await row.evaluate(
+    (element) => element.getBoundingClientRect().width / 91
+  )
+  await dragBy(
+    page,
+    pieces.first().getByRole("button", { name: "Launch read", exact: true }),
+    unit,
+    0
+  )
+  await expect(pieces.first()).toHaveAttribute("data-start-index", "5")
+  await expect(pieces.first()).toHaveAttribute("data-end-index", "5")
+})
+
+test("schedule blur cancels pointer edits and resize leaves keyboard selection available", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=web-mining")
+  const booking = page.locator('[data-booking-id="booking-1"]')
+  const body = booking.getByRole("button", { name: "Launch read", exact: true })
+  await body.scrollIntoViewIfNeeded()
+  await page
+    .getByRole("region", { name: "Campaign schedule timeline" })
+    .evaluate((element) => {
+      element.scrollLeft = 0
+    })
+  const unit = await booking
+    .locator("..")
+    .evaluate((element) => element.getBoundingClientRect().width / 91)
+  const box = await body.boundingBox()
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(
+    box!.x + box!.width / 2 + unit * 2,
+    box!.y + box!.height / 2,
+    { steps: 5 }
+  )
+  await expect(booking).toHaveAttribute("data-start-index", "6")
+  await page.keyboard.press("Tab")
+  await expect(booking).toHaveAttribute("data-start-index", "4")
+  await page.mouse.up()
+  await expect(booking).toHaveAttribute("data-start-index", "4")
+  await expect(booking).toHaveAttribute("data-end-index", "18")
+  await dragBy(
+    page,
+    booking.getByRole("button", { name: "Resize end of Launch read" }),
+    unit,
+    0
+  )
+  await expect(booking).toHaveAttribute("data-end-index", "19")
+  await expect(body).toHaveAttribute("aria-pressed", "false")
+  await body.focus()
+  await body.press("Enter")
+  await expect(body).toHaveAttribute("aria-pressed", "true")
+  const handle = page.getByRole("button", { name: "Reorder Mina Vale" })
+  const handleBox = await handle.boundingBox()
+  await page.mouse.move(
+    handleBox!.x + handleBox!.width / 2,
+    handleBox!.y + handleBox!.height / 2
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    handleBox!.x + handleBox!.width / 2,
+    handleBox!.y + handleBox!.height / 2 + 64
+  )
+  await page.keyboard.press("Tab")
+  await page.mouse.up()
+  await expect(
+    page.locator('[data-slot="campaign-schedule-creator-legend"]').first()
+  ).toContainText("Mina Vale")
+})

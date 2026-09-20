@@ -4,6 +4,7 @@ type CreatorTransferItem = {
   name: string
   meta?: React.ReactNode
   avatar?: React.ReactNode
+  disabledReason?: string
 }
 
 type CreatorTransferSide = "available" | "selected"
@@ -17,11 +18,6 @@ type CreatorTransferFlyer = CreatorTransferTarget & {
   source: CreatorTransferSide
   from: DOMRect
   to: DOMRect
-}
-
-type CreatorPanelResize = {
-  height: number
-  duration: number
 }
 
 type CreatorTransferRequest = {
@@ -40,10 +36,10 @@ type CreatorTransferProps = React.ComponentProps<"section"> & {
   onSelectedIdsChange: (ids: string[]) => void
   availableTitle?: React.ReactNode
   selectedTitle?: React.ReactNode
+  listHeight?: React.CSSProperties["height"]
 }
 export { transferEase, transferMoveMs, transferReflowMs, transferSpaceMs }
 export type {
-  CreatorPanelResize,
   CreatorTransferFlyer,
   CreatorTransferItem,
   CreatorTransferProps,

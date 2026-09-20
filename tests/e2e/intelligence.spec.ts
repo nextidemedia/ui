@@ -340,3 +340,70 @@ test("playground queues creator and context changes without losing updates", asy
   ).toHaveCount(7)
   await expect(progression.locator("div.absolute.z-20")).toHaveCount(7)
 })
+
+test("creator transfer searches and scrolls without moving the page", async ({
+  page,
+}) => {
+  await page.goto("/?view=intelligence")
+  const transfer = page.locator('[data-slot="creator-transfer"]')
+  const available = transfer.getByRole("textbox", {
+    name: "Search available creators",
+  })
+  const selected = transfer.getByRole("textbox", {
+    name: "Search added creators",
+  })
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await available.scrollIntoViewIfNeeded()
+    const height = await transfer.evaluate(
+      (element) => element.getBoundingClientRect().height
+    )
+    await available.fill("taro")
+    const top = await page.evaluate(() => scrollY)
+    await available.press("Enter")
+    await expect(available).toHaveValue("")
+    await expect(
+      selected
+        .locator("xpath=ancestor::section[1]")
+        .getByRole("button", { name: /Taro/ })
+    ).toBeVisible()
+    await expect(
+      transfer.getByRole("heading", { name: "Added creators (3)" })
+    ).toBeVisible()
+    expect(
+      await transfer.evaluate(
+        (element) => element.getBoundingClientRect().height
+      )
+    ).toBe(height)
+    expect(await page.evaluate(() => scrollY)).toBe(top)
+    await expect(available).toBeFocused()
+    await available.press("Tab")
+    await expect(
+      transfer.getByRole("button", { name: /Ivy North/ })
+    ).toBeFocused()
+    await selected.fill("taro")
+    await selected.press("Enter")
+    await expect(
+      transfer.getByRole("heading", { name: "Added creators (2)" })
+    ).toBeVisible()
+    expect(
+      await transfer.evaluate(
+        (element) => element.getBoundingClientRect().height
+      )
+    ).toBe(height)
+    await transfer.screenshot({ path: `output/transfer-${width}.png` })
+  }
+  await selected.fill("ren")
+  await selected.press("Enter")
+  const unavailable = available
+    .locator("xpath=ancestor::section[1]")
+    .getByRole("button", { name: /Ren Kade/ })
+  await expect(unavailable).toBeDisabled()
+  await expect(unavailable).toContainText("Unavailable for this campaign")
+  await available.fill("ren")
+  await available.press("Enter")
+  await expect(available).toHaveValue("ren")
+  await expect(
+    transfer.getByRole("heading", { name: "Added creators (1)" })
+  ).toBeVisible()
+})
