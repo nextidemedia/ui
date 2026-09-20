@@ -12,6 +12,7 @@ test("shell scrollbars fade with overflow while scrolling stays keyboard and poi
 }) => {
   await page.goto("/?view=foundations")
   const viewport = page.locator('[data-slot="app-shell-workspace"] main')
+  await expect(page.getByRole("main")).toHaveCount(1)
   const area = viewport.locator("..")
   const scrollbar = area.locator('[data-slot="scroll-area-scrollbar"]')
   for (const width of [320, 390, 768, 1440]) {
@@ -104,6 +105,7 @@ test("shell scrollbars fade with overflow while scrolling stays keyboard and poi
     .first()
     .evaluate((element) => element.getBoundingClientRect().height)
   expect(sectionHeight).toBeGreaterThanOrEqual(viewportHeight)
+  await expectNoSeriousAxeViolations(page, "scrolling app shell")
 })
 
 test("playground keeps control sizing, Typeset presets, and sidebar motion coherent", async ({

@@ -67,6 +67,7 @@ function AppShell({
           className="relative z-0 overflow-hidden"
           viewportProps={{
             render: <main />,
+            role: "main",
             className: cn(
               "overscroll-y-contain pe-2.5",
               stabilizeResize && sidebarTransitioning && "will-change-transform"
@@ -82,6 +83,7 @@ function AppShell({
           className="relative z-10 hidden overflow-hidden lg:block"
           viewportProps={{
             render: <aside />,
+            role: "complementary",
             className: "pe-2.5 overscroll-y-contain",
             style: { overflowX: "hidden" },
           }}
