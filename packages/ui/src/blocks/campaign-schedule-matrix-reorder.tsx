@@ -13,14 +13,16 @@ type ScheduleReorder = {
 function ScheduleReorderHandle({
   creator,
   reorder,
+  nameId,
 }: {
   creator: CampaignScheduleCreator
   reorder: ScheduleReorder
+  nameId: string
 }) {
   const [position, setPosition] = React.useState<number | null>(null)
-  const { start, consumeClick } = useSchedulePointer()
+  const { start, consumeClick, cancel } = useSchedulePointer()
   const index = reorder.creators.findIndex((item) => item.id === creator.id)
-  const name = typeof creator.name === "string" ? creator.name : "creator"
+  const actionId = React.useId()
   const hintId = React.useId()
   const target = (delta: number) =>
     clamp(index + delta, 0, reorder.creators.length - 1)
@@ -38,7 +40,7 @@ function ScheduleReorderHandle({
     <>
       <button
         type="button"
-        aria-label={`Reorder ${name}`}
+        aria-labelledby={`${actionId} ${nameId}`}
         aria-describedby={hintId}
         aria-pressed={position !== null}
         className="-ml-2 grid min-h-9 w-6 shrink-0 cursor-grab touch-none place-items-center rounded-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
@@ -51,7 +53,7 @@ function ScheduleReorderHandle({
             finish: (delta) => commit(delta === null ? null : target(delta)),
           })
         }
-        onClick={() => consumeClick()}
+        onClick={consumeClick}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             event.preventDefault()
@@ -71,8 +73,14 @@ function ScheduleReorderHandle({
             )
           )
         }}
-        onBlur={() => setPosition(null)}
+        onBlur={() => {
+          cancel()
+          setPosition(null)
+        }}
       >
+        <span id={actionId} className="sr-only">
+          Reorder
+        </span>
         <GripVertical className="size-4" />
       </button>
       <span id={hintId} className="sr-only">

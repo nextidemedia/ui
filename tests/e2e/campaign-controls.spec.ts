@@ -499,3 +499,62 @@ test("campaign cut menu is keyboard reachable and right-click chooses a complete
   await expect(pieces.first()).toHaveAttribute("data-start-index", "5")
   await expect(pieces.first()).toHaveAttribute("data-end-index", "5")
 })
+
+test("schedule blur cancels pointer edits and resize leaves keyboard selection available", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=web-mining")
+  const booking = page.locator('[data-booking-id="booking-1"]')
+  const body = booking.getByRole("button", { name: "Launch read", exact: true })
+  await body.scrollIntoViewIfNeeded()
+  await page
+    .getByRole("region", { name: "Campaign schedule timeline" })
+    .evaluate((element) => {
+      element.scrollLeft = 0
+    })
+  const unit = await booking
+    .locator("..")
+    .evaluate((element) => element.getBoundingClientRect().width / 91)
+  const box = await body.boundingBox()
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(
+    box!.x + box!.width / 2 + unit * 2,
+    box!.y + box!.height / 2,
+    { steps: 5 }
+  )
+  await expect(booking).toHaveAttribute("data-start-index", "6")
+  await page.keyboard.press("Tab")
+  await expect(booking).toHaveAttribute("data-start-index", "4")
+  await page.mouse.up()
+  await expect(booking).toHaveAttribute("data-start-index", "4")
+  await expect(booking).toHaveAttribute("data-end-index", "18")
+  await dragBy(
+    page,
+    booking.getByRole("button", { name: "Resize end of Launch read" }),
+    unit,
+    0
+  )
+  await expect(booking).toHaveAttribute("data-end-index", "19")
+  await expect(body).toHaveAttribute("aria-pressed", "false")
+  await body.focus()
+  await body.press("Enter")
+  await expect(body).toHaveAttribute("aria-pressed", "true")
+  const handle = page.getByRole("button", { name: "Reorder Mina Vale" })
+  const handleBox = await handle.boundingBox()
+  await page.mouse.move(
+    handleBox!.x + handleBox!.width / 2,
+    handleBox!.y + handleBox!.height / 2
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    handleBox!.x + handleBox!.width / 2,
+    handleBox!.y + handleBox!.height / 2 + 64
+  )
+  await page.keyboard.press("Tab")
+  await page.mouse.up()
+  await expect(
+    page.locator('[data-slot="campaign-schedule-creator-legend"]').first()
+  ).toContainText("Mina Vale")
+})

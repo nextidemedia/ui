@@ -55,6 +55,7 @@ type PointerGesture = {
 function useSchedulePointer() {
   const cleanup = React.useRef<(() => void) | null>(null)
   const suppressClick = React.useRef(false)
+  const cancelGesture = React.useRef<(() => void) | null>(null)
   React.useEffect(() => () => cleanup.current?.(), [])
   const start = (
     event: React.PointerEvent<HTMLElement>,
@@ -84,6 +85,7 @@ function useSchedulePointer() {
       suppressClick.current = moved
       gesture.finish(value)
     }
+    cancelGesture.current = () => finish(null)
     const up = (next: PointerEvent) => {
       if (next.pointerId === event.pointerId) finish(moved ? delta : null)
     }
@@ -106,14 +108,15 @@ function useSchedulePointer() {
       window.removeEventListener("pointercancel", cancel)
       window.removeEventListener("keydown", key)
       cleanup.current = null
+      cancelGesture.current = null
     }
   }
-  const consumeClick = () => {
-    const value = suppressClick.current
+  const consumeClick = (event: React.MouseEvent) => {
+    const value = event.detail > 0 && suppressClick.current
     suppressClick.current = false
     return value
   }
-  return { start, consumeClick }
+  return { start, consumeClick, cancel: () => cancelGesture.current?.() }
 }
 
 function useBookingEdit(
@@ -191,7 +194,10 @@ function useBookingEdit(
     canEdit,
     pointerDown,
     keyDown,
-    cancel: () => setDraft(null),
+    cancel: () => {
+      pointer.cancel()
+      setDraft(null)
+    },
     consumeClick: pointer.consumeClick,
   }
 }

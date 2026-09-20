@@ -155,9 +155,10 @@ function WebIncidentProof() {
 function ScheduleEditorDemo() {
   const [activeBookingId, setActiveBookingId] = useState("booking-2")
   const [creators, setCreators] = useState(scheduleCreators)
-  const [bookings, setBookings] = useState(() =>
+  const [bookings, setBookings] = useState<CampaignScheduleBooking[]>(() =>
     scheduleBookings.map((booking) => ({
       ...booking,
+      title: <span>{booking.title}</span>,
       startIndex: Math.max(booking.startIndex, 4),
     }))
   )

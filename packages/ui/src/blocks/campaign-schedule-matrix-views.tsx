@@ -268,17 +268,22 @@ function ScheduleCreatorLegend({
   creator: CampaignScheduleCreator
   reorder: ScheduleReorder
 }) {
+  const nameId = React.useId()
   return (
     <div
       data-slot="campaign-schedule-creator-legend"
       className="sticky left-0 z-20 flex min-w-0 items-center gap-2 border-r border-b border-nextide-line bg-nextide-panel p-3"
     >
-      <ScheduleReorderHandle creator={creator} reorder={reorder} />
+      <ScheduleReorderHandle
+        creator={creator}
+        reorder={reorder}
+        nameId={nameId}
+      />
       <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-nextide-line bg-background/35 text-xs font-medium text-nextide-tide">
         {creator.avatar ?? initialsFromNode(creator.name)}
       </span>
       <span className="grid min-w-0 gap-0.5">
-        <strong className="truncate text-sm leading-tight">
+        <strong id={nameId} className="truncate text-sm leading-tight">
           {creator.name}
         </strong>
         {creator.meta ? (

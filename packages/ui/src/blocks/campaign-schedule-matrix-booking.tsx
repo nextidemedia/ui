@@ -40,7 +40,7 @@ function ScheduleBooking({
   const hintId = React.useId()
   const start = clamp(edit.shown.startIndex, 0, boundedDays - 1)
   const end = clamp(edit.shown.endIndex, start, boundedDays - 1)
-  const label = typeof booking.title === "string" ? booking.title : "Booking"
+  const titleId = React.useId()
   const cuttable =
     Boolean(editing.onBookingSplit) && booking.startIndex < booking.endIndex
   const contextMenu = (event: React.MouseEvent) => {
@@ -80,11 +80,17 @@ function ScheduleBooking({
       }}
     >
       {edit.canEdit && (
-        <BookingEdge edge="start" label={label} hintId={hintId} edit={edit} />
+        <BookingEdge
+          edge="start"
+          titleId={titleId}
+          hintId={hintId}
+          edit={edit}
+        />
       )}
       <button
         type="button"
-        aria-label={label}
+        aria-labelledby={titleId}
+        aria-pressed={active}
         aria-describedby={edit.canEdit ? hintId : undefined}
         className={cn(
           "flex min-w-0 flex-1 items-center overflow-hidden px-[min(0.75rem,8%)] text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -93,19 +99,19 @@ function ScheduleBooking({
         onPointerDown={(event) => edit.pointerDown(event, "move")}
         onKeyDown={(event) => edit.keyDown(event, "move")}
         onBlur={edit.cancel}
-        onClick={() => {
-          if (!edit.consumeClick()) onBookingSelect(booking)
+        onClick={(event) => {
+          if (!edit.consumeClick(event)) onBookingSelect(booking)
         }}
       >
-        <BookingLabel booking={booking} />
+        <BookingLabel booking={booking} titleId={titleId} />
       </button>
       {cuttable && (
         <BookingCutMenu
-          {...{ booking, editing, menuOpen, setMenuOpen, cutIndex, label }}
+          {...{ booking, editing, menuOpen, setMenuOpen, cutIndex, titleId }}
         />
       )}
       {edit.canEdit && (
-        <BookingEdge edge="end" label={label} hintId={hintId} edit={edit} />
+        <BookingEdge edge="end" titleId={titleId} hintId={hintId} edit={edit} />
       )}
       <span id={hintId} className="sr-only">
         Left and right arrows adjust one day. Enter saves. Escape cancels.
@@ -121,32 +127,43 @@ function ScheduleBooking({
 
 function BookingEdge({
   edge,
-  label,
+  titleId,
   hintId,
   edit,
 }: {
   edge: "start" | "end"
-  label: string
+  titleId: string
   hintId: string
   edit: ReturnType<typeof useBookingEdit>
 }) {
+  const actionId = React.useId()
   return (
     <button
       type="button"
-      aria-label={`Resize ${edge} of ${label}`}
+      aria-labelledby={`${actionId} ${titleId}`}
       aria-describedby={hintId}
       className="z-10 w-[min(0.75rem,15%)] shrink-0 cursor-ew-resize touch-none rounded-sm outline-none after:mx-auto after:block after:h-5 after:w-0.5 after:rounded-full after:bg-current after:opacity-50 hover:bg-nextide-tide/20 focus-visible:ring-2 focus-visible:ring-ring"
       onPointerDown={(event) => edit.pointerDown(event, edge)}
       onKeyDown={(event) => edit.keyDown(event, edge)}
       onBlur={edit.cancel}
-    />
+    >
+      <span id={actionId} className="sr-only">
+        Resize {edge} of
+      </span>
+    </button>
   )
 }
 
-function BookingLabel({ booking }: { booking: CampaignScheduleBooking }) {
+function BookingLabel({
+  booking,
+  titleId,
+}: {
+  booking: CampaignScheduleBooking
+  titleId: string
+}) {
   return (
     <span className="grid min-w-0 gap-0.5">
-      <span className="truncate text-sm leading-tight font-medium">
+      <span id={titleId} className="truncate text-sm leading-tight font-medium">
         {booking.title}
       </span>
       <span className="flex min-w-0 items-center gap-2">
@@ -176,15 +193,16 @@ function BookingCutMenu({
   menuOpen,
   setMenuOpen,
   cutIndex,
-  label,
+  titleId,
 }: {
   booking: CampaignScheduleBooking
   editing: ScheduleEditing
   menuOpen: boolean
   setMenuOpen: (open: boolean) => void
   cutIndex: number | null
-  label: string
+  titleId: string
 }) {
+  const actionId = React.useId()
   const indices = Array.from(
     { length: booking.endIndex - booking.startIndex },
     (_, index) => booking.startIndex + index + 1
@@ -195,10 +213,13 @@ function BookingCutMenu({
     <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger
         render={<Button variant="ghost" size="icon-xs" />}
-        aria-label={`Cut ${label}`}
+        aria-labelledby={`${actionId} ${titleId}`}
         className="z-10 w-[min(2rem,25%)] shrink-0 self-center overflow-hidden"
         onPointerDown={(event) => event.stopPropagation()}
       >
+        <span id={actionId} className="sr-only">
+          Cut
+        </span>
         <MoreHorizontal />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="max-h-72 w-60" align="end">
