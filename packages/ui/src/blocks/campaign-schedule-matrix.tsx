@@ -224,10 +224,6 @@ function ScheduleTimeline({
             headerLayers={headerLayers}
             boundedDays={boundedDays}
           />
-          {(campaignStartIndex !== undefined ||
-            campaignEndIndex !== undefined) && (
-            <div aria-hidden="true" className="col-span-2 h-6" />
-          )}
           {children}
           <ScheduleCampaignMarkers
             start={campaignStartIndex}
@@ -260,7 +256,7 @@ function ScheduleCampaignMarkers({
           className="absolute inset-y-0 border-l border-nextide-tide/70"
           style={{ left: `${(start / boundedDays) * 100}%` }}
         >
-          <span className="absolute top-20 left-1 text-ui-micro whitespace-nowrap text-nextide-tide">
+          <span className="absolute top-1 left-1 rounded-sm bg-nextide-panel px-1 text-ui-micro whitespace-nowrap text-nextide-tide">
             Campaign start
           </span>
         </div>
@@ -271,7 +267,7 @@ function ScheduleCampaignMarkers({
           className="absolute inset-y-0 border-r border-nextide-tide/70"
           style={{ left: `${((end + 1) / boundedDays) * 100}%` }}
         >
-          <span className="absolute top-20 right-1 text-ui-micro whitespace-nowrap text-nextide-tide">
+          <span className="absolute top-1 right-1 rounded-sm bg-nextide-panel px-1 text-ui-micro whitespace-nowrap text-nextide-tide">
             Campaign end
           </span>
         </div>

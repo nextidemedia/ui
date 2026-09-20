@@ -329,12 +329,14 @@ function ScheduleHeader({
         {layer.context.map((span) => (
           <span
             key={span.id}
-            className="flex min-w-0 items-center justify-center border-r border-nextide-line/60 px-2 text-ui-micro font-medium text-muted-foreground last:border-r-0"
+            className="@container flex min-w-0 items-center justify-center overflow-hidden border-r border-nextide-line/60 px-2 text-ui-micro font-medium text-muted-foreground last:border-r-0"
             style={{
               gridColumn: `${span.startIndex + 1} / ${span.endIndex + 2}`,
             }}
           >
-            <span className="truncate">{span.contextLabel ?? span.label}</span>
+            <span className="invisible whitespace-nowrap @min-[4rem]:visible">
+              {span.contextLabel ?? span.label}
+            </span>
           </span>
         ))}
       </span>
@@ -348,18 +350,23 @@ function ScheduleHeader({
           <span
             key={span.id}
             className={cn(
-              "grid min-w-0 content-center border-r border-nextide-line/60 px-2 text-center last:border-r-0",
+              "@container grid min-w-0 content-center overflow-hidden border-r border-nextide-line/60 px-2 text-center last:border-r-0",
               span.today && "bg-nextide-tide/8 text-nextide-tide"
             )}
             style={{
               gridColumn: `${span.startIndex + 1} / ${span.endIndex + 2}`,
             }}
           >
-            <span className="truncate text-ui-caption font-medium text-foreground">
+            <span className="invisible min-w-0 text-ui-caption font-medium whitespace-nowrap text-foreground @min-[3rem]:visible">
               {span.label}
             </span>
             {span.meta ? (
-              <span className="truncate text-ui-micro text-muted-foreground">
+              <span
+                className={cn(
+                  "invisible min-w-0 text-ui-micro whitespace-nowrap text-muted-foreground",
+                  zoom === "day" ? "@min-[3rem]:visible" : "@min-[6rem]:visible"
+                )}
+              >
                 {span.meta}
               </span>
             ) : null}
