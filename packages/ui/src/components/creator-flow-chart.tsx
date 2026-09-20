@@ -7,7 +7,8 @@ type CreatorFlowTone = "success" | "processing" | "warning" | "danger"
 
 type CreatorFlowCreator = {
   id: string
-  name: string
+  name: React.ReactNode
+  avatar?: React.ReactNode
   meta?: React.ReactNode
 }
 
@@ -42,13 +43,23 @@ function CreatorFlowChart({
   days,
   sessions,
   onSessionsChange,
+  onSessionSelect,
+  title = "Creator flow chart",
+  description = onSessionsChange && title === "Creator flow chart"
+    ? "Drag a block to move a creator session. Drag an edge to resize its date range."
+    : null,
+  compact = false,
   className,
   ...props
-}: React.ComponentProps<"section"> & {
+}: Omit<React.ComponentProps<"section">, "title"> & {
   creators: CreatorFlowCreator[]
   days: React.ReactNode[]
   sessions: CreatorFlowSession[]
   onSessionsChange?: (sessions: CreatorFlowSession[]) => void
+  onSessionSelect?: (session: CreatorFlowSession) => void
+  title?: React.ReactNode
+  description?: React.ReactNode
+  compact?: boolean
 }) {
   const { ref: scrollRef, onWheel } = useContainedScroll<HTMLDivElement>({
     axis: "x",
@@ -60,40 +71,34 @@ function CreatorFlowChart({
     <section
       data-slot="creator-flow-chart"
       className={cn(
-        "grid gap-3 rounded-lg border border-nextide-line bg-nextide-panel p-3",
+        "grid min-w-0 gap-3 rounded-lg border border-nextide-line bg-nextide-panel p-3",
         className
       )}
       {...props}
     >
-      <div className="grid gap-1">
-        <strong className="text-sm">Creator flow chart</strong>
-        <span className="text-xs text-muted-foreground">
-          Drag a block to move a creator session. Drag an edge to resize its
-          date range.
-        </span>
-      </div>
+      {title || description ? (
+        <div className="grid gap-1">
+          {title ? <strong className="text-sm">{title}</strong> : null}
+          {description ? (
+            <span className="text-xs text-muted-foreground">{description}</span>
+          ) : null}
+        </div>
+      ) : null}
       <div
         ref={scrollRef}
         onWheel={onWheel}
         className="nextide-contained-scroll nextide-scrollbar-none overflow-x-auto"
       >
-        <div className="grid min-w-[48rem] grid-cols-[10rem_minmax(0,1fr)] gap-3">
-          <div className="pt-9">
-            {creators.map((creator) => (
-              <div
-                key={creator.id}
-                className="grid h-14 content-center border-t border-nextide-line/70"
-              >
-                <strong className="truncate text-xs">{creator.name}</strong>
-                {creator.meta ? (
-                  <small className="truncate text-ui-caption text-muted-foreground">
-                    {creator.meta}
-                  </small>
-                ) : null}
-              </div>
-            ))}
-          </div>
-          <div className="grid gap-0">
+        <div
+          className={cn(
+            "grid gap-3",
+            compact
+              ? "grid-cols-[minmax(0,1fr)_minmax(0,3fr)]"
+              : "min-w-[48rem] grid-cols-[10rem_minmax(0,1fr)]"
+          )}
+        >
+          <FlowCreators creators={creators} compact={compact} />
+          <div className="grid min-w-0 gap-0">
             <div
               className="grid h-9 border-b border-nextide-line text-center text-ui-caption font-medium text-muted-foreground"
               style={{
@@ -115,6 +120,8 @@ function CreatorFlowChart({
               sessions={sessions}
               columnCount={columnCount}
               onSessionsChange={onSessionsChange}
+              onSessionSelect={onSessionSelect}
+              compact={compact}
               beginDrag={beginDrag}
               moveDrag={moveDrag}
               endDrag={endDrag}
@@ -126,12 +133,50 @@ function CreatorFlowChart({
   )
 }
 
+function FlowCreators({
+  creators,
+  compact,
+}: {
+  creators: CreatorFlowCreator[]
+  compact: boolean
+}) {
+  return (
+    <div className="min-w-0 pt-9">
+      {creators.map((creator) => (
+        <div
+          key={creator.id}
+          className={cn(
+            "flex min-w-0 items-center gap-2 border-t border-nextide-line/70",
+            compact ? "h-12" : "h-14"
+          )}
+        >
+          {creator.avatar ? (
+            <span className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-sm">
+              {creator.avatar}
+            </span>
+          ) : null}
+          <div className="min-w-0">
+            <strong className="block truncate text-xs">{creator.name}</strong>
+            {creator.meta ? (
+              <small className="block truncate text-ui-caption text-muted-foreground">
+                {creator.meta}
+              </small>
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function FlowRows({
   gridRef,
   creators,
   sessions,
   columnCount,
   onSessionsChange,
+  onSessionSelect,
+  compact,
   beginDrag,
   moveDrag,
   endDrag,
@@ -141,6 +186,8 @@ function FlowRows({
   sessions: CreatorFlowSession[]
   columnCount: number
   onSessionsChange: ((sessions: CreatorFlowSession[]) => void) | undefined
+  onSessionSelect: ((session: CreatorFlowSession) => void) | undefined
+  compact: boolean
   beginDrag: (
     event: React.PointerEvent,
     session: CreatorFlowSession,
@@ -158,7 +205,10 @@ function FlowRows({
         return (
           <div
             key={creator.id}
-            className="relative h-14 border-t border-nextide-line/70 bg-[linear-gradient(90deg,rgb(255_255_255/0.035)_1px,transparent_1px)]"
+            className={cn(
+              "relative border-t border-nextide-line/70 bg-[linear-gradient(90deg,rgb(255_255_255/0.035)_1px,transparent_1px)]",
+              compact ? "h-12" : "h-14"
+            )}
             style={{
               backgroundSize: `${100 / columnCount}% 100%`,
             }}
@@ -174,6 +224,8 @@ function FlowRows({
                   key={session.id}
                   session={session}
                   onSessionsChange={onSessionsChange}
+                  onSessionSelect={onSessionSelect}
+                  compact={compact}
                   left={left}
                   width={width}
                   beginDrag={beginDrag}
@@ -192,6 +244,8 @@ function FlowRows({
 function FlowSession({
   session,
   onSessionsChange,
+  onSessionSelect,
+  compact,
   left,
   width,
   beginDrag,
@@ -200,6 +254,8 @@ function FlowSession({
 }: {
   session: CreatorFlowSession
   onSessionsChange: ((sessions: CreatorFlowSession[]) => void) | undefined
+  onSessionSelect: ((session: CreatorFlowSession) => void) | undefined
+  compact: boolean
   left: number
   width: number
   beginDrag: (
@@ -210,36 +266,61 @@ function FlowSession({
   moveDrag: (event: React.PointerEvent) => void
   endDrag: (event: React.PointerEvent) => void
 }): React.JSX.Element {
+  const className = cn(
+    "absolute grid items-center rounded-lg border text-left text-xs font-medium",
+    compact ? "top-1 bottom-1 min-w-0" : "top-2 bottom-2 min-w-12",
+    toneClasses[session.tone ?? "success"],
+    onSessionsChange
+      ? "cursor-grab grid-cols-[0.75rem_minmax(0,1fr)_0.75rem] px-1 active:cursor-grabbing"
+      : "px-2",
+    (onSessionsChange || onSessionSelect) &&
+      "transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+  )
+  const style = { left: `${left}%`, width: `${width}%` }
+  const label = <span className="truncate">{session.label}</span>
+  if (!onSessionsChange && !onSessionSelect) {
+    return (
+      <div className={className} style={style}>
+        {label}
+      </div>
+    )
+  }
+  const dragHandlers = onSessionsChange
+    ? {
+        onPointerDown: (event: React.PointerEvent) =>
+          beginDrag(event, session, "move"),
+        onPointerMove: moveDrag,
+        onPointerUp: endDrag,
+        onPointerCancel: endDrag,
+      }
+    : {}
   return (
     <button
-      key={session.id}
       type="button"
-      className={cn(
-        "absolute top-2 bottom-2 grid min-w-12 grid-cols-[0.75rem_minmax(0,1fr)_0.75rem] items-center rounded-lg border px-1 text-left text-xs font-medium shadow-[0_0_24px_rgb(30_228_188/0.12)] transition-[filter] hover:brightness-110",
-        toneClasses[session.tone ?? "success"],
-        onSessionsChange && "cursor-grab active:cursor-grabbing"
-      )}
-      style={{ left: `${left}%`, width: `${width}%` }}
-      onPointerDown={(event) => beginDrag(event, session, "move")}
-      onPointerMove={moveDrag}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
+      className={className}
+      style={style}
+      onClick={onSessionSelect ? () => onSessionSelect(session) : undefined}
+      {...dragHandlers}
     >
-      <span
-        className="h-full cursor-ew-resize rounded-l-md"
-        onPointerDown={(event) => {
-          event.stopPropagation()
-          beginDrag(event, session, "start")
-        }}
-      />
-      <span className="truncate px-1">{session.label}</span>
-      <span
-        className="h-full cursor-ew-resize rounded-r-md"
-        onPointerDown={(event) => {
-          event.stopPropagation()
-          beginDrag(event, session, "end")
-        }}
-      />
+      {onSessionsChange ? (
+        <span
+          className="h-full cursor-ew-resize rounded-l-md"
+          onPointerDown={(event) => {
+            event.stopPropagation()
+            beginDrag(event, session, "start")
+          }}
+        />
+      ) : null}
+      {label}
+      {onSessionsChange ? (
+        <span
+          className="h-full cursor-ew-resize rounded-r-md"
+          onPointerDown={(event) => {
+            event.stopPropagation()
+            beginDrag(event, session, "end")
+          }}
+        />
+      ) : null}
     </button>
   )
 }

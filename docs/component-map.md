@@ -278,3 +278,9 @@ An explicit `alignItemWithTrigger` opts into the selected-item overlay treatment
 Navigation preserves icon positions through the drawer/text exit, then smoothly
 settles heading space, row heights, gaps and search placement. Expansion settles
 icons first, then reveals the text. Reduced motion applies the final state directly.
+
+`CreatorFlowChart` accepts caller-owned `title`, `description` (pass `null` to hide),
+creator `avatar` and `name` nodes, and `compact` for a fluid, denser calendar.
+Supply week labels through `days` and inclusive column indices through sessions.
+Without `onSessionsChange`, sessions are read-only; `onSessionSelect(session)`
+optionally makes them keyboard-accessible actions. Editing retains move and resize.

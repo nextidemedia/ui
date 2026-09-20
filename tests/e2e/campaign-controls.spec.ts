@@ -285,3 +285,76 @@ async function expectScheduleDragBoundary(
     .poll(() => timeline.evaluate((element) => element.scrollLeft))
     .toBeGreaterThan(300)
 }
+
+test("flow calendar selects without editing and edits only when enabled", async ({
+  page,
+}) => {
+  const calendar = page.getByRole("region", { name: "Campaign calendar" })
+  const session = calendar.getByRole("button", { name: "Autumn launch" })
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(
+      await calendar.evaluate(
+        (element) => element.scrollWidth - element.clientWidth
+      )
+    ).toBeLessThanOrEqual(1)
+    const bounds = await session.boundingBox()
+    const calendarBounds = await calendar.boundingBox()
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(
+      calendarBounds!.x + calendarBounds!.width
+    )
+    await calendar.screenshot({ path: `output/flow-calendar-${width}.png` })
+  }
+  const originalLeft = await session.evaluate((element) => element.style.left)
+  const originalWidth = await session.evaluate((element) => element.style.width)
+  const bounds = await session.boundingBox()
+  await page.mouse.move(
+    bounds!.x + bounds!.width / 2,
+    bounds!.y + bounds!.height / 2
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    bounds!.x + bounds!.width,
+    bounds!.y + bounds!.height / 2
+  )
+  await page.mouse.up()
+  expect(await session.evaluate((element) => element.style.left)).toBe(
+    originalLeft
+  )
+  expect(await session.evaluate((element) => element.style.width)).toBe(
+    originalWidth
+  )
+  await session.focus()
+  await page.keyboard.press("Enter")
+  await expect(page.getByLabel("Selected campaign")).toHaveText("Autumn launch")
+  await expectVisibleFocus(session)
+  await page.getByRole("button", { name: "Edit calendar", exact: true }).click()
+  const editableBounds = await session.boundingBox()
+  await page.mouse.move(
+    editableBounds!.x + editableBounds!.width / 2,
+    editableBounds!.y + editableBounds!.height / 2
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    editableBounds!.x + editableBounds!.width,
+    editableBounds!.y + editableBounds!.height / 2
+  )
+  await page.mouse.up()
+  expect(await session.evaluate((element) => element.style.left)).toBe("25%")
+  expect(await session.evaluate((element) => element.style.width)).toBe(
+    originalWidth
+  )
+  const movedBounds = await session.boundingBox()
+  await page.mouse.move(
+    movedBounds!.x + movedBounds!.width - 6,
+    movedBounds!.y + movedBounds!.height / 2
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    movedBounds!.x + movedBounds!.width * 1.5 - 6,
+    movedBounds!.y + movedBounds!.height / 2
+  )
+  await page.mouse.up()
+  expect(await session.evaluate((element) => element.style.left)).toBe("25%")
+  expect(await session.evaluate((element) => element.style.width)).toBe("75%")
+})
