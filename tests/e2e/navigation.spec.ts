@@ -7,6 +7,92 @@ import {
 
 test.beforeEach(openQualification)
 
+test("shell scrollbars fade with overflow while scrolling stays keyboard and pointer operable", async ({
+  page,
+}) => {
+  await page.goto("/?view=foundations")
+  const viewport = page.locator('[data-slot="app-shell-workspace"] main')
+  const area = viewport.locator("..")
+  const scrollbar = area.locator('[data-slot="scroll-area-scrollbar"]')
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 800 })
+    await viewport.evaluate((element) => {
+      const content = element.firstElementChild as HTMLElement
+      content.style.height = "2400px"
+      content.style.overflow = "hidden"
+    })
+    await expect(scrollbar).toHaveCSS("opacity", "1")
+    await viewport.focus()
+    await viewport.press("PageDown")
+    await expect
+      .poll(() => viewport.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(0)
+    const before = await viewport.evaluate((element) => element.scrollTop)
+    await scrollbar.hover()
+    await page.mouse.wheel(0, 200)
+    await expect
+      .poll(() => viewport.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(before)
+    const contentWidth = await viewport.evaluate(
+      (element) => element.clientWidth
+    )
+    for (const height of [1, 2400]) {
+      await area.evaluate((element, height) => {
+        const bar = element.querySelector(
+          '[data-slot="scroll-area-scrollbar"]'
+        ) as HTMLElement
+        bar.addEventListener(
+          "transitionrun",
+          () => {
+            for (const animation of bar.getAnimations()) {
+              animation.pause()
+              animation.currentTime = 75
+            }
+          },
+          { once: true }
+        )
+        const content = element.querySelector("main")
+          ?.firstElementChild as HTMLElement
+        content.style.height = `${height}px`
+      }, height)
+      await expect
+        .poll(() =>
+          scrollbar.evaluate((element) =>
+            element
+              .getAnimations()
+              .some((animation) => animation.playState === "paused")
+          )
+        )
+        .toBe(true)
+      const opacity = await scrollbar.evaluate((element) =>
+        Number(getComputedStyle(element).opacity)
+      )
+      expect(opacity).toBeGreaterThan(0)
+      expect(opacity).toBeLessThan(1)
+      await expect(scrollbar).toHaveCSS(
+        "pointer-events",
+        height === 1 ? "none" : "auto"
+      )
+      await scrollbar.evaluate((element) =>
+        element.getAnimations().forEach((animation) => animation.finish())
+      )
+      await expect(scrollbar).toHaveCSS("opacity", height === 1 ? "0" : "1")
+      expect(await viewport.evaluate((element) => element.clientWidth)).toBe(
+        contentWidth
+      )
+    }
+  }
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await viewport.evaluate((element) => {
+    ;(element.firstElementChild as HTMLElement).style.height = "1px"
+  })
+  await expect(scrollbar).toHaveCSS("opacity", "0")
+  await expect(scrollbar).toHaveCSS("transition-property", "none")
+  expect(
+    await scrollbar.evaluate((element) => element.getAnimations().length)
+  ).toBe(0)
+})
+
 test("playground keeps control sizing, Typeset presets, and sidebar motion coherent", async ({
   page,
 }) => {

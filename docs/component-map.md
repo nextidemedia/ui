@@ -223,6 +223,12 @@ height while the main workspace and optional inspector own their vertical
 scroll independently; consumers should not restore document-level scrolling
 around the shell.
 
+Its main workspace and inspector use `components/scroll-area`; their scrollbars
+fade briefly as content becomes scrollable or fits again, without shifting the
+content width. Reduced motion skips the fade. The scrolling main element is
+`[data-slot="app-shell-workspace"] main[data-slot="scroll-area-viewport"]`.
+`ScrollArea` accepts `viewportProps` for semantic elements, labels and refs.
+
 Long-form report and evidence content can use `.typeset`. Tune only
 `--typeset-size`, `--typeset-leading`, and `--typeset-flow`; the shared CSS owns
 the semantic element treatment and keeps headings at Medium weight.
