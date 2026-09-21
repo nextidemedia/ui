@@ -33,6 +33,11 @@ function LineItemGraph({
   series,
   totalLine,
   axisLabelMode = "day",
+  height,
+  edgePadding = 0,
+  compact = false,
+  showPoints = true,
+  glow = true,
   minValue,
   maxValue,
   activeSeriesIds,
@@ -44,8 +49,7 @@ function LineItemGraph({
   className,
   ...props
 }: LineItemGraphProps) {
-  const rawId = React.useId()
-  const clipId = `nextide-line-item-clip-${rawId.replace(/:/g, "")}`
+  const clipId = `nextide-line-item-clip-${React.useId().replace(/:/g, "")}`
   const { selectableSeries, activeIdSet, activeSeries, toggleSeries } =
     useLineItemSelection(
       series,
@@ -66,7 +70,8 @@ function LineItemGraph({
     axisLabelMode,
     totalLine,
     minValue,
-    maxValue
+    maxValue,
+    { height, compact, edgePadding }
   )
   const { resolvedHover, hoveredDay, hoveredSeries } = resolveLineItemHover(
     hover,
@@ -75,54 +80,53 @@ function LineItemGraph({
     data.seriesPlots
   )
 
-  if (days.length === 0 || selectableSeries.length === 0) {
-    return (
-      <section
-        data-slot="line-item-graph"
-        className={cn(
-          "grid min-h-60 place-items-center rounded-lg border border-nextide-line bg-nextide-panel px-4 py-8 text-sm text-muted-foreground",
-          className
-        )}
-        {...props}
-      >
-        {emptyLabel}
-      </section>
-    )
-  }
+  const empty = days.length === 0 || selectableSeries.length === 0
 
   return (
     <section
       data-slot="line-item-graph"
       className={cn(
-        "grid gap-4 rounded-lg border border-nextide-line bg-nextide-panel p-4",
+        "grid rounded-lg border border-nextide-line bg-nextide-panel",
+        empty
+          ? "min-h-60 place-items-center px-4 py-8 text-sm text-muted-foreground"
+          : "gap-4 p-4",
         className
       )}
       {...props}
     >
-      <LineItemHeading title={title} rangeLabel={rangeLabel} />
+      {empty ? (
+        emptyLabel
+      ) : (
+        <>
+          <LineItemHeading title={title} rangeLabel={rangeLabel} />
 
-      <LineItemControls
-        selectableSeries={selectableSeries}
-        activeIdSet={activeIdSet}
-        toggleSeries={toggleSeries}
-      />
+          <LineItemControls
+            glow={glow}
+            selectableSeries={selectableSeries}
+            activeIdSet={activeIdSet}
+            toggleSeries={toggleSeries}
+          />
 
-      <LineItemCanvas
-        {...data}
-        viewportRef={viewportRef}
-        chartRef={chartRef}
-        setHover={setHover}
-        title={title}
-        clipId={clipId}
-        tickFormatter={tickFormatter}
-        showDayHover={showDayHover}
-        resolvedHover={resolvedHover}
-        valueFormatter={valueFormatter}
-        showPointHover={showPointHover}
-        axisLabelMode={axisLabelMode}
-        hoveredDay={hoveredDay}
-        hoveredSeries={hoveredSeries}
-      />
+          <LineItemCanvas
+            {...data}
+            showPoints={showPoints}
+            glow={glow}
+            viewportRef={viewportRef}
+            chartRef={chartRef}
+            setHover={setHover}
+            title={title}
+            clipId={clipId}
+            tickFormatter={tickFormatter}
+            showDayHover={showDayHover}
+            resolvedHover={resolvedHover}
+            valueFormatter={valueFormatter}
+            showPointHover={showPointHover}
+            axisLabelMode={axisLabelMode}
+            hoveredDay={hoveredDay}
+            hoveredSeries={hoveredSeries}
+          />
+        </>
+      )}
     </section>
   )
 }

@@ -90,16 +90,10 @@ export function buildSmoothPath(points: PlottedLineItemPoint[]) {
 
   let path = `M ${points[0].x} ${points[0].y}`
   for (let index = 0; index < points.length - 1; index += 1) {
-    const previous = points[index - 1] ?? points[index]
     const current = points[index]
     const next = points[index + 1]
-    const afterNext = points[index + 2] ?? next
-    const controlOneX = current.x + (next.x - previous.x) / 6
-    const controlOneY = current.y + (next.y - previous.y) / 6
-    const controlTwoX = next.x - (afterNext.x - current.x) / 6
-    const controlTwoY = next.y - (afterNext.y - current.y) / 6
-
-    path += ` C ${controlOneX} ${controlOneY}, ${controlTwoX} ${controlTwoY}, ${next.x} ${next.y}`
+    const midpoint = (current.x + next.x) / 2
+    path += ` C ${midpoint} ${current.y}, ${midpoint} ${next.y}, ${next.x} ${next.y}`
   }
 
   return path
@@ -142,26 +136,33 @@ export function withAlpha(color: string, alpha: number) {
 export function getLineItemLayout(
   measuredChartWidth: number,
   visibleDays: LineItemGraphDay[],
-  axisLabelMode: LineItemGraphAxisLabelMode
+  axisLabelMode: LineItemGraphAxisLabelMode,
+  height?: number,
+  compact = false,
+  edgePadding = 0
 ) {
   const chartWidth = measuredChartWidth || 760
   const compactAxis = chartWidth < 520
-  const plotTop = 22
   const plotLeft = compactAxis ? 48 : 58
   const plotRight = chartWidth - (compactAxis ? 12 : 22)
   const plotWidth = plotRight - plotLeft
-  const step =
-    visibleDays.length > 1 ? plotWidth / (visibleDays.length - 1) : plotWidth
+  const edgeDays = Math.max(0, edgePadding)
+  const step = plotWidth / Math.max(1, visibleDays.length - 1 + 2 * edgeDays)
   const angleThreshold =
     axisLabelMode === "weekday-day"
       ? 74
       : axisLabelMode === "angled-day"
         ? 58
         : 52
-  const shouldAngleLabels = visibleDays.length > 1 && step < angleThreshold
-  const chartHeight = shouldAngleLabels ? 306 : 274
-  const plotBottom = shouldAngleLabels ? 214 : 204
-  const plotHeight = plotBottom - plotTop
+  const shouldAngleLabels =
+    axisLabelMode === "angled-day" ||
+    (visibleDays.length > 1 && step < angleThreshold)
+  const vertical = getLineItemVerticalLayout(
+    shouldAngleLabels,
+    axisLabelMode,
+    height,
+    compact
+  )
   const minimumLabelGap = shouldAngleLabels
     ? 52
     : axisLabelMode === "weekday-day"
@@ -173,17 +174,48 @@ export function getLineItemLayout(
   )
 
   return {
+    compact,
     chartWidth,
-    chartHeight,
-    plotTop,
+    ...vertical,
     plotLeft,
     plotRight,
     plotWidth,
     step,
+    edgeOffset: step * edgeDays,
     shouldAngleLabels,
-    plotBottom,
-    plotHeight,
     axisLabelIndices,
+  }
+}
+
+function getLineItemVerticalLayout(
+  angled: boolean,
+  axisLabelMode: LineItemGraphAxisLabelMode,
+  height: number | undefined,
+  compact: boolean
+) {
+  const plotTop = 22
+  const [defaultHeight, defaultMargin, defaultLabelOffset] = angled
+    ? [306, 92, 32]
+    : [274, 70, 25]
+  const compactMargin = angled
+    ? axisLabelMode === "weekday-day"
+      ? 76
+      : 64
+    : 38
+  const bottomMargin = compact ? compactMargin : defaultMargin
+  const axisLabelOffset = compact ? 18 : defaultLabelOffset
+  // Five value ticks need four 16px intervals in addition to the axis margins.
+  const chartHeight = Math.max(
+    height ?? defaultHeight,
+    plotTop + bottomMargin + 64
+  )
+  const plotBottom = chartHeight - bottomMargin
+  return {
+    chartHeight,
+    plotTop,
+    plotBottom,
+    plotHeight: plotBottom - plotTop,
+    axisLabelOffset,
   }
 }
 
@@ -242,19 +274,30 @@ export function getLineItemPlots(
   days: LineItemGraphDay[],
   plotLeft: number,
   plotBottom: number,
-  plotHeight: number
+  plotHeight: number,
+  step: number
 ) {
   const { resolvedMin, resolvedMax, range } = getLineItemRange(
     minValue,
     maxValue,
     chartValues
   )
+  const firstDayId = days.find((day) => !day.hidden)?.id ?? ""
+  const previousX = (dayX.get(firstDayId) ?? plotLeft) - step
+  const contextPoint = (value: number): PlottedLineItemPoint => ({
+    dayId: "__previous",
+    value,
+    x: previousX,
+    y: valueToY(value, resolvedMin, range, plotBottom, plotHeight),
+    hidden: true,
+  })
   const ticks = Array.from({ length: 5 }, (_, index) => {
     const progress = index / 4
     return resolvedMax - progress * range
   })
   const seriesPlots = selectableSeries.map((item) => {
-    const plottedPoints: PlottedLineItemPoint[] = []
+    const plottedPoints: PlottedLineItemPoint[] =
+      item.previousValue === undefined ? [] : [contextPoint(item.previousValue)]
 
     for (const point of item.points) {
       const x = dayX.get(point.dayId)
@@ -307,6 +350,8 @@ export function getLineItemPlots(
         }
       : null
 
+  prependTotalContext(totalPlot, seriesPlots, contextPoint)
+
   return {
     resolvedMin,
     range,
@@ -314,6 +359,25 @@ export function getLineItemPlots(
     seriesPlots,
     interactivePoints,
     totalPlot,
+  }
+}
+
+function prependTotalContext(
+  totalPlot: { plottedPoints: PlottedLineItemPoint[] } | null,
+  seriesPlots: Array<LineItemGraphSeries & { active: boolean }>,
+  contextPoint: (value: number) => PlottedLineItemPoint
+) {
+  const activePlots = seriesPlots.filter((item) => item.active)
+  if (
+    totalPlot &&
+    activePlots.length > 0 &&
+    activePlots.every((item) => item.previousValue !== undefined)
+  ) {
+    totalPlot.plottedPoints.unshift(
+      contextPoint(
+        activePlots.reduce((sum, item) => sum + item.previousValue!, 0)
+      )
+    )
   }
 }
 
@@ -327,7 +391,12 @@ export function useLineItemData(
   axisLabelMode: LineItemGraphAxisLabelMode,
   totalLine: LineItemGraphTotalLine | undefined,
   minValue: number | undefined,
-  maxValue: number | undefined
+  maxValue: number | undefined,
+  {
+    height,
+    compact = false,
+    edgePadding = 0,
+  }: { height?: number; compact?: boolean; edgePadding?: number }
 ) {
   const pointMaps = React.useMemo(
     () =>
@@ -351,10 +420,18 @@ export function useLineItemData(
   const layout = getLineItemLayout(
     measuredChartWidth,
     visibleDays,
-    axisLabelMode
+    axisLabelMode,
+    height,
+    compact,
+    edgePadding
   )
-  const { plotLeft, plotRight, step } = layout
-  const dayX = useLineItemDayPositions(days, plotLeft, plotRight, step)
+  const { plotLeft, plotRight, step, edgeOffset } = layout
+  const dayX = useLineItemDayPositions(
+    days,
+    plotLeft + edgeOffset,
+    plotRight - edgeOffset,
+    step
+  )
   const { totalLineConfig, totalPoints, chartValues } = useLineItemTotals(
     totalLine,
     days,
@@ -374,7 +451,8 @@ export function useLineItemData(
     days,
     layout.plotLeft,
     layout.plotBottom,
-    layout.plotHeight
+    layout.plotHeight,
+    step
   )
 
   return { ...layout, ...plots, pointMaps, visibleDays, dayById, dayX }

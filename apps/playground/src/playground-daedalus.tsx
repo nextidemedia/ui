@@ -232,10 +232,24 @@ function DaedalusTrends() {
           <ComponentReference names="LineItemGraph" />
           <LineItemGraph
             title="Weekly total impressions"
+            height={180}
+            compact
+            showPoints={false}
+            glow={false}
             rangeLabel="Last 7 days"
-            days={weeklyImpressionDays}
-            series={weeklyImpressionSeries}
-            axisLabelMode="weekday-day"
+            days={weeklyImpressionDays
+              .filter((day) => !day.hidden)
+              .map((day) => ({
+                ...day,
+                label: String(day.label).replace(" ", ""),
+              }))}
+            series={weeklyImpressionSeries.map((item) => ({
+              ...item,
+              previousValue: item.points[0]?.value,
+              points: item.points.slice(1),
+            }))}
+            axisLabelMode="angled-day"
+            edgePadding={0.5}
             valueFormatter={formatLargeMetricValue}
             tickFormatter={formatCompactMetricValue}
           />
@@ -244,6 +258,11 @@ function DaedalusTrends() {
           <ComponentReference names="LineItemGraph" />
           <LineItemGraph
             title="Banner impressions"
+            height={220}
+            edgePadding={0.5}
+            compact
+            showPoints={false}
+            glow={false}
             rangeLabel="Last 30 days"
             days={bannerImpressionDays}
             series={bannerImpressionSeries}

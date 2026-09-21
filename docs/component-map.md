@@ -279,6 +279,42 @@ Navigation preserves icon positions through the drawer/text exit, then smoothly
 settles heading space, row heights, gaps and search placement. Expansion settles
 icons first, then reveals the text. Reduced motion applies the final state directly.
 
+`CreatorFlowChart` accepts caller-owned `title`, `description` (pass `null` to hide),
+creator `avatar` and `name` nodes, and `compact` for a fluid, denser calendar.
+Supply week labels through `days` and inclusive column indices through sessions.
+Without `onSessionsChange`, sessions are read-only; `onSessionSelect(session)`
+optionally makes them keyboard-accessible actions. Editing retains move and resize.
+
+`LineItemGraph` accepts a canvas `height` in pixels, preserving the existing
+274px/306px defaults when omitted. Without compact, heights retain room for the axes and five
+value ticks (minimum 156px, or 178px with angled labels). Series controls expose
+`data-slot="line-item-graph-controls"` for scoped layout styling.
+
+`LineItemGraph` also accepts `compact` to reduce axis whitespace, `glow={false}`
+to remove series halos and control shadows, and `showPoints={false}` to hide
+painted point markers while retaining point/day tooltips and keyboard access.
+
+`LineItemGraph edgePadding={0.5}` adds half a day to each end of the horizontal
+domain without changing the plot insets. The default is zero. `angled-day`
+explicitly angles labels; `day` and `weekday-day` adapt to available spacing.
+
+For weekday prefixes, supply `day.weekday` separately from `day.label` and choose
+`weekday-day` or `angled-day`. Compact axes render the weekday and separator
+slightly smaller and quieter while preserving full-size dates and tooltips.
+
+`LineItemGraphSeries.previousValue` supplies a real observation one bucket before
+the first visible bucket. It extends the clipped curve without adding an axis
+label, hover target, scale value, or displayed total bucket. The total line uses
+previous context only when every active series supplies it. Omit unavailable
+context; future observations are never inferred.
+
+In compact read-only calendars, `CreatorFlowSession.continuesBefore` opens and
+fades the left edge of a session that started before the visible window. Set
+`CreatorFlowChart continuationFade={1 / 14}` for a half-day fade in weekly
+columns; the default is 0.1 column. This styling never changes session indices.
+
+Compact read-only `CreatorFlowChart` supports `visibleStartIndex`, `visibleColumnCount`, and `onVisibleStartIndexChange` for a bounded full timeline. Navigation pans without replacing campaign rows; dragging pans both axes and reports the final fractional column. Campaign labels stay fixed horizontally and dates stay fixed vertically. Give the chart a height to enable vertical scrolling.
+
 ### Creator transfer and campaign scheduling
 
 `CreatorTransfer` keeps each list independently scrollable with `listHeight`

@@ -148,7 +148,9 @@ test("signal ridge and impression details share compact overview and exact detai
   const canvasBox = await graphCanvas.boundingBox()
   expect(viewportBox).not.toBeNull()
   expect(canvasBox).not.toBeNull()
+  expect(canvasBox!.height).toBe(220)
   expect(Math.abs(viewportBox!.width - canvasBox!.width)).toBeLessThanOrEqual(1)
+  await expectCompactLineGeometry(page)
   const hiddenSeries = impressions.getByRole("button", {
     name: "Immersive frame impressions",
     exact: true,
@@ -163,7 +165,7 @@ test("signal ridge and impression details share compact overview and exact detai
   await expect(tooltip).toBeHidden()
   const hoverZones = impressions.locator("svg > rect")
   await hoverZones.first().hover()
-  await expect(tooltip).toContainText("Day breakdown")
+  await expect(tooltip).toContainText("92,000")
   await expect(tooltip).not.toContainText("Immersive frame impressions")
   await expectTooltipAnchorMovesWithoutRemeasuring(page, tooltip, hoverZones)
 
@@ -259,7 +261,8 @@ async function expectTooltipAnchorMovesWithoutRemeasuring(
   const translateBefore = await tooltip.evaluate(
     (element) => element.style.translate
   )
-  for (const index of [1, 2, 3]) await hoverZones.nth(index).hover()
+  for (const index of [1, 2, 3])
+    await hoverZones.nth(index).hover({ position: { x: 2, y: 2 } })
   await expect
     .poll(() => tooltip.evaluate((element) => element.style.translate))
     .not.toBe(translateBefore)
@@ -268,4 +271,54 @@ async function expectTooltipAnchorMovesWithoutRemeasuring(
       Reflect.deleteProperty(element, property)
     window.ResizeObserver = Reflect.get(window, "graphTooltipResizeObserver")
   })
+}
+
+async function expectCompactLineGeometry(page: Page) {
+  const graph = page.getByRole("group", { name: "Weekly total impressions" })
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await graph.scrollIntoViewIfNeeded()
+    const bounds = await graph.boundingBox()
+    expect(bounds!.height).toBe(180)
+    for (const label of await graph
+      .locator('[data-slot="line-item-axis-label"]')
+      .all()) {
+      const labelBounds = await label.boundingBox()
+      expect(labelBounds!.y + labelBounds!.height).toBeLessThanOrEqual(
+        bounds!.y + bounds!.height
+      )
+    }
+    const points = graph.getByRole("img")
+    const edges = await graph.evaluate((element) => {
+      const zones = [...element.querySelectorAll(":scope > rect")]
+      const markers = [...element.querySelectorAll('g[role="img"] > circle')]
+      const first = Number(markers[0].getAttribute("cx"))
+      const second = Number(markers[1].getAttribute("cx"))
+      const last = Number(markers.at(-1)!.getAttribute("cx"))
+      const left = Number(zones[0].getAttribute("x"))
+      const lastZone = zones.at(-1)!
+      const right =
+        Number(lastZone.getAttribute("x")) +
+        Number(lastZone.getAttribute("width"))
+      return {
+        leftGap: first - left,
+        rightGap: right - last,
+        halfDay: (second - first) / 2,
+      }
+    })
+    expect(edges.leftGap).toBeCloseTo(edges.halfDay, 5)
+    expect(edges.rightGap).toBeCloseTo(edges.halfDay, 5)
+    for (const point of await points.all()) {
+      const pointBounds = await point.boundingBox()
+      expect(pointBounds!.y).toBeGreaterThanOrEqual(bounds!.y)
+      expect(pointBounds!.y + pointBounds!.height).toBeLessThanOrEqual(
+        bounds!.y + bounds!.height
+      )
+    }
+    await points.last().focus()
+    await expect(page.locator('[data-slot="graph-tooltip"]')).toBeVisible()
+    await points.last().press("Tab")
+    await expect(page.locator('[data-slot="graph-tooltip"]')).toBeHidden()
+    await graph.screenshot({ path: `output/compact-line-graph-${width}.png` })
+  }
 }

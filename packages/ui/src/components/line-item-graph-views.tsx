@@ -45,7 +45,7 @@ export function LineItemCanvas({
             totalLabel={plot.totalPlot?.label}
             totalValue={
               plot.totalPlot?.plottedPoints.find(
-                (point) => point.dayId === resolvedHover.dayId
+                (point) => point.dayId === resolvedHover.dayId && !point.hidden
               )?.value
             }
             valueFormatter={plot.valueFormatter}
@@ -59,12 +59,13 @@ export function LineItemCanvas({
 }
 
 export function LineItemControls({
+  glow,
   selectableSeries,
   activeIdSet,
   toggleSeries,
 }: LineItemControlsProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div data-slot="line-item-graph-controls" className="flex flex-wrap gap-2">
       {selectableSeries.map((item) => {
         const color = resolveSeriesColor(item)
         const active = activeIdSet.has(item.id)
@@ -85,7 +86,9 @@ export function LineItemControls({
               active
                 ? {
                     borderColor: color,
-                    boxShadow: `0 0 20px ${withAlpha(color, 0.18)}`,
+                    boxShadow: glow
+                      ? `0 0 20px ${withAlpha(color, 0.18)}`
+                      : undefined,
                   }
                 : undefined
             }
@@ -154,11 +157,7 @@ export function LineItemTooltip({
           <strong className="text-sm leading-tight text-foreground">
             {hoveredSeries.label}
           </strong>
-        ) : (
-          <strong className="text-sm leading-tight text-foreground">
-            Day breakdown
-          </strong>
-        )}
+        ) : null}
       </div>
       <LineItemTooltipRows
         hover={hover}

@@ -1,4 +1,9 @@
 import { useState } from "react"
+import { Building2 } from "lucide-react"
+import {
+  CreatorFlowChart,
+  type CreatorFlowSession,
+} from "@nextide/ui/components/creator-flow-chart"
 
 import { WorkflowStepper } from "@nextide/ui/blocks/workflow-stepper"
 import { Button } from "@nextide/ui/components/button"
@@ -47,6 +52,8 @@ function QualificationPage() {
   return (
     <main className="min-h-screen bg-background p-4 text-foreground sm:p-6">
       <div className="mx-auto grid w-full max-w-4xl gap-4">
+        <FlowChartExample />
+        <FlowViewportExample />
         <header className="grid gap-1">
           <h1 className="text-2xl font-medium">Workspace setup</h1>
           <p className="text-sm text-muted-foreground">
@@ -139,3 +146,86 @@ function QualificationPage() {
 }
 
 export { QualificationPage }
+
+function FlowChartExample() {
+  const [selected, setSelected] = useState("")
+  const [editable, setEditable] = useState(false)
+  const [sessions, setSessions] = useState<CreatorFlowSession[]>([
+    {
+      id: "launch",
+      creatorId: "brand",
+      label: "Autumn launch",
+      startIndex: 0,
+      endIndex: 1,
+      continuesBefore: true,
+    },
+  ])
+  return (
+    <div className="grid gap-3">
+      <CreatorFlowChart
+        aria-label="Campaign calendar"
+        continuationFade={1 / 14}
+        title={<span>Campaign calendar</span>}
+        description={null}
+        compact
+        creators={[
+          {
+            id: "brand",
+            name: <span>Acme</span>,
+            avatar: <Building2 aria-hidden="true" />,
+          },
+        ]}
+        days={["W39", "W40", "W41", "W42"]}
+        sessions={sessions}
+        onSessionsChange={editable ? setSessions : undefined}
+        onSessionSelect={
+          editable ? undefined : (session) => setSelected(String(session.label))
+        }
+      />
+      <Button variant="outline" onClick={() => setEditable(!editable)}>
+        {editable ? "Finish editing calendar" : "Edit calendar"}
+      </Button>
+      <output aria-label="Selected campaign">{selected}</output>
+    </div>
+  )
+}
+
+function FlowViewportExample() {
+  const [start, setStart] = useState(2)
+  const [selected, setSelected] = useState("")
+  const creators = Array.from({ length: 8 }, (_, index) => ({
+    id: `campaign-${index}`,
+    name: `Campaign ${index + 1}`,
+    meta: (
+      <button onClick={() => setSelected(`Inspect ${index + 1}`)}>
+        Inspect {index + 1}
+      </button>
+    ),
+  }))
+  return (
+    <div className="grid gap-3">
+      <CreatorFlowChart
+        aria-label="Pannable calendar"
+        title={null}
+        description={null}
+        compact
+        className="h-56"
+        creators={creators}
+        days={Array.from({ length: 12 }, (_, index) => `Week ${index + 1}`)}
+        sessions={creators.map((creator) => ({
+          id: creator.id,
+          creatorId: creator.id,
+          label: creator.name,
+          startIndex: 0,
+          endIndex: 10,
+        }))}
+        visibleStartIndex={start}
+        visibleColumnCount={6}
+        onVisibleStartIndexChange={setStart}
+        onSessionSelect={(session) => setSelected(String(session.label))}
+      />
+      <Button onClick={() => setStart(start + 1)}>Next calendar week</Button>
+      <output aria-label="Panned campaign">{selected}</output>
+    </div>
+  )
+}
