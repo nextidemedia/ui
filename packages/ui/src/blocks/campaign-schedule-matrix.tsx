@@ -241,10 +241,10 @@ function ScheduleCampaignMarkers({
       {start !== undefined && (
         <div
           data-slot="campaign-start-marker"
-          className="absolute inset-y-0 border-l border-nextide-tide/70"
+          className="absolute inset-y-0 border-l border-dashed border-nextide-tide/35"
           style={{ left: `${(start / boundedDays) * 100}%` }}
         >
-          <span className="absolute top-1 left-1 rounded-sm bg-nextide-panel px-1 text-ui-micro whitespace-nowrap text-nextide-tide">
+          <span className="absolute top-3.5 left-1 -translate-y-1/2 rounded-sm bg-nextide-panel px-1 text-ui-micro whitespace-nowrap text-nextide-tide/75">
             Campaign start
           </span>
         </div>
@@ -252,10 +252,10 @@ function ScheduleCampaignMarkers({
       {end !== undefined && (
         <div
           data-slot="campaign-end-marker"
-          className="absolute inset-y-0 border-r border-nextide-tide/70"
+          className="absolute inset-y-0 border-r border-dashed border-nextide-tide/35"
           style={{ left: `${((end + 1) / boundedDays) * 100}%` }}
         >
-          <span className="absolute top-1 right-1 rounded-sm bg-nextide-panel px-1 text-ui-micro whitespace-nowrap text-nextide-tide">
+          <span className="absolute top-3.5 right-1 -translate-y-1/2 rounded-sm bg-nextide-panel px-1 text-ui-micro whitespace-nowrap text-nextide-tide/75">
             Campaign end
           </span>
         </div>

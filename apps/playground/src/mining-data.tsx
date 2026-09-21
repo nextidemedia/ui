@@ -44,7 +44,8 @@ const scheduleBookings: CampaignScheduleBooking[] = [
   {
     id: "booking-3",
     creatorId: "taro",
-    title: "Late recap",
+    title: (booking) =>
+      `Late recap · ${booking.endIndex - booking.startIndex + 1} days`,
     meta: "Workbook and VOD follow-up",
     startIndex: 45,
     endIndex: 66,

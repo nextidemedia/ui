@@ -159,7 +159,12 @@ function ScheduleEditorDemo() {
   const [bookings, setBookings] = useState<CampaignScheduleBooking[]>(() =>
     scheduleBookings.map((booking) => ({
       ...booking,
-      title: <span>{booking.title}</span>,
+      title:
+        typeof booking.title === "function" ? (
+          booking.title
+        ) : (
+          <span>{booking.title}</span>
+        ),
       startIndex: Math.max(booking.startIndex, 4),
     }))
   )

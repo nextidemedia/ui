@@ -298,6 +298,8 @@ With `onBookingChange`, drag a booking to move it without changing its duration,
 or drag either edge to resize by whole days. Focus the body or either edge and
 use Left/Right to preview, Enter to save, Escape or blur to cancel. Pointer
 cancellation also discards the preview. Blank rows retain timeline panning.
+Booking `title` accepts a React node or a function of the displayed booking,
+including uncommitted edits, so duration labels can follow a resize preview.
 The dedicated creator handle uses drag or Up/Down, Enter, and Escape and calls
 `onCreatorOrderChange` with the reordered creator IDs.
 
