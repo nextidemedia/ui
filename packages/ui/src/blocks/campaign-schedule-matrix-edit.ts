@@ -1,4 +1,5 @@
 import * as React from "react"
+import type { ScheduleTool } from "./campaign-schedule-matrix-tools.js"
 import {
   clamp,
   type CampaignScheduleBooking,
@@ -6,10 +7,13 @@ import {
 
 type BookingEdit = "move" | "start" | "end"
 type ScheduleEditing = {
+  tool: ScheduleTool
+  onToolChange: (tool: ScheduleTool) => void
   editableStartIndex: number
   editableEndIndex: number
   dayLabels: string[]
   onBookingChange?: (booking: CampaignScheduleBooking) => void
+  onBookingDelete?: (booking: CampaignScheduleBooking) => void
   onBookingSplit?: (
     booking: CampaignScheduleBooking,
     splitIndex: number
@@ -49,7 +53,7 @@ type PointerGesture = {
   axis: "x" | "y"
   unit: number
   preview: (delta: number) => void
-  finish: (delta: number | null) => void
+  finish: (delta: number | null, event?: PointerEvent) => void
 }
 
 function useSchedulePointer() {
@@ -80,14 +84,14 @@ function useSchedulePointer() {
       delta = Math.round(distance / gesture.unit)
       gesture.preview(delta)
     }
-    const finish = (value: number | null) => {
+    const finish = (value: number | null, next?: PointerEvent) => {
       cleanup.current?.()
       suppressClick.current = moved
-      gesture.finish(value)
+      gesture.finish(value, next)
     }
     cancelGesture.current = () => finish(null)
     const up = (next: PointerEvent) => {
-      if (next.pointerId === event.pointerId) finish(moved ? delta : null)
+      if (next.pointerId === event.pointerId) finish(moved ? delta : null, next)
     }
     const cancel = (next: PointerEvent) => {
       if (next.pointerId === event.pointerId) finish(null)
@@ -117,7 +121,8 @@ function useSchedulePointer() {
     suppressClick.current = false
     return value
   }
-  return { start, consumeClick, cancel: () => cancelGesture.current?.() }
+  const cancel = React.useCallback(() => cancelGesture.current?.(), [])
+  return { start, consumeClick, cancel }
 }
 
 function useBookingEdit(

@@ -52,6 +52,7 @@ function ScheduleToolbar({
   expanded,
   onExpand,
   expandRef,
+  tools,
 }: {
   title: React.ReactNode
   description: React.ReactNode
@@ -60,6 +61,7 @@ function ScheduleToolbar({
   expanded: boolean
   onExpand: () => void
   expandRef: React.Ref<HTMLButtonElement>
+  tools: React.ReactNode
 }) {
   const zoomIndex = zoomOrder.indexOf(zoom)
   const canZoomIn = zoomIndex > 0
@@ -72,7 +74,8 @@ function ScheduleToolbar({
           <SurfaceDescription>{description}</SurfaceDescription>
         ) : null}
       </span>
-      <span className="flex items-center gap-2">
+      <span className="flex flex-wrap items-center gap-2">
+        {tools}
         <Button
           ref={expandRef}
           type="button"

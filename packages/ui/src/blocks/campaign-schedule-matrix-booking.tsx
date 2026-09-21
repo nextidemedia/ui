@@ -1,7 +1,8 @@
 import * as React from "react"
+import { deleteFocusedBooking } from "./campaign-schedule-matrix-delete.js"
 import {
   useBookingCut,
-  BookingScissors,
+  BookingCutPreview,
   scissorsCursor,
 } from "./campaign-schedule-matrix-cut.js"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
@@ -34,7 +35,7 @@ function ScheduleBooking({
   const edit = useBookingEdit(booking, editing, boundedDays)
   const rootRef = React.useRef<HTMLDivElement>(null)
   const bodyRef = React.useRef<HTMLButtonElement>(null)
-  const cut = useBookingCut(booking, editing, rootRef, bodyRef)
+  const cut = useBookingCut(booking, editing, rootRef)
   const hintId = React.useId()
   const start = clamp(edit.shown.startIndex, 0, boundedDays - 1)
   const end = clamp(edit.shown.endIndex, start, boundedDays - 1)
@@ -46,6 +47,9 @@ function ScheduleBooking({
       data-start-index={start}
       data-end-index={end}
       ref={rootRef}
+      onKeyDownCapture={(event) =>
+        deleteFocusedBooking(event, booking, rootRef, editing.onBookingDelete)
+      }
       data-cutting={cut.armed || undefined}
       className={cn(
         "absolute top-2 bottom-2 flex min-w-0 rounded-lg border shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]",
@@ -58,12 +62,13 @@ function ScheduleBooking({
         width: `${((end - start + 1) / boundedDays) * 100}%`,
       }}
     >
-      {edit.canEdit && !cut.armed && (
+      {edit.canEdit && (
         <BookingEdge
           edge="start"
           titleId={titleId}
           hintId={hintId}
           edit={edit}
+          onStart={cut.cancel}
         />
       )}
       <BookingBody
@@ -78,16 +83,22 @@ function ScheduleBooking({
           onBookingSelect,
         }}
       />
-      {cut.enabled && (
-        <BookingScissors cut={cut} titleId={titleId} booking={booking} />
-      )}
-      {edit.canEdit && !cut.armed && (
-        <BookingEdge edge="end" titleId={titleId} hintId={hintId} edit={edit} />
+      <BookingCutPreview cut={cut} booking={booking} />
+      {edit.canEdit && (
+        <BookingEdge
+          edge="end"
+          titleId={titleId}
+          hintId={hintId}
+          edit={edit}
+          onStart={cut.cancel}
+        />
       )}
       <span id={hintId} className="sr-only">
         {cut.armed
           ? "Left and right arrows choose a cut. Enter cuts. Escape cancels."
           : "Left and right arrows adjust one day. Enter saves. Escape cancels."}
+        {editing.onBookingDelete &&
+          " Delete or Backspace removes this booking. With scissors, sweep across the whole booking to delete."}
       </span>
       {edit.draft && (
         <output className="sr-only">
@@ -118,7 +129,11 @@ function BookingBody({
     <button
       type="button"
       ref={bodyRef}
-      style={cut.armed ? { cursor: scissorsCursor } : undefined}
+      style={
+        cut.tool
+          ? { cursor: cut.tool === "cut" ? scissorsCursor : "crosshair" }
+          : undefined
+      }
       aria-labelledby={titleId}
       aria-pressed={onBookingSelect ? active : undefined}
       aria-describedby={edit.canEdit ? hintId : undefined}
@@ -127,16 +142,22 @@ function BookingBody({
         edit.canEdit && "cursor-grab touch-none active:cursor-grabbing"
       )}
       onPointerDown={(event) => {
-        if (cut.armed) {
+        if (cut.tool) {
           event.stopPropagation()
           event.preventDefault()
+          if (cut.armed) cut.pointerDown(event)
         } else edit.pointerDown(event, "move")
       }}
       onPointerMove={cut.preview}
+      onPointerLeave={cut.leave}
+      onFocus={cut.focus}
       onKeyDown={(event) =>
-        cut.armed ? cut.keyDown(event) : edit.keyDown(event, "move")
+        cut.tool ? cut.keyDown(event) : edit.keyDown(event, "move")
       }
-      onBlur={edit.cancel}
+      onBlur={() => {
+        edit.cancel()
+        cut.blur()
+      }}
       onClick={(event) => {
         if (!cut.click(event) && !edit.consumeClick(event))
           onBookingSelect?.(booking)
@@ -152,11 +173,13 @@ function BookingEdge({
   titleId,
   hintId,
   edit,
+  onStart,
 }: {
   edge: "start" | "end"
   titleId: string
   hintId: string
   edit: ReturnType<typeof useBookingEdit>
+  onStart: () => void
 }) {
   const actionId = React.useId()
   return (
@@ -165,8 +188,14 @@ function BookingEdge({
       aria-labelledby={`${actionId} ${titleId}`}
       aria-describedby={hintId}
       className="z-10 w-[min(0.75rem,15%)] shrink-0 cursor-ew-resize touch-none rounded-sm outline-none after:mx-auto after:block after:h-5 after:w-0.5 after:rounded-full after:bg-current after:opacity-50 hover:bg-nextide-tide/20 focus-visible:ring-2 focus-visible:ring-ring"
-      onPointerDown={(event) => edit.pointerDown(event, edge)}
-      onKeyDown={(event) => edit.keyDown(event, edge)}
+      onPointerDown={(event) => {
+        onStart()
+        edit.pointerDown(event, edge)
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") onStart()
+        edit.keyDown(event, edge)
+      }}
       onBlur={edit.cancel}
     >
       <span id={actionId} className="sr-only">

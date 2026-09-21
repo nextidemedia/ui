@@ -220,6 +220,11 @@ function ScheduleEditorDemo() {
           )
         }
         onBookingSplit={split}
+        onBookingDelete={(booking) =>
+          setBookings((current) =>
+            current.filter((item) => item.id !== booking.id)
+          )
+        }
         onCreatorOrderChange={(ids) =>
           setCreators((current) =>
             ids.map((id) => current.find((creator) => creator.id === id)!)

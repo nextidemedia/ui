@@ -321,9 +321,11 @@ test("campaign schedule edits preserve days, cancellation, and independent split
   await start.press("Enter")
   await expect(booking).toHaveAttribute("data-start-index", "4")
 
-  await booking.getByRole("button", { name: "Cut Launch read" }).click()
+  await page.getByRole("button", { name: "Scissors tool" }).click()
+  await move.focus()
   await move.press("ArrowLeft")
   await move.press("Enter")
+  await page.keyboard.press("Escape")
   const row = matrix
     .locator('[data-slot="campaign-schedule-board-row"]')
     .first()
@@ -528,7 +530,7 @@ test("campaign scissors cancel without changes and cut at complete-day boundarie
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/?view=web-mining")
   const booking = page.locator('[data-booking-id="booking-1"]')
-  const cut = booking.getByRole("button", { name: "Cut Launch read" })
+  const cut = page.getByRole("button", { name: "Scissors tool" })
   await cut.focus()
   await cut.press("Enter")
   await expect(booking).toHaveAttribute("data-cutting", "true")
@@ -545,6 +547,9 @@ test("campaign scissors cancel without changes and cut at complete-day boundarie
   await page.getByRole("button", { name: "Close expanded schedule" }).click()
   await expect(booking).not.toHaveAttribute("data-cutting", "true")
   await cut.click()
+  await booking
+    .getByRole("button", { name: "Launch read", exact: true })
+    .focus()
   await page.keyboard.press("Home")
   await page.keyboard.press("Enter")
   const row = booking.locator("..")
@@ -553,6 +558,7 @@ test("campaign scissors cancel without changes and cut at complete-day boundarie
   await expect(pieces.first()).toHaveAttribute("data-end-index", "4")
   await expect(pieces.nth(1)).toHaveAttribute("data-start-index", "5")
   await expect(pieces.nth(1)).toHaveAttribute("data-end-index", "18")
+  await page.keyboard.press("Escape")
   // A one-day piece remains pointer-movable without another booking's controls covering it.
   await page
     .getByRole("region", { name: "Campaign schedule timeline" })
@@ -688,7 +694,7 @@ test("expanded schedule keeps one editor, view state, and scissors work at every
       )
       .toBe(0)
     const booking = dialog.locator('[data-booking-id="booking-1"]')
-    await booking.getByRole("button", { name: "Cut Launch read" }).focus()
+    await page.getByRole("button", { name: "Scissors tool" }).focus()
     await page.keyboard.press("Enter")
     await expect(booking).toHaveAttribute("data-cutting", "true")
     await page.keyboard.press("Escape")
@@ -721,16 +727,18 @@ test("expanded schedule keeps one editor, view state, and scissors work at every
   }
 })
 
-test("scissors snap pointer cuts and leaving a booking cancels without selection", async ({
+test("scissors snap pointer cuts and outside clicks cancel without selection", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/?view=web-mining")
   const matrix = page.locator('[data-slot="campaign-schedule-matrix"]')
   const booking = matrix.locator('[data-booking-id="booking-1"]')
-  const cut = booking.getByRole("button", { name: "Cut Launch read" })
+  const cut = page.getByRole("button", { name: "Scissors tool" })
   await cut.click()
-  await matrix.getByRole("heading", { name: "Campaign schedule" }).click()
+  await page
+    .getByRole("button", { name: "Clear creators", exact: true })
+    .click({ button: "right" })
   await expect(booking).not.toHaveAttribute("data-cutting", "true")
   await expect(
     matrix.locator('[data-slot="campaign-schedule-booking"]')
@@ -762,7 +770,7 @@ test("scissors snap pointer cuts and leaving a booking cancels without selection
     booking.locator('[data-slot="campaign-cut-boundary"]')
   ).toHaveText("7 days | 8 days")
   await page.mouse.click(x, y)
-  await expect(booking).not.toHaveAttribute("data-cutting", "true")
+  await expect(cut).toHaveAttribute("aria-pressed", "true")
   await expect(booking).toHaveAttribute("data-end-index", "10")
   const right = booking
     .locator("..")
