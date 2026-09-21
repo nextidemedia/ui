@@ -18,7 +18,10 @@ function ScheduleRows({
   const [rows, setRows] = React.useState<Row[]>(() =>
     creators.map((creator) => ({ creator, props: rowProps, exiting: false }))
   )
-  if (previous !== creators) {
+  if (
+    previous.length !== creators.length ||
+    previous.some((creator, index) => creator.id !== creators[index]?.id)
+  ) {
     setPrevious(creators)
     setRows((current) => [
       ...creators.map((creator) => ({
@@ -71,7 +74,10 @@ function ScheduleRows({
           }
         >
           <ScheduleCreatorRow
-            creator={row.creator}
+            creator={
+              creators.find((creator) => creator.id === row.creator.id) ??
+              row.creator
+            }
             {...(row.exiting ? row.props : rowProps)}
           />
         </div>

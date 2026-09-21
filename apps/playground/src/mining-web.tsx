@@ -195,7 +195,7 @@ function ScheduleEditorDemo() {
         </Button>
       </div>
       <CampaignScheduleMatrix
-        creators={creators}
+        creators={creators.map((creator) => ({ ...creator }))}
         days={scheduleDays}
         bookings={bookings}
         activeBookingId={selectionEnabled ? activeBookingId : undefined}

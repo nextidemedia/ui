@@ -112,6 +112,7 @@ function CampaignScheduleMatrix({
           campaignStartIndex={campaignStartIndex}
           campaignEndIndex={campaignEndIndex}
           scrollRef={scrollRef}
+          mountScroll={expanded.mountScroll}
           timelineMinWidth={timelineMinWidth}
           zoom={zoom}
           zoomTransition={zoomTransition}
@@ -164,6 +165,7 @@ function ScheduleTimeline({
   campaignStartIndex,
   campaignEndIndex,
   scrollRef,
+  mountScroll,
   timelineMinWidth,
   zoom,
   zoomTransition,
@@ -174,6 +176,7 @@ function ScheduleTimeline({
   campaignStartIndex?: number
   campaignEndIndex?: number
   scrollRef: ScrollRef
+  mountScroll: React.RefCallback<HTMLDivElement>
   timelineMinWidth: number
   children: React.ReactNode
 }) {
@@ -183,7 +186,7 @@ function ScheduleTimeline({
     <>
       {/* react-doctor-disable-next-line react-doctor/click-events-have-key-events -- Only cancels child clicks after pointer dragging; no action to activate. */}
       <div // oxlint-disable-line jsx-a11y/no-noninteractive-element-interactions -- Named scroll region supports pointer panning, not activation.
-        ref={scrollRef}
+        ref={mountScroll}
         // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Named scroll region supports keyboard scrolling and pointer panning; it is not an activation target.
         role="region"
         aria-label="Campaign schedule timeline"

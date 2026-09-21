@@ -489,6 +489,11 @@ test("campaign scissors cancel without changes and cut at complete-day boundarie
   await expect(pieces.nth(1)).toHaveAttribute("data-start-index", "5")
   await expect(pieces.nth(1)).toHaveAttribute("data-end-index", "18")
   // A one-day piece remains pointer-movable without another booking's controls covering it.
+  await page
+    .getByRole("region", { name: "Campaign schedule timeline" })
+    .evaluate((node) => {
+      node.scrollLeft = 0
+    })
   const unit = await row.evaluate(
     (element) => element.getBoundingClientRect().width / 91
   )
@@ -571,6 +576,16 @@ test("expanded schedule keeps one editor, view state, and scissors work at every
   })
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 })
+    await expect
+      .poll(() =>
+        timeline.evaluate(
+          (node) =>
+            node
+              .getAnimations({ subtree: true })
+              .filter((animation) => animation.playState === "running").length
+        )
+      )
+      .toBe(0)
     await timeline.evaluate((element) => {
       element.scrollLeft = 64
     })
@@ -580,10 +595,33 @@ test("expanded schedule keeps one editor, view state, and scissors work at every
     await dialog.screenshot({ path: `output/schedule-expanded-${width}.png` })
     await expect(timeline).toHaveCount(1)
     await expect(timeline).toHaveAttribute("data-zoom", "week")
+    await expect
+      .poll(() => timeline.evaluate((node) => node.scrollLeft))
+      .toBe(64)
+    const expandedRow = dialog
+      .locator('[data-slot="campaign-schedule-board-row"]')
+      .first()
+    await expandedRow.dispatchEvent("wheel", { deltaY: 40, shiftKey: true })
+    await expect
+      .poll(() => timeline.evaluate((node) => node.scrollLeft))
+      .toBe(104)
+    await expandedRow.dispatchEvent("wheel", { deltaY: 60 })
+    await expect(timeline).toHaveAttribute("data-zoom", "month")
+    await dialog.getByRole("button", { name: "Zoom in" }).click()
     await dialog.getByRole("button", { name: "Zoom in" }).click()
     await expect(timeline).toHaveAttribute("data-zoom", "day")
     await dialog.getByRole("button", { name: "Zoom out" }).click()
     await expect(timeline).toHaveAttribute("data-zoom", "week")
+    await expect
+      .poll(() =>
+        timeline.evaluate(
+          (node) =>
+            node
+              .getAnimations({ subtree: true })
+              .filter((animation) => animation.playState === "running").length
+        )
+      )
+      .toBe(0)
     const booking = dialog.locator('[data-booking-id="booking-1"]')
     await booking.getByRole("button", { name: "Cut Launch read" }).focus()
     await page.keyboard.press("Enter")
@@ -591,12 +629,18 @@ test("expanded schedule keeps one editor, view state, and scissors work at every
     await page.keyboard.press("Escape")
     await expect(dialog).toBeVisible()
     await expect(booking).not.toHaveAttribute("data-cutting", "true")
+    await timeline.evaluate((node) => {
+      node.scrollLeft = 104
+    })
     await page.keyboard.press("Escape")
     await expect(dialog).toBeHidden()
     await expect(
       page.getByRole("button", { name: "Expand schedule" })
     ).toBeFocused()
     await expect(timeline).toHaveCount(1)
+    await expect
+      .poll(() => timeline.evaluate((node) => node.scrollLeft))
+      .toBe(104)
     const row = page
       .locator('[data-slot="campaign-schedule-board-row"]')
       .first()
@@ -646,6 +690,16 @@ test("scissors snap pointer cuts and leaving a booking cancels without selection
     .nth(1)
   await expect(right).toHaveAttribute("data-start-index", "11")
   await expect(right).toHaveAttribute("data-end-index", "18")
+  expect(
+    await matrix
+      .locator('[data-slot="campaign-schedule-creator-row"]')
+      .evaluateAll(
+        (rows) =>
+          rows
+            .flatMap((row) => row.getAnimations())
+            .filter((animation) => animation.playState === "running").length
+      )
+  ).toBe(0)
   await expect(
     booking.getByRole("button", { name: "Launch read", exact: true })
   ).not.toHaveAttribute("aria-pressed")

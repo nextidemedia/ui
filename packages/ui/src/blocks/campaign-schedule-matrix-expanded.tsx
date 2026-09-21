@@ -6,21 +6,22 @@ import {
 } from "@nextide/ui/components/dialog"
 
 function useScheduleExpanded() {
-  const [{ expanded, scrollRef }, setState] = React.useState(() => ({
-    expanded: false,
-    scrollRef: React.createRef<HTMLDivElement>(),
-  }))
+  const [expanded, setExpanded] = React.useState(false)
+  const [scrollRef, setScrollRef] = React.useState<
+    React.RefObject<HTMLDivElement | null>
+  >({ current: null })
   const triggerRef = React.useRef<HTMLButtonElement>(null)
   const position = React.useRef(0)
   const restoreFocus = React.useRef(false)
   const change = (open: boolean) => {
     restoreFocus.current = !open
     position.current = scrollRef.current?.scrollLeft ?? position.current
-    setState({ expanded: open, scrollRef: React.createRef<HTMLDivElement>() })
+    setExpanded(open)
   }
-  React.useLayoutEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollLeft = position.current
-  }, [scrollRef])
+  const mountScroll = React.useCallback((node: HTMLDivElement | null) => {
+    if (node) node.scrollLeft = position.current
+    setScrollRef({ current: node })
+  }, [])
   React.useEffect(() => {
     if (expanded || !restoreFocus.current) return
     const frame = requestAnimationFrame(() => {
@@ -29,7 +30,7 @@ function useScheduleExpanded() {
     })
     return () => cancelAnimationFrame(frame)
   }, [expanded])
-  return { expanded, change, scrollRef, triggerRef }
+  return { expanded, change, scrollRef, mountScroll, triggerRef }
 }
 function ScheduleExpanded({
   state,
