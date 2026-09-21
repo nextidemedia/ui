@@ -154,6 +154,7 @@ function WebIncidentProof() {
 
 function ScheduleEditorDemo() {
   const [activeBookingId, setActiveBookingId] = useState("booking-2")
+  const [selectionEnabled, setSelectionEnabled] = useState(false)
   const [creators, setCreators] = useState(scheduleCreators)
   const [bookings, setBookings] = useState<CampaignScheduleBooking[]>(() =>
     scheduleBookings.map((booking) => ({
@@ -184,13 +185,25 @@ function ScheduleEditorDemo() {
         >
           {creators.length ? "Clear creators" : "Restore creators"}
         </Button>
+        <Button
+          variant="outline"
+          onClick={() => setSelectionEnabled((value) => !value)}
+        >
+          {selectionEnabled
+            ? "Disable booking selection"
+            : "Enable booking selection"}
+        </Button>
       </div>
       <CampaignScheduleMatrix
         creators={creators}
         days={scheduleDays}
         bookings={bookings}
-        activeBookingId={activeBookingId}
-        onBookingSelect={(booking) => setActiveBookingId(booking.id)}
+        activeBookingId={selectionEnabled ? activeBookingId : undefined}
+        onBookingSelect={
+          selectionEnabled
+            ? (booking) => setActiveBookingId(booking.id)
+            : undefined
+        }
         minimumRows={5}
         campaignStartIndex={4}
         campaignEndIndex={86}

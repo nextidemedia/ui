@@ -1,3 +1,8 @@
+import { ScheduleRows } from "./campaign-schedule-matrix-rows.js"
+import {
+  ScheduleExpanded,
+  useScheduleExpanded,
+} from "./campaign-schedule-matrix-expanded.js"
 import * as React from "react"
 
 import { Surface } from "@nextide/ui/components/surface"
@@ -14,7 +19,6 @@ import {
   ScheduleToolbar,
   ScheduleMetrics,
   ScheduleTimelineHeader,
-  ScheduleCreatorRow,
   type ScheduleViewState,
 } from "./campaign-schedule-matrix-views.js"
 import {
@@ -30,7 +34,7 @@ type CampaignScheduleMatrixProps = React.ComponentProps<typeof Surface> & {
   title?: React.ReactNode
   description?: React.ReactNode
   activeBookingId?: string
-  onBookingSelect: (booking: CampaignScheduleBooking) => void
+  onBookingSelect?: (booking: CampaignScheduleBooking) => void
   minimumRows?: number
   showMetrics?: boolean
   campaignStartIndex?: number
@@ -65,7 +69,81 @@ function CampaignScheduleMatrix({
   className,
   ...props
 }: CampaignScheduleMatrixProps) {
-  const scrollRef = React.useRef<HTMLDivElement | null>(null)
+  const expanded = useScheduleExpanded()
+  const { scrollRef } = expanded
+  const headerLayers = useScheduleDays(days)
+  const boundedDays = Math.max(days.length, 1)
+  const { zoom, zoomTransition, timelineMinWidth, zoomBy } = useScheduleZoom(
+    scrollRef,
+    headerLayers,
+    boundedDays
+  )
+  const liveBookings = bookings.filter((booking) =>
+    creators.some((creator) => creator.id === booking.creatorId)
+  )
+  return (
+    <ScheduleExpanded state={expanded} title={title}>
+      <Surface
+        data-slot="campaign-schedule-matrix"
+        className={cn(
+          "grid content-start gap-4",
+          expanded.expanded && "rounded-none border-0",
+          className
+        )}
+        {...props}
+      >
+        <ScheduleToolbar
+          title={title}
+          description={description}
+          zoom={zoom}
+          zoomBy={zoomBy}
+          expanded={expanded.expanded}
+          onExpand={() => expanded.change(!expanded.expanded)}
+          expandRef={expanded.triggerRef}
+        />
+        {showMetrics && (
+          <ScheduleMetrics
+            creatorCount={creators.length}
+            dayCount={days.length}
+            bookingCount={liveBookings.length}
+          />
+        )}
+        <ScheduleTimeline
+          campaignStartIndex={campaignStartIndex}
+          campaignEndIndex={campaignEndIndex}
+          scrollRef={scrollRef}
+          timelineMinWidth={timelineMinWidth}
+          zoom={zoom}
+          zoomTransition={zoomTransition}
+          headerLayers={headerLayers}
+          boundedDays={boundedDays}
+        >
+          <ScheduleRows
+            creators={creators}
+            minimumRows={minimumRows}
+            bookings={liveBookings}
+            activeBookingId={activeBookingId}
+            onBookingSelect={onBookingSelect}
+            editing={{
+              editableStartIndex,
+              editableEndIndex,
+              onBookingChange,
+              onBookingSplit,
+              dayLabels: days.map((day) => day.date),
+            }}
+            reorder={{ creators, onCreatorOrderChange }}
+            zoom={zoom}
+            zoomTransition={zoomTransition}
+            headerLayers={headerLayers}
+            boundedDays={boundedDays}
+          />
+        </ScheduleTimeline>
+      </Surface>
+    </ScheduleExpanded>
+  )
+}
+
+function useScheduleDays(days: CampaignScheduleDay[]) {
   const datedDays = React.useMemo(
     () =>
       days.map((day, index) => ({
@@ -79,100 +157,7 @@ function CampaignScheduleMatrix({
     () => createScheduleHeaderLayers(datedDays),
     [datedDays]
   )
-  const boundedDays = Math.max(days.length, 1)
-  const { zoom, zoomTransition, timelineMinWidth, zoomBy } = useScheduleZoom(
-    scrollRef,
-    headerLayers,
-    boundedDays
-  )
-  const liveBookings = bookings.filter((booking) =>
-    creators.some((creator) => creator.id === booking.creatorId)
-  )
-  return (
-    <Surface
-      data-slot="campaign-schedule-matrix"
-      className={cn("grid gap-4", className)}
-      {...props}
-    >
-      <ScheduleToolbar
-        title={title}
-        description={description}
-        zoom={zoom}
-        zoomBy={zoomBy}
-      />
-      {showMetrics && (
-        <ScheduleMetrics
-          creatorCount={creators.length}
-          dayCount={days.length}
-          bookingCount={liveBookings.length}
-        />
-      )}
-      <ScheduleTimeline
-        campaignStartIndex={campaignStartIndex}
-        campaignEndIndex={campaignEndIndex}
-        scrollRef={scrollRef}
-        timelineMinWidth={timelineMinWidth}
-        zoom={zoom}
-        zoomTransition={zoomTransition}
-        headerLayers={headerLayers}
-        boundedDays={boundedDays}
-      >
-        <ScheduleRows
-          creators={creators}
-          minimumRows={minimumRows}
-          bookings={liveBookings}
-          activeBookingId={activeBookingId}
-          onBookingSelect={onBookingSelect}
-          editing={{
-            editableStartIndex,
-            editableEndIndex,
-            onBookingChange,
-            onBookingSplit,
-            dayLabels: days.map((day) => day.date),
-          }}
-          reorder={{ creators, onCreatorOrderChange }}
-          zoom={zoom}
-          zoomTransition={zoomTransition}
-          headerLayers={headerLayers}
-          boundedDays={boundedDays}
-        />
-      </ScheduleTimeline>
-    </Surface>
-  )
-}
-
-function ScheduleRows({
-  creators,
-  minimumRows,
-  ...rowProps
-}: Omit<React.ComponentProps<typeof ScheduleCreatorRow>, "creator"> & {
-  creators: CampaignScheduleCreator[]
-  minimumRows: number
-}) {
-  return (
-    <>
-      {creators.map((creator) => (
-        <ScheduleCreatorRow key={creator.id} creator={creator} {...rowProps} />
-      ))}
-      {Array.from(
-        { length: Math.max(0, minimumRows - creators.length) },
-        (_, index) => (
-          <React.Fragment key={`empty-${index}`}>
-            <div
-              aria-hidden="true"
-              className="sticky left-0 z-20 border-r border-b border-nextide-line bg-nextide-panel"
-            />
-            <div
-              data-slot="campaign-schedule-board-row"
-              data-placeholder="true"
-              aria-hidden="true"
-              className="min-h-16 cursor-grab border-b border-nextide-line/70"
-            />
-          </React.Fragment>
-        )
-      )}
-    </>
-  )
+  return headerLayers
 }
 
 function ScheduleTimeline({

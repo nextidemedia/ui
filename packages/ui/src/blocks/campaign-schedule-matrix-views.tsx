@@ -5,7 +5,14 @@ import {
   type ScheduleReorder,
 } from "./campaign-schedule-matrix-reorder.js"
 import * as React from "react"
-import { CalendarClock, Clock3, ZoomIn, ZoomOut } from "lucide-react"
+import {
+  CalendarClock,
+  Clock3,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2,
+} from "lucide-react"
 import { Button } from "@nextide/ui/components/button"
 import { Metric } from "@nextide/ui/components/metric"
 import {
@@ -42,11 +49,17 @@ function ScheduleToolbar({
   description,
   zoom,
   zoomBy,
+  expanded,
+  onExpand,
+  expandRef,
 }: {
   title: React.ReactNode
   description: React.ReactNode
   zoom: CampaignScheduleZoom
   zoomBy: (step: -1 | 1) => void
+  expanded: boolean
+  onExpand: () => void
+  expandRef: React.Ref<HTMLButtonElement>
 }) {
   const zoomIndex = zoomOrder.indexOf(zoom)
   const canZoomIn = zoomIndex > 0
@@ -59,7 +72,17 @@ function ScheduleToolbar({
           <SurfaceDescription>{description}</SurfaceDescription>
         ) : null}
       </span>
-      <span className="grid justify-items-end">
+      <span className="flex items-center gap-2">
+        <Button
+          ref={expandRef}
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label={expanded ? "Close expanded schedule" : "Expand schedule"}
+          onClick={onExpand}
+        >
+          {expanded ? <Minimize2 /> : <Maximize2 />}
+        </Button>
         <span className="inline-flex h-8 items-center overflow-hidden rounded-md border border-nextide-line bg-background/25">
           <Button
             type="button"
@@ -215,7 +238,7 @@ function ScheduleCreatorRow({
   reorder: ScheduleReorder
   bookings: CampaignScheduleBooking[]
   activeBookingId?: string
-  onBookingSelect: (booking: CampaignScheduleBooking) => void
+  onBookingSelect?: (booking: CampaignScheduleBooking) => void
 }) {
   const creatorBookings = bookings.filter(
     (booking) => booking.creatorId === creator.id
