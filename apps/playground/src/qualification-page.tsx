@@ -53,6 +53,7 @@ function QualificationPage() {
     <main className="min-h-screen bg-background p-4 text-foreground sm:p-6">
       <div className="mx-auto grid w-full max-w-4xl gap-4">
         <FlowChartExample />
+        <FlowViewportExample />
         <header className="grid gap-1">
           <h1 className="text-2xl font-medium">Workspace setup</h1>
           <p className="text-sm text-muted-foreground">
@@ -185,6 +186,41 @@ function FlowChartExample() {
         {editable ? "Finish editing calendar" : "Edit calendar"}
       </Button>
       <output aria-label="Selected campaign">{selected}</output>
+    </div>
+  )
+}
+
+function FlowViewportExample() {
+  const [start, setStart] = useState(2)
+  const [selected, setSelected] = useState("")
+  const creators = Array.from({ length: 8 }, (_, index) => ({
+    id: `campaign-${index}`,
+    name: `Campaign ${index + 1}`,
+  }))
+  return (
+    <div className="grid gap-3">
+      <CreatorFlowChart
+        aria-label="Pannable calendar"
+        title={null}
+        description={null}
+        compact
+        className="h-56"
+        creators={creators}
+        days={Array.from({ length: 12 }, (_, index) => `Week ${index + 1}`)}
+        sessions={creators.map((creator) => ({
+          id: creator.id,
+          creatorId: creator.id,
+          label: creator.name,
+          startIndex: 0,
+          endIndex: 10,
+        }))}
+        visibleStartIndex={start}
+        visibleColumnCount={6}
+        onVisibleStartIndexChange={setStart}
+        onSessionSelect={(session) => setSelected(String(session.label))}
+      />
+      <Button onClick={() => setStart(start + 1)}>Next calendar week</Button>
+      <output aria-label="Panned campaign">{selected}</output>
     </div>
   )
 }

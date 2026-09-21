@@ -312,3 +312,5 @@ In compact read-only calendars, `CreatorFlowSession.continuesBefore` opens and
 fades the left edge of a session that started before the visible window. Set
 `CreatorFlowChart continuationFade={1 / 14}` for a half-day fade in weekly
 columns; the default is 0.1 column. This styling never changes session indices.
+
+Compact read-only `CreatorFlowChart` supports `visibleStartIndex`, `visibleColumnCount`, and `onVisibleStartIndexChange` for a bounded full timeline. Navigation pans without replacing campaign rows; dragging pans both axes and reports the final fractional column. Campaign labels stay fixed horizontally and dates stay fixed vertically. Give the chart a height to enable vertical scrolling.

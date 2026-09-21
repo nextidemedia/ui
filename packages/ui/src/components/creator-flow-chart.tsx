@@ -1,6 +1,8 @@
 import * as React from "react"
 
 import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
+import { useFlowViewport } from "./creator-flow-chart-viewport"
+
 import { cn } from "@nextide/ui/lib/utils"
 
 type CreatorFlowTone = "success" | "processing" | "warning" | "danger"
@@ -39,21 +41,7 @@ const toneClasses: Record<CreatorFlowTone, string> = {
   danger: "border-nextide-red/60 bg-nextide-red/16 text-nextide-red",
 }
 
-function CreatorFlowChart({
-  creators,
-  days,
-  sessions,
-  onSessionsChange,
-  onSessionSelect,
-  title = "Creator flow chart",
-  description = onSessionsChange && title === "Creator flow chart"
-    ? "Drag a block to move a creator session. Drag an edge to resize its date range."
-    : null,
-  compact = false,
-  continuationFade = 0.1,
-  className,
-  ...props
-}: Omit<React.ComponentProps<"section">, "title"> & {
+type CreatorFlowChartProps = Omit<React.ComponentProps<"section">, "title"> & {
   creators: CreatorFlowCreator[]
   days: React.ReactNode[]
   sessions: CreatorFlowSession[]
@@ -63,72 +51,100 @@ function CreatorFlowChart({
   description?: React.ReactNode
   compact?: boolean
   continuationFade?: number
-}) {
+  visibleStartIndex?: number
+  visibleColumnCount?: number
+  onVisibleStartIndexChange?: (index: number) => void
+}
+
+function CreatorFlowChart({
+  creators,
+  days,
+  sessions,
+  onSessionsChange,
+  onSessionSelect,
+  title = "Creator flow chart",
+  description,
+  compact = false,
+  continuationFade = 0.1,
+  visibleStartIndex = 0,
+  visibleColumnCount,
+  onVisibleStartIndexChange,
+  className,
+  ...props
+}: CreatorFlowChartProps) {
+  const viewportColumns =
+    compact && !onSessionsChange ? visibleColumnCount : undefined
   const { ref: scrollRef, onWheel } = useContainedScroll<HTMLDivElement>({
-    axis: "x",
+    axis: viewportColumns !== undefined ? "both" : "x",
   })
-  const { gridRef, columnCount, beginDrag, moveDrag, endDrag } =
-    useFlowInteraction(days.length, sessions, onSessionsChange)
+  const interaction = useFlowInteraction(
+    days.length,
+    sessions,
+    onSessionsChange
+  )
+  const { columnCount } = interaction
+  const viewport = useFlowViewport(
+    scrollRef,
+    columnCount,
+    viewportColumns,
+    visibleStartIndex,
+    onVisibleStartIndexChange
+  )
 
   return (
     <section
       data-slot="creator-flow-chart"
       className={cn(
         "grid min-w-0 gap-3 rounded-lg border border-nextide-line bg-nextide-panel p-3",
+        viewport.enabled && "flex min-h-0 flex-col",
         className
       )}
       {...props}
     >
-      {title || description ? (
-        <div className="grid gap-1">
-          {title ? <strong className="text-sm">{title}</strong> : null}
-          {description ? (
-            <span className="text-xs text-muted-foreground">{description}</span>
-          ) : null}
-        </div>
-      ) : null}
+      <FlowHeading
+        title={title}
+        description={flowDescription(description, title, onSessionsChange)}
+      />
       <div
+        data-slot="creator-flow-viewport"
         ref={scrollRef}
+        {...viewport.handlers}
         onWheel={onWheel}
-        className="nextide-contained-scroll nextide-scrollbar-none overflow-x-auto"
+        className={cn(
+          "nextide-contained-scroll nextide-scrollbar-none overflow-x-auto",
+          viewport.enabled &&
+            "min-h-0 flex-1 touch-none overflow-auto select-none"
+        )}
       >
         <div
+          style={viewport.gridStyle}
           className={cn(
-            "grid gap-3",
+            "grid items-start gap-3",
             compact
               ? "grid-cols-[minmax(0,1fr)_minmax(0,3fr)]"
               : "min-w-[48rem] grid-cols-[10rem_minmax(0,1fr)]"
           )}
         >
-          <FlowCreators creators={creators} compact={compact} />
+          <FlowCreators
+            creators={creators}
+            compact={compact}
+            sticky={viewport.enabled}
+          />
           <div className="grid min-w-0 gap-0">
-            <div
-              className="grid h-9 border-b border-nextide-line text-center text-ui-caption font-medium text-muted-foreground"
-              style={{
-                gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
-              }}
-            >
-              {days.map((day, index) => (
-                <span
-                  key={dayKey(day, index)}
-                  className="grid place-items-center border-l border-nextide-line/60 first:border-l-0"
-                >
-                  {day}
-                </span>
-              ))}
-            </div>
+            <FlowDays
+              columnCount={columnCount}
+              days={days}
+              sticky={viewport.enabled}
+            />
             <FlowRows
-              gridRef={gridRef}
+              viewport={viewport.enabled ? viewport : undefined}
+              {...interaction}
               creators={creators}
               sessions={sessions}
-              columnCount={columnCount}
               onSessionsChange={onSessionsChange}
               onSessionSelect={onSessionSelect}
               compact={compact}
               continuationFade={continuationFade}
-              beginDrag={beginDrag}
-              moveDrag={moveDrag}
-              endDrag={endDrag}
             />
           </div>
         </div>
@@ -137,18 +153,90 @@ function CreatorFlowChart({
   )
 }
 
+function flowDescription(
+  description: React.ReactNode,
+  title: React.ReactNode,
+  editing: unknown
+) {
+  if (description !== undefined) return description
+  return editing && title === "Creator flow chart"
+    ? "Drag a block to move a creator session. Drag an edge to resize its date range."
+    : null
+}
+
+function FlowHeading({
+  title,
+  description,
+}: {
+  title: React.ReactNode
+  description: React.ReactNode
+}) {
+  if (!title && !description) return null
+  return (
+    <div className="grid gap-1">
+      {title ? <strong className="text-sm">{title}</strong> : null}
+      {description ? (
+        <span className="text-xs text-muted-foreground">{description}</span>
+      ) : null}
+    </div>
+  )
+}
+
+function FlowDays({
+  days,
+  columnCount,
+  sticky,
+}: {
+  days: React.ReactNode[]
+  columnCount: number
+  sticky: boolean
+}) {
+  return (
+    <div
+      data-slot="creator-flow-header"
+      className={cn(
+        "grid h-9 border-b border-nextide-line text-center text-ui-caption font-medium text-muted-foreground",
+        sticky && "sticky top-0 z-10 bg-nextide-panel"
+      )}
+      style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}
+    >
+      {days.map((day, index) => (
+        <span
+          key={dayKey(day, index)}
+          className="grid min-w-0 place-items-center border-l border-nextide-line/60 wrap-break-word first:border-l-0"
+        >
+          {day}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function FlowCreators({
   creators,
   compact,
+  sticky,
 }: {
+  sticky: boolean
   creators: CreatorFlowCreator[]
   compact: boolean
 }) {
   return (
-    <div className="min-w-0 pt-9">
+    <div
+      data-slot="creator-flow-creators"
+      className={cn(
+        "min-w-0",
+        sticky && "sticky left-0 z-20 -mr-3 bg-nextide-panel pr-3"
+      )}
+    >
+      <div
+        className={cn("h-9", sticky && "sticky top-0 z-30 bg-nextide-panel")}
+      />
       {creators.map((creator) => (
         <div
           key={creator.id}
+          data-slot="creator-flow-creator"
+          data-creator-id={creator.id}
           className={cn(
             "flex min-w-0 items-center gap-2 border-t border-nextide-line/70",
             compact ? "h-12" : "h-14"
@@ -174,6 +262,7 @@ function FlowCreators({
 }
 
 function FlowRows({
+  viewport,
   continuationFade,
   gridRef,
   creators,
@@ -186,6 +275,7 @@ function FlowRows({
   moveDrag,
   endDrag,
 }: {
+  viewport: { start: number; count: number } | undefined
   continuationFade: number
   gridRef: React.RefObject<HTMLDivElement | null>
   creators: CreatorFlowCreator[]
@@ -222,16 +312,24 @@ function FlowRows({
             {creatorSessions.map((session) => {
               const start = clamp(session.startIndex, 0, columnCount - 1)
               const end = clamp(session.endIndex, start, columnCount - 1)
-              const left = (start / columnCount) * 100
-              const width = ((end - start + 1) / columnCount) * 100
+              const visibleStart = Math.max(start, viewport?.start ?? start)
+              const visibleEnd = Math.min(
+                end + 1,
+                viewport ? viewport.start + viewport.count : end + 1
+              )
+              const left = (visibleStart / columnCount) * 100
+              const width =
+                (Math.max(0, visibleEnd - visibleStart) / columnCount) * 100
 
               return (
                 <FlowSession
                   key={session.id}
                   session={session}
                   continuationMask={
-                    compact && !onSessionsChange && session.continuesBefore
-                      ? `linear-gradient(to right, transparent, #000 ${(100 * continuationFade) / (end - start + 1)}%)`
+                    compact &&
+                    !onSessionsChange &&
+                    (session.continuesBefore || visibleStart > start)
+                      ? `linear-gradient(to right, transparent, #000 ${(100 * continuationFade) / Math.max(0.01, visibleEnd - visibleStart)}%)`
                       : undefined
                   }
                   onSessionsChange={onSessionsChange}
@@ -300,7 +398,7 @@ function FlowSession({
   const label = <span className="truncate">{session.label}</span>
   if (!interactive) {
     return (
-      <div className={className} style={style}>
+      <div hidden={width === 0} className={className} style={style}>
         {label}
       </div>
     )
@@ -317,6 +415,7 @@ function FlowSession({
   return (
     <button
       type="button"
+      hidden={width === 0}
       className={className}
       style={style}
       onClick={onSessionSelect ? () => onSessionSelect(session) : undefined}
