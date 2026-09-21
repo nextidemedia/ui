@@ -47,7 +47,7 @@ the named public component rather than its supporting modules.
 | Need                       | Start with                                                                                                                                                                                                                                                                                                                                                                                        |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Actions and commands       | `components/button`, `components/badge`, `components/status-badge`                                                                                                                                                                                                                                                                                                                                |
-| Forms and inputs           | `components/input`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/autocomplete`, `components/token-list-editor`                                                                                                                                                             |
+| Forms and inputs           | `components/input`, `components/currency-input`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/autocomplete`, `components/token-list-editor`                                                                                                                                |
 | Choice controls            | `components/segmented-control`, `components/tabs`, `components/collapsible`, `components/dropdown-menu`, `components/dialog`, `components/popover`, `components/tooltip`                                                                                                                                                                                                                          |
 | Date and schedule controls | `components/date-range-picker`, `components/duration-picker`, `components/schedule-control`                                                                                                                                                                                                                                                                                                       |
 | Layout and surfaces        | `components/surface`, `components/card`, `components/separator`, `components/scroll-area`, `components/carousel`, `components/table`, `components/alert`, `components/notice`, `components/metric`, `components/kbd`                                                                                                                                                                              |
@@ -320,3 +320,14 @@ an armed cut is cancelled. `onBookingSelect` is optional: omitting it leaves onl
 focus and temporary edit feedback. Creator additions, removals, and reordering
 animate while retaining the minimum row floor; reduced motion skips animation.
 Transfer lists hide scrollbar chrome while retaining scrolling and keyboard access.
+
+### Currency entry
+
+`CurrencyInput` edits USD with live dollar, comma-grouping, and decimal-dot
+formatting. Pass an unformatted decimal string through `value` and
+`onValueChange`; an empty string clears the amount and a trailing dot is retained
+while typing. It accepts up to two fraction digits without converting the value
+to a JavaScript number. Supply values with at most two fraction digits; numeric
+conversion and domain limits belong to the consumer. Negative amounts are disabled
+unless `allowNegative` is set. Standard input labels, refs, disabled/read-only,
+and error attributes use the same `Input` surface.
