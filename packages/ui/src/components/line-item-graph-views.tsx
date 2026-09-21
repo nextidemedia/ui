@@ -157,11 +157,7 @@ export function LineItemTooltip({
           <strong className="text-sm leading-tight text-foreground">
             {hoveredSeries.label}
           </strong>
-        ) : (
-          <strong className="text-sm leading-tight text-foreground">
-            Day breakdown
-          </strong>
-        )}
+        ) : null}
       </div>
       <LineItemTooltipRows
         hover={hover}

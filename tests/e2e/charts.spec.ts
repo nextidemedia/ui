@@ -165,7 +165,7 @@ test("signal ridge and impression details share compact overview and exact detai
   await expect(tooltip).toBeHidden()
   const hoverZones = impressions.locator("svg > rect")
   await hoverZones.first().hover()
-  await expect(tooltip).toContainText("Day breakdown")
+  await expect(tooltip).toContainText("92,000")
   await expect(tooltip).not.toContainText("Immersive frame impressions")
   await expectTooltipAnchorMovesWithoutRemeasuring(page, tooltip, hoverZones)
 
