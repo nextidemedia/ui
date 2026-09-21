@@ -162,7 +162,7 @@ assert.equal(formatCompactNumber(1320), "1.32k")
 assert.equal(formatCompactNumber(10300), "10.3k")
 assert.equal(formatCompactNumber(100100000), "100m")
 
-const { buildSmoothPath, getLineItemLayout, resolveDayPositions } = await import("@nextide/ui/components/line-item-graph-data")
+const { buildSmoothPath, getLineItemLayout, resolveDayPositions, getLineItemPlots } = await import("@nextide/ui/components/line-item-graph-data")
 const paddedDays = Array.from({ length: 7 }, (_, index) => ({ id: String(index), label: String(index) }))
 const paddedLayout = getLineItemLayout(780, paddedDays, "day", 180, true, 0.5)
 assert.equal(paddedLayout.plotLeft, 58)
@@ -175,6 +175,28 @@ assert.deepEqual([...paddedPositions.values()], [108, 208, 308, 408, 508, 608, 7
 const unpaddedLayout = getLineItemLayout(780, paddedDays, "day")
 assert.equal(unpaddedLayout.edgeOffset, 0)
 assert.equal(unpaddedLayout.plotRight, 758)
+
+const contextDays = [{ id: "0", label: "Today" }, { id: "1", label: "Tomorrow" }]
+const contextSeries = [
+  { id: "a", label: "A", previousValue: 100, points: [{ dayId: "0", value: 5 }, { dayId: "1", value: 10 }] },
+  { id: "b", label: "B", previousValue: 0, points: [{ dayId: "0", value: 2 }, { dayId: "1", value: 4 }] },
+]
+const contextPlots = (series) => getLineItemPlots(undefined, undefined, [5, 10, 2, 4, 7, 14],
+  series, new Map([["0", 100], ["1", 200]]), new Map(contextDays.map(day => [day.id, day])),
+  new Set(["a", "b"]), { label: "Total" }, [{ dayId: "0", value: 7 }, { dayId: "1", value: 14 }],
+  contextDays, 50, 120, 100, 100)
+const contextual = contextPlots(contextSeries)
+assert.deepEqual(contextual.seriesPlots[0].plottedPoints.map(point => point.value), [100, 5, 10])
+assert.equal(contextual.seriesPlots[0].plottedPoints[0].x, 0)
+assert.equal(contextual.seriesPlots[1].plottedPoints[0].value, 0)
+assert.equal(contextual.seriesPlots[1].plottedPoints[0].hidden, true)
+assert.deepEqual(contextual.totalPlot.plottedPoints.map(point => point.value), [100, 7, 14])
+assert.equal(contextual.range, 20, "Context must not change the displayed value scale")
+assert.equal(contextual.interactivePoints.length, 4)
+assert(contextual.interactivePoints.every(({ point }) => point.dayId !== "__previous"))
+const partialContext = contextPlots([contextSeries[0], { ...contextSeries[1], previousValue: undefined }])
+assert.deepEqual(partialContext.totalPlot.plottedPoints.map(point => point.value), [7, 14],
+  "Incomplete aggregate context must not invent a previous total")
 
 for (const values of [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 40, 40],

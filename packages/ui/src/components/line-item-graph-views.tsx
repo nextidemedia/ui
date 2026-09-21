@@ -45,7 +45,7 @@ export function LineItemCanvas({
             totalLabel={plot.totalPlot?.label}
             totalValue={
               plot.totalPlot?.plottedPoints.find(
-                (point) => point.dayId === resolvedHover.dayId
+                (point) => point.dayId === resolvedHover.dayId && !point.hidden
               )?.value
             }
             valueFormatter={plot.valueFormatter}

@@ -274,19 +274,30 @@ export function getLineItemPlots(
   days: LineItemGraphDay[],
   plotLeft: number,
   plotBottom: number,
-  plotHeight: number
+  plotHeight: number,
+  step: number
 ) {
   const { resolvedMin, resolvedMax, range } = getLineItemRange(
     minValue,
     maxValue,
     chartValues
   )
+  const firstDayId = days.find((day) => !day.hidden)?.id ?? ""
+  const previousX = (dayX.get(firstDayId) ?? plotLeft) - step
+  const contextPoint = (value: number): PlottedLineItemPoint => ({
+    dayId: "__previous",
+    value,
+    x: previousX,
+    y: valueToY(value, resolvedMin, range, plotBottom, plotHeight),
+    hidden: true,
+  })
   const ticks = Array.from({ length: 5 }, (_, index) => {
     const progress = index / 4
     return resolvedMax - progress * range
   })
   const seriesPlots = selectableSeries.map((item) => {
-    const plottedPoints: PlottedLineItemPoint[] = []
+    const plottedPoints: PlottedLineItemPoint[] =
+      item.previousValue === undefined ? [] : [contextPoint(item.previousValue)]
 
     for (const point of item.points) {
       const x = dayX.get(point.dayId)
@@ -339,6 +350,8 @@ export function getLineItemPlots(
         }
       : null
 
+  prependTotalContext(totalPlot, seriesPlots, contextPoint)
+
   return {
     resolvedMin,
     range,
@@ -346,6 +359,25 @@ export function getLineItemPlots(
     seriesPlots,
     interactivePoints,
     totalPlot,
+  }
+}
+
+function prependTotalContext(
+  totalPlot: { plottedPoints: PlottedLineItemPoint[] } | null,
+  seriesPlots: Array<LineItemGraphSeries & { active: boolean }>,
+  contextPoint: (value: number) => PlottedLineItemPoint
+) {
+  const activePlots = seriesPlots.filter((item) => item.active)
+  if (
+    totalPlot &&
+    activePlots.length > 0 &&
+    activePlots.every((item) => item.previousValue !== undefined)
+  ) {
+    totalPlot.plottedPoints.unshift(
+      contextPoint(
+        activePlots.reduce((sum, item) => sum + item.previousValue!, 0)
+      )
+    )
   }
 }
 
@@ -419,7 +451,8 @@ export function useLineItemData(
     days,
     layout.plotLeft,
     layout.plotBottom,
-    layout.plotHeight
+    layout.plotHeight,
+    step
   )
 
   return { ...layout, ...plots, pointMaps, visibleDays, dayById, dayX }

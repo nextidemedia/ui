@@ -31,6 +31,7 @@ export type LineItemGraphSeries = {
   id: string
   label: React.ReactNode
   points: LineItemGraphPoint[]
+  previousValue?: number | undefined
   tone?: LineItemGraphTone
   color?: string
   disabled?: boolean

@@ -292,9 +292,9 @@ export function LineItemGrid({
         <clipPath id={clipId}>
           <rect
             x={plotLeft}
-            y={plotTop - 12}
+            y={plotTop}
             width={plotWidth}
-            height={plotHeight + 24}
+            height={plotHeight}
           />
         </clipPath>
       </defs>

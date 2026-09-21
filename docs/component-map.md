@@ -301,3 +301,9 @@ explicitly angles labels; `day` and `weekday-day` adapt to available spacing.
 For weekday prefixes, supply `day.weekday` separately from `day.label` and choose
 `weekday-day` or `angled-day`. Compact axes render the weekday and separator
 slightly smaller and quieter while preserving full-size dates and tooltips.
+
+`LineItemGraphSeries.previousValue` supplies a real observation one bucket before
+the first visible bucket. It extends the clipped curve without adding an axis
+label, hover target, scale value, or displayed total bucket. The total line uses
+previous context only when every active series supplies it. Omit unavailable
+context; future observations are never inferred.

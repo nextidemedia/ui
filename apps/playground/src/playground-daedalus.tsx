@@ -237,11 +237,17 @@ function DaedalusTrends() {
             showPoints={false}
             glow={false}
             rangeLabel="Last 7 days"
-            days={weeklyImpressionDays.map((day) => ({
-              ...day,
-              label: String(day.label).replace(" ", ""),
+            days={weeklyImpressionDays
+              .filter((day) => !day.hidden)
+              .map((day) => ({
+                ...day,
+                label: String(day.label).replace(" ", ""),
+              }))}
+            series={weeklyImpressionSeries.map((item) => ({
+              ...item,
+              previousValue: item.points[0]?.value,
+              points: item.points.slice(1),
             }))}
-            series={weeklyImpressionSeries}
             axisLabelMode="angled-day"
             edgePadding={0.5}
             valueFormatter={formatLargeMetricValue}
