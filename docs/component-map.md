@@ -338,14 +338,25 @@ Booking `title` accepts a React node or a function of the displayed booking,
 including uncommitted edits, so duration labels can follow a resize preview.
 The dedicated creator handle uses drag or Up/Down, Enter, and Escape and calls
 `onCreatorOrderChange` with the reordered creator IDs.
+Rows preview their new order during a drag; drop or Enter commits, while Escape
+or blur restores the saved order.
 
 `onBookingSplit(booking, splitIndex)` requests a cut before the indexed day;
 the two inclusive ranges are `[startIndex, splitIndex - 1]` and
 `[splitIndex, endIndex]`. The consuming app assigns the second booking's ID.
-The scissors button arms one booking at its midpoint. Move over the booking to
-preview the nearest interior day boundary and both resulting durations, then click to cut. Left/Right, Home,
-and End choose a boundary with the keyboard; Enter cuts, Escape or leaving the
-booking cancels. Adjacent bookings retain separate identities and move independently.
+The header scissors tool previews the nearest interior day boundary and both
+resulting durations on the targeted booking; click to cut. Focus a booking and
+use Left/Right, Home, and End to choose a boundary, then Enter to cut. Adjacent
+bookings retain separate identities and move independently. Resize handles stay
+visible and switch back to resizing when used.
+
+With `onBookingDelete(booking)`, Delete or Backspace removes the focused booking,
+and the header eraser tool deletes a clicked booking. A scissors sweep from the
+first day to the last day (or back) also deletes; short bookings use their outer
+quarters. Partial sweeps do nothing. Deletion keeps the creator row and returns
+focus to its handle, or the timeline when reordering is unavailable. Tools turn
+off on a second toggle, Escape, a click outside the matrix, or changing expanded
+view. The chart suppresses text selection during gestures.
 
 The web-mining playground demonstrates padded bounds, edits, cuts, reordering,
 and clearing all creators while retaining five empty rows.

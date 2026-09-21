@@ -9,6 +9,32 @@ import {
 type ScheduleReorder = {
   creators: CampaignScheduleCreator[]
   onCreatorOrderChange?: (ids: string[]) => void
+  onPreviewOrderChange?: (ids: string[] | null) => void
+}
+function useScheduleRowOrder(
+  creators: CampaignScheduleCreator[],
+  reorder: ScheduleReorder
+) {
+  const [preview, setPreview] = React.useState<{
+    base: string[]
+    ids: string[]
+  } | null>(null)
+  const active =
+    preview &&
+    preview.base.length === creators.length &&
+    preview.base.every((id, index) => id === creators[index]?.id)
+  return {
+    creators: active
+      ? preview.ids.map((id) => creators.find((creator) => creator.id === id)!)
+      : creators,
+    reorder: {
+      ...reorder,
+      onPreviewOrderChange: (ids: string[] | null) =>
+        setPreview(
+          ids ? { base: creators.map((creator) => creator.id), ids } : null
+        ),
+    },
+  }
 }
 function ScheduleReorderHandle({
   creator,
@@ -26,12 +52,20 @@ function ScheduleReorderHandle({
   const hintId = React.useId()
   const target = (delta: number) =>
     clamp(index + delta, 0, reorder.creators.length - 1)
+  const orderAt = (to: number) => {
+    const ids = reorder.creators.map((item) => item.id)
+    ids.splice(index, 1)
+    ids.splice(to, 0, creator.id)
+    return ids
+  }
+  const preview = (to: number) => {
+    setPosition(to)
+    reorder.onPreviewOrderChange?.(orderAt(to))
+  }
   const commit = (to: number | null) => {
+    reorder.onPreviewOrderChange?.(null)
     if (to !== null && to !== index) {
-      const ids = reorder.creators.map((item) => item.id)
-      ids.splice(index, 1)
-      ids.splice(to, 0, creator.id)
-      reorder.onCreatorOrderChange?.(ids)
+      reorder.onCreatorOrderChange?.(orderAt(to))
     }
     setPosition(null)
   }
@@ -43,13 +77,13 @@ function ScheduleReorderHandle({
         aria-labelledby={`${actionId} ${nameId}`}
         aria-describedby={hintId}
         aria-pressed={position !== null}
-        className="-ml-2 grid min-h-9 w-6 shrink-0 cursor-grab touch-none place-items-center rounded-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
+        className="-mr-1 -ml-2 grid min-h-9 w-6 shrink-0 cursor-grab touch-none place-items-center rounded-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
         onPointerDown={(event) =>
           start(event, {
             axis: "y",
             unit: event.currentTarget.parentElement!.getBoundingClientRect()
               .height,
-            preview: (delta) => setPosition(target(delta)),
+            preview: (delta) => preview(target(delta)),
             finish: (delta) => commit(delta === null ? null : target(delta)),
           })
         }
@@ -57,7 +91,7 @@ function ScheduleReorderHandle({
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             event.preventDefault()
-            setPosition(null)
+            commit(null)
           }
           if (event.key === "Enter") {
             event.preventDefault()
@@ -65,7 +99,7 @@ function ScheduleReorderHandle({
           }
           if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return
           event.preventDefault()
-          setPosition(
+          preview(
             clamp(
               (position ?? index) + (event.key === "ArrowUp" ? -1 : 1),
               0,
@@ -75,7 +109,7 @@ function ScheduleReorderHandle({
         }}
         onBlur={() => {
           cancel()
-          setPosition(null)
+          commit(null)
         }}
       >
         <span id={actionId} className="sr-only">
@@ -94,5 +128,5 @@ function ScheduleReorderHandle({
     </>
   )
 }
-export { ScheduleReorderHandle }
+export { ScheduleReorderHandle, useScheduleRowOrder }
 export type { ScheduleReorder }

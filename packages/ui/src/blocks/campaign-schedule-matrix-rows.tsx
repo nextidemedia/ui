@@ -1,6 +1,7 @@
 import * as React from "react"
 import { ScheduleCreatorRow } from "./campaign-schedule-matrix-views.js"
 import type { CampaignScheduleCreator } from "./campaign-schedule-matrix-model.js"
+import { useScheduleRowOrder } from "./campaign-schedule-matrix-reorder.js"
 
 type RowProps = Omit<React.ComponentProps<typeof ScheduleCreatorRow>, "creator">
 type Row = {
@@ -10,10 +11,14 @@ type Row = {
   top?: number
 }
 function ScheduleRows({
-  creators,
+  creators: sourceCreators,
   minimumRows,
   ...rowProps
 }: RowProps & { creators: CampaignScheduleCreator[]; minimumRows: number }) {
+  const { creators, reorder } = useScheduleRowOrder(
+    sourceCreators,
+    rowProps.reorder
+  )
   const [previous, setPrevious] = React.useState(creators)
   const [rows, setRows] = React.useState<Row[]>(() =>
     creators.map((creator) => ({ creator, props: rowProps, exiting: false }))
@@ -79,6 +84,7 @@ function ScheduleRows({
               row.creator
             }
             {...(row.exiting ? row.props : rowProps)}
+            reorder={reorder}
           />
         </div>
       ))}
@@ -149,6 +155,7 @@ function useRowMotion(
     }
     height.current = nextHeight
     positions.current = next
+    const nodes = refs.current
     mounted.current = true
     const timer = rows.some((row) => row.exiting)
       ? window.setTimeout(
@@ -157,6 +164,14 @@ function useRowMotion(
         )
       : undefined
     return () => {
+      for (const [id, top] of next) {
+        const node = nodes.get(id)
+        if (node)
+          next.set(
+            id,
+            top + new DOMMatrixReadOnly(getComputedStyle(node).transform).m42
+          )
+      }
       animations.forEach((animation) => animation.cancel())
       window.clearTimeout(timer)
     }

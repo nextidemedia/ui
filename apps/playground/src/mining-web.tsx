@@ -200,6 +200,9 @@ function ScheduleEditorDemo() {
         </Button>
       </div>
       <CampaignScheduleMatrix
+        ref={(node) => {
+          if (node) node.dataset.demoRef = "attached"
+        }}
         creators={creators.map((creator) => ({ ...creator }))}
         days={scheduleDays}
         bookings={bookings}
@@ -220,6 +223,11 @@ function ScheduleEditorDemo() {
           )
         }
         onBookingSplit={split}
+        onBookingDelete={(booking) =>
+          setBookings((current) =>
+            current.filter((item) => item.id !== booking.id)
+          )
+        }
         onCreatorOrderChange={(ids) =>
           setCreators((current) =>
             ids.map((id) => current.find((creator) => creator.id === id)!)

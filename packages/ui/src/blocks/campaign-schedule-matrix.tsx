@@ -1,5 +1,10 @@
 import { ScheduleRows } from "./campaign-schedule-matrix-rows.js"
 import {
+  ScheduleTools,
+  ScheduleSurface,
+  useScheduleTools,
+} from "./campaign-schedule-matrix-tools.js"
+import {
   ScheduleExpanded,
   useScheduleExpanded,
 } from "./campaign-schedule-matrix-expanded.js"
@@ -42,6 +47,7 @@ type CampaignScheduleMatrixProps = React.ComponentProps<typeof Surface> & {
   editableStartIndex?: number
   editableEndIndex?: number
   onBookingChange?: (booking: CampaignScheduleBooking) => void
+  onBookingDelete?: (booking: CampaignScheduleBooking) => void
   onBookingSplit?: (
     booking: CampaignScheduleBooking,
     splitIndex: number
@@ -64,42 +70,45 @@ function CampaignScheduleMatrix({
   editableStartIndex = 0,
   editableEndIndex = days.length - 1,
   onBookingChange,
+  onBookingDelete,
   onBookingSplit,
   onCreatorOrderChange,
-  className,
   ...props
 }: CampaignScheduleMatrixProps) {
-  const expanded = useScheduleExpanded()
-  const { scrollRef } = expanded
-  const headerLayers = useScheduleDays(days)
-  const boundedDays = Math.max(days.length, 1)
-  const { zoom, zoomTransition, timelineMinWidth, zoomBy } = useScheduleZoom(
-    scrollRef,
-    headerLayers,
-    boundedDays
-  )
+  const rootRef = React.useRef<HTMLElement>(null)
+  const view = useScheduleView(days)
+  const tools = useScheduleTools(rootRef, view.expanded.change)
   const liveBookings = bookings.filter((booking) =>
     creators.some((creator) => creator.id === booking.creatorId)
   )
   return (
-    <ScheduleExpanded state={expanded} title={title}>
-      <Surface
+    <ScheduleExpanded state={view.expanded} title={title}>
+      <ScheduleSurface
+        {...props}
+        rootRef={rootRef}
         data-slot="campaign-schedule-matrix"
         className={cn(
           "grid content-start gap-4",
-          expanded.expanded && "rounded-none border-0",
-          className
+          view.expanded.expanded && "rounded-none border-0",
+          props.className
         )}
-        {...props}
       >
         <ScheduleToolbar
           title={title}
           description={description}
-          zoom={zoom}
-          zoomBy={zoomBy}
-          expanded={expanded.expanded}
-          onExpand={() => expanded.change(!expanded.expanded)}
-          expandRef={expanded.triggerRef}
+          zoom={view.zoom}
+          zoomBy={view.zoomBy}
+          expanded={view.expanded.expanded}
+          onExpand={() => tools.expand(!view.expanded.expanded)}
+          expandRef={view.expanded.triggerRef}
+          tools={
+            <ScheduleTools
+              tool={tools.tool}
+              onToolChange={tools.setTool}
+              canCut={Boolean(onBookingSplit)}
+              canDelete={Boolean(onBookingDelete)}
+            />
+          }
         />
         {showMetrics && (
           <ScheduleMetrics
@@ -111,13 +120,13 @@ function CampaignScheduleMatrix({
         <ScheduleTimeline
           campaignStartIndex={campaignStartIndex}
           campaignEndIndex={campaignEndIndex}
-          scrollRef={scrollRef}
-          mountScroll={expanded.mountScroll}
-          timelineMinWidth={timelineMinWidth}
-          zoom={zoom}
-          zoomTransition={zoomTransition}
-          headerLayers={headerLayers}
-          boundedDays={boundedDays}
+          scrollRef={view.scrollRef}
+          mountScroll={view.expanded.mountScroll}
+          timelineMinWidth={view.timelineMinWidth}
+          zoom={view.zoom}
+          zoomTransition={view.zoomTransition}
+          headerLayers={view.headerLayers}
+          boundedDays={view.boundedDays}
         >
           <ScheduleRows
             creators={creators}
@@ -126,22 +135,39 @@ function CampaignScheduleMatrix({
             activeBookingId={activeBookingId}
             onBookingSelect={onBookingSelect}
             editing={{
+              tool: tools.tool,
+              onToolChange: tools.setTool,
               editableStartIndex,
               editableEndIndex,
               onBookingChange,
+              onBookingDelete,
               onBookingSplit,
               dayLabels: days.map((day) => day.date),
             }}
             reorder={{ creators, onCreatorOrderChange }}
-            zoom={zoom}
-            zoomTransition={zoomTransition}
-            headerLayers={headerLayers}
-            boundedDays={boundedDays}
+            zoom={view.zoom}
+            zoomTransition={view.zoomTransition}
+            headerLayers={view.headerLayers}
+            boundedDays={view.boundedDays}
           />
         </ScheduleTimeline>
-      </Surface>
+      </ScheduleSurface>
     </ScheduleExpanded>
   )
+}
+
+function useScheduleView(days: CampaignScheduleDay[]) {
+  const expanded = useScheduleExpanded()
+  const { scrollRef } = expanded
+  const headerLayers = useScheduleDays(days)
+  const boundedDays = Math.max(days.length, 1)
+  return {
+    expanded,
+    scrollRef,
+    headerLayers,
+    boundedDays,
+    ...useScheduleZoom(scrollRef, headerLayers, boundedDays),
+  }
 }
 
 function useScheduleDays(days: CampaignScheduleDay[]) {
@@ -197,7 +223,7 @@ function ScheduleTimeline({
         onPointerDown={handlePointerDown}
         onClickCapture={handleClickCapture}
         onDragStart={(event) => event.preventDefault()}
-        className="nextide-scrollbar-none relative overflow-x-auto rounded-xl border border-nextide-line bg-background/20 outline-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring data-[dragging=true]:select-none"
+        className="nextide-scrollbar-none relative overflow-x-auto rounded-xl border border-nextide-line bg-background/20 outline-none select-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring"
       >
         <div
           className="relative grid w-full transition-[min-width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
