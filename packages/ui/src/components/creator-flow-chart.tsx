@@ -132,6 +132,7 @@ function CreatorFlowChart({
           />
           <div className="grid min-w-0 gap-0">
             <FlowDays
+              compact={compact}
               columnCount={columnCount}
               days={days}
               sticky={viewport.enabled}
@@ -183,10 +184,12 @@ function FlowHeading({
 }
 
 function FlowDays({
+  compact,
   days,
   columnCount,
   sticky,
 }: {
+  compact: boolean
   days: React.ReactNode[]
   columnCount: number
   sticky: boolean
@@ -196,6 +199,7 @@ function FlowDays({
       data-slot="creator-flow-header"
       className={cn(
         "grid h-9 border-b border-nextide-line text-center text-ui-caption font-medium text-muted-foreground",
+        compact && "text-xs",
         sticky && "sticky top-0 z-10 bg-nextide-panel"
       )}
       style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}

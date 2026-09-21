@@ -25,6 +25,9 @@ function HourlyPacingChart({
   buckets,
   targetValue = 100,
   averageValue,
+  showAverage = true,
+  showDetails = true,
+  size = "md",
   maxValue,
   title = "24h pacing",
   description,
@@ -37,6 +40,9 @@ function HourlyPacingChart({
   buckets: HourlyPacingBucket[]
   targetValue?: number
   averageValue?: number
+  showAverage?: boolean
+  showDetails?: boolean
+  size?: "sm" | "md"
   maxValue?: number
   title?: React.ReactNode
   description?: React.ReactNode
@@ -46,9 +52,7 @@ function HourlyPacingChart({
 }) {
   const { ref: chartScrollRef, onWheel: onChartWheel } =
     useContainedScroll<HTMLDivElement>({ axis: "x" })
-  const [internalActiveHour, setInternalActiveHour] = React.useState<
-    number | null
-  >(null)
+  const [selectedHour, setSelectedHour] = React.useState<number | null>(null)
   const normalizedBuckets = React.useMemo(
     () =>
       buckets
@@ -66,12 +70,12 @@ function HourlyPacingChart({
     targetValue,
     maxValue
   )
-  const resolvedActiveHour = activeHour ?? internalActiveHour
+  const resolvedActiveHour = activeHour ?? selectedHour
   const activeBucket =
-    resolvedActiveHour === null || resolvedActiveHour === undefined
+    resolvedActiveHour === null
       ? null
       : normalizedBuckets.find((bucket) => bucket.hour === resolvedActiveHour)
-  const ticks = buildTicks(scaleMax, targetValue)
+  const ticks = buildTicks(scaleMax, targetValue, size)
 
   if (normalizedBuckets.length === 0 || scaleMax <= 0) {
     return (
@@ -97,8 +101,7 @@ function HourlyPacingChart({
       )}
       {...props}
     >
-      {renderPacingHeader(title, description, resolvedAverage)}
-
+      {renderPacingHeader(title, description, resolvedAverage, showAverage)}
       <div
         ref={chartScrollRef}
         onWheel={onChartWheel}
@@ -106,16 +109,17 @@ function HourlyPacingChart({
       >
         {renderPacingPlot(
           ticks,
+          size,
           scaleMax,
           targetValue,
           normalizedBuckets,
           activeBucket,
-          setInternalActiveHour,
+          setSelectedHour,
           onActiveHourChange
         )}
       </div>
 
-      {renderPacingDetail(peak, low, activeBucket)}
+      {showDetails && renderPacingDetail(peak, low, activeBucket)}
     </div>
   )
 }
@@ -123,7 +127,8 @@ function HourlyPacingChart({
 function renderPacingHeader(
   title: React.ReactNode,
   description: React.ReactNode,
-  resolvedAverage: number
+  resolvedAverage: number,
+  showAverage: boolean
 ) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -135,30 +140,45 @@ function renderPacingHeader(
           </span>
         ) : null}
       </div>
-      <div className="rounded-md border border-nextide-tide/35 bg-nextide-tide/10 px-2.5 py-1 text-xs font-medium text-nextide-tide">
-        Avg {formatPercent(resolvedAverage)}
-      </div>
+      {showAverage && (
+        <div className="rounded-md border border-nextide-tide/35 bg-nextide-tide/10 px-2.5 py-1 text-xs font-medium text-nextide-tide">
+          Avg {formatPercent(resolvedAverage)}
+        </div>
+      )}
     </div>
   )
 }
 
 function renderPacingPlot(
   ticks: number[],
+  size: "sm" | "md",
   scaleMax: number,
   targetValue: number,
   normalizedBuckets: HourlyPacingBucket[],
   activeBucket: HourlyPacingBucket | null | undefined,
-  setInternalActiveHour: React.Dispatch<React.SetStateAction<number | null>>,
+  setSelectedHour: React.Dispatch<React.SetStateAction<number | null>>,
   onActiveHourChange: ((bucket: HourlyPacingBucket) => void) | undefined
 ) {
   return (
-    <div className="grid min-w-[48rem] grid-cols-[3.6rem_minmax(0,1fr)] gap-3">
-      <div className="relative h-80 text-ui-caption font-medium text-muted-foreground">
+    <div
+      className={cn(
+        "grid grid-cols-[3.6rem_minmax(0,1fr)] gap-3",
+        size === "sm" ? "h-48 min-w-[40rem]" : "h-80 min-w-[48rem]"
+      )}
+    >
+      <div className="relative h-full text-ui-caption font-medium text-muted-foreground">
         <div className="absolute inset-x-0 top-0 bottom-7">
           {ticks.map((tick) => (
             <span
               key={tick}
-              className="absolute right-0 translate-y-1/2 whitespace-nowrap"
+              className={cn(
+                "absolute right-0 whitespace-nowrap",
+                tick === scaleMax
+                  ? "translate-y-full"
+                  : tick === 0
+                    ? "translate-y-0"
+                    : "translate-y-1/2"
+              )}
               style={{ bottom: `${percentOf(tick, scaleMax)}%` }}
             >
               {formatPercent(tick)}
@@ -166,7 +186,7 @@ function renderPacingPlot(
           ))}
         </div>
       </div>
-      <div className="relative h-80 rounded-md border-b border-l border-nextide-line bg-[linear-gradient(90deg,rgb(30_228_188/0.035),transparent_22%,transparent_74%,rgb(245_184_61/0.035)),linear-gradient(180deg,rgb(255_255_255/0.035),transparent_46%,rgb(0_0_0/0.16))]">
+      <div className="relative h-full rounded-md border-b border-l border-nextide-line bg-[linear-gradient(90deg,rgb(30_228_188/0.035),transparent_22%,transparent_74%,rgb(245_184_61/0.035)),linear-gradient(180deg,rgb(255_255_255/0.035),transparent_46%,rgb(0_0_0/0.16))]">
         <div className="absolute inset-x-0 top-0 bottom-7">
           {ticks.map((tick) => (
             <span
@@ -184,7 +204,7 @@ function renderPacingPlot(
             scaleMax,
             targetValue,
             activeBucket,
-            setInternalActiveHour,
+            setSelectedHour,
             onActiveHourChange
           )}
         </div>
@@ -208,7 +228,7 @@ function renderPacingBars(
   scaleMax: number,
   targetValue: number,
   activeBucket: HourlyPacingBucket | null | undefined,
-  setInternalActiveHour: React.Dispatch<React.SetStateAction<number | null>>,
+  setSelectedHour: React.Dispatch<React.SetStateAction<number | null>>,
   onActiveHourChange: ((bucket: HourlyPacingBucket) => void) | undefined
 ) {
   return (
@@ -223,16 +243,20 @@ function renderPacingBars(
             key={bucket.id ?? bucket.hour}
             type="button"
             className="group relative flex h-full min-w-0 cursor-pointer items-end justify-center rounded-sm px-0.5 focus-visible:outline-none"
-            aria-label={`${padHour(bucket.hour)}:00 pacing ${formatPercent(bucket.value)}`}
             onClick={() => {
-              setInternalActiveHour(bucket.hour)
+              setSelectedHour(bucket.hour)
               onActiveHourChange?.(bucket)
             }}
             onFocus={() => {
-              setInternalActiveHour(bucket.hour)
+              setSelectedHour(bucket.hour)
               onActiveHourChange?.(bucket)
             }}
           >
+            <span className="sr-only">
+              {padHour(bucket.hour)}:00 pacing {formatPercent(bucket.value)}
+              {bucket.valueLabel != null && <> · {bucket.valueLabel}</>}
+              {bucket.detail != null && <> · {bucket.detail}</>}
+            </span>
             <span
               className={cn(
                 "relative block w-full max-w-7 rounded-t-[0.35rem] rounded-b-[0.16rem] bg-linear-to-b shadow-[0_10px_24px_rgb(30_228_188/0.18)] transition-[height,filter] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-out-quart)] group-hover:brightness-110 group-focus-visible:brightness-110 before:absolute before:inset-0 before:rounded-[inherit] before:bg-linear-to-b before:from-white/35 before:to-transparent before:opacity-45",
@@ -310,7 +334,7 @@ function getPacingStats(
   )
   const scaleMax =
     typeof maxValue === "number" && Number.isFinite(maxValue)
-      ? Math.max(1, maxValue)
+      ? niceScaleMax(Math.max(1, maxValue))
       : niceScaleMax(Math.max(peak * 1.12, targetValue * 1.28, 200))
   return { resolvedAverage, peak, low, scaleMax }
 }
@@ -331,7 +355,13 @@ function niceScaleMax(value: number) {
   return Math.ceil(value / 100) * 100
 }
 
-function buildTicks(scaleMax: number, targetValue: number) {
+function buildTicks(scaleMax: number, targetValue: number, size: "sm" | "md") {
+  if (size === "sm") {
+    return [0, targetValue, scaleMax].filter(
+      (tick, index) =>
+        index !== 1 || (tick > scaleMax * 0.15 && tick < scaleMax * 0.85)
+    )
+  }
   const step = scaleMax <= 400 ? 50 : 100
   const ticks = new Set<number>([0, targetValue, scaleMax])
   for (let tick = step; tick < scaleMax; tick += step) {

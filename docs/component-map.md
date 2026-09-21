@@ -47,7 +47,7 @@ the named public component rather than its supporting modules.
 | Need                       | Start with                                                                                                                                                                                                                                                                                                                                                                                        |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Actions and commands       | `components/button`, `components/badge`, `components/status-badge`                                                                                                                                                                                                                                                                                                                                |
-| Forms and inputs           | `components/input`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/autocomplete`, `components/token-list-editor`                                                                                                                                                             |
+| Forms and inputs           | `components/input`, `components/currency-input`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/autocomplete`, `components/token-list-editor`                                                                                                                                |
 | Choice controls            | `components/segmented-control`, `components/tabs`, `components/collapsible`, `components/dropdown-menu`, `components/dialog`, `components/popover`, `components/tooltip`                                                                                                                                                                                                                          |
 | Date and schedule controls | `components/date-range-picker`, `components/duration-picker`, `components/schedule-control`                                                                                                                                                                                                                                                                                                       |
 | Layout and surfaces        | `components/surface`, `components/card`, `components/separator`, `components/scroll-area`, `components/carousel`, `components/table`, `components/alert`, `components/notice`, `components/metric`, `components/kbd`                                                                                                                                                                              |
@@ -314,3 +314,56 @@ fades the left edge of a session that started before the visible window. Set
 columns; the default is 0.1 column. This styling never changes session indices.
 
 Compact read-only `CreatorFlowChart` supports `visibleStartIndex`, `visibleColumnCount`, and `onVisibleStartIndexChange` for a bounded full timeline. Navigation pans without replacing campaign rows; dragging pans both axes and reports the final fractional column. Campaign labels stay fixed horizontally and dates stay fixed vertically. Give the chart a height to enable vertical scrolling.
+
+### Creator transfer and campaign scheduling
+
+`CreatorTransfer` keeps each list independently scrollable with `listHeight`
+(default `20rem`). Search + Enter transfers the first eligible result and clears
+that search. `disabledReason` makes an available creator unavailable to add and
+shows why; selected creators can still be removed. Tab retains normal document
+focus order. Transfers animate inside a stable-height layout.
+
+`CampaignScheduleMatrix` remains controlled. Set `minimumRows={5}` for a stable
+empty board; placeholder rows do not count as creators. `showMetrics={false}`
+hides summary metrics. `campaignStartIndex` and `campaignEndIndex` mark the
+inclusive campaign range within `days`, independently of the inclusive
+`editableStartIndex`/`editableEndIndex` bounds (default: all displayed days).
+Display padding is supplied as ordinary days.
+
+With `onBookingChange`, drag a booking to move it without changing its duration,
+or drag either edge to resize by whole days. Focus the body or either edge and
+use Left/Right to preview, Enter to save, Escape or blur to cancel. Pointer
+cancellation also discards the preview. Blank rows retain timeline panning.
+Booking `title` accepts a React node or a function of the displayed booking,
+including uncommitted edits, so duration labels can follow a resize preview.
+The dedicated creator handle uses drag or Up/Down, Enter, and Escape and calls
+`onCreatorOrderChange` with the reordered creator IDs.
+
+`onBookingSplit(booking, splitIndex)` requests a cut before the indexed day;
+the two inclusive ranges are `[startIndex, splitIndex - 1]` and
+`[splitIndex, endIndex]`. The consuming app assigns the second booking's ID.
+The scissors button arms one booking at its midpoint. Move over the booking to
+preview the nearest interior day boundary and both resulting durations, then click to cut. Left/Right, Home,
+and End choose a boundary with the keyboard; Enter cuts, Escape or leaving the
+booking cancels. Adjacent bookings retain separate identities and move independently.
+
+The web-mining playground demonstrates padded bounds, edits, cuts, reordering,
+and clearing all creators while retaining five empty rows.
+
+The schedule's Expand button opens the existing large dialog surface with one
+editable timeline. Closing restores focus to Expand and preserves zoom and pan;
+an armed cut is cancelled. `onBookingSelect` is optional: omitting it leaves only
+focus and temporary edit feedback. Creator additions, removals, and reordering
+animate while retaining the minimum row floor; reduced motion skips animation.
+Transfer lists hide scrollbar chrome while retaining scrolling and keyboard access.
+
+### Currency entry
+
+`CurrencyInput` edits USD with live dollar, comma-grouping, and decimal-dot
+formatting. Pass an unformatted decimal string through `value` and
+`onValueChange`; an empty string clears the amount and a trailing dot is retained
+while typing. It accepts up to two fraction digits without converting the value
+to a JavaScript number. Supply values with at most two fraction digits; numeric
+conversion and domain limits belong to the consumer. Negative amounts are disabled
+unless `allowNegative` is set. Standard input labels, refs, disabled/read-only,
+and error attributes use the same `Input` surface.

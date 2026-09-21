@@ -23,7 +23,9 @@ type CampaignScheduleDay = {
 type CampaignScheduleBooking = {
   id: string
   creatorId: string
-  title: React.ReactNode
+  title:
+    | React.ReactNode
+    | ((booking: CampaignScheduleBooking) => React.ReactNode)
   meta?: React.ReactNode
   startIndex: number
   endIndex: number

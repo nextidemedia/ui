@@ -19,6 +19,7 @@ import {
   CardTitle,
 } from "@nextide/ui/components/card"
 import { Checkbox } from "@nextide/ui/components/checkbox"
+import { CurrencyInput } from "@nextide/ui/components/currency-input"
 import {
   DurationPicker,
   type DurationValue,
@@ -81,6 +82,7 @@ function InputPreview({
             </FieldDescription>
           </Field>
         </div>
+        <CurrencyInputPreview />
         <div className="grid gap-2">
           <ComponentReference names="SelectMenu" />
           <SelectMenu
@@ -316,5 +318,27 @@ export function FieldStatesPreview() {
         </Field>
       </CardContent>
     </Card>
+  )
+}
+
+function CurrencyInputPreview() {
+  const [budget, setBudget] = useState("12500.50")
+  return (
+    <div className="grid gap-2">
+      <ComponentReference names="CurrencyInput" />
+      <Field>
+        <FieldLabel htmlFor="primitive-budget">Budget (USD)</FieldLabel>
+        <CurrencyInput
+          id="primitive-budget"
+          value={budget}
+          onValueChange={setBudget}
+          placeholder="$0.00"
+        />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="primitive-cpm">CPM (USD)</FieldLabel>
+        <CurrencyInput id="primitive-cpm" defaultValue="12.05" />
+      </Field>
+    </div>
   )
 }
