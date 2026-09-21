@@ -307,7 +307,7 @@ The dedicated creator handle uses drag or Up/Down, Enter, and Escape and calls
 the two inclusive ranges are `[startIndex, splitIndex - 1]` and
 `[splitIndex, endIndex]`. The consuming app assigns the second booking's ID.
 The scissors button arms one booking at its midpoint. Move over the booking to
-preview the nearest interior day boundary, then click to cut. Left/Right, Home,
+preview the nearest interior day boundary and both resulting durations, then click to cut. Left/Right, Home,
 and End choose a boundary with the keyboard; Enter cuts, Escape or leaving the
 booking cancels. Adjacent bookings retain separate identities and move independently.
 

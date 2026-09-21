@@ -79,12 +79,7 @@ function ScheduleBooking({
         }}
       />
       {cut.enabled && (
-        <BookingScissors
-          cut={cut}
-          titleId={titleId}
-          booking={booking}
-          dayLabels={editing.dayLabels}
-        />
+        <BookingScissors cut={cut} titleId={titleId} booking={booking} />
       )}
       {edit.canEdit && !cut.armed && (
         <BookingEdge edge="end" titleId={titleId} hintId={hintId} edit={edit} />
