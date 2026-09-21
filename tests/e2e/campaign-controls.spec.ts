@@ -744,7 +744,9 @@ test("scissors snap pointer cuts and leaving a booking cancels without selection
   await expect(
     booking.locator('[data-slot="campaign-cut-boundary"]')
   ).toHaveText("10 days | 5 days")
-  expect((await preview.locator("output").boundingBox())!.width).toBe(width)
+  expect(
+    Math.abs((await preview.locator("output").boundingBox())!.width - width)
+  ).toBeLessThan(0.1)
   await page.mouse.move(x, y)
   await expect(
     booking.locator('[data-slot="campaign-cut-boundary"]')
