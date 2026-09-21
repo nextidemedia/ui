@@ -506,6 +506,16 @@ async function verifyCreatorReorder(page: Page, matrix: Locator) {
   await expect(
     matrix.locator('[data-slot="campaign-schedule-creator-legend"]').first()
   ).toContainText("Ren Kade")
+  await expect
+    .poll(() =>
+      matrix.evaluate(
+        (element) =>
+          element
+            .getAnimations({ subtree: true })
+            .filter((animation) => animation.playState === "running").length
+      )
+    )
+    .toBe(0)
   await dragBy(page, handle, 0, 64)
   await expect(
     matrix.locator('[data-slot="campaign-schedule-creator-legend"]').nth(2)
