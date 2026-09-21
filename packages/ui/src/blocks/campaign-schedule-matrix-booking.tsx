@@ -1,12 +1,9 @@
 import * as React from "react"
-import { MoreHorizontal, Scissors } from "lucide-react"
-import { Button } from "@nextide/ui/components/button"
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@nextide/ui/components/dropdown-menu"
+  useBookingCut,
+  BookingScissors,
+  scissorsCursor,
+} from "./campaign-schedule-matrix-cut.js"
 import { StatusBadge } from "@nextide/ui/components/status-badge"
 import { cn } from "@nextide/ui/lib/utils"
 import {
@@ -23,7 +20,7 @@ type BookingProps = {
   booking: CampaignScheduleBooking
   boundedDays: number
   active: boolean
-  onBookingSelect: (booking: CampaignScheduleBooking) => void
+  onBookingSelect?: (booking: CampaignScheduleBooking) => void
   editing: ScheduleEditing
 }
 
@@ -35,39 +32,21 @@ function ScheduleBooking({
   editing,
 }: BookingProps) {
   const edit = useBookingEdit(booking, editing, boundedDays)
-  const [menuOpen, setMenuOpen] = React.useState(false)
-  const [cutIndex, setCutIndex] = React.useState<number | null>(null)
+  const rootRef = React.useRef<HTMLDivElement>(null)
+  const bodyRef = React.useRef<HTMLButtonElement>(null)
+  const cut = useBookingCut(booking, editing, rootRef, bodyRef)
   const hintId = React.useId()
   const start = clamp(edit.shown.startIndex, 0, boundedDays - 1)
   const end = clamp(edit.shown.endIndex, start, boundedDays - 1)
   const titleId = React.useId()
-  const cuttable =
-    Boolean(editing.onBookingSplit) && booking.startIndex < booking.endIndex
-  const contextMenu = (event: React.MouseEvent) => {
-    if (!cuttable) return
-    event.preventDefault()
-    const box = event.currentTarget.getBoundingClientRect()
-    setCutIndex(
-      clamp(
-        Math.round(
-          booking.startIndex +
-            ((event.clientX - box.left) / box.width) *
-              (booking.endIndex - booking.startIndex + 1)
-        ),
-        booking.startIndex + 1,
-        booking.endIndex
-      )
-    )
-    setMenuOpen(true)
-  }
   return (
-    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- Context menu duplicates the keyboard-accessible booking actions button.
     <div
       data-slot="campaign-schedule-booking"
       data-booking-id={booking.id}
       data-start-index={start}
       data-end-index={end}
-      onContextMenu={contextMenu}
+      ref={rootRef}
+      data-cutting={cut.armed || undefined}
       className={cn(
         "absolute top-2 bottom-2 flex min-w-0 rounded-lg border shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]",
         bookingToneClasses[booking.tone ?? "success"],
@@ -79,7 +58,7 @@ function ScheduleBooking({
         width: `${((end - start + 1) / boundedDays) * 100}%`,
       }}
     >
-      {edit.canEdit && (
+      {edit.canEdit && !cut.armed && (
         <BookingEdge
           edge="start"
           titleId={titleId}
@@ -87,34 +66,33 @@ function ScheduleBooking({
           edit={edit}
         />
       )}
-      <button
-        type="button"
-        aria-labelledby={titleId}
-        aria-pressed={active}
-        aria-describedby={edit.canEdit ? hintId : undefined}
-        className={cn(
-          "flex min-w-0 flex-1 items-center overflow-hidden px-[min(0.75rem,8%)] text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          edit.canEdit && "cursor-grab touch-none active:cursor-grabbing"
-        )}
-        onPointerDown={(event) => edit.pointerDown(event, "move")}
-        onKeyDown={(event) => edit.keyDown(event, "move")}
-        onBlur={edit.cancel}
-        onClick={(event) => {
-          if (!edit.consumeClick(event)) onBookingSelect(booking)
+      <BookingBody
+        {...{
+          bodyRef,
+          cut,
+          edit,
+          titleId,
+          active,
+          hintId,
+          booking,
+          onBookingSelect,
         }}
-      >
-        <BookingLabel booking={booking} titleId={titleId} />
-      </button>
-      {cuttable && (
-        <BookingCutMenu
-          {...{ booking, editing, menuOpen, setMenuOpen, cutIndex, titleId }}
+      />
+      {cut.enabled && (
+        <BookingScissors
+          cut={cut}
+          titleId={titleId}
+          booking={booking}
+          dayLabels={editing.dayLabels}
         />
       )}
-      {edit.canEdit && (
+      {edit.canEdit && !cut.armed && (
         <BookingEdge edge="end" titleId={titleId} hintId={hintId} edit={edit} />
       )}
       <span id={hintId} className="sr-only">
-        Left and right arrows adjust one day. Enter saves. Escape cancels.
+        {cut.armed
+          ? "Left and right arrows choose a cut. Enter cuts. Escape cancels."
+          : "Left and right arrows adjust one day. Enter saves. Escape cancels."}
       </span>
       {edit.draft && (
         <output className="sr-only">
@@ -122,6 +100,55 @@ function ScheduleBooking({
         </output>
       )}
     </div>
+  )
+}
+
+function BookingBody({
+  bodyRef,
+  cut,
+  edit,
+  titleId,
+  active,
+  hintId,
+  booking,
+  onBookingSelect,
+}: {
+  bodyRef: React.RefObject<HTMLButtonElement | null>
+  cut: ReturnType<typeof useBookingCut>
+  edit: ReturnType<typeof useBookingEdit>
+  titleId: string
+  hintId: string
+} & Pick<BookingProps, "booking" | "active" | "onBookingSelect">) {
+  return (
+    <button
+      type="button"
+      ref={bodyRef}
+      style={cut.armed ? { cursor: scissorsCursor } : undefined}
+      aria-labelledby={titleId}
+      aria-pressed={onBookingSelect ? active : undefined}
+      aria-describedby={edit.canEdit ? hintId : undefined}
+      className={cn(
+        "flex min-w-0 flex-1 items-center overflow-hidden px-[min(0.75rem,8%)] text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        edit.canEdit && "cursor-grab touch-none active:cursor-grabbing"
+      )}
+      onPointerDown={(event) => {
+        if (cut.armed) {
+          event.stopPropagation()
+          event.preventDefault()
+        } else edit.pointerDown(event, "move")
+      }}
+      onPointerMove={cut.preview}
+      onKeyDown={(event) =>
+        cut.armed ? cut.keyDown(event) : edit.keyDown(event, "move")
+      }
+      onBlur={edit.cancel}
+      onClick={(event) => {
+        if (!cut.click(event) && !edit.consumeClick(event))
+          onBookingSelect?.(booking)
+      }}
+    >
+      <BookingLabel booking={booking} titleId={titleId} />
+    </button>
   )
 }
 
@@ -184,56 +211,6 @@ function BookingLabel({
         )}
       </span>
     </span>
-  )
-}
-
-function BookingCutMenu({
-  booking,
-  editing,
-  menuOpen,
-  setMenuOpen,
-  cutIndex,
-  titleId,
-}: {
-  booking: CampaignScheduleBooking
-  editing: ScheduleEditing
-  menuOpen: boolean
-  setMenuOpen: (open: boolean) => void
-  cutIndex: number | null
-  titleId: string
-}) {
-  const actionId = React.useId()
-  const indices = Array.from(
-    { length: booking.endIndex - booking.startIndex },
-    (_, index) => booking.startIndex + index + 1
-  )
-  if (cutIndex !== null)
-    indices.sort((a, b) => Number(b === cutIndex) - Number(a === cutIndex))
-  return (
-    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-      <DropdownMenuTrigger
-        render={<Button variant="ghost" size="icon-xs" />}
-        aria-labelledby={`${actionId} ${titleId}`}
-        className="z-10 w-[min(2rem,25%)] shrink-0 self-center overflow-hidden"
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <span id={actionId} className="sr-only">
-          Cut
-        </span>
-        <MoreHorizontal />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="max-h-72 w-60" align="end">
-        {indices.map((index) => (
-          <DropdownMenuItem
-            key={index}
-            onClick={() => editing.onBookingSplit?.(booking, index)}
-          >
-            <Scissors />
-            Cut before {editing.dayLabels[index]}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }
 

@@ -304,9 +304,17 @@ The dedicated creator handle uses drag or Up/Down, Enter, and Escape and calls
 `onBookingSplit(booking, splitIndex)` requests a cut before the indexed day;
 the two inclusive ranges are `[startIndex, splitIndex - 1]` and
 `[splitIndex, endIndex]`. The consuming app assigns the second booking's ID.
-The Cut menu supports keyboard activation and right-click, offers only interior
-boundaries, and labels each boundary by date. Adjacent bookings retain their
-separate identities and can be moved independently.
+The scissors button arms one booking at its midpoint. Move over the booking to
+preview the nearest interior day boundary, then click to cut. Left/Right, Home,
+and End choose a boundary with the keyboard; Enter cuts, Escape or leaving the
+booking cancels. Adjacent bookings retain separate identities and move independently.
 
 The web-mining playground demonstrates padded bounds, edits, cuts, reordering,
 and clearing all creators while retaining five empty rows.
+
+The schedule's Expand button opens the existing large dialog surface with one
+editable timeline. Closing restores focus to Expand and preserves zoom and pan;
+an armed cut is cancelled. `onBookingSelect` is optional: omitting it leaves only
+focus and temporary edit feedback. Creator additions, removals, and reordering
+animate while retaining the minimum row floor; reduced motion skips animation.
+Transfer lists hide scrollbar chrome while retaining scrolling and keyboard access.

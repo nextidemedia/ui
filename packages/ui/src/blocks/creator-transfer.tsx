@@ -209,7 +209,7 @@ function CreatorTransferPanel({
       </label>
       <div
         data-slot="creator-transfer-list"
-        className="grid content-start gap-2 overflow-y-auto overscroll-contain"
+        className="nextide-scrollbar-none grid content-start gap-2 overflow-y-auto overscroll-contain"
         style={{ height: listHeight }}
       >
         {items.length === 0 ? (
