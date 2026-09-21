@@ -307,3 +307,8 @@ the first visible bucket. It extends the clipped curve without adding an axis
 label, hover target, scale value, or displayed total bucket. The total line uses
 previous context only when every active series supplies it. Omit unavailable
 context; future observations are never inferred.
+
+In compact read-only calendars, `CreatorFlowSession.continuesBefore` opens and
+fades the left edge of a session that started before the visible window. Set
+`CreatorFlowChart continuationFade={1 / 14}` for a half-day fade in weekly
+columns; the default is 0.1 column. This styling never changes session indices.

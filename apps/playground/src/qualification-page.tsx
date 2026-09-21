@@ -156,12 +156,14 @@ function FlowChartExample() {
       label: "Autumn launch",
       startIndex: 0,
       endIndex: 1,
+      continuesBefore: true,
     },
   ])
   return (
     <div className="grid gap-3">
       <CreatorFlowChart
         aria-label="Campaign calendar"
+        continuationFade={1 / 14}
         title={<span>Campaign calendar</span>}
         description={null}
         compact

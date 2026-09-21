@@ -19,6 +19,7 @@ type CreatorFlowSession = {
   startIndex: number
   endIndex: number
   tone?: CreatorFlowTone
+  continuesBefore?: boolean | undefined
 }
 
 type DragState = {
@@ -49,6 +50,7 @@ function CreatorFlowChart({
     ? "Drag a block to move a creator session. Drag an edge to resize its date range."
     : null,
   compact = false,
+  continuationFade = 0.1,
   className,
   ...props
 }: Omit<React.ComponentProps<"section">, "title"> & {
@@ -60,6 +62,7 @@ function CreatorFlowChart({
   title?: React.ReactNode
   description?: React.ReactNode
   compact?: boolean
+  continuationFade?: number
 }) {
   const { ref: scrollRef, onWheel } = useContainedScroll<HTMLDivElement>({
     axis: "x",
@@ -122,6 +125,7 @@ function CreatorFlowChart({
               onSessionsChange={onSessionsChange}
               onSessionSelect={onSessionSelect}
               compact={compact}
+              continuationFade={continuationFade}
               beginDrag={beginDrag}
               moveDrag={moveDrag}
               endDrag={endDrag}
@@ -170,6 +174,7 @@ function FlowCreators({
 }
 
 function FlowRows({
+  continuationFade,
   gridRef,
   creators,
   sessions,
@@ -181,6 +186,7 @@ function FlowRows({
   moveDrag,
   endDrag,
 }: {
+  continuationFade: number
   gridRef: React.RefObject<HTMLDivElement | null>
   creators: CreatorFlowCreator[]
   sessions: CreatorFlowSession[]
@@ -223,6 +229,11 @@ function FlowRows({
                 <FlowSession
                   key={session.id}
                   session={session}
+                  continuationMask={
+                    compact && !onSessionsChange && session.continuesBefore
+                      ? `linear-gradient(to right, transparent, #000 ${(100 * continuationFade) / (end - start + 1)}%)`
+                      : undefined
+                  }
                   onSessionsChange={onSessionsChange}
                   onSessionSelect={onSessionSelect}
                   compact={compact}
@@ -242,6 +253,7 @@ function FlowRows({
 }
 
 function FlowSession({
+  continuationMask,
   session,
   onSessionsChange,
   onSessionSelect,
@@ -252,6 +264,7 @@ function FlowSession({
   moveDrag,
   endDrag,
 }: {
+  continuationMask: string | undefined
   session: CreatorFlowSession
   onSessionsChange: ((sessions: CreatorFlowSession[]) => void) | undefined
   onSessionSelect: ((session: CreatorFlowSession) => void) | undefined
@@ -266,6 +279,7 @@ function FlowSession({
   moveDrag: (event: React.PointerEvent) => void
   endDrag: (event: React.PointerEvent) => void
 }): React.JSX.Element {
+  const interactive = onSessionsChange || onSessionSelect
   const className = cn(
     "absolute grid items-center rounded-lg border text-left text-xs font-medium",
     compact ? "top-1 bottom-1 min-w-0" : "top-2 bottom-2 min-w-12",
@@ -273,12 +287,18 @@ function FlowSession({
     onSessionsChange
       ? "cursor-grab grid-cols-[0.75rem_minmax(0,1fr)_0.75rem] px-1 active:cursor-grabbing"
       : "px-2",
-    (onSessionsChange || onSessionSelect) &&
-      "transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    interactive &&
+      "transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+    continuationMask !== undefined &&
+      "rounded-l-none border-l-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
   )
-  const style = { left: `${left}%`, width: `${width}%` }
+  const style = {
+    left: `${left}%`,
+    width: `${width}%`,
+    maskImage: continuationMask,
+  }
   const label = <span className="truncate">{session.label}</span>
-  if (!onSessionsChange && !onSessionSelect) {
+  if (!interactive) {
     return (
       <div className={className} style={style}>
         {label}
