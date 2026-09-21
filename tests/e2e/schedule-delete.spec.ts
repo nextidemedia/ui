@@ -72,7 +72,23 @@ test("scissors sweeps delete in both directions and cancel partial or escaped ge
   page,
 }) => {
   for (const reverse of [false, true]) {
-    const matrix = await openSchedule(page)
+    const matrix = await openSchedule(page, reverse ? 768 : 1440)
+    if (reverse) {
+      await matrix.getByRole("button", { name: "Zoom out" }).click()
+      await expect
+        .poll(() =>
+          matrix.evaluate(
+            (node) =>
+              node
+                .getAnimations({ subtree: true })
+                .filter((animation) => animation.playState === "running").length
+          )
+        )
+        .toBe(0)
+      await matrix.getByRole("region").evaluate((node) => {
+        node.scrollLeft = 0
+      })
+    }
     const booking = matrix.locator('[data-booking-id="booking-1"]')
     const tool = matrix.getByRole("button", { name: "Scissors tool" })
     await tool.click()
@@ -99,6 +115,19 @@ test("scissors sweeps delete in both directions and cancel partial or escaped ge
     ).toBeFocused()
     expect(await page.evaluate(() => getSelection()?.toString())).toBe("")
   }
+  const matrix = await openSchedule(page)
+  const booking = matrix.locator('[data-booking-id="booking-1"]')
+  await matrix.getByRole("button", { name: "Scissors tool" }).click()
+  const body = booking.getByRole("button", { name: "Launch read", exact: true })
+  await body.press("Home")
+  await body.press("Enter")
+  await expect(booking).toHaveAttribute("data-end-index", "4")
+  await matrix.getByRole("region").evaluate((node) => {
+    node.scrollLeft = 0
+  })
+  await sweep(page, booking)
+  await expect(booking).toHaveCount(0)
+  await expect(matrix.locator(bookingSelector)).toHaveCount(4)
 })
 
 test("chart tools toggle, resize handles remain usable, and eraser removes only its target", async ({
@@ -106,6 +135,7 @@ test("chart tools toggle, resize handles remain usable, and eraser removes only 
 }) => {
   const matrix = await openSchedule(page)
   const scissors = matrix.getByRole("button", { name: "Scissors tool" })
+  await expect(matrix).toHaveAttribute("data-demo-ref", "attached")
   const eraser = matrix.getByRole("button", { name: "Eraser tool" })
   const booking = matrix.locator('[data-booking-id="booking-1"]')
   await scissors.click()

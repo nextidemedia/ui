@@ -21,7 +21,7 @@ function useBookingCut(
   const [previewing, setPreviewing] = React.useState(false)
   const enabled =
     Boolean(editing.onBookingSplit) && booking.startIndex < booking.endIndex
-  const armed = enabled && editing.tool === "cut"
+  const armed = editing.tool === "cut"
   const cancel = () => editing.onToolChange(null)
   const sweep = useBookingSweep(
     booking,
@@ -47,7 +47,7 @@ function useBookingCut(
   }
   const commit = (index: number) => editing.onBookingSplit?.(booking, index)
   const keyDown = (event: React.KeyboardEvent) => {
-    if (!armed) return
+    if (!armed || !enabled) return
     const indices: Record<string, number> = {
       ArrowLeft: boundary - 1,
       ArrowRight: boundary + 1,
@@ -67,7 +67,7 @@ function useBookingCut(
   }
   return {
     armed,
-    previewing,
+    previewing: previewing && (enabled || sweep.deleting),
     boundary: clamp(boundary, booking.startIndex + 1, booking.endIndex),
     deleting: sweep.deleting,
     cancel,
@@ -96,11 +96,12 @@ function useBookingCut(
         return true
       }
       if (armed) {
-        commit(
-          event.detail
-            ? atPointer(event.clientX)
-            : clamp(boundary, booking.startIndex + 1, booking.endIndex)
-        )
+        if (enabled)
+          commit(
+            event.detail
+              ? atPointer(event.clientX)
+              : clamp(boundary, booking.startIndex + 1, booking.endIndex)
+          )
         return true
       }
       return false

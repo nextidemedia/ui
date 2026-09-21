@@ -54,7 +54,7 @@ function useBookingSweep(
   const [deleting, setDeleting] = React.useState(false)
   const start = (event: React.PointerEvent<HTMLButtonElement>) => {
     if (!onDelete || !root.current) return
-    const rect = root.current.getBoundingClientRect()
+    const rect = event.currentTarget.getBoundingClientRect()
     const origin = (event.clientX - rect.left) / rect.width
     const tolerance = Math.min(
       0.25,

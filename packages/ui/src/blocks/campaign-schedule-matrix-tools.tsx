@@ -1,6 +1,20 @@
 import * as React from "react"
 import { Eraser, Scissors } from "lucide-react"
 import { Button } from "@nextide/ui/components/button"
+import { Surface } from "@nextide/ui/components/surface"
+import { useRender } from "@base-ui/react/use-render"
+
+function ScheduleSurface({
+  rootRef,
+  ref,
+  ...props
+}: React.ComponentProps<typeof Surface> & { rootRef: React.Ref<HTMLElement> }) {
+  return useRender({
+    render: <Surface />,
+    ref: ref ? [rootRef, ref] : rootRef,
+    props,
+  })
+}
 
 type ScheduleTool = "cut" | "delete" | null
 
@@ -84,5 +98,5 @@ function ScheduleTools({
     </span>
   )
 }
-export { ScheduleTools, useScheduleTools }
+export { ScheduleTools, ScheduleSurface, useScheduleTools }
 export type { ScheduleTool }

@@ -200,6 +200,9 @@ function ScheduleEditorDemo() {
         </Button>
       </div>
       <CampaignScheduleMatrix
+        ref={(node) => {
+          if (node) node.dataset.demoRef = "attached"
+        }}
         creators={creators.map((creator) => ({ ...creator }))}
         days={scheduleDays}
         bookings={bookings}

@@ -1,6 +1,7 @@
 import { ScheduleRows } from "./campaign-schedule-matrix-rows.js"
 import {
   ScheduleTools,
+  ScheduleSurface,
   useScheduleTools,
 } from "./campaign-schedule-matrix-tools.js"
 import {
@@ -82,9 +83,9 @@ function CampaignScheduleMatrix({
   )
   return (
     <ScheduleExpanded state={view.expanded} title={title}>
-      <Surface
+      <ScheduleSurface
         {...props}
-        ref={rootRef}
+        rootRef={rootRef}
         data-slot="campaign-schedule-matrix"
         className={cn(
           "grid content-start gap-4",
@@ -150,7 +151,7 @@ function CampaignScheduleMatrix({
             boundedDays={view.boundedDays}
           />
         </ScheduleTimeline>
-      </Surface>
+      </ScheduleSurface>
     </ScheduleExpanded>
   )
 }
