@@ -95,18 +95,19 @@ function useSchedulePointer() {
     const key = (next: KeyboardEvent) => {
       if (next.key === "Escape") {
         next.preventDefault()
+        next.stopPropagation()
         finish(null)
       }
     }
     window.addEventListener("pointermove", move, { passive: false })
     window.addEventListener("pointerup", up)
     window.addEventListener("pointercancel", cancel)
-    window.addEventListener("keydown", key)
+    window.addEventListener("keydown", key, true)
     cleanup.current = () => {
       window.removeEventListener("pointermove", move)
       window.removeEventListener("pointerup", up)
       window.removeEventListener("pointercancel", cancel)
-      window.removeEventListener("keydown", key)
+      window.removeEventListener("keydown", key, true)
       cleanup.current = null
       cancelGesture.current = null
     }
@@ -126,6 +127,7 @@ function useBookingEdit(
 ) {
   const [draft, setDraft] = React.useState<CampaignScheduleBooking | null>(null)
   const pointer = useSchedulePointer()
+  useDraftCancellation(draft !== null, setDraft)
   const {
     editableStartIndex: min,
     editableEndIndex: max,
@@ -168,10 +170,6 @@ function useBookingEdit(
     mode: BookingEdit
   ) => {
     if (!canEdit) return
-    if (event.key === "Escape") {
-      event.preventDefault()
-      setDraft(null)
-    }
     if (event.key === "Enter" && draft) {
       event.preventDefault()
       commit(draft)
@@ -200,6 +198,23 @@ function useBookingEdit(
     },
     consumeClick: pointer.consumeClick,
   }
+}
+
+function useDraftCancellation(
+  active: boolean,
+  setDraft: React.Dispatch<React.SetStateAction<CampaignScheduleBooking | null>>
+) {
+  React.useEffect(() => {
+    if (!active) return
+    const cancel = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return
+      event.preventDefault()
+      event.stopPropagation()
+      setDraft(null)
+    }
+    window.addEventListener("keydown", cancel, true)
+    return () => window.removeEventListener("keydown", cancel, true)
+  }, [active, setDraft])
 }
 
 export { useBookingEdit, useSchedulePointer }

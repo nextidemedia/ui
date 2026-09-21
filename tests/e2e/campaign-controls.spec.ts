@@ -382,6 +382,8 @@ test("booking duration titles follow resize previews and cancellation", async ({
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/?view=web-mining")
   const booking = page.locator('[data-booking-id="booking-3"]')
+  await page.getByRole("button", { name: "Expand schedule" }).click()
+  const dialog = page.getByRole("dialog", { name: "Campaign schedule" })
   const end = booking.getByRole("button", { name: /^Resize end of Late recap/ })
   await expect(
     booking.getByRole("button", { name: "Late recap · 22 days", exact: true })
@@ -403,15 +405,25 @@ test("booking duration titles follow resize previews and cancellation", async ({
   ).toBeVisible()
   await page.keyboard.press("Escape")
   await page.mouse.up()
+  await expect(dialog).toBeVisible()
   await expect(
     booking.getByRole("button", { name: "Late recap · 22 days", exact: true })
   ).toBeVisible()
+  await expect(booking).toHaveAttribute("data-end-index", "66")
+  await end.press("ArrowLeft")
+  await expect(
+    booking.getByRole("button", { name: "Late recap · 21 days", exact: true })
+  ).toBeVisible()
+  await end.press("Escape")
+  await expect(dialog).toBeVisible()
   await expect(booking).toHaveAttribute("data-end-index", "66")
   await end.press("ArrowRight")
   await expect(
     booking.getByRole("button", { name: "Late recap · 23 days", exact: true })
   ).toBeVisible()
   await end.press("Enter")
+  await page.keyboard.press("Escape")
+  await expect(dialog).toBeHidden()
   await page.getByRole("button", { name: "Expand schedule" }).click()
   await expect(
     booking.getByRole("button", { name: "Late recap · 23 days", exact: true })
@@ -723,7 +735,20 @@ test("scissors snap pointer cuts and leaving a booking cancels without selection
   await page.mouse.move(x, y)
   await expect(
     booking.locator('[data-slot="campaign-cut-boundary"]')
-  ).toHaveText("Cut before 2026-05-22")
+  ).toHaveText("7 days | 8 days")
+  await page.mouse.move(rect!.x + (rect!.width * 9.1) / 15, y)
+  const preview = booking.locator('[data-slot="campaign-cut-boundary"]')
+  await expect(preview).toHaveText("9 days | 6 days")
+  const width = (await preview.locator("output").boundingBox())!.width
+  await page.mouse.move(rect!.x + (rect!.width * 10.1) / 15, y)
+  await expect(
+    booking.locator('[data-slot="campaign-cut-boundary"]')
+  ).toHaveText("10 days | 5 days")
+  expect((await preview.locator("output").boundingBox())!.width).toBe(width)
+  await page.mouse.move(x, y)
+  await expect(
+    booking.locator('[data-slot="campaign-cut-boundary"]')
+  ).toHaveText("7 days | 8 days")
   await page.mouse.click(x, y)
   await expect(booking).not.toHaveAttribute("data-cutting", "true")
   await expect(booking).toHaveAttribute("data-end-index", "10")

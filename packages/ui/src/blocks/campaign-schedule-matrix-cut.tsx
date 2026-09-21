@@ -105,12 +105,10 @@ function BookingScissors({
   cut,
   titleId,
   booking,
-  dayLabels,
 }: {
   cut: ReturnType<typeof useBookingCut>
   titleId: string
   booking: CampaignScheduleBooking
-  dayLabels: string[]
 }) {
   const actionId = React.useId()
   return (
@@ -139,7 +137,14 @@ function BookingScissors({
           }}
         >
           <output className="absolute bottom-full left-0 mb-1 rounded-sm bg-nextide-panel px-1 text-ui-micro whitespace-nowrap text-nextide-tide">
-            Cut before {dayLabels[cut.boundary!]}
+            <span className="inline-block min-w-[2ch] text-right tabular-nums">
+              {cut.boundary! - booking.startIndex}
+            </span>{" "}
+            days |{" "}
+            <span className="inline-block min-w-[2ch] text-right tabular-nums">
+              {booking.endIndex - cut.boundary! + 1}
+            </span>{" "}
+            days
           </output>
         </span>
       )}
