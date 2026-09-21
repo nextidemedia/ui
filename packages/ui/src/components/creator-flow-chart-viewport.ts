@@ -82,6 +82,7 @@ function useViewportPan(
   } | null>(null)
   const suppressClick = React.useRef(false)
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    suppressClick.current = false
     if (
       !enabled ||
       event.button !== 0 ||
@@ -90,7 +91,6 @@ function useViewportPan(
       )
     )
       return
-    suppressClick.current = false
     drag.current = {
       x: event.clientX,
       y: event.clientY,

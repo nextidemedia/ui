@@ -1,7 +1,7 @@
 import * as React from "react"
 
 import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
-import { useFlowViewport } from "./creator-flow-chart-viewport"
+import { useFlowViewport } from "./creator-flow-chart-viewport.js"
 
 import { cn } from "@nextide/ui/lib/utils"
 

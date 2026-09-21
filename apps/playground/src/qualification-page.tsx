@@ -196,6 +196,11 @@ function FlowViewportExample() {
   const creators = Array.from({ length: 8 }, (_, index) => ({
     id: `campaign-${index}`,
     name: `Campaign ${index + 1}`,
+    meta: (
+      <button onClick={() => setSelected(`Inspect ${index + 1}`)}>
+        Inspect {index + 1}
+      </button>
+    ),
   }))
   return (
     <div className="grid gap-3">

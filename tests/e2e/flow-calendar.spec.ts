@@ -130,6 +130,10 @@ test("flow calendar pans stable rows with sticky labels and dates", async ({
     expect(await viewport.evaluate((el) => el.scrollTop)).toBeGreaterThan(0)
     await expect(page.getByLabel("Panned campaign")).toHaveText("Campaign 1")
     expect((await creator.boundingBox())!.x).toBeCloseTo(original!.x, 0)
+    await calendar
+      .getByRole("button", { name: "Inspect 2", exact: true })
+      .click()
+    await expect(page.getByLabel("Panned campaign")).toHaveText("Inspect 2")
     await calendar.screenshot({ path: `output/flow-viewport-${width}.png` })
   }
 })

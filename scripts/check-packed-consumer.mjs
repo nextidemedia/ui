@@ -33,6 +33,7 @@ const tempRoot = await mkdtemp(join(tmpdir(), "nextide-ui-consumer-"))
 const consumerRoot = join(tempRoot, "consumer")
 
 const qualifiedExports = [
+  ["@nextide/ui/components/creator-flow-chart", "CreatorFlowChart"],
   ["@nextide/ui/blocks/app-shell", "AppShell"],
   ["@nextide/ui/blocks/navigation-panel", "NavigationPanel"],
   ["@nextide/ui/blocks/campaign-schedule-matrix", "CampaignScheduleMatrix"],
