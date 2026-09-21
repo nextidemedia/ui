@@ -137,3 +137,29 @@ test("flow calendar pans stable rows with sticky labels and dates", async ({
     await calendar.screenshot({ path: `output/flow-viewport-${width}.png` })
   }
 })
+
+for (const width of [320, 390, 768, 1440]) {
+  test(`flow continuation distinguishes clipped and real ends at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const calendar = page.getByRole("region", { name: "Pannable calendar" })
+    const session = calendar.getByRole("button", {
+      name: "Campaign 1",
+      exact: true,
+    })
+    await calendar.scrollIntoViewIfNeeded()
+    await expect(session).toHaveCSS("border-top-left-radius", "0px")
+    await expect(session).toHaveCSS("border-top-right-radius", "0px")
+    await expect(session).toHaveCSS("border-right-width", "0px")
+    expect(
+      await session.evaluate((el) => getComputedStyle(el).maskImage)
+    ).toContain("rgba(0, 0, 0, 0)")
+    for (let step = 0; step < 4; step++) {
+      await page.getByRole("button", { name: "Next calendar week" }).click()
+    }
+    await expect(session).not.toHaveCSS("border-top-right-radius", "0px")
+    await expect(session).toHaveCSS("border-right-width", "1px")
+    await expect(session).toHaveCSS("border-top-left-radius", "0px")
+  })
+}

@@ -62,7 +62,7 @@ The package expects React 19 and Tailwind CSS 4. Install an exact release so a
 consumer upgrades deliberately:
 
 ```bash
-pnpm add --save-exact @nextide/ui@2.5.5
+pnpm add --save-exact @nextide/ui@2.5.6
 pnpm add --save-dev --save-exact tailwindcss@4.3.1 @tailwindcss/vite@4.3.1
 ```
 
