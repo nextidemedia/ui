@@ -147,7 +147,7 @@ function BookingBody({
           onBookingSelect?.(booking)
       }}
     >
-      <BookingLabel booking={booking} titleId={titleId} />
+      <BookingLabel booking={edit.shown} titleId={titleId} />
     </button>
   )
 }
@@ -191,7 +191,9 @@ function BookingLabel({
   return (
     <span className="grid min-w-0 gap-0.5">
       <span id={titleId} className="truncate text-sm leading-tight font-medium">
-        {booking.title}
+        {typeof booking.title === "function"
+          ? booking.title(booking)
+          : booking.title}
       </span>
       <span className="flex min-w-0 items-center gap-2">
         {booking.meta && (

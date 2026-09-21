@@ -376,6 +376,49 @@ test("campaign schedule edits preserve days, cancellation, and independent split
   )
 })
 
+test("booking duration titles follow resize previews and cancellation", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=web-mining")
+  const booking = page.locator('[data-booking-id="booking-3"]')
+  const end = booking.getByRole("button", { name: /^Resize end of Late recap/ })
+  await expect(
+    booking.getByRole("button", { name: "Late recap · 22 days", exact: true })
+  ).toBeVisible()
+  await end.scrollIntoViewIfNeeded()
+  const unit = await booking
+    .locator("..")
+    .evaluate((row) => row.getBoundingClientRect().width / 91)
+  const box = await end.boundingBox()
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(
+    box!.x + box!.width / 2 + unit * 2,
+    box!.y + box!.height / 2,
+    { steps: 5 }
+  )
+  await expect(
+    booking.getByRole("button", { name: "Late recap · 24 days", exact: true })
+  ).toBeVisible()
+  await page.keyboard.press("Escape")
+  await page.mouse.up()
+  await expect(
+    booking.getByRole("button", { name: "Late recap · 22 days", exact: true })
+  ).toBeVisible()
+  await expect(booking).toHaveAttribute("data-end-index", "66")
+  await end.press("ArrowRight")
+  await expect(
+    booking.getByRole("button", { name: "Late recap · 23 days", exact: true })
+  ).toBeVisible()
+  await end.press("Enter")
+  await page.getByRole("button", { name: "Expand schedule" }).click()
+  await expect(
+    booking.getByRole("button", { name: "Late recap · 23 days", exact: true })
+  ).toBeVisible()
+  await expect(booking).toHaveAttribute("data-end-index", "67")
+})
+
 test("campaign schedule preserves an empty board and contained editing at every viewport", async ({
   page,
 }) => {
