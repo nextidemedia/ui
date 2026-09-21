@@ -329,13 +329,14 @@ function FlowRows({
                 <FlowSession
                   key={session.id}
                   session={session}
-                  continuationMask={
-                    compact &&
-                    !onSessionsChange &&
-                    (session.continuesBefore || visibleStart > start)
-                      ? `linear-gradient(to right, transparent, #000 ${(100 * continuationFade) / Math.max(0.01, visibleEnd - visibleStart)}%)`
-                      : undefined
-                  }
+                  continuation={flowContinuation(
+                    session,
+                    compact && !onSessionsChange,
+                    start,
+                    visibleStart,
+                    visibleEnd,
+                    continuationFade
+                  )}
                   onSessionsChange={onSessionsChange}
                   onSessionSelect={onSessionSelect}
                   compact={compact}
@@ -354,8 +355,37 @@ function FlowRows({
   )
 }
 
+function flowContinuation(
+  session: CreatorFlowSession,
+  readOnly: boolean,
+  start: number,
+  visibleStart: number,
+  visibleEnd: number,
+  continuationFade: number
+) {
+  if (!readOnly) return {}
+  const before = Boolean(session.continuesBefore || visibleStart > start)
+  const after = visibleEnd < session.endIndex + 1
+  const continuing = before || after
+  const fade = Math.min(
+    50,
+    (100 * continuationFade) / Math.max(0.01, visibleEnd - visibleStart)
+  )
+  return {
+    maskImage: continuing
+      ? `linear-gradient(to right, ${before ? "transparent" : "#000"}, #000 ${before ? fade : 0}%, #000 ${after ? 100 - fade : 100}%, ${after ? "transparent" : "#000"})`
+      : undefined,
+    className: cn(
+      before && "rounded-l-none border-l-0",
+      after && "rounded-r-none border-r-0",
+      continuing &&
+        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
+    ),
+  }
+}
+
 function FlowSession({
-  continuationMask,
+  continuation,
   session,
   onSessionsChange,
   onSessionSelect,
@@ -366,7 +396,7 @@ function FlowSession({
   moveDrag,
   endDrag,
 }: {
-  continuationMask: string | undefined
+  continuation: ReturnType<typeof flowContinuation>
   session: CreatorFlowSession
   onSessionsChange: ((sessions: CreatorFlowSession[]) => void) | undefined
   onSessionSelect: ((session: CreatorFlowSession) => void) | undefined
@@ -391,13 +421,12 @@ function FlowSession({
       : "px-2",
     interactive &&
       "transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-    continuationMask !== undefined &&
-      "rounded-l-none border-l-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
+    continuation.className
   )
   const style = {
     left: `${left}%`,
     width: `${width}%`,
-    maskImage: continuationMask,
+    maskImage: continuation.maskImage,
   }
   const label = <span className="truncate">{session.label}</span>
   if (!interactive) {
