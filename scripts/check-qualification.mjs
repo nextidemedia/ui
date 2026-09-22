@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { execFileSync, spawnSync } from "node:child_process"
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { createRequire } from "node:module"
+import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { runInNewContext } from "node:vm"
@@ -114,6 +115,25 @@ test("local profiles select existing checks without applying a release", () => {
   }
 })
 
+test("selected releases only run Oxlint when their manifest declares it", async () => {
+  const condition = workflow.match(/if node -e "([^"]+)"; then/)[1]
+  const source = await mkdtemp(join(tmpdir(), "nextide-ui-manifest-"))
+  try {
+    for (const [manifest, expected] of [
+      [{ devDependencies: { oxlint: "1.80.0" } }, 0],
+      [{ devDependencies: { typescript: "6.0.3" } }, 1],
+    ]) {
+      await writeFile(join(source, "package.json"), JSON.stringify(manifest))
+      assert.equal(
+        spawnSync(process.execPath, ["-e", condition], { cwd: source }).status,
+        expected
+      )
+    }
+  } finally {
+    await rm(source, { recursive: true, force: true })
+  }
+})
+
 test("deploy lint permits cosmetic debt but retains unsafe operations and hooks", async () => {
   const packageRoot = join(root, "packages/ui")
   const require = createRequire(join(packageRoot, "package.json"))
@@ -122,7 +142,7 @@ test("deploy lint permits cosmetic debt but retains unsafe operations and hooks"
     "bin/eslint.js"
   )
   const oxlint = join(root, "node_modules/oxlint/bin/oxlint")
-  const probeRoot = await mkdtemp(join(packageRoot, "src/qualification-probe-"))
+  const probeRoot = await mkdtemp(join(tmpdir(), "nextide-ui-qualification-"))
   const file = join(probeRoot, "probe.tsx")
   const probes = [
     ["cosmetic", "const unused = 1\nexport const ready = true\n", 0],
@@ -144,11 +164,20 @@ test("deploy lint permits cosmetic debt but retains unsafe operations and hooks"
           packageRoot,
         ],
       ]) {
+        const inputArgs =
+          binary === eslint
+            ? [
+                "--stdin",
+                "--stdin-filename",
+                join(packageRoot, "src/probe.tsx"),
+              ]
+            : ["--config", join(root, ".oxlintrc.json"), file]
         const result = spawnSync(
           process.execPath,
-          [binary, ...command.split(" "), file],
+          [binary, ...command.split(" "), ...inputArgs],
           {
             cwd,
+            input: source,
             encoding: "utf8",
           }
         )
@@ -158,7 +187,10 @@ test("deploy lint permits cosmetic debt but retains unsafe operations and hooks"
           `${name}: ${result.stdout}${result.stderr}`
         )
         if (name === "cosmetic") {
-          const quality = spawnSync(process.execPath, [binary, file], { cwd })
+          const quality = spawnSync(process.execPath, [binary, ...inputArgs], {
+            cwd,
+            input: source,
+          })
           assert.equal(
             quality.status,
             1,
