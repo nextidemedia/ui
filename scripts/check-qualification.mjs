@@ -85,6 +85,15 @@ test("selected groups and release caller fail closed on actual job results", () 
 })
 
 test("local profiles select existing checks without applying a release", () => {
+  const concurrency = workflow.match(/  group: (.+)/)[1]
+  const releaseGroup = (sha) =>
+    concurrency.replace(/\$\{\{ (.+?) \}\}/g, (_, expression) =>
+      runInNewContext(expression, {
+        inputs: { source_sha: sha, profile: "deploy" },
+        github: { workflow: "Publish @nextide/ui", ref: "refs/heads/main" },
+      })
+    )
+  assert.notEqual(releaseGroup("a".repeat(40)), releaseGroup("b".repeat(40)))
   for (const profile of ["qualify", "qualify-deploy"]) {
     const result = spawnSync("just", ["--dry-run", profile], {
       cwd: root,
