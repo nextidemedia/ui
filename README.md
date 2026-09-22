@@ -161,10 +161,8 @@ release-age and build-script guardrails.
 3. Merge the release commit and create a matching `v<version>` tag on that merge.
 4. Run **Publish @nextide/ui** manually with the exact tag.
 
-Publication verifies the existing tag, runs deploy qualification against its exact
-commit, then re-verifies the tag before publishing. Qualification alone never
-publishes a package. The workflow uses existing package commands so selected
-release tags do not need the newer local `just` entrypoints.
+Publication requires successful deploy qualification. Running either
+qualification profile alone never publishes a package.
 
 ## Dead-code report
 
