@@ -13,10 +13,16 @@ with `pwsh` available on PATH.
 - `just check` runs Prettier, Oxlint, existing ESLint, the supply-chain watchlist,
   LOC budgets, strict TypeScript checks, and packed-consumer qualification.
 - `just fmt`, `just fmt-check`, `just lint`, and `just typecheck` run separately.
+- `just quality` runs full formatting, lint, and LOC checks.
+- `just correctness` runs correctness lint, the supply-chain watchlist, TypeScript,
+  qualification gate probes, packed-consumer checks, the playground build, and
+  Chromium checks. `just qualify-deploy` runs the same checks without publishing.
+- `just qualify` runs both groups. `just check` keeps its existing scope.
 - `just test` runs the packed-consumer check through Node's test runner; native
   flags and file selection work, e.g. `just test --test-reporter=spec scripts/check-packed-consumer.mjs`.
   This check builds and packs the library and installs an isolated consumer, so
-  it needs npm registry access. There is currently one local test file.
+  it needs npm registry access. `node --test scripts/check-qualification.mjs`
+  separately exercises qualification profiles, failure propagation, and lint boundaries.
 - `just test-integration` builds both workspaces and runs Playwright. First run
   `pnpm exec playwright install chromium` (Linux CI also uses `--with-deps`).
   Port 4173 must be free. Focus with `just test-integration -g "campaign schedule"`.
@@ -28,6 +34,18 @@ files meet the 600-line limit and browser suites meet the 900-line test limit;
 forwarded-prop, or scroll-region semantics. Existing ESLint/React Hooks rules remain until parity
 with Oxlint is verified. Oxlint 1.80.0 was the newest stable npm release at least
 seven days old on 2026-09-08; the existing formatter and TypeScript remain pinned.
+
+Correctness lint retains the configured React Hooks, accessibility, unsafe-operation,
+and accumulating-spread checks. Only explicit cosmetic rules (size/complexity,
+unused declarations, redundant syntax/types, and syntax preferences) are omitted;
+the complete rule sets still run in Quality. Type safety restrictions and the
+supply-chain watchlist remain required in both profiles.
+
+The weekly **Qualification** workflow runs full qualification. Manual runs select
+`full` or `deploy`; deploy deliberately skips **Quality**. **Qualification result**
+requires every selected group to succeed and reports the validated commit. The
+package has no service deployment or database integration lane; its integration
+surface is the packed consumer and playground browser suite.
 
 ## Brand
 
@@ -129,19 +147,22 @@ cd packages/ui
 npm pack --dry-run --access public
 ```
 
-`pnpm run check` remains the canonical lint, typecheck, build, and targeted
-supply-chain release gate. Install Chromium once, then run the explicit,
-headless `pnpm run qualify` gate for packed-package consumer resolution and
+`pnpm run check` keeps its lint, typecheck, build, and targeted supply-chain scope.
+Install Chromium once, then run the explicit, headless `pnpm run qualify` gate for packed-package consumer resolution and
 representative Chromium interaction, accessibility, and responsive checks.
+Use `just qualify` for all checks or `just qualify-deploy` for release validation.
 Direct dependencies are pinned exactly. The workspace also enforces pnpm
 release-age and build-script guardrails.
 
 ## Releasing
 
 1. Update `packages/ui/package.json` and the install examples in both READMEs.
-2. Run `pnpm run check`, `pnpm run qualify`, and the package dry run above.
+2. Run `just qualify-deploy` and the package dry run above (`just qualify` includes Quality too).
 3. Merge the release commit and create a matching `v<version>` tag on that merge.
 4. Run **Publish @nextide/ui** manually with the exact tag.
+
+Publication requires successful deploy qualification. Running either
+qualification profile alone never publishes a package.
 
 ## Dead-code report
 

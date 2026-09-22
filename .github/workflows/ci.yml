@@ -1,50 +1,112 @@
-name: CI
+name: Qualification
+run-name: Qualification (${{ inputs.profile || 'full' }})
 
 on:
   schedule:
     - cron: "17 8 * * 0"
   workflow_dispatch:
+    inputs:
+      profile:
+        description: Validation profile
+        type: choice
+        options: [full, deploy]
+        default: full
+  workflow_call:
+    inputs:
+      profile:
+        type: string
+        required: true
+      source_sha:
+        description: Exact release commit to validate
+        type: string
+        required: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: qualification-${{ github.workflow }}-${{ inputs.source_sha || github.ref }}-${{ inputs.profile || 'full' }}
   cancel-in-progress: true
 
 jobs:
-  qualify:
+  quality:
+    name: Quality
+    if: ${{ (inputs.profile || 'full') == 'full' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+          ref: ${{ inputs.source_sha || github.sha }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24.18.0"
           package-manager-cache: false
+      - run: npm install --global pnpm@11.10.0
+      - run: pnpm install --frozen-lockfile
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - run: pnpm run format:check
+      - run: pnpm run lint
+      - run: uv run --no-project --python 3.12 python scripts/check_loc.py
 
-      - name: Install pnpm
-        run: npm install --global pnpm@11.10.0
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
-
-      - name: Set up just
-        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
-
-      - name: Install dependencies
-        run: just setup
-
-      - name: Run static and build checks
-        run: just check
-
+  correctness:
+    name: Correctness / Package and browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - name: Validate profile
+        env:
+          PROFILE: ${{ inputs.profile || 'full' }}
+        run: |
+          case "$PROFILE" in full|deploy) ;; *) echo "Unknown profile: $PROFILE"; exit 1 ;; esac
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_sha || github.sha }}
+      - id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.18.0"
+          package-manager-cache: false
+      - run: npm install --global pnpm@11.10.0
+      - run: pnpm install --frozen-lockfile
+      # Native commands also work on release tags predating the local just recipes.
+      - name: Correctness lint
+        run: |
+          if node -e "process.exit(require('./package.json').devDependencies?.oxlint ? 0 : 1)"; then
+            pnpm exec oxlint --deny-warnings -A complexity -A max-lines-per-function -A no-unused-vars -A no-unused-labels -A no-unused-private-class-members -A no-extra-boolean-cast -A no-useless-catch -A no-useless-escape -A no-useless-rename -A typescript/no-duplicate-type-constituents -A typescript/no-redundant-type-constituents -A typescript/no-extra-non-null-assertion -A typescript/no-this-alias -A typescript/no-unnecessary-parameter-property-assignment -A typescript/no-useless-default-assignment -A typescript/no-useless-empty-export -A typescript/prefer-as-const -A typescript/prefer-namespace-keyword -A typescript/triple-slash-reference -A unicorn/no-empty-file -A unicorn/no-single-promise-in-promise-methods -A unicorn/no-unnecessary-await -A unicorn/no-useless-fallback-in-spread -A unicorn/no-useless-length-check -A unicorn/no-useless-spread -A unicorn/prefer-set-size -A unicorn/prefer-string-starts-ends-with
+          fi
+          pnpm -r exec eslint --rule no-unused-labels:off --rule no-unused-private-class-members:off --rule no-extra-boolean-cast:off --rule no-useless-catch:off --rule no-useless-escape:off --rule no-empty-static-block:off --rule no-var:off --rule prefer-const:off --rule prefer-rest-params:off --rule prefer-spread:off --rule @typescript-eslint/no-unused-vars:off --rule @typescript-eslint/no-array-constructor:off --rule @typescript-eslint/no-extra-non-null-assertion:off --rule @typescript-eslint/no-namespace:off --rule @typescript-eslint/no-require-imports:off --rule @typescript-eslint/no-this-alias:off --rule @typescript-eslint/no-unnecessary-type-constraint:off --rule @typescript-eslint/prefer-as-const:off --rule @typescript-eslint/prefer-namespace-keyword:off --rule @typescript-eslint/triple-slash-reference:off --rule react-refresh/only-export-components:off
+      - run: pnpm run security:watchlist
+      - run: pnpm run typecheck
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
-
       - name: Qualify packed package and browser
-        run: just test-integration
+        run: pnpm run qualify
+
+  result:
+    name: Qualification result
+    if: ${{ always() }}
+    needs: [quality, correctness]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require selected groups
+        env:
+          PROFILE: ${{ inputs.profile || 'full' }}
+          SOURCE_SHA: ${{ needs.correctness.outputs.sha || inputs.source_sha || github.sha }}
+          QUALITY: ${{ needs.quality.result }}
+          CORRECTNESS: ${{ needs.correctness.result }}
+        run: |
+          node <<'NODE'
+          const { PROFILE, SOURCE_SHA, QUALITY, CORRECTNESS } = process.env;
+          console.log(`Qualification ${PROFILE}: ${SOURCE_SHA}; Quality=${QUALITY}; Correctness=${CORRECTNESS}`);
+          const expectedQuality = { full: "success", deploy: "skipped" }[PROFILE];
+          if (!expectedQuality || QUALITY !== expectedQuality || CORRECTNESS !== "success") {
+            process.exit(1);
+          }
+          NODE
