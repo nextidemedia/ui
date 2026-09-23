@@ -19,6 +19,7 @@ test("scramble text reveals changed labels and respects reduced motion", async (
   const visual = example.locator('[aria-hidden="true"]')
   await expect(visual).toHaveText("Every · minutes")
   await page.clock.install()
+  await page.clock.pauseAt(new Date())
   await example.getByRole("button", { name: "Change label" }).click()
   await expect(example.locator(".sr-only")).toHaveText(
     "Trigger Cooldown · minutes"
