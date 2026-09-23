@@ -191,7 +191,9 @@ or repair the pressed-state transform.
 Use `components/dialog` for shared modal focus, backdrop, close, and motion
 behavior. Product blocks such as `SettingsModal` and `LiveEventProofModal` own
 their content layout but compose that primitive instead of styling Base UI
-dialog parts directly.
+dialog parts directly. Standard dialogs include card background, responsive
+padding, and close-button clearance. Use `layout="flush"` when the dialog's
+own header and body sections provide their spacing.
 
 `blocks/campaign-schedule-matrix` derives day/week/month/quarter headers from
 each slot's ISO `date`. It opens at week scale and, when a `today` slot exists,

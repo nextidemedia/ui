@@ -13,8 +13,10 @@ import {
 } from "@nextide/ui/components/collapsible"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -58,19 +60,7 @@ function OverlayPreview() {
             names={["Dialog", "DropdownMenu", "Popover", "Tooltip"]}
           />
           <div className="flex flex-wrap gap-2">
-            <Dialog>
-              <DialogTrigger render={<Button variant="outline" />}>
-                Open dialog
-              </DialogTrigger>
-              <DialogContent className="max-w-md p-5">
-                <DialogHeader>
-                  <DialogTitle>Review report scope</DialogTitle>
-                  <DialogDescription>
-                    Confirm the creators and campaigns included in this report.
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
+            <DialogExamples />
             <DropdownMenu>
               <DropdownMenuTrigger render={<Button variant="outline" />}>
                 Open menu
@@ -131,6 +121,45 @@ function OverlayPreview() {
         <CollapsiblePreview />
       </CardContent>
     </Card>
+  )
+}
+
+function DialogExamples() {
+  return (
+    <>
+      <Dialog>
+        <DialogTrigger render={<Button variant="outline" />}>
+          Open dialog
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Review report scope</DialogTitle>
+            <DialogDescription>
+              Confirm the creators and campaigns included in this report.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose render={<Button variant="ghost" />}>
+              Cancel
+            </DialogClose>
+            <DialogClose render={<Button />}>Continue</DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog>
+        <DialogTrigger render={<Button variant="outline" />}>
+          Open flush dialog
+        </DialogTrigger>
+        <DialogContent layout="flush" className="max-w-md gap-0">
+          <div className="border-b border-nextide-line px-5 py-4 pr-12">
+            <DialogTitle>Review evidence</DialogTitle>
+          </div>
+          <div className="p-5 text-ui-label text-muted-foreground">
+            Select the evidence you want to inspect.
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 

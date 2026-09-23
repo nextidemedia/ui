@@ -45,6 +45,7 @@ function ScheduleExpanded({
     <Dialog open={state.expanded} onOpenChange={state.change}>
       {state.expanded ? (
         <DialogContent
+          layout="flush"
           className="h-[calc(100dvh-2rem)] max-h-none max-w-none content-start overflow-y-auto"
           finalFocus={state.triggerRef}
           showCloseButton={false}

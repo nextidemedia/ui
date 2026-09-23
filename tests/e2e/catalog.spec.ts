@@ -6,6 +6,53 @@ import {
 
 test.beforeEach(openQualification)
 
+test("standard dialog has inset content while flush layouts keep their own spacing", async ({
+  page,
+}) => {
+  await page.goto("/?view=report")
+  await page.getByRole("button", { name: /Primitives/ }).click()
+
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    const standardTrigger = page.getByRole("button", { name: "Open dialog" })
+    await standardTrigger.click()
+    const standard = page.getByRole("dialog", { name: "Review report scope" })
+    await expect(standard).toBeVisible()
+    await expect(standard).toHaveCSS(
+      "padding-left",
+      width < 640 ? "20px" : "24px"
+    )
+    await expect(standard).toHaveCSS("row-gap", "24px")
+    await expect(standard.locator('[data-slot="dialog-header"]')).toHaveCSS(
+      "padding-right",
+      "32px"
+    )
+    await expect(standard.locator('[data-slot="dialog-footer"]')).toHaveCSS(
+      "flex-wrap",
+      width < 640 ? "nowrap" : "wrap"
+    )
+    await page.keyboard.press("Escape")
+    await expect(standardTrigger).toBeFocused()
+
+    const flushTrigger = page.getByRole("button", {
+      name: "Open flush dialog",
+    })
+    await flushTrigger.click()
+    const flush = page.getByRole("dialog", { name: "Review evidence" })
+    await expect(flush).toHaveCSS("padding-left", "0px")
+    await expect(flush.locator("div").first()).toHaveCSS("padding-left", "20px")
+    await page.keyboard.press("Escape")
+    await expect(flushTrigger).toBeFocused()
+  }
+
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.getByRole("button", { name: "Open dialog" }).click()
+  await expect(
+    page.getByRole("dialog", { name: "Review report scope" })
+  ).toBeVisible()
+  await page.keyboard.press("Escape")
+})
+
 test("scramble text reveals changed labels and respects reduced motion", async ({
   page,
 }) => {
