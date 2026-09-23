@@ -103,11 +103,7 @@ function FitLeaderboard({
 }
 
 type ScorePlateTone =
-  | "success"
-  | "processing"
-  | "warning"
-  | "danger"
-  | "neutral"
+  "success" | "processing" | "warning" | "danger" | "neutral"
 
 const scorePlateClasses: Record<ScorePlateTone, string> = {
   success: "border-nextide-tide/35 [--score-plate:var(--nextide-tide)]",

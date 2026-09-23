@@ -5,10 +5,7 @@ import { ProcessingText } from "@nextide/ui/components/processing-text"
 import { cn } from "@nextide/ui/lib/utils"
 
 type IntelligenceStageStatus =
-  | "completed"
-  | "processing"
-  | "queued"
-  | "degraded"
+  "completed" | "processing" | "queued" | "degraded"
 
 type IntelligenceProgressionStage = {
   id: string

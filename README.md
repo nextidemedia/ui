@@ -6,7 +6,7 @@ Run `pnpm dev`, then open [http://127.0.0.1:5174](http://127.0.0.1:5174) to view
 
 ## Development checks
 
-Install Node 22.14+, pnpm 11.10.0, `just`, and uv. On Windows, install PowerShell 7.5+
+Install Node 22.14+, pnpm 12.6.0, `just`, and uv. On Windows, install PowerShell 7.5+
 with `pwsh` available on PATH.
 
 - `just setup` installs the frozen workspace lockfile.

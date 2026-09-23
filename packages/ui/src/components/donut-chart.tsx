@@ -3,11 +3,7 @@ import * as React from "react"
 import { cn } from "@nextide/ui/lib/utils"
 
 type DonutChartTone =
-  | "success"
-  | "processing"
-  | "warning"
-  | "danger"
-  | "neutral"
+  "success" | "processing" | "warning" | "danger" | "neutral"
 
 type DonutChartSegment = {
   id: string
