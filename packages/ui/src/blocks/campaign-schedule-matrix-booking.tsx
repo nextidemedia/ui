@@ -1,3 +1,4 @@
+import type { BookingShape } from "./campaign-schedule-matrix-overlap.js"
 import * as React from "react"
 import { deleteFocusedBooking } from "./campaign-schedule-matrix-delete.js"
 import {
@@ -18,6 +19,7 @@ import {
 } from "./campaign-schedule-matrix-edit.js"
 
 type BookingProps = {
+  shape?: BookingShape
   booking: CampaignScheduleBooking
   boundedDays: number
   active: boolean
@@ -26,6 +28,7 @@ type BookingProps = {
 }
 
 function ScheduleBooking({
+  shape,
   booking,
   boundedDays,
   active,
@@ -51,48 +54,57 @@ function ScheduleBooking({
         deleteFocusedBooking(event, booking, rootRef, editing.onBookingDelete)
       }
       data-cutting={cut.armed || undefined}
-      className={cn(
-        "absolute top-2 bottom-2 flex min-w-0 rounded-lg border shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]",
-        bookingToneClasses[booking.tone ?? "success"],
-        active && "border-nextide-tide bg-nextide-tide/12",
-        edit.draft && "ring-2 ring-ring"
-      )}
+      data-overlap-shape={shape ? "stepped" : undefined}
+      className="pointer-events-none absolute top-2 bottom-2"
+      onFocusCapture={() => shape && onBookingSelect?.(booking)}
       style={{
         left: `${(start / boundedDays) * 100}%`,
         width: `${((end - start + 1) / boundedDays) * 100}%`,
+        ...shapeVisibility(shape),
       }}
     >
-      {edit.canEdit && (
-        <BookingEdge
-          edge="start"
-          titleId={titleId}
-          hintId={hintId}
-          edit={edit}
-          onStart={cut.cancel}
+      <div
+        className={cn(
+          "pointer-events-auto absolute inset-0 flex min-w-0 rounded-lg border shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]",
+          bookingToneClasses[booking.tone ?? "success"],
+          active && "border-nextide-tide bg-nextide-tide/12",
+          edit.draft && "ring-2 ring-ring"
+        )}
+        style={{ clipPath: shape?.clip }}
+      >
+        {edit.canEdit && (
+          <BookingEdge
+            edge="start"
+            titleId={titleId}
+            hintId={hintId}
+            edit={edit}
+            onStart={cut.cancel}
+          />
+        )}
+        <BookingBody
+          {...{
+            bodyRef,
+            cut,
+            edit,
+            titleId,
+            active,
+            hintId,
+            booking,
+            onBookingSelect,
+            shape,
+          }}
         />
-      )}
-      <BookingBody
-        {...{
-          bodyRef,
-          cut,
-          edit,
-          titleId,
-          active,
-          hintId,
-          booking,
-          onBookingSelect,
-        }}
-      />
+        {edit.canEdit && (
+          <BookingEdge
+            edge="end"
+            titleId={titleId}
+            hintId={hintId}
+            edit={edit}
+            onStart={cut.cancel}
+          />
+        )}
+      </div>
       <BookingCutPreview cut={cut} booking={booking} />
-      {edit.canEdit && (
-        <BookingEdge
-          edge="end"
-          titleId={titleId}
-          hintId={hintId}
-          edit={edit}
-          onStart={cut.cancel}
-        />
-      )}
       <span id={hintId} className="sr-only">
         {cut.armed
           ? "Left and right arrows choose a cut. Enter cuts. Escape cancels."
@@ -118,13 +130,14 @@ function BookingBody({
   hintId,
   booking,
   onBookingSelect,
+  shape,
 }: {
   bodyRef: React.RefObject<HTMLButtonElement | null>
   cut: ReturnType<typeof useBookingCut>
   edit: ReturnType<typeof useBookingEdit>
   titleId: string
   hintId: string
-} & Pick<BookingProps, "booking" | "active" | "onBookingSelect">) {
+} & Pick<BookingProps, "booking" | "active" | "onBookingSelect" | "shape">) {
   return (
     <button
       type="button"
@@ -163,7 +176,29 @@ function BookingBody({
           onBookingSelect?.(booking)
       }}
     >
-      <BookingLabel booking={edit.shown} titleId={titleId} />
+      <span
+        className={
+          shape
+            ? "pointer-events-none absolute flex min-w-0 items-center overflow-hidden px-3"
+            : "min-w-0"
+        }
+        style={
+          shape
+            ? {
+                left: `${shape.label.left}%`,
+                width: `${shape.label.width}%`,
+                top: `${shape.label.top}%`,
+                height: `${shape.label.height}%`,
+              }
+            : undefined
+        }
+      >
+        <BookingLabel
+          booking={edit.shown}
+          titleId={titleId}
+          compact={Boolean(shape && shape.label.height < 100)}
+        />
+      </span>
     </button>
   )
 }
@@ -208,12 +243,18 @@ function BookingEdge({
 function BookingLabel({
   booking,
   titleId,
+  compact,
 }: {
   booking: CampaignScheduleBooking
   titleId: string
+  compact: boolean
 }) {
   return (
-    <span className="grid min-w-0 gap-0.5">
+    <span
+      className={
+        compact ? "flex min-w-0 items-center gap-2" : "grid min-w-0 gap-0.5"
+      }
+    >
       <span id={titleId} className="truncate text-sm leading-tight font-medium">
         {typeof booking.title === "function"
           ? booking.title(booking)
@@ -241,3 +282,7 @@ function BookingLabel({
 }
 
 export { ScheduleBooking }
+
+function shapeVisibility(shape?: BookingShape): React.CSSProperties {
+  return { display: shape && !shape.visible ? "none" : undefined }
+}

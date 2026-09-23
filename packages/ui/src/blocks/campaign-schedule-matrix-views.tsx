@@ -1,3 +1,8 @@
+import {
+  scheduleOverlapSpans,
+  scheduleBookingShape,
+} from "./campaign-schedule-matrix-overlap.js"
+import { ScheduleOverlapList } from "./campaign-schedule-matrix-overlap-list.js"
 import { ScheduleBooking } from "./campaign-schedule-matrix-booking.js"
 import type { ScheduleEditing } from "./campaign-schedule-matrix-edit.js"
 import {
@@ -254,6 +259,19 @@ function ScheduleCreatorRow({
   const creatorBookings = bookings.filter(
     (booking) => booking.creatorId === creator.id
   )
+  const [preview, setPreview] = React.useState<CampaignScheduleBooking | null>(
+    null
+  )
+  const [selectedId, setSelectedId] = React.useState<string>()
+  const shown = creatorBookings.map((booking) =>
+    preview?.id === booking.id ? preview : booking
+  )
+  const spans =
+    editing.overlapLayout === "stepped" ? scheduleOverlapSpans(shown) : []
+  const select = (booking: CampaignScheduleBooking) => {
+    setSelectedId(booking.id)
+    onBookingSelect?.(booking)
+  }
   return (
     <>
       <ScheduleCreatorLegend creator={creator} reorder={reorder} />
@@ -283,13 +301,36 @@ function ScheduleCreatorRow({
         {creatorBookings.map((booking) => (
           <ScheduleBooking
             key={booking.id}
-            editing={editing}
+            editing={
+              editing.overlapLayout
+                ? { ...editing, onBookingPreview: setPreview }
+                : editing
+            }
+            shape={
+              editing.overlapLayout
+                ? scheduleBookingShape(
+                    preview?.id === booking.id ? preview : booking,
+                    spans,
+                    preview?.id ?? activeBookingId ?? selectedId
+                  )
+                : undefined
+            }
             booking={booking}
             boundedDays={boundedDays}
             active={booking.id === activeBookingId}
-            onBookingSelect={onBookingSelect}
+            onBookingSelect={editing.overlapLayout ? select : onBookingSelect}
           />
         ))}
+        {spans
+          .filter((span) => span.bookings.length > 2)
+          .map((span) => (
+            <ScheduleOverlapList
+              key={span.start}
+              span={span}
+              boundedDays={boundedDays}
+              onSelect={select}
+            />
+          ))}
       </div>
     </>
   )
