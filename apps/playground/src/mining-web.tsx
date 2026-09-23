@@ -152,7 +152,43 @@ function WebIncidentProof() {
   )
 }
 
+const creativeOverlapBookings: CampaignScheduleBooking[] = [
+  {
+    id: "creative-a",
+    creatorId: "creative-placement",
+    title: "Creative A",
+    startIndex: 4,
+    endIndex: 24,
+    tone: "success",
+  },
+  {
+    id: "creative-b",
+    creatorId: "creative-placement",
+    title: "Creative B",
+    startIndex: 14,
+    endIndex: 34,
+    tone: "processing",
+  },
+  {
+    id: "creative-c",
+    creatorId: "creative-placement",
+    title: "Creative C",
+    startIndex: 18,
+    endIndex: 28,
+    tone: "neutral",
+  },
+]
+
+const creativeOverlapRows = [
+  {
+    ...scheduleCreators[0]!,
+    id: "creative-placement",
+    name: "Banner · 320×50",
+  },
+]
+
 function ScheduleEditorDemo() {
+  const [stepped, setStepped] = useState(false)
   const [activeBookingId, setActiveBookingId] = useState("booking-2")
   const [selectionEnabled, setSelectionEnabled] = useState(false)
   const [creators, setCreators] = useState(scheduleCreators)
@@ -184,6 +220,16 @@ function ScheduleEditorDemo() {
       <div className="flex flex-wrap gap-2">
         <Button
           variant="outline"
+          onClick={() => {
+            setStepped(true)
+            setCreators(creativeOverlapRows)
+            setBookings(creativeOverlapBookings)
+          }}
+        >
+          Show creative overlaps
+        </Button>
+        <Button
+          variant="outline"
           onClick={() =>
             setCreators((current) => (current.length ? [] : scheduleCreators))
           }
@@ -200,6 +246,8 @@ function ScheduleEditorDemo() {
         </Button>
       </div>
       <CampaignScheduleMatrix
+        overlapLayout={stepped ? "stepped" : undefined}
+        rowLabel={stepped ? "Placement" : "Creator"}
         ref={(node) => {
           if (node) node.dataset.demoRef = "attached"
         }}

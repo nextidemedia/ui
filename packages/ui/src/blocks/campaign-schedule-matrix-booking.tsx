@@ -1,3 +1,4 @@
+import type { BookingShape } from "./campaign-schedule-matrix-overlap.js"
 import * as React from "react"
 import { deleteFocusedBooking } from "./campaign-schedule-matrix-delete.js"
 import {
@@ -18,6 +19,7 @@ import {
 } from "./campaign-schedule-matrix-edit.js"
 
 type BookingProps = {
+  shape?: BookingShape
   booking: CampaignScheduleBooking
   boundedDays: number
   active: boolean
@@ -26,6 +28,7 @@ type BookingProps = {
 }
 
 function ScheduleBooking({
+  shape,
   booking,
   boundedDays,
   active,
@@ -51,6 +54,7 @@ function ScheduleBooking({
         deleteFocusedBooking(event, booking, rootRef, editing.onBookingDelete)
       }
       data-cutting={cut.armed || undefined}
+      data-overlap-shape={shape ? "stepped" : undefined}
       className={cn(
         "absolute top-2 bottom-2 flex min-w-0 rounded-lg border shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]",
         bookingToneClasses[booking.tone ?? "success"],
@@ -60,6 +64,7 @@ function ScheduleBooking({
       style={{
         left: `${(start / boundedDays) * 100}%`,
         width: `${((end - start + 1) / boundedDays) * 100}%`,
+        ...shapeStyle(shape),
       }}
     >
       {edit.canEdit && (
@@ -81,6 +86,7 @@ function ScheduleBooking({
           hintId,
           booking,
           onBookingSelect,
+          shape,
         }}
       />
       <BookingCutPreview cut={cut} booking={booking} />
@@ -118,13 +124,14 @@ function BookingBody({
   hintId,
   booking,
   onBookingSelect,
+  shape,
 }: {
   bodyRef: React.RefObject<HTMLButtonElement | null>
   cut: ReturnType<typeof useBookingCut>
   edit: ReturnType<typeof useBookingEdit>
   titleId: string
   hintId: string
-} & Pick<BookingProps, "booking" | "active" | "onBookingSelect">) {
+} & Pick<BookingProps, "booking" | "active" | "onBookingSelect" | "shape">) {
   return (
     <button
       type="button"
@@ -163,7 +170,25 @@ function BookingBody({
           onBookingSelect?.(booking)
       }}
     >
-      <BookingLabel booking={edit.shown} titleId={titleId} />
+      <span
+        className={
+          shape
+            ? "pointer-events-none absolute flex min-w-0 items-center overflow-hidden px-3"
+            : undefined
+        }
+        style={
+          shape
+            ? {
+                left: `${shape.label.left}%`,
+                width: `${shape.label.width}%`,
+                top: `${shape.label.top}%`,
+                height: `${shape.label.height}%`,
+              }
+            : undefined
+        }
+      >
+        <BookingLabel booking={edit.shown} titleId={titleId} />
+      </span>
     </button>
   )
 }
@@ -241,3 +266,10 @@ function BookingLabel({
 }
 
 export { ScheduleBooking }
+
+function shapeStyle(shape?: BookingShape): React.CSSProperties {
+  return {
+    clipPath: shape?.clip,
+    display: shape && !shape.visible ? "none" : undefined,
+  }
+}

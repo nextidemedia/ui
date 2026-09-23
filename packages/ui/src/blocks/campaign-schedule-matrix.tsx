@@ -36,6 +36,7 @@ type CampaignScheduleMatrixProps = React.ComponentProps<typeof Surface> & {
   creators: CampaignScheduleCreator[]
   days: CampaignScheduleDay[]
   bookings: CampaignScheduleBooking[]
+  overlapLayout?: "stepped"
   rowLabel?: React.ReactNode
   title?: React.ReactNode
   description?: React.ReactNode
@@ -60,6 +61,7 @@ function CampaignScheduleMatrix({
   creators,
   days,
   bookings,
+  overlapLayout,
   rowLabel = "Creator",
   title = "Campaign schedule",
   description = "Creator sessions arranged across campaign slots.",
@@ -123,13 +125,8 @@ function CampaignScheduleMatrix({
           rowLabel={rowLabel}
           campaignStartIndex={campaignStartIndex}
           campaignEndIndex={campaignEndIndex}
-          scrollRef={view.scrollRef}
+          {...view}
           mountScroll={view.expanded.mountScroll}
-          timelineMinWidth={view.timelineMinWidth}
-          zoom={view.zoom}
-          zoomTransition={view.zoomTransition}
-          headerLayers={view.headerLayers}
-          boundedDays={view.boundedDays}
         >
           <ScheduleRows
             creators={creators}
@@ -138,6 +135,7 @@ function CampaignScheduleMatrix({
             activeBookingId={activeBookingId}
             onBookingSelect={onBookingSelect}
             editing={{
+              overlapLayout,
               tool: tools.tool,
               onToolChange: tools.setTool,
               editableStartIndex,

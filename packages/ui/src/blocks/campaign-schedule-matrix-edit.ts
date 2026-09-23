@@ -7,6 +7,8 @@ import {
 
 type BookingEdit = "move" | "start" | "end"
 type ScheduleEditing = {
+  overlapLayout?: "stepped"
+  onBookingPreview?: (booking: CampaignScheduleBooking | null) => void
   tool: ScheduleTool
   onToolChange: (tool: ScheduleTool) => void
   editableStartIndex: number
@@ -130,7 +132,17 @@ function useBookingEdit(
   editing: ScheduleEditing,
   boundedDays: number
 ) {
-  const [draft, setDraft] = React.useState<CampaignScheduleBooking | null>(null)
+  const [draft, setLocalDraft] = React.useState<CampaignScheduleBooking | null>(
+    null
+  )
+  const onPreview = editing.onBookingPreview
+  const setDraft = React.useCallback(
+    (next: CampaignScheduleBooking | null) => {
+      setLocalDraft(next)
+      onPreview?.(next)
+    },
+    [onPreview]
+  )
   const pointer = useSchedulePointer()
   useDraftCancellation(draft !== null, setDraft)
   const {
@@ -207,7 +219,7 @@ function useBookingEdit(
 
 function useDraftCancellation(
   active: boolean,
-  setDraft: React.Dispatch<React.SetStateAction<CampaignScheduleBooking | null>>
+  setDraft: (next: CampaignScheduleBooking | null) => void
 ) {
   React.useEffect(() => {
     if (!active) return

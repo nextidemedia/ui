@@ -382,3 +382,5 @@ unless `allowNegative` is set. Standard input labels, refs, disabled/read-only,
 and error attributes use the same `Input` surface.
 
 CampaignScheduleMatrix accepts `rowLabel` for creative and other schedule lanes; its default is Creator.
+
+Set `overlapLayout="stepped"` to keep overlapping bookings in one fixed-height lane. Two bookings share complementary stepped shapes; three or more show a compact overlap list for selecting each booking. Drag and keyboard previews update the shapes before committing.
