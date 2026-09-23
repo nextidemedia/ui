@@ -380,3 +380,5 @@ to a JavaScript number. Supply values with at most two fraction digits; numeric
 conversion and domain limits belong to the consumer. Negative amounts are disabled
 unless `allowNegative` is set. Standard input labels, refs, disabled/read-only,
 and error attributes use the same `Input` surface.
+
+CampaignScheduleMatrix accepts `rowLabel` for creative and other schedule lanes; its default is Creator.
