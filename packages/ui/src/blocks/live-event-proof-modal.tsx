@@ -70,6 +70,7 @@ function LiveEventProofModal({
       }}
     >
       <DialogContent
+        layout="flush"
         showCloseButton={false}
         overlayClassName="bg-black/75"
         className="max-w-[70rem] grid-rows-[auto_minmax(0,1fr)] gap-0 rounded-lg border-nextide-tide/20 shadow-2xl"

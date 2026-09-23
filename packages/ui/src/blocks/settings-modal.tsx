@@ -45,6 +45,7 @@ function SettingsModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        layout="flush"
         ref={contentRef}
         data-slot="settings-modal"
         showCloseButton={false}
