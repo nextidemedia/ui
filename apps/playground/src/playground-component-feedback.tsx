@@ -1,3 +1,6 @@
+import { useState } from "react"
+import { Button } from "@nextide/ui/components/button"
+import { ScrambleText } from "@nextide/ui/components/scramble-text"
 import {
   Alert,
   AlertDescription,
@@ -80,6 +83,7 @@ function StatusPreview() {
 }
 
 function ProcessingPreview() {
+  const [alternate, setAlternate] = useState(false)
   return (
     <Card>
       <CardHeader>
@@ -91,6 +95,22 @@ function ProcessingPreview() {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3">
+        <div className="grid gap-2 rounded-lg border border-nextide-line bg-background/25 p-3">
+          <ComponentReference names="ScrambleText" />
+          <span className="text-ui-title font-medium">
+            <ScrambleText
+              label={
+                alternate ? "Trigger Cooldown · minutes" : "Every · minutes"
+              }
+            />
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => setAlternate((value) => !value)}
+          >
+            Change label
+          </Button>
+        </div>
         {[
           {
             label: "Classic",

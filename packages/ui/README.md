@@ -8,7 +8,7 @@ shadcn/ui, Base UI, Tailwind CSS 4, and React 19.
 Pin an exact release so upgrades remain deliberate:
 
 ```bash
-pnpm add --save-exact @nextide/ui@2.5.8
+pnpm add --save-exact @nextide/ui@2.5.9
 pnpm add --save-dev --save-exact tailwindcss@4.3.1 @tailwindcss/vite@4.3.1
 ```
 

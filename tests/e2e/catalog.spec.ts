@@ -6,6 +6,33 @@ import {
 
 test.beforeEach(openQualification)
 
+test("scramble text reveals changed labels and respects reduced motion", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0
+  })
+  await page.goto("/?view=report")
+  await page.getByRole("button", { name: /Primitives/ }).click()
+  const reference = page.locator('[data-component-name="ScrambleText"]')
+  const example = reference.locator("xpath=..").locator("xpath=..")
+  const visual = example.locator('[aria-hidden="true"]')
+  await expect(visual).toHaveText("Every · minutes")
+  await page.clock.install()
+  await example.getByRole("button", { name: "Change label" }).click()
+  await expect(example.locator(".sr-only")).toHaveText(
+    "Trigger Cooldown · minutes"
+  )
+  await page.clock.runFor(30)
+  await expect(visual).toHaveText("TriAAAA AAAAAAAA · AAAAAAA")
+  await page.clock.runFor(300)
+  await expect(visual).toHaveText("Trigger Cooldown · minutes")
+
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await example.getByRole("button", { name: "Change label" }).click()
+  await expect(visual).toHaveText("Every · minutes")
+})
+
 test("looping carousel preserves edited slides when reordered", async ({
   page,
 }) => {
@@ -138,6 +165,7 @@ const primitiveReferences = [
   "Badge",
   "Notice",
   "ProcessingText",
+  "ScrambleText",
   "Avatar",
   "AvatarGroup",
   "Progress",
