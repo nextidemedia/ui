@@ -150,14 +150,19 @@ function ScheduleMetrics({
 }
 
 function ScheduleTimelineHeader({
+  rowLabel,
   zoom,
   zoomTransition,
   headerLayers,
   boundedDays,
-}: ScheduleViewState) {
+}: ScheduleViewState & { rowLabel: React.ReactNode }) {
   return (
     <>
-      <ScheduleCornerLegend zoom={zoom} zoomTransition={zoomTransition} />
+      <ScheduleCornerLegend
+        rowLabel={rowLabel}
+        zoom={zoom}
+        zoomTransition={zoomTransition}
+      />
       <div
         data-slot="campaign-schedule-top-legend"
         className="relative h-20 overflow-hidden border-b border-nextide-line bg-background/35"
@@ -186,9 +191,12 @@ function ScheduleTimelineHeader({
 }
 
 function ScheduleCornerLegend({
+  rowLabel,
   zoom,
   zoomTransition,
-}: Pick<ScheduleViewState, "zoom" | "zoomTransition">) {
+}: Pick<ScheduleViewState, "zoom" | "zoomTransition"> & {
+  rowLabel: React.ReactNode
+}) {
   return (
     <div className="sticky left-0 z-30 grid h-20 grid-rows-[1.75rem_3.25rem] border-r border-b border-nextide-line bg-nextide-panel">
       <span
@@ -218,7 +226,7 @@ function ScheduleCornerLegend({
           headerTierClasses[zoom]
         )}
       >
-        Creator
+        {rowLabel}
       </span>
     </div>
   )

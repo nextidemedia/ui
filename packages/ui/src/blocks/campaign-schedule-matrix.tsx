@@ -36,6 +36,7 @@ type CampaignScheduleMatrixProps = React.ComponentProps<typeof Surface> & {
   creators: CampaignScheduleCreator[]
   days: CampaignScheduleDay[]
   bookings: CampaignScheduleBooking[]
+  rowLabel?: React.ReactNode
   title?: React.ReactNode
   description?: React.ReactNode
   activeBookingId?: string
@@ -59,6 +60,7 @@ function CampaignScheduleMatrix({
   creators,
   days,
   bookings,
+  rowLabel = "Creator",
   title = "Campaign schedule",
   description = "Creator sessions arranged across campaign slots.",
   activeBookingId,
@@ -118,6 +120,7 @@ function CampaignScheduleMatrix({
           />
         )}
         <ScheduleTimeline
+          rowLabel={rowLabel}
           campaignStartIndex={campaignStartIndex}
           campaignEndIndex={campaignEndIndex}
           scrollRef={view.scrollRef}
@@ -188,6 +191,7 @@ function useScheduleDays(days: CampaignScheduleDay[]) {
 }
 
 function ScheduleTimeline({
+  rowLabel,
   campaignStartIndex,
   campaignEndIndex,
   scrollRef,
@@ -199,6 +203,7 @@ function ScheduleTimeline({
   boundedDays,
   children,
 }: ScheduleViewState & {
+  rowLabel: React.ReactNode
   campaignStartIndex?: number
   campaignEndIndex?: number
   scrollRef: ScrollRef
@@ -233,6 +238,7 @@ function ScheduleTimeline({
           }}
         >
           <ScheduleTimelineHeader
+            rowLabel={rowLabel}
             zoom={zoom}
             zoomTransition={zoomTransition}
             headerLayers={headerLayers}
