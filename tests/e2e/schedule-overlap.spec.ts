@@ -41,6 +41,17 @@ test("stepped overlaps retain row height and expose every creative for editing",
       )
     })
   expect(targets).toEqual(["creative-a", "creative-b"])
+  const a = matrix.locator('[data-booking-id="creative-a"]')
+  await a.getByRole("button", { name: "Resize end of Creative A" }).focus()
+  expect(
+    await a.evaluate((node) => {
+      const box = node.getBoundingClientRect()
+      return document
+        .elementFromPoint(box.right - 5, box.top + 12)
+        ?.closest("[data-booking-id]")
+        ?.getAttribute("data-booking-id")
+    })
+  ).toBe("creative-a")
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 })
     await matrix.screenshot({ path: `output/overlaps-${width}.png` })
