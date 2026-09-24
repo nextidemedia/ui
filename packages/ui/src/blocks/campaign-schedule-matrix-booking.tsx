@@ -23,6 +23,7 @@ type BookingProps = {
   shape?: BookingShape
   booking: CampaignScheduleBooking
   boundedDays: number
+  zooming: boolean
   active: boolean
   onBookingSelect?: (booking: CampaignScheduleBooking) => void
   editing: ScheduleEditing
@@ -34,6 +35,7 @@ function ScheduleBooking({
   shape,
   booking,
   boundedDays,
+  zooming,
   active,
   onBookingSelect,
   editing,
@@ -60,7 +62,8 @@ function ScheduleBooking({
       }
       data-cutting={cut.armed || undefined}
       data-editing={Boolean(edit.draft)}
-      className="pointer-events-none absolute top-2 bottom-2 transition-[left,width] duration-[var(--nextide-motion-layout)] data-[editing=true]:transition-none motion-reduce:transition-none"
+      data-zooming={zooming}
+      className="pointer-events-none absolute top-2 bottom-2 transition-[left,width] duration-[var(--nextide-motion-layout)] data-[editing=true]:transition-none data-[zooming=false]:transition-none motion-reduce:transition-none"
       onFocusCapture={() => shape && onBookingSelect?.(booking)}
       style={{
         left: `${(start / boundedDays) * 100}%`,

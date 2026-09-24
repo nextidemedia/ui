@@ -316,6 +316,7 @@ function ScheduleCreatorRow({
                 : undefined
             }
             booking={booking}
+            zooming={Boolean(zoomTransition)}
             boundedDays={boundedDays}
             active={booking.id === activeBookingId}
             onBookingSelect={editing.overlapLayout ? select : onBookingSelect}
