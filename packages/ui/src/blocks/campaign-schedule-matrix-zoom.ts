@@ -40,7 +40,7 @@ function useScheduleZoom(
   const [zoomTransition, setZoomTransition] =
     React.useState<ZoomTransition | null>(null)
   const timelineMinWidth = Math.max(
-    minimumTimelineWidth,
+    zoom === "month" ? minimumTimelineWidth / 2 : minimumTimelineWidth,
     headerLayers[zoom].primary.length * minimumUnitWidths[zoom]
   )
   const requestZoom = React.useCallback(
@@ -96,10 +96,7 @@ function beginZoom(
       zoomDuration
     )
     const resolvedViewportX = viewportX ?? node.clientWidth / 2
-    const currentTimelineWidth = Math.max(
-      node.scrollWidth - creatorColumnWidth,
-      1
-    )
+    const currentTimelineWidth = scheduleDateWidth(node)
     state.focus = {
       ratio: clamp(
         (node.scrollLeft + resolvedViewportX - creatorColumnWidth) /
@@ -139,10 +136,7 @@ function useAnchoredZoom(
     const duration = reduceMotion ? 1 : tracking.current.duration
     let frame = 0
     const keepFocusAnchored = () => {
-      const currentTimelineWidth = Math.max(
-        node.scrollWidth - creatorColumnWidth,
-        1
-      )
+      const currentTimelineWidth = scheduleDateWidth(node)
       const nextScrollLeft =
         creatorColumnWidth +
         focus.ratio * currentTimelineWidth -
@@ -181,10 +175,7 @@ function useInitialScroll(
     const firstVisibleWeek =
       headerLayers.week.primary[Math.max(0, todayWeekIndex - 1)]
     if (!firstVisibleWeek) return
-    const timelineWidth = Math.max(
-      node.scrollWidth - creatorColumnWidth,
-      timelineMinWidth
-    )
+    const timelineWidth = scheduleDateWidth(node)
     node.scrollLeft = clamp(
       (firstVisibleWeek.startIndex / boundedDays) * timelineWidth,
       0,
@@ -192,6 +183,14 @@ function useInitialScroll(
     )
     positioned.current = true
   }, [scrollRef, tracking, boundedDays, headerLayers, timelineMinWidth])
+}
+
+function scheduleDateWidth(node: HTMLDivElement) {
+  return Math.max(
+    (node.firstElementChild?.getBoundingClientRect().width ??
+      node.scrollWidth) - creatorColumnWidth,
+    1
+  )
 }
 
 export { useScheduleZoom, type ZoomTracking, type ScrollRef }

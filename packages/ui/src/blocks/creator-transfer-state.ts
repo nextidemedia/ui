@@ -263,6 +263,11 @@ function startFlyer(
     .current[id]
   if (!sourceRow || !targetRow) return false
 
+  if (document.activeElement === sourceRow)
+    sourceRow
+      .closest("section")
+      ?.querySelector("input")
+      ?.focus({ preventScroll: true })
   revealTransferRow(sourceRow)
   revealTransferRow(targetRow)
   setTransferFlyer({
@@ -323,10 +328,59 @@ function filterCreatorIds(
   creators: Map<string, CreatorTransferItem>,
   query: string
 ) {
-  const normalizedQuery = query.trim().toLowerCase()
-  if (!normalizedQuery) return ids
-  return ids.filter((id) =>
-    creators.get(id)?.name.toLowerCase().includes(normalizedQuery)
+  const terms = searchWords(query)
+  if (!terms.length) return ids
+  return ids.filter((id) => {
+    const creator = creators.get(id)
+    if (!creator) return false
+    const text = searchWords(`${creator.name} ${creator.searchText ?? ""}`)
+    return terms.every((term) =>
+      text.some(
+        (word) =>
+          word.includes(term) || (term.length >= 4 && oneSearchTypo(term, word))
+      )
+    )
+  })
+}
+
+function searchWords(value: string) {
+  return (
+    value
+      .normalize("NFKD")
+      .replace(/\p{M}/gu, "")
+      .toLowerCase()
+      .match(/[\p{L}\p{N}]+/gu) ?? []
+  )
+}
+
+function oneSearchTypo(left: string, right: string) {
+  if (Math.abs(left.length - right.length) > 1) return false
+  let leftIndex = 0
+  let rightIndex = 0
+  let edits = 0
+  while (leftIndex < left.length && rightIndex < right.length) {
+    if (left[leftIndex] === right[rightIndex]) {
+      leftIndex += 1
+      rightIndex += 1
+      continue
+    }
+    if (++edits > 1) return false
+    if (left.length === right.length) {
+      if (
+        left[leftIndex] === right[rightIndex + 1] &&
+        left[leftIndex + 1] === right[rightIndex]
+      ) {
+        leftIndex += 2
+        rightIndex += 2
+      } else {
+        leftIndex += 1
+        rightIndex += 1
+      }
+    } else if (left.length > right.length) leftIndex += 1
+    else rightIndex += 1
+  }
+  return (
+    edits + Number(leftIndex < left.length || rightIndex < right.length) <= 1
   )
 }
 
@@ -384,7 +438,7 @@ function enqueueTransfer(
 }
 
 function revealTransferRow(row: HTMLButtonElement) {
-  const list = row.parentElement
+  const list = row.closest('[data-slot="creator-transfer-list"]')
   if (!list) return
   const rowBox = row.getBoundingClientRect()
   const listBox = list.getBoundingClientRect()

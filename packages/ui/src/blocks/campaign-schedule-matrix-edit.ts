@@ -16,6 +16,10 @@ type ScheduleEditing = {
   dayLabels: string[]
   onBookingChange?: (booking: CampaignScheduleBooking) => void
   onBookingDelete?: (booking: CampaignScheduleBooking) => void
+  onBookingLockChange?: (
+    booking: CampaignScheduleBooking,
+    locked: boolean
+  ) => void
   onBookingSplit?: (
     booking: CampaignScheduleBooking,
     splitIndex: number
@@ -152,6 +156,7 @@ function useBookingEdit(
   } = editing
   const canEdit =
     Boolean(onBookingChange) &&
+    !booking.locked &&
     booking.startIndex >= min &&
     booking.endIndex <= max
   const commit = (next: CampaignScheduleBooking | null) => {

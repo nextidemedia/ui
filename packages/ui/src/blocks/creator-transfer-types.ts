@@ -3,6 +3,7 @@ type CreatorTransferItem = {
   id: string
   name: string
   meta?: React.ReactNode
+  searchText?: string
   avatar?: React.ReactNode
   disabledReason?: string
 }
@@ -34,6 +35,8 @@ type CreatorTransferProps = React.ComponentProps<"section"> & {
   creators: CreatorTransferItem[]
   selectedIds: string[]
   onSelectedIdsChange: (ids: string[]) => void
+  lockedIds?: string[]
+  onLockedIdsChange?: (ids: string[]) => void
   availableTitle?: React.ReactNode
   selectedTitle?: React.ReactNode
   listHeight?: React.CSSProperties["height"]

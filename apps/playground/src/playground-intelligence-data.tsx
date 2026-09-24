@@ -30,6 +30,7 @@ const intelligenceCreators = [
     id: "creator-taro",
     name: "Taro",
     meta: "YouTube - scheduled",
+    searchText: "Fortnite Battle Royale",
     avatar: "TA",
   },
   {

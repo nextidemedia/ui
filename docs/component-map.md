@@ -325,7 +325,12 @@ Compact read-only `CreatorFlowChart` supports `visibleStartIndex`, `visibleColum
 (default `20rem`). Search + Enter transfers the first eligible result and clears
 that search. `disabledReason` makes an available creator unavailable to add and
 shows why; selected creators can still be removed. Tab retains normal document
-focus order. Transfers animate inside a stable-height layout.
+focus order. `searchText` adds searchable category or game terms without displaying
+them; search matches partial words, accents, and a one-character typo. Incoming
+`creators` order determines the available list order. Optional controlled
+`lockedIds` and `onLockedIdsChange` add a separate lock button to selected rows;
+the consumer decides whether a locked creator may be removed. Transfers animate
+inside a stable-height layout.
 
 `CampaignScheduleMatrix` remains controlled. Set `minimumRows={5}` for a stable
 empty board; placeholder rows do not count as creators. `showMetrics={false}`
@@ -340,6 +345,9 @@ use Left/Right to preview, Enter to save, Escape or blur to cancel. Pointer
 cancellation also discards the preview. Blank rows retain timeline panning.
 Booking `title` accepts a React node or a function of the displayed booking,
 including uncommitted edits, so duration labels can follow a resize preview.
+The date scale can shrink inside the full-width scroll frame at Months zoom, so
+short campaigns visibly zoom out while the creator column and date markers stay
+aligned. The campaign bounds mark dates and never narrow the displayed domain.
 The dedicated creator handle uses drag or Up/Down, Enter, and Escape and calls
 `onCreatorOrderChange` with the reordered creator IDs.
 Rows preview their new order during a drag; drop or Enter commits, while Escape
@@ -361,6 +369,12 @@ quarters. Partial sweeps do nothing. Deletion keeps the creator row and returns
 focus to its handle, or the timeline when reordering is unavailable. Tools turn
 off on a second toggle, Escape, a click outside the matrix, or changing expanded
 view. The chart suppresses text selection during gestures.
+
+Set a booking's controlled `locked` field to retain its exact date range. With
+`onBookingLockChange(booking, locked)`, a lock tool appears beside scissors and
+eraser; clicking a booking while armed requests the new lock state. Locked
+bookings retain selection and focus but cannot move, resize, split, or delete by
+pointer or keyboard. The same state and tool work in expanded view.
 
 The web-mining playground demonstrates padded bounds, edits, cuts, reordering,
 and clearing all creators while retaining five empty rows.

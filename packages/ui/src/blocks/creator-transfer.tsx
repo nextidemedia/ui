@@ -1,4 +1,11 @@
-import { ArrowRight, Plus, Search, X } from "lucide-react"
+import {
+  ArrowRight,
+  LockKeyhole,
+  Plus,
+  Search,
+  UnlockKeyhole,
+  X,
+} from "lucide-react"
 import * as React from "react"
 import { createPortal } from "react-dom"
 
@@ -18,6 +25,8 @@ function CreatorTransfer({
   creators,
   selectedIds,
   onSelectedIdsChange,
+  lockedIds = [],
+  onLockedIdsChange,
   availableTitle = "Available creators",
   selectedTitle = "Added creators",
   listHeight = "20rem",
@@ -92,6 +101,8 @@ function CreatorTransfer({
         side="selected"
         action="remove"
         onTransfer={transferCreator}
+        lockedIds={lockedIds}
+        onLockedIdsChange={onLockedIdsChange}
       />
       <CreatorTransferOverlay
         transferFlyer={transferFlyer}
@@ -154,6 +165,8 @@ function CreatorTransferPanel({
   side,
   action,
   onTransfer,
+  lockedIds = [],
+  onLockedIdsChange,
 }: {
   listHeight: React.CSSProperties["height"]
   panelRef: React.RefObject<HTMLElement | null>
@@ -169,6 +182,8 @@ function CreatorTransferPanel({
   side: CreatorTransferSide
   action: "add" | "remove"
   onTransfer: (id: string, direction: "add" | "remove") => void
+  lockedIds?: string[]
+  onLockedIdsChange?: (ids: string[]) => void
 }) {
   const searchId = React.useId()
 
@@ -227,6 +242,8 @@ function CreatorTransferPanel({
             side,
             action,
             onTransfer,
+            lockedIds,
+            onLockedIdsChange,
           }}
         />
       </div>
@@ -243,6 +260,8 @@ function CreatorTransferRows({
   side,
   action,
   onTransfer,
+  lockedIds = [],
+  onLockedIdsChange,
 }: Pick<
   Parameters<typeof CreatorTransferPanel>[0],
   | "items"
@@ -253,6 +272,8 @@ function CreatorTransferRows({
   | "side"
   | "action"
   | "onTransfer"
+  | "lockedIds"
+  | "onLockedIdsChange"
 >) {
   return items.map((id) => {
     const creator = itemById.get(id)
@@ -260,27 +281,106 @@ function CreatorTransferRows({
     const hidden =
       (transferTarget?.side === side && transferTarget.id === id) ||
       (transferFlyer?.source === side && transferFlyer.id === id)
-    return (
-      <button
-        key={id}
-        ref={(node) => {
-          if (node) refs.current[id] = node
-          else delete refs.current[id]
+    const transferButton = (
+      <CreatorTransferActionButton
+        {...{ id, creator, transferTarget, hidden, action, onTransfer }}
+        buttonRef={(node) => {
+          refs.current[id] = node
         }}
-        type="button"
-        tabIndex={transferTarget?.id === id ? -1 : undefined}
+      />
+    )
+    if (side !== "selected" || !onLockedIdsChange)
+      return <React.Fragment key={id}>{transferButton}</React.Fragment>
+    return (
+      <div
+        key={id}
+        inert={hidden || undefined}
         aria-hidden={hidden || undefined}
-        disabled={action === "add" && Boolean(creator.disabledReason)}
         className={cn(
-          "rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+          "flex min-w-0 items-center gap-1",
           hidden && "pointer-events-none opacity-0"
         )}
-        onClick={() => onTransfer(id, action)}
       >
-        <CreatorTransferRow creator={creator} action={action} />
-      </button>
+        {transferButton}
+        <CreatorLockButton
+          creator={creator}
+          lockedIds={lockedIds}
+          onLockedIdsChange={onLockedIdsChange}
+        />
+      </div>
     )
   })
+}
+
+function CreatorTransferActionButton({
+  id,
+  creator,
+  buttonRef,
+  transferTarget,
+  hidden,
+  action,
+  onTransfer,
+}: {
+  id: string
+  creator: CreatorTransferItem
+  buttonRef: React.Ref<HTMLButtonElement>
+  transferTarget: CreatorTransferTarget | null
+  hidden: boolean
+  action: "add" | "remove"
+  onTransfer: (id: string, direction: "add" | "remove") => void
+}) {
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      tabIndex={transferTarget?.id === id ? -1 : undefined}
+      aria-hidden={hidden || undefined}
+      disabled={action === "add" && Boolean(creator.disabledReason)}
+      className={cn(
+        "min-w-0 flex-1 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+        hidden && "pointer-events-none opacity-0"
+      )}
+      onClick={() => onTransfer(id, action)}
+    >
+      <CreatorTransferRow creator={creator} action={action} />
+    </button>
+  )
+}
+
+function CreatorLockButton({
+  creator,
+  lockedIds,
+  onLockedIdsChange,
+}: {
+  creator: CreatorTransferItem
+  lockedIds: string[]
+  onLockedIdsChange: (ids: string[]) => void
+}) {
+  const locked = lockedIds.includes(creator.id)
+  return (
+    <button
+      type="button"
+      aria-label={`${locked ? "Unlock" : "Lock"} ${creator.name}`}
+      aria-pressed={locked}
+      className={cn(
+        "grid size-10 shrink-0 place-items-center rounded-lg border border-nextide-line bg-nextide-panel text-muted-foreground outline-none hover:border-nextide-tide/45 focus-visible:ring-2 focus-visible:ring-ring",
+        locked && "border-nextide-tide bg-nextide-tide/10 text-nextide-tide"
+      )}
+      onClick={() =>
+        onLockedIdsChange(
+          locked
+            ? lockedIds.filter((id) => id !== creator.id)
+            : [...lockedIds, creator.id]
+        )
+      }
+    >
+      {locked ? (
+        <LockKeyhole className="size-4" />
+      ) : (
+        <UnlockKeyhole className="size-4" />
+      )}
+    </button>
+  )
 }
 
 function CreatorTransferRow({

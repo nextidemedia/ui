@@ -189,6 +189,7 @@ const creativeOverlapRows = [
 
 function ScheduleEditorDemo() {
   const [stepped, setStepped] = useState(false)
+  const [shortWindow, setShortWindow] = useState(false)
   const [activeBookingId, setActiveBookingId] = useState("booking-2")
   const [selectionEnabled, setSelectionEnabled] = useState(false)
   const [creators, setCreators] = useState(scheduleCreators)
@@ -217,34 +218,21 @@ function ScheduleEditorDemo() {
     )
   return (
     <div className="grid gap-3">
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          onClick={() => {
-            setStepped(true)
-            setCreators(creativeOverlapRows)
-            setBookings(creativeOverlapBookings)
-          }}
-        >
-          Show creative overlaps
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() =>
-            setCreators((current) => (current.length ? [] : scheduleCreators))
-          }
-        >
-          {creators.length ? "Clear creators" : "Restore creators"}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => setSelectionEnabled((value) => !value)}
-        >
-          {selectionEnabled
-            ? "Disable booking selection"
-            : "Enable booking selection"}
-        </Button>
-      </div>
+      <ScheduleDemoControls
+        shortWindow={shortWindow}
+        onToggleWindow={() => setShortWindow((value) => !value)}
+        onShowOverlaps={() => {
+          setStepped(true)
+          setCreators(creativeOverlapRows)
+          setBookings(creativeOverlapBookings)
+        }}
+        creatorsPresent={creators.length > 0}
+        onToggleCreators={() =>
+          setCreators((current) => (current.length ? [] : scheduleCreators))
+        }
+        selectionEnabled={selectionEnabled}
+        onToggleSelection={() => setSelectionEnabled((value) => !value)}
+      />
       <CampaignScheduleMatrix
         overlapLayout={stepped ? "stepped" : undefined}
         rowLabel={stepped ? "Placement" : "Creator"}
@@ -252,8 +240,12 @@ function ScheduleEditorDemo() {
           if (node) node.dataset.demoRef = "attached"
         }}
         creators={creators.map((creator) => ({ ...creator }))}
-        days={scheduleDays}
-        bookings={bookings}
+        days={shortWindow ? scheduleDays.slice(0, 28) : scheduleDays}
+        bookings={
+          shortWindow
+            ? bookings.filter((booking) => booking.endIndex < 28)
+            : bookings
+        }
         activeBookingId={selectionEnabled ? activeBookingId : undefined}
         onBookingSelect={
           selectionEnabled
@@ -262,15 +254,22 @@ function ScheduleEditorDemo() {
         }
         minimumRows={5}
         campaignStartIndex={4}
-        campaignEndIndex={86}
+        campaignEndIndex={shortWindow ? 27 : 86}
         editableStartIndex={4}
-        editableEndIndex={86}
+        editableEndIndex={shortWindow ? 27 : 86}
         onBookingChange={(booking) =>
           setBookings((current) =>
             current.map((item) => (item.id === booking.id ? booking : item))
           )
         }
         onBookingSplit={split}
+        onBookingLockChange={(booking, locked) =>
+          setBookings((current) =>
+            current.map((item) =>
+              item.id === booking.id ? { ...item, locked } : item
+            )
+          )
+        }
         onBookingDelete={(booking) =>
           setBookings((current) =>
             current.filter((item) => item.id !== booking.id)
@@ -282,6 +281,43 @@ function ScheduleEditorDemo() {
           )
         }
       />
+    </div>
+  )
+}
+
+function ScheduleDemoControls({
+  shortWindow,
+  onToggleWindow,
+  onShowOverlaps,
+  creatorsPresent,
+  onToggleCreators,
+  selectionEnabled,
+  onToggleSelection,
+}: {
+  shortWindow: boolean
+  onToggleWindow: () => void
+  onShowOverlaps: () => void
+  creatorsPresent: boolean
+  onToggleCreators: () => void
+  selectionEnabled: boolean
+  onToggleSelection: () => void
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button variant="outline" onClick={onToggleWindow}>
+        {shortWindow ? "Show full schedule" : "Show four weeks"}
+      </Button>
+      <Button variant="outline" onClick={onShowOverlaps}>
+        Show creative overlaps
+      </Button>
+      <Button variant="outline" onClick={onToggleCreators}>
+        {creatorsPresent ? "Clear creators" : "Restore creators"}
+      </Button>
+      <Button variant="outline" onClick={onToggleSelection}>
+        {selectionEnabled
+          ? "Disable booking selection"
+          : "Enable booking selection"}
+      </Button>
     </div>
   )
 }
