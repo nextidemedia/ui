@@ -9,11 +9,7 @@ import { useContainedScroll } from "@nextide/ui/hooks/use-contained-scroll"
 import { cn } from "@nextide/ui/lib/utils"
 
 type DashboardFilterTone =
-  | "neutral"
-  | "success"
-  | "processing"
-  | "warning"
-  | "danger"
+  "neutral" | "success" | "processing" | "warning" | "danger"
 
 type DashboardFilterGroup = {
   id: string

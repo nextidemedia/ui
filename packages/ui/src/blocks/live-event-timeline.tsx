@@ -4,9 +4,7 @@ import { MessageSquare, ShieldAlert, Sparkles } from "lucide-react"
 import { cn } from "@nextide/ui/lib/utils"
 
 type LiveEventTimelineLane =
-  | "creator-brand-safety"
-  | "creator-mentions"
-  | "chat-mentions"
+  "creator-brand-safety" | "creator-mentions" | "chat-mentions"
 type LiveEventTimelineSeverity = "clean" | "watch" | "alert" | "critical"
 
 type LiveEventTimelineIncident = {

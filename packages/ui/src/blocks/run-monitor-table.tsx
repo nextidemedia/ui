@@ -13,11 +13,7 @@ import {
 import { cn } from "@nextide/ui/lib/utils"
 
 type RunMonitorTone =
-  | "neutral"
-  | "success"
-  | "processing"
-  | "warning"
-  | "danger"
+  "neutral" | "success" | "processing" | "warning" | "danger"
 
 type RunMonitorStage = {
   id: string

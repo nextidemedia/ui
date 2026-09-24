@@ -5,12 +5,7 @@ import type {
 } from "./line-item-graph-data.js"
 
 export type LineItemGraphTone =
-  | "cyan"
-  | "tide"
-  | "yellow"
-  | "red"
-  | "violet"
-  | "neutral"
+  "cyan" | "tide" | "yellow" | "red" | "violet" | "neutral"
 
 export type LineItemGraphAxisLabelMode = "day" | "weekday-day" | "angled-day"
 

@@ -11,11 +11,7 @@ import {
 import { cn } from "@nextide/ui/lib/utils"
 
 type ReportRailStatus =
-  | "draft"
-  | "queued"
-  | "processing"
-  | "completed"
-  | "failed"
+  "draft" | "queued" | "processing" | "completed" | "failed"
 
 type ReportRailItem = {
   id: string

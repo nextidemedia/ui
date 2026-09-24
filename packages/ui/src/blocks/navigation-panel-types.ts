@@ -6,11 +6,7 @@ import { type StatusBadgeIndicator } from "@nextide/ui/components/status-badge"
 import { Surface } from "@nextide/ui/components/surface"
 
 type NavigationPanelStatusTone =
-  | "neutral"
-  | "success"
-  | "processing"
-  | "warning"
-  | "danger"
+  "neutral" | "success" | "processing" | "warning" | "danger"
 
 type NavigationPanelSelectionStyle = "rail" | "fill" | "outline" | "dot"
 

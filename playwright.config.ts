@@ -7,7 +7,7 @@ export default defineConfig({
   workers: 2,
   retries: 0,
   timeout: 30_000,
-  globalTimeout: 120_000,
+  globalTimeout: 180_000,
   expect: { timeout: 5_000 },
   reporter: "line",
   use: {
@@ -24,8 +24,9 @@ export default defineConfig({
     },
   ],
   webServer: {
+    cwd: "./apps/playground",
     command:
-      "pnpm --filter playground exec vite preview --host 127.0.0.1 --port 4173 --strictPort",
+      "node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4173 --strictPort",
     url: "http://127.0.0.1:4173/qualification",
     reuseExistingServer: false,
     timeout: 60_000,

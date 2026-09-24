@@ -2,6 +2,8 @@ packages:
   - "apps/*"
   - "packages/*"
 
+pmOnFail: ignore
+
 overrides:
   flatted: 3.4.2
 

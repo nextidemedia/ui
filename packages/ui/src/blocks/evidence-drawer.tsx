@@ -14,11 +14,7 @@ import {
 import { cn } from "@nextide/ui/lib/utils"
 
 type EvidenceDrawerTone =
-  | "neutral"
-  | "success"
-  | "processing"
-  | "warning"
-  | "danger"
+  "neutral" | "success" | "processing" | "warning" | "danger"
 
 type EvidenceDrawerFact = {
   id: string
