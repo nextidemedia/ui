@@ -28,6 +28,7 @@ type CampaignScheduleBooking = {
   meta?: React.ReactNode
   startIndex: number
   endIndex: number
+  locked?: boolean
   tone?: CampaignScheduleTone
   status?: React.ReactNode
   statusIndicator?: StatusBadgeIndicator

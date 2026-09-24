@@ -50,6 +50,10 @@ type CampaignScheduleMatrixProps = React.ComponentProps<typeof Surface> & {
   editableEndIndex?: number
   onBookingChange?: (booking: CampaignScheduleBooking) => void
   onBookingDelete?: (booking: CampaignScheduleBooking) => void
+  onBookingLockChange?: (
+    booking: CampaignScheduleBooking,
+    locked: boolean
+  ) => void
   onBookingSplit?: (
     booking: CampaignScheduleBooking,
     splitIndex: number
@@ -75,6 +79,7 @@ function CampaignScheduleMatrix({
   editableEndIndex = days.length - 1,
   onBookingChange,
   onBookingDelete,
+  onBookingLockChange,
   onBookingSplit,
   onCreatorOrderChange,
   ...props
@@ -82,9 +87,7 @@ function CampaignScheduleMatrix({
   const rootRef = React.useRef<HTMLElement>(null)
   const view = useScheduleView(days)
   const tools = useScheduleTools(rootRef, view.expanded.change)
-  const liveBookings = bookings.filter((booking) =>
-    creators.some((creator) => creator.id === booking.creatorId)
-  )
+  const liveBookings = visibleBookings(creators, bookings)
   return (
     <ScheduleExpanded state={view.expanded} title={title}>
       <ScheduleSurface
@@ -111,6 +114,7 @@ function CampaignScheduleMatrix({
               onToolChange={tools.setTool}
               canCut={Boolean(onBookingSplit)}
               canDelete={Boolean(onBookingDelete)}
+              canLock={Boolean(onBookingLockChange)}
             />
           }
         />
@@ -142,6 +146,7 @@ function CampaignScheduleMatrix({
               editableEndIndex,
               onBookingChange,
               onBookingDelete,
+              onBookingLockChange,
               onBookingSplit,
               dayLabels: days.map((day) => day.date),
             }}
@@ -155,6 +160,14 @@ function CampaignScheduleMatrix({
       </ScheduleSurface>
     </ScheduleExpanded>
   )
+}
+
+function visibleBookings(
+  creators: CampaignScheduleCreator[],
+  bookings: CampaignScheduleBooking[]
+) {
+  const ids = new Set(creators.map((creator) => creator.id))
+  return bookings.filter((booking) => ids.has(booking.creatorId))
 }
 
 function useScheduleView(days: CampaignScheduleDay[]) {
@@ -229,9 +242,9 @@ function ScheduleTimeline({
         className="nextide-scrollbar-none relative overflow-x-auto rounded-xl border border-nextide-line bg-background/20 outline-none select-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring"
       >
         <div
-          className="relative grid w-full transition-[min-width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
+          className="relative grid transition-[width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
           style={{
-            minWidth: `calc(${creatorColumnWidth}px + ${timelineMinWidth}px)`,
+            width: `max(${zoom === "month" ? "50%" : "100%"}, ${creatorColumnWidth + timelineMinWidth}px)`,
             gridTemplateColumns: `${creatorColumnWidth}px minmax(0, 1fr)`,
           }}
         >

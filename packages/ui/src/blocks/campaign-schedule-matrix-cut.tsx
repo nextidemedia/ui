@@ -20,13 +20,15 @@ function useBookingCut(
   const [boundary, setBoundary] = React.useState(midpoint)
   const [previewing, setPreviewing] = React.useState(false)
   const enabled =
-    Boolean(editing.onBookingSplit) && booking.startIndex < booking.endIndex
-  const armed = editing.tool === "cut"
+    !booking.locked &&
+    Boolean(editing.onBookingSplit) &&
+    booking.startIndex < booking.endIndex
+  const armed = editing.tool === "cut" && !booking.locked
   const cancel = () => editing.onToolChange(null)
   const sweep = useBookingSweep(
     booking,
     rootRef,
-    editing.onBookingDelete,
+    booking.locked ? undefined : editing.onBookingDelete,
     cancel
   )
   const cancelSweep = sweep.cancel
@@ -91,6 +93,7 @@ function useBookingCut(
     },
     click: (event: React.MouseEvent) => {
       if (sweep.consumeClick(event)) return true
+      if (booking.locked) return Boolean(editing.tool)
       if (editing.tool === "delete") {
         requestBookingDelete(booking, rootRef, editing.onBookingDelete)
         return true

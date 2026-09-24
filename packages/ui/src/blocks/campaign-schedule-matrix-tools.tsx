@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Eraser, Scissors } from "lucide-react"
+import { Eraser, LockKeyhole, Scissors } from "lucide-react"
 import { Button } from "@nextide/ui/components/button"
 import { Surface } from "@nextide/ui/components/surface"
 import { useRender } from "@base-ui/react/use-render"
@@ -16,7 +16,7 @@ function ScheduleSurface({
   })
 }
 
-type ScheduleTool = "cut" | "delete" | null
+type ScheduleTool = "cut" | "delete" | "lock" | null
 
 function useScheduleTools(
   rootRef: React.RefObject<HTMLElement | null>,
@@ -63,13 +63,15 @@ function ScheduleTools({
   onToolChange,
   canCut,
   canDelete,
+  canLock,
 }: {
   tool: ScheduleTool
   onToolChange: (tool: ScheduleTool) => void
   canCut: boolean
   canDelete: boolean
+  canLock: boolean
 }) {
-  if (!canCut && !canDelete) return null
+  if (!canCut && !canDelete && !canLock) return null
   return (
     <span className="inline-flex items-center gap-1">
       <span className="mr-1 text-ui-caption text-muted-foreground">Tools:</span>
@@ -95,6 +97,18 @@ function ScheduleTools({
       >
         <Eraser />
       </Button>
+      {canLock && (
+        <Button
+          type="button"
+          variant={tool === "lock" ? "secondary" : "ghost"}
+          size="icon-sm"
+          aria-label="Lock tool"
+          aria-pressed={tool === "lock"}
+          onClick={() => onToolChange(tool === "lock" ? null : "lock")}
+        >
+          <LockKeyhole />
+        </Button>
+      )}
     </span>
   )
 }

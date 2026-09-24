@@ -163,6 +163,52 @@ test("chart tools toggle, resize handles remain usable, and eraser removes only 
   await expect(eraser).toHaveAttribute("aria-pressed", "false")
 })
 
+test("locked bookings resist editing and deletion until unlocked in either view", async ({
+  page,
+}) => {
+  const matrix = await openSchedule(page)
+  const booking = matrix.locator('[data-booking-id="booking-1"]')
+  const lock = matrix.getByRole("button", { name: "Lock tool" })
+  await lock.click()
+  await booking
+    .getByRole("button", { name: "Launch read", exact: true })
+    .click()
+  await expect(booking).toHaveAttribute("data-locked", "true")
+  await expect(booking.getByRole("button", { name: /Resize/ })).toHaveCount(0)
+  await lock.click()
+  const body = booking.getByRole("button", { name: "Locked Launch read" })
+  await body.press("ArrowRight")
+  await body.press("Enter")
+  await body.press("Delete")
+  await expect(booking).toHaveAttribute("data-start-index", "4")
+  await expect(booking).toHaveAttribute("data-end-index", "18")
+  const box = (await body.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2, {
+    steps: 5,
+  })
+  await page.mouse.up()
+  await expect(booking).toHaveAttribute("data-start-index", "4")
+  await matrix.getByRole("button", { name: "Scissors tool" }).click()
+  await body.click()
+  await expect(booking).toHaveAttribute("data-end-index", "18")
+  await matrix.getByRole("button", { name: "Eraser tool" }).click()
+  await body.click()
+  await expect(booking).toHaveCount(1)
+  await matrix.getByRole("button", { name: "Expand schedule" }).click()
+  await expect(booking).toHaveAttribute("data-locked", "true")
+  await expect(
+    matrix.getByRole("button", { name: "Eraser tool" })
+  ).toHaveAttribute("aria-pressed", "false")
+  await lock.click()
+  await body.click()
+  await expect(booking).not.toHaveAttribute("data-locked", "true")
+  await expect(
+    booking.getByRole("button", { name: "Resize end of Launch read" })
+  ).toBeVisible()
+})
+
 test("creator order previews while held, reverses, cancels, and commits on drop", async ({
   page,
 }) => {

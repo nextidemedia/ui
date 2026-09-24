@@ -1,4 +1,5 @@
 import type { BookingShape } from "./campaign-schedule-matrix-overlap.js"
+import { LockKeyhole } from "lucide-react"
 import * as React from "react"
 import { deleteFocusedBooking } from "./campaign-schedule-matrix-delete.js"
 import {
@@ -43,18 +44,19 @@ function ScheduleBooking({
   const start = clamp(edit.shown.startIndex, 0, boundedDays - 1)
   const end = clamp(edit.shown.endIndex, start, boundedDays - 1)
   const titleId = React.useId()
+  const onDelete = booking.locked ? undefined : editing.onBookingDelete
   return (
     <div
       data-slot="campaign-schedule-booking"
       data-booking-id={booking.id}
       data-start-index={start}
       data-end-index={end}
+      data-locked={booking.locked}
       ref={rootRef}
       onKeyDownCapture={(event) =>
-        deleteFocusedBooking(event, booking, rootRef, editing.onBookingDelete)
+        deleteFocusedBooking(event, booking, rootRef, onDelete)
       }
       data-cutting={cut.armed || undefined}
-      data-overlap-shape={shape ? "stepped" : undefined}
       className="pointer-events-none absolute top-2 bottom-2"
       onFocusCapture={() => shape && onBookingSelect?.(booking)}
       style={{
@@ -92,6 +94,7 @@ function ScheduleBooking({
             booking,
             onBookingSelect,
             shape,
+            editing,
           }}
         />
         {edit.canEdit && (
@@ -109,7 +112,7 @@ function ScheduleBooking({
         {cut.armed
           ? "Left and right arrows choose a cut. Enter cuts. Escape cancels."
           : "Left and right arrows adjust one day. Enter saves. Escape cancels."}
-        {editing.onBookingDelete &&
+        {onDelete &&
           " Delete or Backspace removes this booking. With scissors, sweep across the whole booking to delete."}
       </span>
       {edit.draft && (
@@ -131,25 +134,36 @@ function BookingBody({
   booking,
   onBookingSelect,
   shape,
+  editing,
 }: {
   bodyRef: React.RefObject<HTMLButtonElement | null>
   cut: ReturnType<typeof useBookingCut>
   edit: ReturnType<typeof useBookingEdit>
   titleId: string
   hintId: string
-} & Pick<BookingProps, "booking" | "active" | "onBookingSelect" | "shape">) {
+} & Pick<
+  BookingProps,
+  "booking" | "active" | "onBookingSelect" | "shape" | "editing"
+>) {
   return (
     <button
       type="button"
       ref={bodyRef}
       style={
         cut.tool
-          ? { cursor: cut.tool === "cut" ? scissorsCursor : "crosshair" }
+          ? {
+              cursor:
+                cut.tool === "cut"
+                  ? scissorsCursor
+                  : cut.tool === "lock"
+                    ? "pointer"
+                    : "crosshair",
+            }
           : undefined
       }
       aria-labelledby={titleId}
       aria-pressed={onBookingSelect ? active : undefined}
-      aria-describedby={edit.canEdit ? hintId : undefined}
+      aria-describedby={edit.canEdit || cut.armed ? hintId : undefined}
       className={cn(
         "flex min-w-0 flex-1 items-center overflow-hidden px-[min(0.75rem,8%)] text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
         edit.canEdit && "cursor-grab touch-none active:cursor-grabbing"
@@ -157,7 +171,7 @@ function BookingBody({
       onPointerDown={(event) => {
         if (cut.tool) {
           event.stopPropagation()
-          event.preventDefault()
+          if (cut.tool !== "lock") event.preventDefault()
           if (cut.armed) cut.pointerDown(event)
         } else edit.pointerDown(event, "move")
       }}
@@ -172,7 +186,9 @@ function BookingBody({
         cut.blur()
       }}
       onClick={(event) => {
-        if (!cut.click(event) && !edit.consumeClick(event))
+        if (cut.tool === "lock" && editing.onBookingLockChange) {
+          editing.onBookingLockChange(booking, !booking.locked)
+        } else if (!cut.click(event) && !edit.consumeClick(event))
           onBookingSelect?.(booking)
       }}
     >
@@ -256,6 +272,13 @@ function BookingLabel({
       }
     >
       <span id={titleId} className="truncate text-sm leading-tight font-medium">
+        {booking.locked && (
+          <LockKeyhole
+            aria-hidden="true"
+            className="mr-1 inline size-3 align-[-1px]"
+          />
+        )}
+        {booking.locked && <span className="sr-only">Locked </span>}
         {typeof booking.title === "function"
           ? booking.title(booking)
           : booking.title}

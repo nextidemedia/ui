@@ -365,7 +365,7 @@ test("creator transfer searches and scrolls without moving the page", async ({
     await expect(
       selected
         .locator("xpath=ancestor::section[1]")
-        .getByRole("button", { name: /Taro/ })
+        .getByRole("button", { name: /^TA Taro / })
     ).toBeVisible()
     await expect(
       transfer.getByRole("heading", { name: "Added creators (3)" })
@@ -406,4 +406,40 @@ test("creator transfer searches and scrolls without moving the page", async ({
   await expect(
     transfer.getByRole("heading", { name: "Added creators (1)" })
   ).toBeVisible()
+})
+
+test("creator transfer finds category typos and keeps lock control separate", async ({
+  page,
+}) => {
+  await page.goto("/?view=intelligence")
+  const transfer = page.locator('[data-slot="creator-transfer"]')
+  const available = transfer.getByRole("textbox", {
+    name: "Search available creators",
+  })
+  await available.fill("fornite")
+  await expect(
+    transfer.getByRole("button", { name: /^TA Taro / })
+  ).toBeVisible()
+  await available.press("Enter")
+  const selected = transfer.getByRole("textbox", {
+    name: "Search added creators",
+  })
+  const selectedPanel = selected.locator("xpath=ancestor::section[1]")
+  const row = selectedPanel.getByRole("button", { name: /^TA Taro / })
+  const lock = selectedPanel.getByRole("button", { name: "Lock Taro" })
+  await expect(row).toBeVisible()
+  await row.focus()
+  await page.keyboard.press("Tab")
+  await expect(lock).toBeFocused()
+  await lock.press("Enter")
+  await expect(
+    selectedPanel.getByRole("button", { name: "Unlock Taro" })
+  ).toHaveAttribute("aria-pressed", "true")
+  await expect(transfer.locator("button button")).toHaveCount(0)
+  await row.focus()
+  await row.press("Enter")
+  await expect(
+    transfer.getByRole("heading", { name: "Added creators (2)" })
+  ).toBeVisible()
+  await expect(selected).toBeFocused()
 })

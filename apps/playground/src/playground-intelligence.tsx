@@ -55,12 +55,9 @@ function IntelligencePlayground({
   onFlowSessionsChange: (sessions: CreatorFlowSession[]) => void
   onSelectedStreamIdsChange: (ids: string[]) => void
 }) {
-  const selectedCreators = intelligenceCreators.filter((creator) =>
-    selectedCreatorIds.includes(creator.id)
-  )
-  const scopedStreams = intelligenceStreamRows.filter((stream) =>
-    selectedCreatorIds.includes(stream.creatorId)
-  )
+  const [lockedCreatorIds, setLockedCreatorIds] = useState<string[]>([])
+  const { selectedCreators, scopedStreams } =
+    intelligenceSelection(selectedCreatorIds)
 
   return (
     <section className="grid gap-4">
@@ -93,6 +90,8 @@ function IntelligencePlayground({
           }))}
           selectedIds={selectedCreatorIds}
           onSelectedIdsChange={onSelectedCreatorIdsChange}
+          lockedIds={lockedCreatorIds}
+          onLockedIdsChange={setLockedCreatorIds}
         />
       </Surface>
 
@@ -140,6 +139,18 @@ function IntelligencePlayground({
 }
 
 export { IntelligencePlayground }
+
+function intelligenceSelection(ids: string[]) {
+  const selected = new Set(ids)
+  return {
+    selectedCreators: intelligenceCreators.filter((creator) =>
+      selected.has(creator.id)
+    ),
+    scopedStreams: intelligenceStreamRows.filter((stream) =>
+      selected.has(stream.creatorId)
+    ),
+  }
+}
 
 function IntelligenceOverview({
   selectedCreatorIds,
