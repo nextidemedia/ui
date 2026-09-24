@@ -1,4 +1,11 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type Locator } from "@playwright/test"
+
+async function settleCaret(input: Locator) {
+  // NumericFormat finishes its mobile Chrome caret correction in a timer turn.
+  await input.evaluate(
+    () => new Promise<void>((resolve) => setTimeout(resolve, 0))
+  )
+}
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/?view=report")
@@ -12,6 +19,7 @@ test("currency edits retain formatting, cents, and the caret", async ({
   await input.fill("")
   await input.pressSequentially("1234.05")
   await expect(input).toHaveValue("$1,234.05")
+  await settleCaret(input)
   await input.press("Home")
   await input.press("ArrowRight")
   await input.press("ArrowRight")
@@ -19,12 +27,14 @@ test("currency edits retain formatting, cents, and the caret", async ({
   await expect(input).toHaveValue("$19,234.05")
   await input.press("Backspace")
   await expect(input).toHaveValue("$1,234.05")
+  await settleCaret(input)
 
   await input.evaluate((element: HTMLInputElement) => {
     element.setSelectionRange(3, 6)
   })
   await input.pressSequentially("56")
   await expect(input).toHaveValue("$156.05")
+  await settleCaret(input)
   await input.press("ControlOrMeta+A")
   await input.press("Backspace")
   await expect(input).toHaveValue("")

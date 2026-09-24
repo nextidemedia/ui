@@ -174,13 +174,11 @@ function useScheduleView(days: CampaignScheduleDay[]) {
   const expanded = useScheduleExpanded()
   const { scrollRef } = expanded
   const headerLayers = useScheduleDays(days)
-  const boundedDays = Math.max(days.length, 1)
   return {
     expanded,
     scrollRef,
     headerLayers,
-    boundedDays,
-    ...useScheduleZoom(scrollRef, headerLayers, boundedDays),
+    ...useScheduleZoom(scrollRef, headerLayers),
   }
 }
 
@@ -194,10 +192,21 @@ function useScheduleDays(days: CampaignScheduleDay[]) {
       })),
     [days]
   )
-  const headerLayers = React.useMemo(
-    () => createScheduleHeaderLayers(datedDays),
-    [datedDays]
-  )
+  const headerLayers = React.useMemo(() => {
+    const base = createScheduleHeaderLayers(datedDays)
+    const last = datedDays.at(-1)
+    if (!last) return base
+    const padding = datedDays.map((_, index) => {
+      const dateValue = new Date(last.dateValue)
+      dateValue.setUTCDate(dateValue.getUTCDate() + index + 1)
+      const date = dateValue.toISOString().slice(0, 10)
+      return { id: date, date, dateValue, index: datedDays.length + index }
+    })
+    return {
+      ...base,
+      month: createScheduleHeaderLayers([...datedDays, ...padding]).month,
+    }
+  }, [datedDays])
   return headerLayers
 }
 
@@ -244,7 +253,7 @@ function ScheduleTimeline({
         <div
           className="relative grid transition-[width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
           style={{
-            width: `max(${zoom === "month" ? "50%" : "100%"}, ${creatorColumnWidth + timelineMinWidth}px)`,
+            width: `max(100%, ${creatorColumnWidth + timelineMinWidth}px)`,
             gridTemplateColumns: `${creatorColumnWidth}px minmax(0, 1fr)`,
           }}
         >
@@ -281,28 +290,34 @@ function ScheduleCampaignMarkers({
       className="pointer-events-none absolute inset-y-0 right-0 z-10"
       style={{ left: creatorColumnWidth }}
     >
-      {start !== undefined && (
-        <div
-          data-slot="campaign-start-marker"
-          className="absolute inset-y-0 border-l border-dashed border-nextide-tide/35"
-          style={{ left: `${(start / boundedDays) * 100}%` }}
-        >
-          <span className="absolute top-3.5 left-1 -translate-y-1/2 rounded-sm bg-nextide-panel px-1 text-ui-micro whitespace-nowrap text-nextide-tide/75">
-            Campaign start
-          </span>
-        </div>
-      )}
-      {end !== undefined && (
-        <div
-          data-slot="campaign-end-marker"
-          className="absolute inset-y-0 border-r border-dashed border-nextide-tide/35"
-          style={{ left: `${((end + 1) / boundedDays) * 100}%` }}
-        >
-          <span className="absolute top-3.5 right-1 -translate-y-1/2 rounded-sm bg-nextide-panel px-1 text-ui-micro whitespace-nowrap text-nextide-tide/75">
-            Campaign end
-          </span>
-        </div>
-      )}
+      <div
+        className="@container/markers absolute inset-y-0 transition-[left,right] duration-[var(--nextide-motion-layout)] motion-reduce:transition-none"
+        style={{
+          left: `${((start ?? 0) / boundedDays) * 100}%`,
+          right: `${(1 - ((end ?? boundedDays - 1) + 1) / boundedDays) * 100}%`,
+        }}
+      >
+        {start !== undefined && (
+          <div
+            data-slot="campaign-start-marker"
+            className="absolute inset-y-0 left-0 border-l border-dashed border-nextide-tide/35"
+          >
+            <span className="absolute top-3.5 left-1 -translate-y-1/2 rounded-sm bg-nextide-panel px-1 text-ui-micro whitespace-nowrap text-nextide-tide/75 @max-[12rem]/markers:top-1.75">
+              Campaign start
+            </span>
+          </div>
+        )}
+        {end !== undefined && (
+          <div
+            data-slot="campaign-end-marker"
+            className="absolute inset-y-0 right-0 border-r border-dashed border-nextide-tide/35"
+          >
+            <span className="absolute top-3.5 right-1 -translate-y-1/2 rounded-sm bg-nextide-panel px-1 text-ui-micro whitespace-nowrap text-nextide-tide/75 @max-[12rem]/markers:top-5.25 @max-[12rem]/markers:right-auto @max-[12rem]/markers:left-1">
+              Campaign end
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

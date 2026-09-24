@@ -47,11 +47,11 @@ function SingleCalendarDateRangePicker({
       )}
       {...props}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="size-4 text-nextide-tide" />
-          <strong className="text-sm">Single calendar range</strong>
-        </div>
+      <div className="flex items-center gap-2">
+        <CalendarDays
+          aria-hidden="true"
+          className="size-4 shrink-0 text-nextide-tide"
+        />
         <div className="flex flex-wrap gap-2">
           <RangeEdgeButton
             edge="start"

@@ -177,7 +177,7 @@ function ScheduleTimelineHeader({
             key={`old-${zoomTransition.id}`}
             layer={headerLayers[zoomTransition.from]}
             zoom={zoomTransition.from}
-            boundedDays={boundedDays}
+            boundedDays={headerLayers[zoomTransition.from].dayCount}
             phase="exit"
             direction={zoomTransition.direction}
           />
@@ -286,7 +286,7 @@ function ScheduleCreatorRow({
           <ScheduleGridLines
             key={`old-grid-${creator.id}-${zoomTransition.id}`}
             spans={headerLayers[zoomTransition.from].primary}
-            boundedDays={boundedDays}
+            boundedDays={headerLayers[zoomTransition.from].dayCount}
             phase="exit"
             direction={zoomTransition.direction}
           />
@@ -316,6 +316,7 @@ function ScheduleCreatorRow({
                 : undefined
             }
             booking={booking}
+            zooming={Boolean(zoomTransition)}
             boundedDays={boundedDays}
             active={booking.id === activeBookingId}
             onBookingSelect={editing.overlapLayout ? select : onBookingSelect}

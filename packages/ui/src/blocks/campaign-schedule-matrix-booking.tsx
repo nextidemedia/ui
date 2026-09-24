@@ -23,15 +23,19 @@ type BookingProps = {
   shape?: BookingShape
   booking: CampaignScheduleBooking
   boundedDays: number
+  zooming: boolean
   active: boolean
   onBookingSelect?: (booking: CampaignScheduleBooking) => void
   editing: ScheduleEditing
 }
 
+const lockCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='14' height='11' x='5' y='11' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") 12 12, pointer`
+
 function ScheduleBooking({
   shape,
   booking,
   boundedDays,
+  zooming,
   active,
   onBookingSelect,
   editing,
@@ -57,7 +61,9 @@ function ScheduleBooking({
         deleteFocusedBooking(event, booking, rootRef, onDelete)
       }
       data-cutting={cut.armed || undefined}
-      className="pointer-events-none absolute top-2 bottom-2"
+      data-editing={Boolean(edit.draft)}
+      data-zooming={zooming}
+      className="pointer-events-none absolute top-2 bottom-2 transition-[left,width] duration-[var(--nextide-motion-layout)] data-[editing=true]:transition-none data-[zooming=false]:transition-none motion-reduce:transition-none"
       onFocusCapture={() => shape && onBookingSelect?.(booking)}
       style={{
         left: `${(start / boundedDays) * 100}%`,
@@ -156,7 +162,7 @@ function BookingBody({
                 cut.tool === "cut"
                   ? scissorsCursor
                   : cut.tool === "lock"
-                    ? "pointer"
+                    ? lockCursor
                     : "crosshair",
             }
           : undefined
