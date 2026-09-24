@@ -50,6 +50,7 @@ type ScheduleHeaderSpan = {
 }
 
 type ScheduleHeaderLayer = {
+  dayCount: number
   context: ScheduleHeaderSpan[]
   primary: ScheduleHeaderSpan[]
 }
@@ -165,9 +166,13 @@ function createScheduleHeaderLayers(
   })
 
   return {
-    day: { context: weekSpans, primary: daySpans },
-    week: { context: monthSpans, primary: weekSpans },
-    month: { context: quarterSpans, primary: monthSpans },
+    day: { dayCount: days.length, context: weekSpans, primary: daySpans },
+    week: { dayCount: days.length, context: monthSpans, primary: weekSpans },
+    month: {
+      dayCount: days.length,
+      context: quarterSpans,
+      primary: monthSpans,
+    },
   }
 }
 

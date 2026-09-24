@@ -345,9 +345,10 @@ use Left/Right to preview, Enter to save, Escape or blur to cancel. Pointer
 cancellation also discards the preview. Blank rows retain timeline panning.
 Booking `title` accepts a React node or a function of the displayed booking,
 including uncommitted edits, so duration labels can follow a resize preview.
-The date scale can shrink inside the full-width scroll frame at Months zoom, so
-short campaigns visibly zoom out while the creator column and date markers stay
-aligned. The campaign bounds mark dates and never narrow the displayed domain.
+Months zoom extends the consecutive daily view with an equal number of trailing
+dates, keeping the board full width while bookings become narrower. Added dates
+are display-only: booking indices and editable bounds remain within the supplied
+days. Close campaign markers use separate label lines within the header.
 The dedicated creator handle uses drag or Up/Down, Enter, and Escape and calls
 `onCreatorOrderChange` with the reordered creator IDs.
 Rows preview their new order during a drag; drop or Enter commits, while Escape

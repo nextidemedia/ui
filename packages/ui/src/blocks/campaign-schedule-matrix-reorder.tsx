@@ -121,7 +121,7 @@ function ScheduleReorderHandle({
         Up and down arrows choose row. Enter saves. Escape cancels.
       </span>
       {position !== null && (
-        <output className="absolute right-1 bottom-0 text-ui-micro text-nextide-tide">
+        <output className="sr-only">
           Row {position + 1} of {reorder.creators.length}
         </output>
       )}

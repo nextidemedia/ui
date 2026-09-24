@@ -189,7 +189,7 @@ const creativeOverlapRows = [
 
 function ScheduleEditorDemo() {
   const [stepped, setStepped] = useState(false)
-  const [shortWindow, setShortWindow] = useState(false)
+  const [windowDays, setWindowDays] = useState(scheduleDays.length)
   const [activeBookingId, setActiveBookingId] = useState("booking-2")
   const [selectionEnabled, setSelectionEnabled] = useState(false)
   const [creators, setCreators] = useState(scheduleCreators)
@@ -219,8 +219,8 @@ function ScheduleEditorDemo() {
   return (
     <div className="grid gap-3">
       <ScheduleDemoControls
-        shortWindow={shortWindow}
-        onToggleWindow={() => setShortWindow((value) => !value)}
+        windowDays={windowDays}
+        onWindowChange={setWindowDays}
         onShowOverlaps={() => {
           setStepped(true)
           setCreators(creativeOverlapRows)
@@ -240,11 +240,11 @@ function ScheduleEditorDemo() {
           if (node) node.dataset.demoRef = "attached"
         }}
         creators={creators.map((creator) => ({ ...creator }))}
-        days={shortWindow ? scheduleDays.slice(0, 28) : scheduleDays}
+        days={scheduleDays.slice(0, windowDays)}
         bookings={
-          shortWindow
-            ? bookings.filter((booking) => booking.endIndex < 28)
-            : bookings
+          windowDays === 9
+            ? [{ ...bookings[0]!, startIndex: 4, endIndex: 4 }]
+            : bookings.filter((booking) => booking.endIndex < windowDays)
         }
         activeBookingId={selectionEnabled ? activeBookingId : undefined}
         onBookingSelect={
@@ -254,9 +254,9 @@ function ScheduleEditorDemo() {
         }
         minimumRows={5}
         campaignStartIndex={4}
-        campaignEndIndex={shortWindow ? 27 : 86}
+        campaignEndIndex={windowDays === 9 ? 4 : Math.min(windowDays - 1, 86)}
         editableStartIndex={4}
-        editableEndIndex={shortWindow ? 27 : 86}
+        editableEndIndex={windowDays === 9 ? 4 : Math.min(windowDays - 1, 86)}
         onBookingChange={(booking) =>
           setBookings((current) =>
             current.map((item) => (item.id === booking.id ? booking : item))
@@ -286,16 +286,16 @@ function ScheduleEditorDemo() {
 }
 
 function ScheduleDemoControls({
-  shortWindow,
-  onToggleWindow,
+  windowDays,
+  onWindowChange,
   onShowOverlaps,
   creatorsPresent,
   onToggleCreators,
   selectionEnabled,
   onToggleSelection,
 }: {
-  shortWindow: boolean
-  onToggleWindow: () => void
+  windowDays: number
+  onWindowChange: (days: number) => void
   onShowOverlaps: () => void
   creatorsPresent: boolean
   onToggleCreators: () => void
@@ -304,8 +304,16 @@ function ScheduleDemoControls({
 }) {
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" onClick={onToggleWindow}>
-        {shortWindow ? "Show full schedule" : "Show four weeks"}
+      <Button
+        variant="outline"
+        onClick={() =>
+          onWindowChange(windowDays === 28 ? scheduleDays.length : 28)
+        }
+      >
+        {windowDays === 28 ? "Show full schedule" : "Show four weeks"}
+      </Button>
+      <Button variant="outline" onClick={() => onWindowChange(9)}>
+        Show one day
       </Button>
       <Button variant="outline" onClick={onShowOverlaps}>
         Show creative overlaps

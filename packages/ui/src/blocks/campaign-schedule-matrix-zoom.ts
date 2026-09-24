@@ -19,15 +19,14 @@ type ZoomTracking = {
   duration: number
   transitionId: number
   timer: ReturnType<typeof setTimeout> | null
-  focus: { ratio: number; viewportX: number } | null
+  focus: { dayIndex: number; viewportX: number } | null
 }
 
 type ScrollRef = React.RefObject<HTMLDivElement | null>
 
 function useScheduleZoom(
   scrollRef: ScrollRef,
-  headerLayers: Record<CampaignScheduleZoom, ScheduleHeaderLayer>,
-  boundedDays: number
+  headerLayers: Record<CampaignScheduleZoom, ScheduleHeaderLayer>
 ) {
   const tracking = React.useRef<ZoomTracking>({
     zoom: "week",
@@ -39,6 +38,7 @@ function useScheduleZoom(
   const [zoom, setZoom] = React.useState<CampaignScheduleZoom>("week")
   const [zoomTransition, setZoomTransition] =
     React.useState<ZoomTransition | null>(null)
+  const boundedDays = Math.max(headerLayers[zoom].dayCount, 1)
   const timelineMinWidth = Math.max(
     zoom === "month" ? minimumTimelineWidth / 2 : minimumTimelineWidth,
     headerLayers[zoom].primary.length * minimumUnitWidths[zoom]
@@ -51,16 +51,23 @@ function useScheduleZoom(
         state,
         scrollRef.current,
         nextZoom,
+        Math.max(headerLayers[state.zoom].dayCount, 1),
         viewportX
       )
       setZoomTransition(transition)
       setZoom(nextZoom)
       state.timer = setTimeout(() => setZoomTransition(null), state.duration)
     },
-    [scrollRef]
+    [scrollRef, headerLayers]
   )
 
-  useAnchoredZoom(scrollRef, tracking, timelineMinWidth, zoomTransition)
+  useAnchoredZoom(
+    scrollRef,
+    tracking,
+    timelineMinWidth,
+    zoomTransition,
+    boundedDays
+  )
   useInitialScroll(
     scrollRef,
     tracking,
@@ -80,13 +87,14 @@ function useScheduleZoom(
     const nextZoom = zoomOrder[zoomOrder.indexOf(zoom) + step]
     if (nextZoom) requestZoom(nextZoom)
   }
-  return { zoom, zoomTransition, timelineMinWidth, zoomBy }
+  return { zoom, zoomTransition, timelineMinWidth, zoomBy, boundedDays }
 }
 
 function beginZoom(
   state: ZoomTracking,
   node: HTMLDivElement | null,
   nextZoom: CampaignScheduleZoom,
+  dayCount: number,
   viewportX?: number
 ): ZoomTransition {
   const currentZoom = state.zoom
@@ -98,12 +106,14 @@ function beginZoom(
     const resolvedViewportX = viewportX ?? node.clientWidth / 2
     const currentTimelineWidth = scheduleDateWidth(node)
     state.focus = {
-      ratio: clamp(
-        (node.scrollLeft + resolvedViewportX - creatorColumnWidth) /
-          currentTimelineWidth,
-        0,
-        1
-      ),
+      dayIndex:
+        dayCount *
+        clamp(
+          (node.scrollLeft + resolvedViewportX - creatorColumnWidth) /
+            currentTimelineWidth,
+          0,
+          1
+        ),
       viewportX: resolvedViewportX,
     }
   }
@@ -123,7 +133,8 @@ function useAnchoredZoom(
   scrollRef: ScrollRef,
   tracking: React.RefObject<ZoomTracking>,
   timelineMinWidth: number,
-  zoomTransition: ZoomTransition | null
+  zoomTransition: ZoomTransition | null,
+  boundedDays: number
 ) {
   React.useLayoutEffect(() => {
     const focus = tracking.current.focus
@@ -139,7 +150,7 @@ function useAnchoredZoom(
       const currentTimelineWidth = scheduleDateWidth(node)
       const nextScrollLeft =
         creatorColumnWidth +
-        focus.ratio * currentTimelineWidth -
+        (focus.dayIndex / boundedDays) * currentTimelineWidth -
         focus.viewportX
       node.scrollLeft = clamp(
         nextScrollLeft,
@@ -154,7 +165,7 @@ function useAnchoredZoom(
     }
     frame = requestAnimationFrame(keepFocusAnchored)
     return () => cancelAnimationFrame(frame)
-  }, [scrollRef, tracking, timelineMinWidth, zoomTransition])
+  }, [scrollRef, tracking, timelineMinWidth, zoomTransition, boundedDays])
 }
 
 function useInitialScroll(
