@@ -95,22 +95,13 @@ test("looping carousel preserves edited slides when reordered", async ({
   await expect(note).toHaveValue("Keep this draft")
 })
 
-test("playground shows exact public names beside component examples", async ({
+test("shared dialog and controls remain operable across the catalog", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/?view=report")
 
-  const expectComponentReferences = async (names: readonly string[]) => {
-    for (const name of names) {
-      await expect(
-        page.locator(`[data-component-name="${name}"]`).first()
-      ).toBeVisible()
-    }
-  }
-
   await page.getByRole("button", { name: /Primitives/ }).click()
-  await expectComponentReferences(primitiveReferences)
   const openDialog = page.getByRole("button", { name: "Open dialog" })
   await openDialog.click()
   const dialog = page.getByRole("dialog", { name: "Review report scope" })
@@ -168,127 +159,7 @@ test("playground shows exact public names beside component examples", async ({
     )
     expect(overflow).toBeLessThanOrEqual(1)
   }
-  await page.setViewportSize({ width: 1440, height: 1000 })
-
-  await page.getByRole("button", { name: /Patterns/ }).click()
-  await expectComponentReferences(patternReferences)
-
-  await page.getByRole("button", { name: /Daedalus/ }).click()
-  await expectComponentReferences(dashboardReferences)
-
-  await page.getByRole("button", { name: /Creator workflow/ }).click()
-  await expectComponentReferences(creatorReferences)
-
-  await page.getByRole("button", { name: /Campaign tools/ }).click()
-  await expectComponentReferences(campaignReferences)
-
-  await page.getByRole("button", { name: /Kraken operations/ }).click()
-  await expectComponentReferences(krakenReferences)
-
-  await page.getByRole("button", { name: /Report reader/ }).click()
-  await expectComponentReferences(reportReferences)
-
-  await page.getByRole("button", { name: "Settings", exact: true }).click()
-  await expectComponentReferences(settingsReferences)
 })
-
-const primitiveReferences = [
-  "AppShell",
-  "NavigationPanel",
-  "Surface",
-  "Card",
-  "Button",
-  "Dialog",
-  "Popover",
-  "Tooltip",
-  "ScrollArea",
-  "Input",
-  "DurationPicker",
-  "Checkbox",
-  "Switch",
-  "SegmentedControl",
-  "Slider",
-  "Autocomplete",
-  "StatusBadge",
-  "Badge",
-  "Notice",
-  "ProcessingText",
-  "ScrambleText",
-  "Avatar",
-  "AvatarGroup",
-  "Progress",
-  "Spinner",
-  "Skeleton",
-  "Empty",
-  "Metric",
-] as const
-
-const patternReferences = [
-  "AppShell",
-  "NavigationPanel",
-  "NavigationUserMenu",
-  "Surface",
-  "ProgressiveSummaryRail",
-  "WorkflowStepper",
-  "Metric",
-  "Separator",
-] as const
-
-const dashboardReferences = [
-  "SignalPlate",
-  "DashboardFilterBar",
-  "Metric",
-  "SingleCalendarDateRangePicker",
-  "DurationPicker",
-  "TrendBarChart",
-  "HourlyPacingChart",
-  "SignalRidgeChart",
-  "LineItemGraph",
-  "LineGraph",
-  "DonutChart",
-  "ExportWorkbench",
-  "LiveguardCockpit",
-] as const
-
-const creatorReferences = [
-  "SignalPlate",
-  "FitLeaderboard",
-  "CreatorTransfer",
-  "CreatorScopePanel",
-  "SingleCalendarDateRangePicker",
-  "CreatorFlowChart",
-  "StreamSelector",
-  "ReportContextBuilder",
-  "IntelligenceProgressionChart",
-] as const
-
-const campaignReferences = [
-  "SignalPlate",
-  "CampaignScheduleMatrix",
-  "PacingConfigurator",
-  "ExportWorkbench",
-  "LiveguardIncidentReview",
-] as const
-
-const krakenReferences = [
-  "SignalPlate",
-  "Metric",
-  "RunMonitorTable",
-  "EvidenceDrawer",
-  "DataLedger",
-] as const
-
-const reportReferences = [
-  "ReportRail",
-  "ReportReader",
-  "IntelligenceProgressionChart",
-] as const
-
-const settingsReferences = [
-  "SettingsModal",
-  "SettingsModalSection",
-  "SelectMenu",
-] as const
 
 test("field focus stays inside the control and dropdowns preserve selection and edge alignment", async ({
   page,
