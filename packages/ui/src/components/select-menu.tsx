@@ -52,6 +52,8 @@ function SelectMenu({
   optionLabelClassName,
   disabled,
   "aria-label": ariaLabel,
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
   ...props
 }: SelectMenuProps) {
   const triggerRef = React.useRef<HTMLButtonElement | null>(null)
@@ -76,10 +78,6 @@ function SelectMenu({
     }
   }, [contentAnchorRef, contentWidthRef])
   const usesExternalAnchor = !!(contentAnchorRef || contentWidthRef)
-  const contentWidth =
-    contentMinWidth === undefined
-      ? "var(--anchor-width)"
-      : `max(var(--anchor-width), ${contentMinWidth}px)`
 
   return (
     <div
@@ -99,6 +97,8 @@ function SelectMenu({
           ref={triggerRef}
           id={triggerId}
           aria-label={ariaLabel ?? (triggerId ? undefined : "Select option")}
+          aria-describedby={ariaDescribedBy}
+          aria-invalid={ariaInvalid}
           className={cn(
             "w-full border-nextide-line bg-nextide-panel px-3 text-left font-medium hover:bg-nextide-panel-strong",
             triggerClassName
@@ -118,7 +118,10 @@ function SelectMenu({
           sideOffset={usesExternalAnchor ? 8 : 4}
           style={
             {
-              "--nextide-select-width": contentWidth,
+              "--nextide-select-width":
+                contentMinWidth === undefined
+                  ? "var(--anchor-width)"
+                  : `max(var(--anchor-width), ${contentMinWidth}px)`,
               width: "var(--nextide-select-width)",
             } as React.CSSProperties
           }

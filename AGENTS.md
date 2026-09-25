@@ -16,8 +16,8 @@ This repo is the shared `@nextide/ui` package. The playground exists only as a l
 
 Use `just setup` and `just check` for the shared development baseline; see README.md for focused tests and browser prerequisites. Keep source files within 600 lines, tests within 900 lines, functions within 100 lines, and complexity within 12; do not add legacy debt exceptions.
 
-
 <!-- BEGIN NEXTIDE-META:GOVERNANCE -->
+
 ## Delivery Baseline
 
 - Use short-lived branches from `main`; update them before merging.
@@ -58,4 +58,5 @@ Use `just setup` and `just check` for the shared development baseline; see READM
 - Flag worthwhile broader cleanup to the orchestrator with its location and
   a brief reason. Continue assigned work unless correctness is blocked; the
   orchestrator decides whether to include it, dispatch separately, or defer it.
+
 <!-- END NEXTIDE-META:GOVERNANCE -->
