@@ -78,10 +78,6 @@ function SelectMenu({
     }
   }, [contentAnchorRef, contentWidthRef])
   const usesExternalAnchor = !!(contentAnchorRef || contentWidthRef)
-  const contentWidth =
-    contentMinWidth === undefined
-      ? "var(--anchor-width)"
-      : `max(var(--anchor-width), ${contentMinWidth}px)`
 
   return (
     <div
@@ -122,7 +118,10 @@ function SelectMenu({
           sideOffset={usesExternalAnchor ? 8 : 4}
           style={
             {
-              "--nextide-select-width": contentWidth,
+              "--nextide-select-width":
+                contentMinWidth === undefined
+                  ? "var(--anchor-width)"
+                  : `max(var(--anchor-width), ${contentMinWidth}px)`,
               width: "var(--nextide-select-width)",
             } as React.CSSProperties
           }
