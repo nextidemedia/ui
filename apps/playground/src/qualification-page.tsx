@@ -16,7 +16,12 @@ import {
   CardTitle,
 } from "@nextide/ui/components/card"
 import { Checkbox } from "@nextide/ui/components/checkbox"
-import { Field, FieldGroup, FieldLabel } from "@nextide/ui/components/field"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@nextide/ui/components/field"
 import { Input } from "@nextide/ui/components/input"
 import {
   Popover,
@@ -47,7 +52,7 @@ const workflowSteps = [
 
 function QualificationPage() {
   const [activeStepId, setActiveStepId] = useState("details")
-  const [region, setRegion] = useState("europe")
+  const [region, setRegion] = useState("")
 
   return (
     <main className="min-h-screen bg-background p-4 text-foreground sm:p-6">
@@ -74,10 +79,14 @@ function QualificationPage() {
                 <FieldLabel htmlFor="project-name">Project name</FieldLabel>
                 <Input id="project-name" defaultValue="Launch plan" />
               </Field>
-              <Field>
+              <Field data-invalid={!region}>
                 <FieldLabel>Delivery region</FieldLabel>
                 <SelectMenu
                   aria-label="Delivery region"
+                  aria-describedby={
+                    region ? undefined : "delivery-region-error"
+                  }
+                  aria-invalid={!region}
                   onValueChange={setRegion}
                   options={[
                     { value: "europe", label: "Europe" },
@@ -86,6 +95,11 @@ function QualificationPage() {
                   ]}
                   value={region}
                 />
+                {!region && (
+                  <FieldDescription id="delivery-region-error">
+                    Choose a delivery region.
+                  </FieldDescription>
+                )}
               </Field>
               <Field orientation="horizontal">
                 <Checkbox id="weekly-summary" />

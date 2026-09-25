@@ -18,6 +18,8 @@ test("public controls and block are keyboard operable and accessible", async ({
   await projectName.fill("Campaign launch")
 
   const region = page.getByRole("combobox", { name: "Delivery region" })
+  await expect(region).toHaveAccessibleDescription("Choose a delivery region.")
+  await expect(region).toHaveAttribute("aria-invalid", "true")
   await projectName.press("Tab")
   await expectVisibleFocus(region)
   await region.press("Enter")
@@ -28,6 +30,8 @@ test("public controls and block are keyboard operable and accessible", async ({
   await page.keyboard.press("Enter")
   await expect(region).toContainText("Americas")
   await expect(region).toBeFocused()
+  await expect(region).toHaveAttribute("aria-invalid", "false")
+  await expect(region).toHaveAccessibleDescription("")
 
   const weeklySummary = page.getByRole("checkbox", {
     name: "Include a weekly summary",
