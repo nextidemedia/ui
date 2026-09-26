@@ -368,24 +368,66 @@ test("creator selection commits before motion and respects controlled replacemen
     .evaluate((button: HTMLButtonElement) => button.click())
   await expect(creatorCount).toHaveText("4")
 
+  await page.getByRole("button", { name: "Reset creators" }).click()
+  await expect(creatorCount).toHaveText("2")
+  await page.clock.runFor(650)
+  await page.clock.runFor(16)
+  await expect(creatorCount).toHaveText("2")
+  await expect(
+    transfer.getByRole("heading", { name: "Added creators (2)" })
+  ).toBeVisible()
+  await expect(
+    transfer.getByRole("button", { name: /^IN Ivy North/ })
+  ).toBeVisible()
+
+  await available.fill("taro")
+  await available.press("Enter")
+  await expect(creatorCount).toHaveText("3")
   await page
     .getByRole("button", { name: /Primitives Controls and states/ })
     .click()
   await page
     .getByRole("button", { name: /Creator workflow Guided report flow/ })
     .click()
-  await expect(creatorCount).toHaveText("4")
-
-  await transfer.getByRole("button", { name: /^TA Taro / }).click()
   await expect(creatorCount).toHaveText("3")
+})
 
-  await page.getByRole("button", { name: "Reset creators" }).click()
-  await expect(creatorCount).toHaveText("2")
-  await page.clock.resume()
-  await expect(creatorCount).toHaveText("2")
-  await expect(
-    transfer.getByRole("heading", { name: "Added creators (2)" })
-  ).toBeVisible()
+test("declined creator removal stays retryable and preserves other selections", async ({
+  page,
+}) => {
+  await page.goto("/?view=intelligence")
+  const transfer = page.locator('[data-slot="creator-transfer"]')
+  const creatorCount = page
+    .locator('[data-slot="signal-plate"]')
+    .first()
+    .getByText("Creators", { exact: true })
+    .locator("..")
+    .locator("strong")
+  const available = transfer.getByRole("textbox", {
+    name: "Search available creators",
+  })
+  const selected = transfer.getByRole("textbox", {
+    name: "Search added creators",
+  })
+
+  await available.fill("taro")
+  await available.press("Enter")
+  const taro = selected
+    .locator("xpath=ancestor::section[1]")
+    .getByRole("button", { name: /^TA Taro / })
+  await expect(taro).toBeVisible()
+  await page.getByRole("button", { name: "Decline removals" }).click()
+  await taro.click()
+  await expect(creatorCount).toHaveText("3")
+  await expect(taro).toBeVisible()
+
+  await transfer.getByRole("button", { name: /^IN Ivy North/ }).click()
+  await expect(creatorCount).toHaveText("4")
+  await expect(taro).toBeVisible()
+
+  await page.getByRole("button", { name: "Allow removals" }).click()
+  await taro.click()
+  await expect(creatorCount).toHaveText("3")
 })
 
 test("creator transfer searches and scrolls without moving the page", async ({

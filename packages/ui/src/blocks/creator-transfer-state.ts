@@ -24,12 +24,15 @@ function useCreatorTransfer({
   const queue = useTransferQueue()
   const motion = useTransferMotion()
   const intendedSelectedIdsRef = React.useRef(selectedIds)
-  const previousSelectedIdsRef = React.useRef(selectedIds)
   React.useLayoutEffect(() => {
-    if (sameStringArray(previousSelectedIdsRef.current, selectedIds)) return
+    if (sameStringArray(intendedSelectedIdsRef.current, selectedIds)) return
     intendedSelectedIdsRef.current = selectedIds
-    previousSelectedIdsRef.current = selectedIds
-  }, [selectedIds])
+    queue.clearQueuedTransfers()
+    motion.clearTransferTimers()
+    state.setTransferTarget(null)
+    state.setTransferFlyer(null)
+    state.setMotionLocked(false)
+  })
   const animateTransfer = createTransferCreator(creators, state, motion)
   const transferCreator = (id: string, direction: "add" | "remove") => {
     const creator = state.creatorById.get(id)
@@ -149,12 +152,16 @@ function useSelectedCreatorsSync(
 }
 function useTransferQueue() {
   const queuedTransfersRef = React.useRef<CreatorTransferRequest[]>([])
+  const clearQueuedTransfers = React.useCallback(() => {
+    queuedTransfersRef.current.length = 0
+  }, [])
   const [queueVersion, setQueueVersion] = React.useState(0)
   const transferCreatorRef = React.useRef<
     (id: string, direction: "add" | "remove") => void
   >(() => undefined)
   return {
     queuedTransfersRef,
+    clearQueuedTransfers,
     queueVersion,
     setQueueVersion,
     transferCreatorRef,
@@ -183,6 +190,7 @@ function useQueuedTransfers(
     if (!nextTransfer) return
 
     const frame = window.requestAnimationFrame(() => {
+      if (queuedTransfersRef.current[0] !== nextTransfer) return
       queuedTransfersRef.current.shift()
       transferCreatorRef.current(nextTransfer.id, nextTransfer.direction)
       setQueueVersion((version) => version + 1)

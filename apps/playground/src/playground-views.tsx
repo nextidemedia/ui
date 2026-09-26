@@ -7,6 +7,7 @@ import {
   SurfaceTitle,
 } from "@nextide/ui/components/surface"
 import { Activity, BarChart3, ShieldAlert } from "lucide-react"
+import { useState } from "react"
 import { ComponentReference } from "./component-reference"
 import {
   IntelligenceReportMiningPage,
@@ -51,6 +52,7 @@ function PlaygroundView({ app }: { app: PlaygroundApplication }) {
 }
 
 function IntelligenceView({ app }: { app: PlaygroundApplication }) {
+  const [declineRemovals, setDeclineRemovals] = useState(false)
   const {
     updatePlaygroundState,
     intelligenceCreatorIds,
@@ -71,15 +73,23 @@ function IntelligenceView({ app }: { app: PlaygroundApplication }) {
       >
         Reset creators
       </Button>
+      <Button
+        variant="outline"
+        onClick={() => setDeclineRemovals(!declineRemovals)}
+      >
+        {declineRemovals ? "Allow removals" : "Decline removals"}
+      </Button>
       <IntelligencePlayground
         selectedCreatorIds={intelligenceCreatorIds}
         dateRange={intelligenceDateRange}
         contextBuckets={intelligenceContext}
         flowSessions={intelligenceFlowSessions}
         selectedStreamIds={intelligenceStreamIds}
-        onSelectedCreatorIdsChange={(nextIds) =>
+        onSelectedCreatorIdsChange={(nextIds) => {
+          if (declineRemovals && nextIds.length < intelligenceCreatorIds.length)
+            return
           updatePlaygroundState({ intelligenceCreatorIds: nextIds })
-        }
+        }}
         onDateRangeChange={(nextRange) =>
           updatePlaygroundState({ intelligenceDateRange: nextRange })
         }
