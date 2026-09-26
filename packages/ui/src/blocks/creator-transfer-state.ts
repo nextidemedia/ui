@@ -23,15 +23,33 @@ function useCreatorTransfer({
   const state = useTransferState(creators, selectedIds)
   const queue = useTransferQueue()
   const motion = useTransferMotion()
-  const transferCreator = createTransferCreator(
-    creators,
-    onSelectedIdsChange,
-    state,
-    motion,
-    queue
-  )
-  useQueuedTransfers(queue, state.motionLocked, transferCreator)
-  useSelectedCreatorsSync(state, creators, selectedIds)
+  const intendedSelectedIdsRef = React.useRef(selectedIds)
+  const previousSelectedIdsRef = React.useRef(selectedIds)
+  React.useLayoutEffect(() => {
+    if (sameStringArray(previousSelectedIdsRef.current, selectedIds)) return
+    intendedSelectedIdsRef.current = selectedIds
+    previousSelectedIdsRef.current = selectedIds
+  }, [selectedIds])
+  const animateTransfer = createTransferCreator(creators, state, motion)
+  const transferCreator = (id: string, direction: "add" | "remove") => {
+    const creator = state.creatorById.get(id)
+    if (!creator || transferDisabled(direction, creator)) return
+    const intendedIds = intendedSelectedIdsRef.current
+    if (
+      direction === "add" ? intendedIds.includes(id) : !intendedIds.includes(id)
+    )
+      return
+    const nextIds =
+      direction === "add"
+        ? [...intendedIds, id]
+        : intendedIds.filter((creatorId) => creatorId !== id)
+    intendedSelectedIdsRef.current = nextIds
+    if (state.motionLocked) enqueueTransfer(queue, id, direction)
+    else animateTransfer(id, direction)
+    onSelectedIdsChange(nextIds)
+  }
+  useQueuedTransfers(queue, state.motionLocked, animateTransfer)
+  useSelectedCreatorsSync(state, queue, creators, selectedIds)
   useTransferMotionEffects(
     motion,
     state.visibleAvailableIds,
@@ -102,12 +120,13 @@ function useTransferState(
 type TransferState = ReturnType<typeof useTransferState>
 function useSelectedCreatorsSync(
   state: TransferState,
+  queue: TransferQueue,
   creators: CreatorTransferItem[],
   selectedIds: string[]
 ) {
   const { motionLocked, creatorIds, setAddedIds, setAvailableIds } = state
   React.useEffect(() => {
-    if (motionLocked) return
+    if (motionLocked || queue.queuedTransfersRef.current.length) return
 
     const syncTimer = window.setTimeout(() => {
       setAddedIds(selectedIds.filter((id) => creatorIds.has(id)))
@@ -121,6 +140,8 @@ function useSelectedCreatorsSync(
     creatorIds,
     creators,
     motionLocked,
+    queue.queueVersion,
+    queue.queuedTransfersRef,
     selectedIds,
     setAddedIds,
     setAvailableIds,
@@ -143,35 +164,45 @@ type TransferQueue = ReturnType<typeof useTransferQueue>
 function useQueuedTransfers(
   queue: TransferQueue,
   motionLocked: boolean,
-  transferCreator: (id: string, direction: "add" | "remove") => void
+  animateTransfer: (id: string, direction: "add" | "remove") => void
 ) {
-  const { queuedTransfersRef, queueVersion, transferCreatorRef } = queue
+  const {
+    queuedTransfersRef,
+    queueVersion,
+    setQueueVersion,
+    transferCreatorRef,
+  } = queue
   React.useEffect(() => {
-    transferCreatorRef.current = transferCreator
+    transferCreatorRef.current = animateTransfer
   })
 
   React.useEffect(() => {
     if (motionLocked || queuedTransfersRef.current.length === 0) return
 
-    const nextTransfer = queuedTransfersRef.current.shift()
+    const nextTransfer = queuedTransfersRef.current[0]
     if (!nextTransfer) return
 
     const frame = window.requestAnimationFrame(() => {
+      queuedTransfersRef.current.shift()
       transferCreatorRef.current(nextTransfer.id, nextTransfer.direction)
+      setQueueVersion((version) => version + 1)
     })
 
     return () => window.cancelAnimationFrame(frame)
-  }, [motionLocked, queueVersion, queuedTransfersRef, transferCreatorRef])
+  }, [
+    motionLocked,
+    queueVersion,
+    queuedTransfersRef,
+    setQueueVersion,
+    transferCreatorRef,
+  ])
 }
 function createTransferCreator(
   creators: CreatorTransferItem[],
-  onSelectedIdsChange: CreatorTransferProps["onSelectedIdsChange"],
   state: TransferState,
-  motion: TransferMotion,
-  queue: TransferQueue
+  motion: TransferMotion
 ) {
   const {
-    motionLocked,
     availableIds,
     addedIds,
     setMotionLocked,
@@ -189,12 +220,6 @@ function createTransferCreator(
     queueTransferTimer,
   } = motion
   return (id: string, direction: "add" | "remove") => {
-    if (transferDisabled(direction, state.creatorById.get(id))) return
-    if (motionLocked) {
-      enqueueTransfer(queue, id, direction)
-      return
-    }
-
     if (
       (direction === "add" && !availableIds.includes(id)) ||
       (direction === "remove" && !addedIds.includes(id))
@@ -239,8 +264,7 @@ function createTransferCreator(
             nextAddedIds,
             source,
             state,
-            motion,
-            onSelectedIdsChange
+            motion
           )
         },
         didStart ? transferMoveMs : 0
@@ -286,8 +310,7 @@ function completeTransfer(
   nextAddedIds: string[],
   collapseSide: CreatorTransferSide,
   state: TransferState,
-  motion: TransferMotion,
-  onSelectedIdsChange: CreatorTransferProps["onSelectedIdsChange"]
+  motion: TransferMotion
 ) {
   const { availableReflowRef, availableRefs, addedReflowRef, addedRefs } =
     motion
@@ -320,7 +343,6 @@ function completeTransfer(
   setTransferTarget(null)
   setTransferFlyer(null)
   setMotionLocked(false)
-  onSelectedIdsChange(nextAddedIds)
 }
 
 function filterCreatorIds(

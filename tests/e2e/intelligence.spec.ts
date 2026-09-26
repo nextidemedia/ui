@@ -341,6 +341,53 @@ test("playground queues creator and context changes without losing updates", asy
   await expect(progression.locator("div.absolute.z-20")).toHaveCount(7)
 })
 
+test("creator selection commits before motion and respects controlled replacement", async ({
+  page,
+}) => {
+  await page.goto("/?view=intelligence")
+  await page.clock.install()
+  await page.clock.pauseAt(new Date())
+
+  const transfer = page.locator('[data-slot="creator-transfer"]')
+  const creatorCount = page
+    .locator('[data-slot="signal-plate"]')
+    .first()
+    .getByText("Creators", { exact: true })
+    .locator("..")
+    .locator("strong")
+  const available = transfer.getByRole("textbox", {
+    name: "Search available creators",
+  })
+
+  await available.fill("taro")
+  await available.press("Enter")
+  await expect(creatorCount).toHaveText("3")
+
+  await transfer
+    .getByRole("button", { name: /^IN Ivy North/ })
+    .evaluate((button: HTMLButtonElement) => button.click())
+  await expect(creatorCount).toHaveText("4")
+
+  await page
+    .getByRole("button", { name: /Primitives Controls and states/ })
+    .click()
+  await page
+    .getByRole("button", { name: /Creator workflow Guided report flow/ })
+    .click()
+  await expect(creatorCount).toHaveText("4")
+
+  await transfer.getByRole("button", { name: /^TA Taro / }).click()
+  await expect(creatorCount).toHaveText("3")
+
+  await page.getByRole("button", { name: "Reset creators" }).click()
+  await expect(creatorCount).toHaveText("2")
+  await page.clock.resume()
+  await expect(creatorCount).toHaveText("2")
+  await expect(
+    transfer.getByRole("heading", { name: "Added creators (2)" })
+  ).toBeVisible()
+})
+
 test("creator transfer searches and scrolls without moving the page", async ({
   page,
 }) => {

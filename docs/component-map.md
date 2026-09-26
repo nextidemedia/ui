@@ -330,7 +330,8 @@ them; search matches partial words, accents, and a one-character typo. Incoming
 `creators` order determines the available list order. Optional controlled
 `lockedIds` and `onLockedIdsChange` add a separate lock button to selected rows;
 the consumer decides whether a locked creator may be removed. Transfers animate
-inside a stable-height layout.
+inside a stable-height layout. `onSelectedIdsChange` reports each accepted add or
+remove immediately, including while a previous transfer is animating.
 
 `CampaignScheduleMatrix` remains controlled. Set `minimumRows={5}` for a stable
 empty board; placeholder rows do not count as creators. `showMetrics={false}`

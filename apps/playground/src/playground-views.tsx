@@ -1,4 +1,5 @@
 import { Metric } from "@nextide/ui/components/metric"
+import { Button } from "@nextide/ui/components/button"
 import {
   Surface,
   SurfaceDescription,
@@ -59,30 +60,42 @@ function IntelligenceView({ app }: { app: PlaygroundApplication }) {
     intelligenceStreamIds,
   } = app
   return (
-    <IntelligencePlayground
-      selectedCreatorIds={intelligenceCreatorIds}
-      dateRange={intelligenceDateRange}
-      contextBuckets={intelligenceContext}
-      flowSessions={intelligenceFlowSessions}
-      selectedStreamIds={intelligenceStreamIds}
-      onSelectedCreatorIdsChange={(nextIds) =>
-        updatePlaygroundState({ intelligenceCreatorIds: nextIds })
-      }
-      onDateRangeChange={(nextRange) =>
-        updatePlaygroundState({ intelligenceDateRange: nextRange })
-      }
-      onContextBucketsChange={(nextBuckets) =>
-        updatePlaygroundState({ intelligenceContext: nextBuckets })
-      }
-      onFlowSessionsChange={(nextSessions) =>
-        updatePlaygroundState({
-          intelligenceFlowSessions: nextSessions,
-        })
-      }
-      onSelectedStreamIdsChange={(nextIds) =>
-        updatePlaygroundState({ intelligenceStreamIds: nextIds })
-      }
-    />
+    <>
+      <Button
+        variant="outline"
+        onClick={() =>
+          updatePlaygroundState({
+            intelligenceCreatorIds: ["creator-mina", "creator-ren"],
+          })
+        }
+      >
+        Reset creators
+      </Button>
+      <IntelligencePlayground
+        selectedCreatorIds={intelligenceCreatorIds}
+        dateRange={intelligenceDateRange}
+        contextBuckets={intelligenceContext}
+        flowSessions={intelligenceFlowSessions}
+        selectedStreamIds={intelligenceStreamIds}
+        onSelectedCreatorIdsChange={(nextIds) =>
+          updatePlaygroundState({ intelligenceCreatorIds: nextIds })
+        }
+        onDateRangeChange={(nextRange) =>
+          updatePlaygroundState({ intelligenceDateRange: nextRange })
+        }
+        onContextBucketsChange={(nextBuckets) =>
+          updatePlaygroundState({ intelligenceContext: nextBuckets })
+        }
+        onFlowSessionsChange={(nextSessions) =>
+          updatePlaygroundState({
+            intelligenceFlowSessions: nextSessions,
+          })
+        }
+        onSelectedStreamIdsChange={(nextIds) =>
+          updatePlaygroundState({ intelligenceStreamIds: nextIds })
+        }
+      />
+    </>
   )
 }
 
