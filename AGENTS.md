@@ -17,7 +17,6 @@ This repo is the shared `@nextide/ui` package. The playground exists only as a l
 Use `just setup` and `just check` for the shared development baseline; see README.md for focused tests and browser prerequisites. Keep source files within 600 lines, tests within 900 lines, functions within 100 lines, and complexity within 12; do not add legacy debt exceptions.
 
 <!-- BEGIN NEXTIDE-META:GOVERNANCE -->
-
 ## Delivery Baseline
 
 - Use short-lived branches from `main`; update them before merging.
@@ -44,12 +43,32 @@ Use `just setup` and `just check` for the shared development baseline; see READM
   Wait on observable conditions, not arbitrary sleeps.
 - Keep focused suites independently runnable, with discoverable commands,
   prerequisites, and rough runtimes.
-- Run required checks and tests for changed behavior and its reachable effects.
-  Keep expensive lifecycle, load, and live-provider checks separate, with clear
-  reasons to run them.
-- Preserve reproducible E2E evidence using existing tooling: revision, command,
-  relevant inputs or seed, and outcome. Capture failure logs or traces, and
-  screenshots when visual behavior matters.
+- Preserve relevant E2E inputs or seeds, failure logs or traces, and screenshots
+  when visual behavior matters.
+
+## Validation
+
+- One owner consolidates worker results and covers combined changes. Reviewers
+  and orchestrators request only missing or invalidated checks.
+- Run required checks and cover changed behavior and reachable effects. Prefer
+  focused commands; keep cheap broad checks when simpler. Reuse passing results
+  while relevant inputs and execution conditions are unchanged.
+- Release coverage includes all changes since the target's last successful
+  deployment or publication, plus affected consumers. Broaden for shared
+  foundations, dependencies, migrations, or uncertain impact.
+- Qualify required behavior, packaging, configuration, and migration safety with
+  trusted evidence valid for the release candidate. Deployment verifies artifact
+  identity, current prerequisites, and health; run further checks for missing or
+  invalidated evidence.
+- Keep expensive lifecycle, load, and live-provider checks separate. Run them
+  only when cheaper checks cannot prove affected guarantees or on existing
+  schedules.
+- Keep check selection explicit and locally reproducible; record revision,
+  commands, and outcomes in existing PR notes or logs.
+- Replace redundant work without increasing PR or qualification/deployment
+  elapsed time or billed minutes, including shifted scheduled work. Existing
+  required gates remain binding until explicitly revised; missing prerequisites
+  or evidence are not passes.
 
 ## Adjacent cleanup
 
@@ -58,5 +77,4 @@ Use `just setup` and `just check` for the shared development baseline; see READM
 - Flag worthwhile broader cleanup to the orchestrator with its location and
   a brief reason. Continue assigned work unless correctness is blocked; the
   orchestrator decides whether to include it, dispatch separately, or defer it.
-
 <!-- END NEXTIDE-META:GOVERNANCE -->
