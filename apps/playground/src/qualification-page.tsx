@@ -32,6 +32,7 @@ import {
   PopoverTrigger,
 } from "@nextide/ui/components/popover"
 import { SelectMenu } from "@nextide/ui/components/select-menu"
+import { toast } from "@nextide/ui/components/toast"
 import {
   Tabs,
   TabsContent,
@@ -56,6 +57,7 @@ function QualificationPage() {
   return (
     <main className="min-h-screen bg-background p-4 text-foreground sm:p-6">
       <div className="mx-auto grid w-full max-w-4xl gap-4">
+        <NotificationExample />
         <FlowChartExample />
         <FlowViewportExample />
         <header className="grid gap-1">
@@ -134,6 +136,33 @@ function QualificationPage() {
         </Tabs>
       </div>
     </main>
+  )
+}
+
+function NotificationExample() {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {(["success", "info", "warning"] as const).map((tone) => (
+        <Button
+          key={tone}
+          variant="outline"
+          onClick={() =>
+            toast({
+              title:
+                tone === "success"
+                  ? "Banner · 320 × 50 URL copied"
+                  : tone === "info"
+                    ? "Source settings updated"
+                    : "Review source dimensions",
+              description: "Set width 320 and height 50 in the Browser Source.",
+              tone,
+            })
+          }
+        >
+          {tone} notification
+        </Button>
+      ))}
+    </div>
   )
 }
 

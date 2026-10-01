@@ -8,7 +8,7 @@ shadcn/ui, Base UI, Tailwind CSS 4, and React 19.
 Pin an exact release so upgrades remain deliberate:
 
 ```bash
-pnpm add --save-exact @nextide/ui@2.5.15
+pnpm add --save-exact @nextide/ui@2.6.0
 pnpm add --save-dev --save-exact tailwindcss@4.3.1 @tailwindcss/vite@4.3.1
 ```
 
@@ -69,6 +69,27 @@ function DetailsTrigger() {
 
 Do not import internal `src` or `dist` paths. The supported exports are
 `globals.css`, `components/*`, `blocks/*`, `hooks/*`, and `lib/*`.
+
+## Notifications
+
+Mount `<Toaster />` once in the application root. Call `toast` after an action
+succeeds; the library handles the polite announcement and dismissal.
+
+```tsx
+import { Toaster, toast } from "@nextide/ui/components/toast"
+
+// Application root
+;<Toaster />
+
+// After a successful copy
+toast({
+  title: "Banner � 320 � 50 URL copied",
+  description: "Set width 320 and height 50 in the Browser Source.",
+  tone: "success",
+})
+```
+
+`description` is optional. `tone` accepts `success`, `info` (default), or `warning`.
 
 ## v2 foundation
 
