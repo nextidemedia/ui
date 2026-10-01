@@ -35,7 +35,7 @@ function AppShell({
       data-sidebar-transitioning={sidebarTransitioning}
       data-density={density}
       className={cn(
-        "isolate grid h-dvh max-h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-background text-foreground transition-[grid-template-columns] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none lg:grid-rows-1",
+        "isolate grid h-dvh max-h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] overflow-clip bg-background text-foreground transition-[grid-template-columns] duration-[var(--nextide-drawer-duration)] ease-[var(--nextide-drawer-ease)] motion-reduce:transition-none lg:grid-rows-1",
         getAppShellGridClass(density, collapsed, Boolean(aside)),
         className
       )}
@@ -49,7 +49,7 @@ function AppShell({
       <div
         data-slot="app-shell-workspace"
         className={cn(
-          "relative z-0 grid min-h-0 min-w-0 overflow-hidden bg-background",
+          "relative z-0 grid min-h-0 min-w-0 overflow-clip bg-background",
           header
             ? "grid-rows-[auto_minmax(0,1fr)]"
             : "grid-rows-[minmax(0,1fr)]"
@@ -64,7 +64,7 @@ function AppShell({
           </header>
         ) : null}
         <ScrollArea
-          className="relative z-0 overflow-hidden"
+          className="relative z-0 overflow-clip"
           viewportProps={{
             render: <main />,
             role: "main",
@@ -80,7 +80,7 @@ function AppShell({
       </div>
       {aside ? (
         <ScrollArea
-          className="relative z-10 hidden overflow-hidden lg:block"
+          className="relative z-10 hidden overflow-clip lg:block"
           viewportProps={{
             render: <aside />,
             role: "complementary",

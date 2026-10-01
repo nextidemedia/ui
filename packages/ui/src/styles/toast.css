@@ -1,0 +1,38 @@
+.nextide-toast {
+  --nextide-toast-enter-y: 0px;
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: calc(4 - var(--toast-index));
+  transform: translate(
+    var(--toast-swipe-movement-x, 0px),
+    calc(
+      -1 * var(--toast-offset-y, 0px) - var(--toast-index, 0) * 0.75rem +
+        var(--toast-swipe-movement-y, 0px) + var(--nextide-toast-enter-y)
+    )
+  );
+  transition:
+    opacity var(--nextide-motion-state) var(--nextide-ease-out-quart),
+    transform var(--nextide-motion-state) var(--nextide-ease-out-quart);
+}
+
+.nextide-toast[data-starting-style],
+.nextide-toast[data-ending-style] {
+  --nextide-toast-enter-y: 0.5rem;
+  opacity: 0;
+}
+
+.nextide-toast[data-limited] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nextide-toast[data-swiping] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nextide-toast {
+    transition: none;
+  }
+}

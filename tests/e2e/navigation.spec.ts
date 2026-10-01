@@ -7,6 +7,64 @@ import {
 
 test.beforeEach(openQualification)
 
+test("deep scrollIntoView moves only the shell viewport and keeps the frame fixed", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/?view=foundations")
+  await page.evaluate(() => document.fonts.ready)
+  const clippingBoxes = page.locator(
+    '[data-slot="app-shell"], [data-slot="app-shell-workspace"], [data-slot="app-shell-workspace"] > [data-slot="scroll-area"], [data-slot="app-shell"] > [data-slot="scroll-area"]'
+  )
+  for (const width of [1440, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    if (width === 1440)
+      await page.getByRole("button", { name: "Inspect", exact: true }).click()
+    const viewports = page.locator(
+      '[data-slot="app-shell"] [data-slot="scroll-area-viewport"]:visible'
+    )
+    const header = page.locator('[data-slot="app-shell-header"]')
+    const headerBefore = await header.boundingBox()
+    for (const viewport of await viewports.all()) {
+      await viewport.evaluate((element) => {
+        // Exercise overflow in a clipping root as well as the real scroll viewport.
+        element.style.height = `${element.clientHeight + 120}px`
+        const content = element.firstElementChild as HTMLElement
+        const target = document.createElement("button")
+        target.textContent = "Deep scroll target"
+        target.style.display = "block"
+        target.style.marginTop = "2400px"
+        target.style.marginBottom = "1200px"
+        target.style.scrollMarginTop = "24px"
+        content.append(target)
+      })
+      const target = viewport
+        .getByRole("button", { name: "Deep scroll target", exact: true })
+        .last()
+      await expect(
+        viewport.locator("..").locator('[data-slot="scroll-area-scrollbar"]')
+      ).toHaveAttribute("data-has-overflow-y", "")
+      await target.evaluate((element) =>
+        element.scrollIntoView({ block: "start", behavior: "instant" })
+      )
+      await expect
+        .poll(() => viewport.evaluate((element) => element.scrollTop))
+        .toBeGreaterThan(0)
+      expect(
+        await clippingBoxes.evaluateAll((elements) =>
+          elements.map((element) => element.scrollTop)
+        )
+      ).toEqual(Array(await clippingBoxes.count()).fill(0))
+      expect(await header.boundingBox()).toEqual(headerBefore)
+      await expect(target).toBeInViewport()
+      await viewport.evaluate((element) =>
+        element.scrollTo({ top: 0, behavior: "instant" })
+      )
+      expect(await viewport.evaluate((element) => element.scrollTop)).toBe(0)
+    }
+  }
+})
+
 test("shell scrollbars fade with overflow while scrolling stays keyboard and pointer operable", async ({
   page,
 }) => {

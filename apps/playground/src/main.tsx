@@ -6,6 +6,7 @@ import "@nextide/ui/display-font.css"
 import { App } from "./App.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { QualificationPage } from "./qualification-page.tsx"
+import { Toaster } from "@nextide/ui/components/toast"
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -15,6 +16,7 @@ createRoot(document.getElementById("root")!).render(
       ) : (
         <App />
       )}
+      <Toaster />
     </ThemeProvider>
   </StrictMode>
 )

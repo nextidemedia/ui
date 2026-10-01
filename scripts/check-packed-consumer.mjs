@@ -40,6 +40,8 @@ const qualifiedExports = [
   ["@nextide/ui/blocks/creator-transfer", "CreatorTransfer"],
   ["@nextide/ui/blocks/stream-selector", "StreamSelector"],
   ["@nextide/ui/components/button", "Button"],
+  ["@nextide/ui/components/toast", "Toaster"],
+  ["@nextide/ui/components/toast", "toast"],
   ["@nextide/ui/components/currency-input", "CurrencyInput"],
   ["@nextide/ui/components/segmented-control", "SegmentedControl"],
   ["@nextide/ui/components/signal-ridge-chart", "SignalRidgeChart"],
