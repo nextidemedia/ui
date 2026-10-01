@@ -48,7 +48,7 @@ jobs:
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
       - run: pnpm run format:check
       - run: pnpm run lint
-      - run: uv run --no-project --python 3.12 python scripts/check_loc.py
+      - run: uv run --no-project --python 3.15 python scripts/check_loc.py
 
   correctness:
     name: Correctness / Package and browser

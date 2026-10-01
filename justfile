@@ -9,7 +9,7 @@ setup:
 
 lint:
     pnpm run lint
-    uv run --no-project --python 3.12 python scripts/check_loc.py
+    uv run --no-project --python 3.15 python scripts/check_loc.py
 
 fmt:
     pnpm run format
@@ -49,4 +49,4 @@ qualify-deploy: correctness
 deadcode-setup: setup
 
 deadcode:
-    uv run --no-project --python 3.12 python scripts/deadcode.py
+    uv run --no-project --python 3.15 python scripts/deadcode.py
