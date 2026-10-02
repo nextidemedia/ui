@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 
 test("one-day campaign labels remain readable across zoom and viewport sizes", async ({
   page,
@@ -81,6 +81,7 @@ test("four-week schedule zoom changes booking scale and keeps dates aligned", as
         rowRight: row.right,
       }
     })
+  await expect(timeline).toHaveAttribute("data-zoom", "week")
   const week = await measure()
   expect(week.track).toBeGreaterThanOrEqual(week.frame - 2)
   await matrix.getByRole("button", { name: "Zoom out" }).click()
@@ -117,4 +118,144 @@ test("four-week schedule zoom changes booking scale and keeps dates aligned", as
       timeline.evaluate((node) => node.scrollWidth - node.clientWidth)
     )
     .toBeGreaterThan(0)
+})
+
+function creatorFlight(page: Page) {
+  const panel = page.locator('[data-slot="creator-flight-panel"]')
+  const timeline = panel.getByRole("region", {
+    name: "Campaign schedule timeline",
+  })
+  return {
+    panel,
+    timeline,
+    open: (label: string) =>
+      page
+        .getByRole("group", { name: "Flight opening zoom" })
+        .getByRole("button", { name: label })
+        .click(),
+    resize: (width: number) =>
+      panel.evaluate((node, nextWidth) => {
+        node.style.maxWidth = "none"
+        node.style.width = `${nextWidth}px`
+      }, width),
+    overflow: () =>
+      timeline.evaluate((node) => node.scrollWidth - node.clientWidth),
+    scrollLeft: () => timeline.evaluate((node) => node.scrollLeft),
+    // ResizeObserver delivers before the next paint; two frames prove none was acted on.
+    settle: () =>
+      page.evaluate(
+        () =>
+          new Promise((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(resolve))
+          )
+      ),
+  }
+}
+
+async function openCreatorFlight(page: Page) {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.setViewportSize({ width: 1920, height: 1000 })
+  await page.goto("/?view=daedalus")
+  const flight = creatorFlight(page)
+  await flight.panel.scrollIntoViewIfNeeded()
+  return flight
+}
+
+test("fit opens a flight at the most detailed zoom its panel shows whole", async ({
+  page,
+}) => {
+  const flight = await openCreatorFlight(page)
+  for (const [width, zoom] of [
+    [1500, "day"],
+    [1000, "week"],
+    [640, "month"],
+  ] as const) {
+    await flight.resize(width)
+    await flight.open("Weeks")
+    await flight.open("Fit flight")
+    await expect(flight.timeline).toHaveAttribute("data-zoom", zoom)
+    expect(await flight.overflow()).toBeLessThanOrEqual(0)
+    expect(await flight.scrollLeft()).toBe(0)
+  }
+  await flight.resize(420)
+  await flight.open("Weeks")
+  await flight.open("Fit flight")
+  await expect(flight.timeline).toHaveAttribute("data-zoom", "month")
+  expect(await flight.overflow()).toBeGreaterThan(0)
+})
+
+test("fit settles before the first paint without a zoom animation", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=daedalus")
+  const flight = creatorFlight(page)
+  await flight.panel.scrollIntoViewIfNeeded()
+  await flight.open("Weeks")
+  await expect(flight.timeline).toHaveAttribute("data-zoom", "week")
+  await flight.panel.evaluate((panel) => {
+    const frames: string[] = []
+    Object.assign(window, { flightFrames: frames })
+    const record = () => {
+      const region = panel.querySelector('[role="region"]')
+      const track = region?.firstElementChild?.getBoundingClientRect()
+      frames.push(
+        `${region?.getAttribute("data-zoom")}:${Math.round(track?.width ?? 0)}`
+      )
+      if (frames.length < 24) requestAnimationFrame(record)
+    }
+    document.addEventListener("click", () => requestAnimationFrame(record), {
+      capture: true,
+      once: true,
+    })
+  })
+  await flight.open("Fit flight")
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { flightFrames: string[] }).flightFrames
+      )
+    )
+    .toHaveLength(24)
+  const frames = await page.evaluate(
+    () => (window as unknown as { flightFrames: string[] }).flightFrames
+  )
+  expect(new Set(frames).size).toBe(1)
+  expect(frames[0]).toMatch(/^month:[1-9]\d+$/)
+})
+
+test("fit follows panel resizes until the viewer zooms", async ({ page }) => {
+  const flight = await openCreatorFlight(page)
+  await flight.resize(1000)
+  await flight.open("Weeks")
+  await flight.open("Fit flight")
+  await expect(flight.timeline).toHaveAttribute("data-zoom", "week")
+  await flight.resize(640)
+  await expect(flight.timeline).toHaveAttribute("data-zoom", "month")
+  await flight.resize(1000)
+  await expect(flight.timeline).toHaveAttribute("data-zoom", "week")
+  await flight.panel.getByRole("button", { name: "Zoom in" }).click()
+  await expect(flight.timeline).toHaveAttribute("data-zoom", "day")
+  for (const width of [420, 1500]) {
+    await flight.resize(width)
+    await flight.settle()
+    await expect(flight.timeline).toHaveAttribute("data-zoom", "day")
+  }
+})
+
+test("an explicit opening zoom is kept at any panel width", async ({
+  page,
+}) => {
+  const flight = await openCreatorFlight(page)
+  await flight.resize(640)
+  await flight.open("Days")
+  await expect(flight.timeline).toHaveAttribute("data-zoom", "day")
+  expect(await flight.overflow()).toBeGreaterThan(0)
+  expect(await flight.scrollLeft()).toBeGreaterThan(0)
+  await flight.resize(1500)
+  await flight.open("Months")
+  await expect(flight.timeline).toHaveAttribute("data-zoom", "month")
+  await flight.resize(640)
+  await flight.settle()
+  await expect(flight.timeline).toHaveAttribute("data-zoom", "month")
 })

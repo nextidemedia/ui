@@ -266,6 +266,27 @@ function initialsFromNode(node: React.ReactNode) {
     : "NX"
 }
 
+function scheduleTimelineMinWidth(
+  zoom: CampaignScheduleZoom,
+  headerLayers: Record<CampaignScheduleZoom, ScheduleHeaderLayer>
+) {
+  return Math.max(
+    zoom === "month" ? minimumTimelineWidth / 2 : minimumTimelineWidth,
+    headerLayers[zoom].primary.length * minimumUnitWidths[zoom]
+  )
+}
+
+function fitScheduleZoom(
+  timelineWidth: number,
+  headerLayers: Record<CampaignScheduleZoom, ScheduleHeaderLayer>
+): CampaignScheduleZoom {
+  return (
+    zoomOrder.find(
+      (zoom) => scheduleTimelineMinWidth(zoom, headerLayers) <= timelineWidth
+    ) ?? "month"
+  )
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
 }
@@ -292,9 +313,7 @@ export {
   zoomOrder,
   zoomLabels,
   contextLabels,
-  minimumUnitWidths,
   creatorColumnWidth,
-  minimumTimelineWidth,
   zoomDuration,
   wheelThreshold,
   createScheduleHeaderLayers,
@@ -302,6 +321,8 @@ export {
   contextTierForZoom,
   scheduleTransitionClass,
   initialsFromNode,
+  scheduleTimelineMinWidth,
+  fitScheduleZoom,
   clamp,
   readCssTime,
 }

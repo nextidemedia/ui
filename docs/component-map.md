@@ -203,8 +203,15 @@ padding, and close-button clearance. Use `layout="flush"` when the dialog's
 own header and body sections provide their spacing.
 
 `blocks/campaign-schedule-matrix` derives day/week/month/quarter headers from
-each slot's ISO `date`. It opens at week scale and, when a `today` slot exists,
-positions that week after one visible week of history. Inside the schedule
+each slot's ISO `date`. `defaultZoom` sets the opening scale: `"day"`,
+`"week"` (default), `"month"`, or `"fit"`. A fixed scale with a `today` slot
+opens with that day, week, or month after one visible unit of history. `"fit"`
+opens at the most detailed scale whose minimum timeline width fits beside the
+creator column, falling back to months, and stretches it across the board so a
+short flight is visible whole without scrolling. It settles before the first
+paint and follows container resizes until the viewer zooms with the toolbar or
+wheel. Changing `defaultZoom` after mount has no effect; remount with a `key` to
+reopen at another scale. Inside the schedule
 board, wheel interaction steps between day, week, and month zoom only while
 another level is available, then hands scrolling back to the page. The top and
 creator legends remain inert. Pointer users can drag the board horizontally; a

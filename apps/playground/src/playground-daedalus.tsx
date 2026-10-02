@@ -33,6 +33,7 @@ import { cn } from "@nextide/ui/lib/utils"
 import { CalendarClock, Filter, Gauge, RadioTower } from "lucide-react"
 import { type ReactNode, useState } from "react"
 import { ComponentReference } from "./component-reference"
+import { CreatorFlightDemo } from "./playground-daedalus-flight"
 import {
   bannerImpressionDays,
   bannerImpressionSeries,
@@ -113,6 +114,11 @@ function DaedalusPlayground({
         dateRange={dateRange}
         onDateRangeChange={onDateRangeChange}
       />
+
+      <div className="grid gap-2">
+        <ComponentReference names="CampaignScheduleMatrix" />
+        <CreatorFlightDemo />
+      </div>
 
       <DaedalusTrends />
 

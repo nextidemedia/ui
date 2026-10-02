@@ -3,9 +3,9 @@ import * as React from "react"
 import {
   clamp,
   creatorColumnWidth,
-  minimumTimelineWidth,
-  minimumUnitWidths,
+  fitScheduleZoom,
   readCssTime,
+  scheduleTimelineMinWidth,
   zoomDuration,
   zoomOrder,
   type CampaignScheduleZoom,
@@ -23,26 +23,30 @@ type ZoomTracking = {
 }
 
 type ScrollRef = React.RefObject<HTMLDivElement | null>
+type HeaderLayers = Record<CampaignScheduleZoom, ScheduleHeaderLayer>
+type CampaignScheduleDefaultZoom = CampaignScheduleZoom | "fit"
+type RequestZoom = (zoom: CampaignScheduleZoom, viewportX?: number) => void
 
 function useScheduleZoom(
   scrollRef: ScrollRef,
-  headerLayers: Record<CampaignScheduleZoom, ScheduleHeaderLayer>
+  headerLayers: HeaderLayers,
+  defaultZoom: CampaignScheduleDefaultZoom
 ) {
+  const fit = defaultZoom === "fit"
+  const startZoom = fit ? "week" : defaultZoom
   const tracking = React.useRef<ZoomTracking>({
-    zoom: "week",
+    zoom: startZoom,
     duration: zoomDuration,
     transitionId: 0,
     timer: null,
     focus: null,
   })
-  const [zoom, setZoom] = React.useState<CampaignScheduleZoom>("week")
+  const [zoom, setZoom] = React.useState<CampaignScheduleZoom>(startZoom)
+  const [fitting, setFitting] = React.useState(fit)
   const [zoomTransition, setZoomTransition] =
     React.useState<ZoomTransition | null>(null)
   const boundedDays = Math.max(headerLayers[zoom].dayCount, 1)
-  const timelineMinWidth = Math.max(
-    zoom === "month" ? minimumTimelineWidth / 2 : minimumTimelineWidth,
-    headerLayers[zoom].primary.length * minimumUnitWidths[zoom]
-  )
+  const timelineMinWidth = scheduleTimelineMinWidth(zoom, headerLayers)
   const requestZoom = React.useCallback(
     (nextZoom: CampaignScheduleZoom, viewportX?: number) => {
       const state = tracking.current
@@ -60,7 +64,32 @@ function useScheduleZoom(
     },
     [scrollRef, headerLayers]
   )
+  const userZoomed = React.useRef(false)
+  const requestUserZoom = React.useCallback<RequestZoom>(
+    (nextZoom, viewportX) => {
+      userZoomed.current = true
+      requestZoom(nextZoom, viewportX)
+    },
+    [requestZoom]
+  )
 
+  // The timeline content mounts only after this measurement, before paint,
+  // so the fitted zoom never animates in from the placeholder zoom.
+  React.useLayoutEffect(() => {
+    const node = scrollRef.current
+    if (!fitting || !node) return
+    const fittedZoom = fitScheduleZoom(fitWidth(node), headerLayers)
+    tracking.current.zoom = fittedZoom
+    setZoom(fittedZoom)
+    setFitting(false)
+  }, [scrollRef, headerLayers, fitting])
+  useRefitOnResize(
+    scrollRef,
+    headerLayers,
+    fit && !fitting,
+    userZoomed,
+    requestZoom
+  )
   useAnchoredZoom(
     scrollRef,
     tracking,
@@ -73,9 +102,10 @@ function useScheduleZoom(
     tracking,
     headerLayers,
     boundedDays,
-    timelineMinWidth
+    timelineMinWidth,
+    fit ? null : startZoom
   )
-  useScheduleWheel(scrollRef, tracking, requestZoom)
+  useScheduleWheel(scrollRef, tracking, requestUserZoom)
   React.useEffect(
     () => () => {
       if (tracking.current.timer) clearTimeout(tracking.current.timer)
@@ -85,9 +115,42 @@ function useScheduleZoom(
 
   const zoomBy = (step: -1 | 1) => {
     const nextZoom = zoomOrder[zoomOrder.indexOf(zoom) + step]
-    if (nextZoom) requestZoom(nextZoom)
+    if (nextZoom) requestUserZoom(nextZoom)
   }
-  return { zoom, zoomTransition, timelineMinWidth, zoomBy, boundedDays }
+  return {
+    zoom,
+    zoomTransition,
+    timelineMinWidth,
+    zoomBy,
+    boundedDays,
+    fitting,
+  }
+}
+
+function useRefitOnResize(
+  scrollRef: ScrollRef,
+  headerLayers: HeaderLayers,
+  enabled: boolean,
+  userZoomed: React.RefObject<boolean>,
+  requestZoom: RequestZoom
+) {
+  React.useEffect(() => {
+    const node = scrollRef.current
+    if (!enabled || !node) return
+    const observer = new ResizeObserver(() => {
+      if (userZoomed.current) {
+        observer.disconnect()
+        return
+      }
+      requestZoom(fitScheduleZoom(fitWidth(node), headerLayers))
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [scrollRef, headerLayers, enabled, userZoomed, requestZoom])
+}
+
+function fitWidth(node: HTMLDivElement) {
+  return node.clientWidth - creatorColumnWidth
 }
 
 function beginZoom(
@@ -171,29 +234,41 @@ function useAnchoredZoom(
 function useInitialScroll(
   scrollRef: ScrollRef,
   tracking: React.RefObject<ZoomTracking>,
-  headerLayers: Record<CampaignScheduleZoom, ScheduleHeaderLayer>,
+  headerLayers: HeaderLayers,
   boundedDays: number,
-  timelineMinWidth: number
+  timelineMinWidth: number,
+  initialZoom: CampaignScheduleZoom | null
 ) {
   const positioned = React.useRef(false)
   React.useLayoutEffect(() => {
     const node = scrollRef.current
-    if (!node || positioned.current || tracking.current.zoom !== "week") return
-    const todayWeekIndex = headerLayers.week.primary.findIndex(
-      (span) => span.today
+    if (
+      !node ||
+      !initialZoom ||
+      positioned.current ||
+      tracking.current.zoom !== initialZoom
     )
-    if (todayWeekIndex < 0) return
-    const firstVisibleWeek =
-      headerLayers.week.primary[Math.max(0, todayWeekIndex - 1)]
-    if (!firstVisibleWeek) return
+      return
+    const spans = headerLayers[initialZoom].primary
+    const todayIndex = spans.findIndex((span) => span.today)
+    if (todayIndex < 0) return
+    const firstVisibleSpan = spans[Math.max(0, todayIndex - 1)]
+    if (!firstVisibleSpan) return
     const timelineWidth = scheduleDateWidth(node)
     node.scrollLeft = clamp(
-      (firstVisibleWeek.startIndex / boundedDays) * timelineWidth,
+      (firstVisibleSpan.startIndex / boundedDays) * timelineWidth,
       0,
       Math.max(node.scrollWidth - node.clientWidth, 0)
     )
     positioned.current = true
-  }, [scrollRef, tracking, boundedDays, headerLayers, timelineMinWidth])
+  }, [
+    scrollRef,
+    tracking,
+    boundedDays,
+    headerLayers,
+    timelineMinWidth,
+    initialZoom,
+  ])
 }
 
 function scheduleDateWidth(node: HTMLDivElement) {
@@ -204,4 +279,9 @@ function scheduleDateWidth(node: HTMLDivElement) {
   )
 }
 
-export { useScheduleZoom, type ZoomTracking, type ScrollRef }
+export {
+  useScheduleZoom,
+  type CampaignScheduleDefaultZoom,
+  type ZoomTracking,
+  type ScrollRef,
+}
