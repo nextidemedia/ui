@@ -376,3 +376,38 @@ test("an explicit opening zoom is kept at any panel width", async ({
   await expect(flight.timeline).toHaveAttribute("data-zoom", "month")
   expect(await flight.headerLabels()).toEqual(["Jun", "Jul", "Aug"])
 })
+
+test("schedule header dates keep their type roles beside text colours", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/?view=web-mining")
+  await page.getByRole("button", { name: "Show four weeks" }).click()
+  const matrix = page.locator('[data-slot="campaign-schedule-matrix"]')
+  const legend = matrix.locator('[data-slot="campaign-schedule-top-legend"]')
+  const roleSize = (role: string) =>
+    page.evaluate((className) => {
+      const probe = document.createElement("span")
+      probe.className = className
+      document.body.append(probe)
+      const size = getComputedStyle(probe).fontSize
+      probe.remove()
+      return size
+    }, role)
+  const micro = await roleSize("text-ui-micro")
+  const caption = await roleSize("text-ui-caption")
+  expect(micro).not.toBe(caption)
+  await expect(legend.getByText(/^May \d+–\d+$/).first()).toHaveCSS(
+    "font-size",
+    micro
+  )
+  await expect(matrix.getByText("Month", { exact: true })).toHaveCSS(
+    "font-size",
+    micro
+  )
+  await expect(matrix.getByText("Creator", { exact: true })).toHaveCSS(
+    "font-size",
+    caption
+  )
+})

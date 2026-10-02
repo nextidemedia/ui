@@ -166,7 +166,7 @@ function renderIncidentProof(
         <span className="text-xs font-medium text-muted-foreground uppercase">
           Incident proof
         </span>
-        <DialogTitle className="text-2xl leading-none font-medium">
+        <DialogTitle className="leading-none font-medium">
           {incidentTitle}
         </DialogTitle>
         {incidentMeta ? (

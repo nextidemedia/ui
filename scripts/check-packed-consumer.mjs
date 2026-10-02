@@ -252,6 +252,22 @@ assert(!css.includes("assets/fonts"), "v2 must not reference font assets")
 assert(css.includes("--nextide-font-ui"), "v2 must expose its UI font stack")
 assert(css.includes("--text-ui-body"), "v2 must expose semantic type roles")
 
+const { cn } = await import("@nextide/ui/lib/utils")
+assert.equal(cn("text-ui-micro", "text-muted-foreground"), "text-ui-micro text-muted-foreground")
+assert.equal(cn("text-ui-micro text-ui-caption"), "text-ui-caption")
+assert.equal(cn("text-ui-label", "text-sm"), "text-sm")
+assert.equal(cn("text-muted-foreground", "text-foreground"), "text-foreground")
+const typeRoles = [...css.matchAll(/--text-([a-z0-9-]+?):/g)]
+  .map(([, name]) => name)
+  .filter((name) => !name.includes("--"))
+assert(typeRoles.includes("ui-micro"), "type roles must be readable from globals.css")
+for (const role of typeRoles) {
+  const size = "text-" + role
+  assert.equal(cn(size, "text-nextide-tide"), size + " text-nextide-tide",
+    size + " must merge as a font size, not a text colour")
+  assert.equal(cn("text-ui-body", size), size, size + " must replace another type role")
+}
+
 const displayCssPath = fileURLToPath(
   import.meta.resolve("@nextide/ui/display-font.css")
 )

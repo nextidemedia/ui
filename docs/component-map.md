@@ -93,7 +93,9 @@ The global stylesheet also owns the v2 typography utilities `text-ui-brand`,
 `text-ui-label`, `text-ui-caption`, and `text-ui-micro`. Use the first two only
 for the primary product lockup and rare intro or report mastheads. Reserve Micro
 for short badges and dense chart labels; shared controls and blocks should use
-the semantic roles instead of arbitrary font sizes or baseline offsets.
+the semantic roles instead of arbitrary font sizes or baseline offsets. `cn`
+treats these roles as font sizes: a role beside a text colour keeps both, and a
+later role or Tailwind size in `className` replaces the component's role.
 
 Shared interactive primitives use the Tide focus ring width from
 `--nextide-focus-ring-width` (0.5px by default). Form fields use the inset
