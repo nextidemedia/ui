@@ -206,12 +206,17 @@ own header and body sections provide their spacing.
 each slot's ISO `date`. `defaultZoom` sets the opening scale: `"day"`,
 `"week"` (default), `"month"`, or `"fit"`. A fixed scale with a `today` slot
 opens with that day, week, or month after one visible unit of history. `"fit"`
-opens at the most detailed scale whose minimum timeline width fits beside the
-creator column, falling back to months, and stretches it across the board so a
-short flight is visible whole without scrolling. It settles before the first
-paint and follows container resizes until the viewer zooms with the toolbar or
-wheel. Changing `defaultZoom` after mount has no effect; remount with a `key` to
-reopen at another scale. Inside the schedule
+spans exactly the supplied slots edge to edge, without trailing display dates or
+the standard minimum width, at the most detailed scale whose units keep their
+minimum width (88px per day, 112px per week, 176px per month) beside the
+creator column. When no scale fits it uses months, narrowed only while every
+header label stays readable, and scrolls beyond that. A partial week or month
+shorter than half the longest one may hide its label rather than truncate it.
+It settles before the first paint and follows container resizes until the
+viewer zooms with the toolbar or wheel; that zoom switches to the standard
+board, with its trailing month dates and minimum width. Changing `defaultZoom`
+after mount has no effect; remount with a `key` to reopen at another scale.
+Inside the schedule
 board, wheel interaction steps between day, week, and month zoom only while
 another level is available, then hands scrolling back to the page. The top and
 creator legends remain inert. Pointer users can drag the board horizontally; a

@@ -1,9 +1,11 @@
 import * as React from "react"
+import { flushSync } from "react-dom"
 
 import {
   clamp,
   creatorColumnWidth,
   fitScheduleZoom,
+  fittedTimelineMinWidth,
   readCssTime,
   scheduleTimelineMinWidth,
   zoomDuration,
@@ -27,9 +29,11 @@ type HeaderLayers = Record<CampaignScheduleZoom, ScheduleHeaderLayer>
 type CampaignScheduleDefaultZoom = CampaignScheduleZoom | "fit"
 type RequestZoom = (zoom: CampaignScheduleZoom, viewportX?: number) => void
 
+type ScheduleLayers = { standard: HeaderLayers; fitted: HeaderLayers }
+
 function useScheduleZoom(
   scrollRef: ScrollRef,
-  headerLayers: HeaderLayers,
+  layers: ScheduleLayers,
   defaultZoom: CampaignScheduleDefaultZoom
 ) {
   const fit = defaultZoom === "fit"
@@ -42,11 +46,14 @@ function useScheduleZoom(
     focus: null,
   })
   const [zoom, setZoom] = React.useState<CampaignScheduleZoom>(startZoom)
-  const [fitting, setFitting] = React.useState(fit)
+  // A fitted board spans only the supplied days without the standard width
+  // floor. The first toolbar or wheel zoom hands over to the standard board,
+  // with its trailing month padding and width floor, and ends re-fitting.
+  const [fitted, setFitted] = React.useState(fit)
   const [zoomTransition, setZoomTransition] =
     React.useState<ZoomTransition | null>(null)
+  const headerLayers = fitted ? layers.fitted : layers.standard
   const boundedDays = Math.max(headerLayers[zoom].dayCount, 1)
-  const timelineMinWidth = scheduleTimelineMinWidth(zoom, headerLayers)
   const requestZoom = React.useCallback(
     (nextZoom: CampaignScheduleZoom, viewportX?: number) => {
       const state = tracking.current
@@ -55,7 +62,7 @@ function useScheduleZoom(
         state,
         scrollRef.current,
         nextZoom,
-        Math.max(headerLayers[state.zoom].dayCount, 1),
+        headerLayers[state.zoom],
         viewportX
       )
       setZoomTransition(transition)
@@ -64,32 +71,29 @@ function useScheduleZoom(
     },
     [scrollRef, headerLayers]
   )
-  const userZoomed = React.useRef(false)
   const requestUserZoom = React.useCallback<RequestZoom>(
     (nextZoom, viewportX) => {
-      userZoomed.current = true
+      if (tracking.current.zoom === nextZoom) return
+      setFitted(false)
       requestZoom(nextZoom, viewportX)
     },
     [requestZoom]
   )
-
-  // The timeline content mounts only after this measurement, before paint,
-  // so the fitted zoom never animates in from the placeholder zoom.
-  React.useLayoutEffect(() => {
-    const node = scrollRef.current
-    if (!fitting || !node) return
-    const fittedZoom = fitScheduleZoom(fitWidth(node), headerLayers)
+  const applyFit = React.useCallback((fittedZoom: CampaignScheduleZoom) => {
     tracking.current.zoom = fittedZoom
     setZoom(fittedZoom)
-    setFitting(false)
-  }, [scrollRef, headerLayers, fitting])
-  useRefitOnResize(
+  }, [])
+  const { fitting, fitWidth } = useScheduleFit(
     scrollRef,
-    headerLayers,
-    fit && !fitting,
-    userZoomed,
+    layers.fitted,
+    fit,
+    fitted,
+    applyFit,
     requestZoom
   )
+  const timelineMinWidth = fitted
+    ? Math.max(fittedTimelineMinWidth(zoom, headerLayers), fitWidth)
+    : scheduleTimelineMinWidth(zoom, headerLayers)
   useAnchoredZoom(
     scrollRef,
     tracking,
@@ -120,47 +124,75 @@ function useScheduleZoom(
   return {
     zoom,
     zoomTransition,
+    headerLayers,
     timelineMinWidth,
     zoomBy,
     boundedDays,
     fitting,
+    // A fitted board follows its container; only zoom transitions animate it.
+    animateWidth: !fitted || zoomTransition !== null,
   }
 }
 
-function useRefitOnResize(
+// Fit mode measures the timeline before its content mounts and the first
+// paint, then re-measures on every resize until the viewer zooms. The fitted
+// track is floored at the measured width, not only stretched to it, so layout
+// passes that size the board intrinsically already see the final width and
+// size-dependent header labels resolve against it.
+function useScheduleFit(
   scrollRef: ScrollRef,
-  headerLayers: HeaderLayers,
-  enabled: boolean,
-  userZoomed: React.RefObject<boolean>,
+  fittedLayers: HeaderLayers,
+  fit: boolean,
+  fitted: boolean,
+  applyFit: (zoom: CampaignScheduleZoom) => void,
   requestZoom: RequestZoom
 ) {
+  const [fitting, setFitting] = React.useState(fit)
+  const [width, setWidth] = React.useState(0)
+  React.useLayoutEffect(() => {
+    const node = scrollRef.current
+    if (!fitting || !node) return
+    const measured = measureFitWidth(node)
+    setWidth(measured)
+    applyFit(fitScheduleZoom(measured, fittedLayers))
+    setFitting(false)
+  }, [scrollRef, fittedLayers, fitting, applyFit])
   React.useEffect(() => {
     const node = scrollRef.current
-    if (!enabled || !node) return
+    if (!fitted || fitting || !node) return
     const observer = new ResizeObserver(() => {
-      if (userZoomed.current) {
-        observer.disconnect()
-        return
-      }
-      requestZoom(fitScheduleZoom(fitWidth(node), headerLayers))
+      const measured = measureFitWidth(node)
+      flushSync(() => {
+        setWidth(measured)
+        requestZoom(fitScheduleZoom(measured, fittedLayers))
+      })
     })
     observer.observe(node)
     return () => observer.disconnect()
-  }, [scrollRef, headerLayers, enabled, userZoomed, requestZoom])
+  }, [scrollRef, fittedLayers, fitted, fitting, requestZoom])
+  return { fitting, fitWidth: width }
 }
 
-function fitWidth(node: HTMLDivElement) {
-  return node.clientWidth - creatorColumnWidth
+// The timeline width beside the creator column, rounded down so a track
+// floored at it never overflows.
+function measureFitWidth(node: HTMLDivElement) {
+  const style = window.getComputedStyle(node)
+  const width =
+    Number.parseFloat(style.width) -
+    Number.parseFloat(style.borderLeftWidth) -
+    Number.parseFloat(style.borderRightWidth)
+  return Math.floor(width) - creatorColumnWidth
 }
 
 function beginZoom(
   state: ZoomTracking,
   node: HTMLDivElement | null,
   nextZoom: CampaignScheduleZoom,
-  dayCount: number,
+  currentLayer: ScheduleHeaderLayer,
   viewportX?: number
 ): ZoomTransition {
   const currentZoom = state.zoom
+  const dayCount = Math.max(currentLayer.dayCount, 1)
   if (node) {
     state.duration = readCssTime(
       window.getComputedStyle(node).getPropertyValue("--nextide-motion-layout"),
@@ -185,6 +217,7 @@ function beginZoom(
   const transition: ZoomTransition = {
     id: ++state.transitionId,
     from: currentZoom,
+    fromLayer: currentLayer,
     direction: nextIndex > currentIndex ? "out" : "in",
   }
   if (state.timer) clearTimeout(state.timer)

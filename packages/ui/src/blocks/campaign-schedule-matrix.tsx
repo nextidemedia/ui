@@ -178,13 +178,12 @@ function useScheduleView(
 ) {
   const expanded = useScheduleExpanded()
   const { scrollRef } = expanded
-  const headerLayers = useScheduleDays(days)
+  const layers = useScheduleDays(days)
   return {
     expanded,
     scrollRef,
     mountScroll: expanded.mountScroll,
-    headerLayers,
-    ...useScheduleZoom(scrollRef, headerLayers, defaultZoom),
+    ...useScheduleZoom(scrollRef, layers, defaultZoom),
   }
 }
 
@@ -198,10 +197,10 @@ function useScheduleDays(days: CampaignScheduleDay[]) {
       })),
     [days]
   )
-  const headerLayers = React.useMemo(() => {
-    const base = createScheduleHeaderLayers(datedDays)
+  return React.useMemo(() => {
+    const fitted = createScheduleHeaderLayers(datedDays)
     const last = datedDays.at(-1)
-    if (!last) return base
+    if (!last) return { fitted, standard: fitted }
     const padding = datedDays.map((_, index) => {
       const dateValue = new Date(last.dateValue)
       dateValue.setUTCDate(dateValue.getUTCDate() + index + 1)
@@ -209,11 +208,13 @@ function useScheduleDays(days: CampaignScheduleDay[]) {
       return { id: date, date, dateValue, index: datedDays.length + index }
     })
     return {
-      ...base,
-      month: createScheduleHeaderLayers([...datedDays, ...padding]).month,
+      fitted,
+      standard: {
+        ...fitted,
+        month: createScheduleHeaderLayers([...datedDays, ...padding]).month,
+      },
     }
   }, [datedDays])
-  return headerLayers
 }
 
 function ScheduleTimeline({
@@ -224,6 +225,7 @@ function ScheduleTimeline({
   mountScroll,
   timelineMinWidth,
   fitting,
+  animateWidth,
   zoom,
   zoomTransition,
   headerLayers,
@@ -237,6 +239,7 @@ function ScheduleTimeline({
   mountScroll: React.RefCallback<HTMLDivElement>
   timelineMinWidth: number
   fitting: boolean
+  animateWidth: boolean
   children: React.ReactNode
 }) {
   const { dragging, handlePointerDown, handleClickCapture } =
@@ -260,7 +263,11 @@ function ScheduleTimeline({
       >
         {!fitting && (
           <div
-            className="relative grid transition-[width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
+            className={cn(
+              "relative grid",
+              animateWidth &&
+                "transition-[width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
+            )}
             style={{
               width: `max(100%, ${creatorColumnWidth + timelineMinWidth}px)`,
               gridTemplateColumns: `${creatorColumnWidth}px minmax(0, 1fr)`,

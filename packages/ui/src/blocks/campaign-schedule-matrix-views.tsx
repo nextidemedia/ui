@@ -175,9 +175,9 @@ function ScheduleTimelineHeader({
         {zoomTransition ? (
           <ScheduleHeader
             key={`old-${zoomTransition.id}`}
-            layer={headerLayers[zoomTransition.from]}
+            layer={zoomTransition.fromLayer}
             zoom={zoomTransition.from}
-            boundedDays={headerLayers[zoomTransition.from].dayCount}
+            boundedDays={zoomTransition.fromLayer.dayCount}
             phase="exit"
             direction={zoomTransition.direction}
           />
@@ -285,8 +285,8 @@ function ScheduleCreatorRow({
         {zoomTransition ? (
           <ScheduleGridLines
             key={`old-grid-${creator.id}-${zoomTransition.id}`}
-            spans={headerLayers[zoomTransition.from].primary}
-            boundedDays={headerLayers[zoomTransition.from].dayCount}
+            spans={zoomTransition.fromLayer.primary}
+            boundedDays={zoomTransition.fromLayer.dayCount}
             phase="exit"
             direction={zoomTransition.direction}
           />

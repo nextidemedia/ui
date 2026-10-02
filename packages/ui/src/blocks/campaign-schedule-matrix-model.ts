@@ -58,6 +58,8 @@ type ScheduleHeaderLayer = {
 type ZoomTransition = {
   id: number
   from: CampaignScheduleZoom
+  // The header layer on screen when the zoom began, which exits during it.
+  fromLayer: ScheduleHeaderLayer
   direction: "in" | "out"
 }
 
@@ -276,14 +278,43 @@ function scheduleTimelineMinWidth(
   )
 }
 
+// A header span shows its label once its content box reaches 3rem, inside
+// 0.5rem padding on each side and a 1px divider (see ScheduleHeader).
+const minimumLabelSpanWidth = 65
+
+// Fitted boards span exactly the supplied days with no fixed width floor. Each
+// span keeps a legible label, except slivers shorter than half the longest span
+// (a partial week or month at an edge), which hide their label instead of
+// truncating it.
+function fittedTimelineMinWidth(
+  zoom: CampaignScheduleZoom,
+  headerLayers: Record<CampaignScheduleZoom, ScheduleHeaderLayer>
+) {
+  const { dayCount, primary } = headerLayers[zoom]
+  const lengths = primary.map((span) => span.endIndex - span.startIndex + 1)
+  const longest = Math.max(...lengths)
+  const narrowestLabelled = Math.min(
+    ...lengths.filter((length) => length * 2 >= longest)
+  )
+  return lengths.length
+    ? (minimumLabelSpanWidth * dayCount) / narrowestLabelled
+    : 0
+}
+
+// The most detailed zoom whose units all keep their minimum width across the
+// supplied days; the coarsest zoom when none does.
 function fitScheduleZoom(
   timelineWidth: number,
   headerLayers: Record<CampaignScheduleZoom, ScheduleHeaderLayer>
 ): CampaignScheduleZoom {
   return (
     zoomOrder.find(
-      (zoom) => scheduleTimelineMinWidth(zoom, headerLayers) <= timelineWidth
-    ) ?? "month"
+      (zoom) =>
+        Math.max(
+          headerLayers[zoom].primary.length * minimumUnitWidths[zoom],
+          fittedTimelineMinWidth(zoom, headerLayers)
+        ) <= timelineWidth
+    ) ?? zoomOrder[zoomOrder.length - 1]
   )
 }
 
@@ -322,6 +353,7 @@ export {
   scheduleTransitionClass,
   initialsFromNode,
   scheduleTimelineMinWidth,
+  fittedTimelineMinWidth,
   fitScheduleZoom,
   clamp,
   readCssTime,
