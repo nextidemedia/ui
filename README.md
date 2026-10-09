@@ -6,7 +6,7 @@ Run `pnpm dev`, then open [http://127.0.0.1:5174](http://127.0.0.1:5174) to view
 
 ## Development checks
 
-Install Node 22.14+, pnpm 12.6.0, `just`, and uv. On Windows, install PowerShell 7.5+
+Install Node 22.22.3+ or 24.8+, pnpm 12.6.0, `just`, and uv. On Windows, install PowerShell 7.5+
 with `pwsh` available on PATH.
 
 - `just setup` installs the frozen workspace lockfile.
@@ -15,17 +15,27 @@ with `pwsh` available on PATH.
 - `just fmt`, `just fmt-check`, `just lint`, and `just typecheck` run separately.
 - `just quality` runs full formatting, lint, and LOC checks.
 - `just correctness` runs correctness lint, the supply-chain watchlist, TypeScript,
-  qualification gate probes, packed-consumer checks, the playground build, and
-  Chromium checks. `just qualify-deploy` runs the same checks without publishing.
+  packed-consumer checks, the playground build, and native TesterArmy browser
+  checks. `just qualify-deploy` runs the same checks without publishing.
 - `just qualify` runs both groups. `just check` keeps its existing scope.
-- `just test` runs the packed-consumer check through Node's test runner; native
-  flags and file selection work, e.g. `just test --test-reporter=spec scripts/check-packed-consumer.mjs`.
-  This check builds and packs the library and installs an isolated consumer, so
-  it needs npm registry access. `node --test scripts/check-qualification.mjs`
-  separately exercises qualification profiles, failure propagation, and lint boundaries.
-- `just test-integration` builds both workspaces and runs Playwright. First run
-  `pnpm exec playwright install chromium` (Linux CI also uses `--with-deps`).
-  Port 4173 must be free. Focus with `just test-integration -g "campaign schedule"`.
+- `just test` runs native package acceptance: a packed tarball installed into an
+  isolated npm consumer, public TypeScript/runtime exports, stylesheet/font assets,
+  and known chart, scroll-state, and typography regressions. It needs npm registry access.
+  Native tooling acceptance also invokes the real lint processes against disposable
+  unsafe-operation and React Hooks probes; source-shape qualification units are removed.
+- `just test-integration` builds both workspaces and runs native TesterArmy E2E.
+  First run `pnpm exec e2e-web install chromium` (Linux CI adds `--with-deps`).
+  The runner owns an isolated preview port and stops the server on exit.
+  Focus with `pnpm exec e2e run tests/schedule.e2e.ts --target mobile`.
+- Normal runs use committed recordings, strict read-only cache, zero retries, and
+  unavailable model credentials. Tests use the built library through playground
+  public exports at desktop (1440px) and mobile (390px) widths. The packed consumer
+  separately proves installation without workspace links. No visible browser is opened.
+- To author a changed recorded goal, set `UI_E2E_RECORD=1` with saved ChatGPT OAuth,
+  then run the affected case and one target with `--grep` and `--max-failures 1`.
+  Use `gpt-6-luna` with low reasoning. Inspect the generated `.e2e/cache` JSON for
+  sensitive data and literal origins before committing it unchanged. Clear the
+  recording variable and replay without credentials; never edit cache outcomes.
 
 The [shared baseline](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md)
 sets complexity 12, function length 100, and source/test LOC limits. All source
@@ -41,7 +51,7 @@ unused declarations, redundant syntax/types, and syntax preferences) are omitted
 the complete rule sets still run in Quality. Type safety restrictions and the
 supply-chain watchlist remain required in both profiles.
 
-The weekly **Qualification** workflow runs full qualification. Manual runs select
+Pull requests, main pushes, and the weekly **Qualification** workflow run full qualification. Manual runs select
 `full` or `deploy`; deploy deliberately skips **Quality**. **Qualification result**
 requires every selected group to succeed and reports the validated commit. The
 package has no service deployment or database integration lane; its integration
@@ -141,7 +151,7 @@ pnpm add "@nextide/ui@file:../nextide-ui/packages/ui"
 
 ```bash
 pnpm run check
-pnpm exec playwright install chromium
+pnpm exec e2e-web install chromium
 pnpm run qualify
 cd packages/ui
 npm pack --dry-run --access public
