@@ -154,7 +154,7 @@ test(
 )
 
 test(
-  "notification expiry pauses during hover and resumes after leaving",
+  "notification expiry preserves overlapping hover and focus pauses",
   { platforms: ["web"] },
   async ({ app, screen, browser }) => {
     await app.open("/qualification")
@@ -163,15 +163,33 @@ test(
     const notification = browser.locator('[data-slot="toast"]')
     await notification.hover()
     await expect(notification).toBeVisible()
-    const started = Date.now()
-    await expect
-      .poll(
-        async () => (Date.now() - started >= 4500 ? notification.count() : 0),
-        { timeout: 5500 }
-      )
-      .toBe(1)
-    await trigger.focus()
+    const dismiss = notification.getByRole("button", "Dismiss notification")
+    await dismiss.focus()
+    async function remainsFor(duration: number) {
+      const started = Date.now()
+      await expect
+        .poll(
+          async () =>
+            (await notification.count()) === 1 ? Date.now() - started : -1,
+          { timeout: duration + 1500 }
+        )
+        .toBeGreaterThanOrEqual(duration)
+    }
+    await remainsFor(4500)
     await browser.mouse.move(0, 0)
-    await expect(notification).toHaveCount(0, { timeout: 6000 })
+    await expect(dismiss).toBeFocused()
+    await remainsFor(4500)
+    await trigger.focus()
+    await remainsFor(3200)
+    await expect(notification).toHaveCount(0, { timeout: 2800 })
+
+    await trigger.tap()
+    await notification.hover()
+    await dismiss.focus()
+    await trigger.focus()
+    await remainsFor(4500)
+    await browser.mouse.move(0, 0)
+    await remainsFor(3200)
+    await expect(notification).toHaveCount(0, { timeout: 2800 })
   }
 )

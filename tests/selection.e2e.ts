@@ -152,13 +152,21 @@ test(
     await app.open("/?view=daedalus")
     const bar = browser.locator('[data-slot="dashboard-filter-bar"]')
     const clear = bar.getByRole("button", "Clear filter")
-    await clear.tap()
-    await expect(clear).toBeDisabled()
-    await browser
-      .locator('[data-slot="dashboard-filter-scroll"]')
-      .getByRole("button")
-      .first()
-      .tap()
-    await expect(clear).toBeEnabled()
+    const viewport = await browser.evaluate(() => ({
+      width: innerWidth,
+      height: innerHeight,
+    }))
+    const widths = viewport.width === 390 ? [390, 320, 768] : [viewport.width]
+    for (const width of widths) {
+      await browser.setViewport({ width, height: viewport.height })
+      await clear.tap()
+      await expect(clear).toBeDisabled()
+      await browser
+        .locator('[data-slot="dashboard-filter-scroll"]')
+        .getByRole("button")
+        .first()
+        .tap()
+      await expect(clear).toBeEnabled()
+    }
   }
 )
