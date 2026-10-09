@@ -8,16 +8,19 @@
     "dev": "turbo dev",
     "lint": "pnpm exec oxlint --deny-warnings && turbo lint && pnpm run security:watchlist",
     "format": "prettier --write .",
-    "qualify": "pnpm run test:package && pnpm --filter playground build && playwright test",
-    "typecheck": "turbo typecheck",
+    "qualify": "pnpm run build && e2e run",
+    "typecheck": "turbo typecheck && tsc --noEmit -p tsconfig.e2e.json",
     "security:watchlist": "node scripts/check-supply-chain.mjs",
-    "test:e2e": "pnpm run build && playwright test",
-    "test:package": "node scripts/check-packed-consumer.mjs",
+    "test:e2e": "pnpm run build && e2e run",
+    "test:package": "e2e run --target package",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "@axe-core/playwright": "4.13.0",
-    "@playwright/test": "1.63.0",
+    "@ai-sdk/openai": "4.0.83",
+    "@e2e-dev/web": "0.13.0",
+    "@types/node": "26.6.1",
+    "ai": "7.0.126",
+    "e2e": "0.18.0",
     "knip": "6.36.0",
     "oxlint": "1.83.0",
     "prettier": "3.9.7",
@@ -27,6 +30,6 @@
   },
   "packageManager": "pnpm@12.6.0",
   "engines": {
-    "node": ">=22.14.0"
+    "node": "^22.22.3 || >=24.8.0"
   }
 }

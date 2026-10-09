@@ -20,6 +20,8 @@ coverage
 .ask-pro
 .playwright-cli
 output
+.e2e/*
+!.e2e/cache/
 .impeccable/config.local.json
 .impeccable/hook.cache.json
 .impeccable/live/sessions/

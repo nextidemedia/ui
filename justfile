@@ -20,12 +20,12 @@ fmt-check:
 typecheck:
     pnpm run typecheck
 
-test *args="scripts/check-packed-consumer.mjs":
-    node --test {{_forward_args}}
+test *args:
+    pnpm exec e2e run --target package {{_forward_args}}
 
 test-integration *args:
     pnpm run build
-    pnpm exec playwright test {{_forward_args}}
+    pnpm exec e2e run {{_forward_args}}
 
 check: fmt-check lint typecheck test
 
@@ -38,7 +38,6 @@ lint-correctness:
     pnpm run security:watchlist
 
 correctness: lint-correctness typecheck
-    node --test scripts/check-qualification.mjs
     pnpm run qualify
 
 qualify: quality correctness

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-10-09T10:38:18.953Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Review settings\"",
+        "target": {
+          "role": "button",
+          "name": "Review settings"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/controls.e2e.ts::a%20reviewer%20opens%20and%20dismisses%20project%20review",
+      "targetId": "desktop",
+      "instructionDigest": "32b0534d7081d0085db51f39bd9ddba2ce9276f2bec6fafdf4c4e26b70f62c55",
+      "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "Opened Review settings; the Project review dialog is displayed with the message “Your project is ready for the team.”",
+    "startPath": "/qualification",
+    "endPath": "/qualification",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Review settings",
+        "states": [
+          "expanded"
+        ]
+      },
+      {
+        "role": "heading",
+        "name": "Project review"
+      },
+      {
+        "text": "Your project is ready for the team."
+      },
+      {
+        "role": "dialog",
+        "name": "Project review"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "button",
+        "name": "Review settings"
+      }
+    ],
+    "endWaitMs": 12437
+  }
+}

@@ -5,8 +5,11 @@ coverage/
 pnpm-lock.yaml
 .pnpm-store/
 output/
+.e2e/
+.agents/skills/e2e/
 .ask-pro/
 .playwright-cli/
 .impeccable/
 # Upstream-owned copy from meta; preserve its original formatting.
+AGENTS.md
 docs/brand_assets/NEXTIDE_BRAND_AGENT_GUIDE.md
