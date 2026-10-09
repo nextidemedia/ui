@@ -17,7 +17,6 @@ This repo is the shared `@nextide/ui` package. The playground exists only as a l
 Use `just setup` and `just check` for the shared development baseline; see README.md for focused tests and browser prerequisites. Keep source files within 600 lines, tests within 900 lines, functions within 100 lines, and complexity within 12; do not add legacy debt exceptions.
 
 <!-- BEGIN NEXTIDE-META:GOVERNANCE -->
-
 ## Delivery Baseline
 
 - Use short-lived branches from `main`; update them before merging.
@@ -27,25 +26,49 @@ Use `just setup` and `just check` for the shared development baseline; see READM
 
 ## Testing
 
-- Before implementing non-trivial behavior, identify expected outcomes, relevant
-  failures, and existing coverage. Derive expectations from requirements and
-  contracts, not the implementation.
-- Use the smallest test boundary that proves the behavior. Use E2E when the
-  complete path matters; cover representative interactions, boundaries, and
-  failure or recovery cases rather than only the simplest happy path.
-- Add or extend tests only for meaningful coverage gaps, including regressions.
-  Prefer the owning suite; remove duplicates only when they protect the same
-  guarantee at the same boundary.
-- Reject tautologies and tests that only detect implementation changes.
-  Behavior-preserving refactors should preserve behavioral expectations.
+- Remove ordinary unit tests; do not add standalone unit tests with each change.
+  Preserve genuine known-bug outcomes in the owning journey; relabeling a unit
+  test as a regression does not justify keeping it. Delete implementation-shape
+  checks and same-guarantee duplicates. Coverage totals are not justification.
+- Plan user-visible acceptance outcomes before implementation, then implement
+  against the owning E2E suite. Derive expectations from requirements, known-bug
+  evidence, or external contracts, not the implementation. Agent-written browser
+  tests are not independent merely because they use a browser.
+- Retain integration checks only for a concrete, important, unique outcome at an
+  actual process, storage, or external boundary that cannot reasonably be proved
+  by the owning journey. Preserve safety, security, data-integrity guarantees
+  and relevant static/build checks; explicitly replace obsolete test gates as
+  part of conversion rather than silently bypassing required checks.
+- All E2E uses native TesterArmy: `npx skills add tester-army/e2e`.
+  Read the installed skill/references and the repo's verified record/replay
+  runbook. Do not wrap an old Playwright or unit suite. Use tools-only targets
+  for meaningful API/service boundaries without an artificial browser or model.
+  Pin compatible `e2e` and `@e2e-dev/*` versions; only these packages are exempt
+  from the seven-day release-age requirement.
+- Initially record bounded, meaningful `agent.act` goals with `gpt-6-luna` at low
+  reasoning and immediate native locator/engine `expect` checks. Use exact
+  mechanical actions where the skill recommends them. Record explicitly in
+  read-write mode; review and commit generated cache unchanged. Never edit
+  cache JSON or manufacture passing evidence. No larger-model fallback.
+- Routine replay is read-only and strict, with retries zero, model transport
+  disabled, and live model/external-provider credentials unavailable; disposable
+  local test authentication remains available. Missing recordings can still
+  call a model under strict mode. Avoid live `agent.assert`, `agent.waitFor`, and
+  `agent.extract` in the zero-call gate. Preserve recordings until an intentional
+  behavior/goal/engine change or reproducible replay break requires re-recording.
+  Run automated checks in the background and browsers headless.
 - Test time-dependent production logic with controlled clocks or prepared
   history without bypassing the behavior being proved. Account for other
   components' clocks; use real elapsed time only when the guarantee requires it.
   Wait on observable conditions, not arbitrary sleeps.
 - Keep focused suites independently runnable, with discoverable commands,
-  prerequisites, and rough runtimes.
-- Preserve relevant E2E inputs or seeds, failure logs or traces, and screenshots
-  when visual behavior matters.
+  prerequisites, and rough runtimes. Keep required model-quality and
+  live-provider qualification separate from routine zero-call acceptance.
+- Preserve revision, commands, inputs, outcomes, and useful failure evidence.
+  For conversions, report logical cases before/after, absolute and percentage
+  reduction, classifications, and retained regression guarantees. Separate
+  handwritten LOC from vendored/generated cache; report comparable timings with
+  caveats and recording/replay calls and tokens, including failures.
 
 ## Validation
 
@@ -78,5 +101,4 @@ Use `just setup` and `just check` for the shared development baseline; see READM
 - Flag worthwhile broader cleanup to the orchestrator with its location and
   a brief reason. Continue assigned work unless correctness is blocked; the
   orchestrator decides whether to include it, dispatch separately, or defer it.
-
 <!-- END NEXTIDE-META:GOVERNANCE -->
