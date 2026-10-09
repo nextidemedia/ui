@@ -148,20 +148,11 @@ test(
 test(
   "clearing a dashboard selection disables clear until a campaign is selected",
   { platforms: ["web"] },
-  async ({ app, screen, browser }) => {
+  async ({ app, browser }) => {
     await app.open("/?view=daedalus")
     const bar = browser.locator('[data-slot="dashboard-filter-bar"]')
     const clear = bar.getByRole("button", "Clear filter")
-    await browser.evaluate(async () => {
-      await document.fonts.ready
-      document
-        .querySelector('[aria-label="Clear filter"]')!
-        .scrollIntoView({ block: "center", behavior: "instant" })
-      return null
-    })
-    const box = (await clear.boundingBox())!
-    // Locator tap re-scrolls this control into the shell clip; use its visible center.
-    await screen.tapAt({ x: box.x + box.width / 2, y: box.y + box.height / 2 })
+    await clear.tap()
     await expect(clear).toBeDisabled()
     await browser
       .locator('[data-slot="dashboard-filter-scroll"]')
