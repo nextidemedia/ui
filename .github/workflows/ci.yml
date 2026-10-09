@@ -90,7 +90,12 @@ jobs:
       - run: pnpm run security:watchlist
       - run: pnpm run typecheck
       - name: Install Chromium
-        run: pnpm exec e2e-web install chromium --with-deps
+        run: |
+          if node -e "process.exit(require('./package.json').devDependencies?.['@e2e-dev/web'] ? 0 : 1)"; then
+            pnpm exec e2e-web install chromium --with-deps
+          else
+            pnpm exec playwright install --with-deps chromium
+          fi
       - name: Qualify packed package and browser
         run: pnpm run qualify
       - name: Preserve native E2E evidence
