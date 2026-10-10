@@ -21,17 +21,23 @@ const npm = process.platform === "win32" ? process.execPath : "npm"
 const npmArgs =
   process.platform === "win32"
     ? [
-        join(
-          dirname(process.execPath),
-          "node_modules",
-          "npm",
-          "bin",
-          "npm-cli.js"
-        ),
+        process.env.npm_execpath ??
+          join(
+            dirname(process.execPath),
+            "node_modules",
+            "npm",
+            "bin",
+            "npm-cli.js"
+          ),
       ]
     : []
 function run(command: string, args: string[], options: { cwd?: string } = {}) {
+  const env = { ...process.env }
+  // npm exports user approvals as an environment flag that nested installs reject.
+  delete env.npm_config_allow_scripts
+  delete env.NPM_CONFIG_ALLOW_SCRIPTS
   execFileSync(command, args, {
+    env,
     stdio: "inherit",
     timeout: 120_000,
     ...options,
