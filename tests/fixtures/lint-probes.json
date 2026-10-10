@@ -1,0 +1,114 @@
+[
+  {
+    "name": "cosmetic",
+    "source": "const unused = 1; export const ready = true",
+    "rule": "no-unused-vars",
+    "quality": 1,
+    "correctness": 0
+  },
+  {
+    "name": "unsafe",
+    "source": "declare const value: { foo?: { bar: number } }; export const broken = (value.foo?.bar).toFixed()",
+    "rule": "no-unsafe-optional-chaining",
+    "quality": 1,
+    "correctness": 1
+  },
+  {
+    "name": "hooks",
+    "source": "import { useState } from \"react\"; export function Probe({ enabled }: { enabled: boolean }) { if (enabled) useState(0); return null }",
+    "rule": "rules-of-hooks",
+    "quality": 1,
+    "correctness": 1
+  },
+  {
+    "name": "dependencies",
+    "source": "import { useEffect } from \"react\"; export function Probe({ value }: { value: string }) { useEffect(() => console.log(value), []); return null }",
+    "rule": "exhaustive-deps",
+    "quality": 1,
+    "correctness": 1
+  },
+  {
+    "name": "purity",
+    "source": "export function Probe() { return <div>{Date.now()}</div> }",
+    "rule": "purity",
+    "quality": 1,
+    "correctness": 1
+  },
+  {
+    "name": "refs",
+    "source": "import { useRef } from \"react\"; export function Probe() { const value = useRef(0); return <div>{value.current}</div> }",
+    "rule": "refs",
+    "quality": 1,
+    "correctness": 1
+  },
+  {
+    "name": "immutability",
+    "source": "export function Probe({ value }: { value: { count: number } }) { value.count = 1; return <div>{value.count}</div> }",
+    "rule": "immutability",
+    "quality": 1,
+    "correctness": 1
+  },
+  {
+    "name": "state-effect",
+    "source": "import { useEffect, useState } from \"react\"; export function Probe() { const [value, setValue] = useState(0); useEffect(() => { setValue(1) }, []); return <div>{value}</div> }",
+    "rule": "set-state-in-effect",
+    "quality": 1,
+    "correctness": 1
+  },
+  {
+    "name": "explicit-any",
+    "source": "export function read(value: any) { return value }",
+    "rule": "no-explicit-any",
+    "quality": 1,
+    "correctness": 1
+  },
+  {
+    "name": "a11y",
+    "source": "export function Probe() { return <label>Name</label> }",
+    "rule": "label-has-associated-control",
+    "quality": 1,
+    "correctness": 1
+  },
+  {
+    "name": "valid-label",
+    "source": "declare function Input(): import(\"react\").ReactNode; export function Probe() { return <label>Name<Input /></label> }",
+    "rule": "",
+    "quality": 0,
+    "correctness": 0
+  },
+  {
+    "name": "valid-hooks",
+    "source": "import { useState } from \"react\"; export function Probe() { const [value] = useState(0); return <div>{value}</div> }",
+    "rule": "",
+    "quality": 0,
+    "correctness": 0
+  },
+  {
+    "name": "valid-purity",
+    "source": "export function Probe({ todayDate }: { todayDate?: Date }) { return <div>{(todayDate ?? new Date()).getDate()}</div> }",
+    "rule": "",
+    "quality": 0,
+    "correctness": 0
+  },
+  {
+    "name": "refresh",
+    "source": "export function formatValue(value: string) { return value.trim() }; export function Probe() { return <div/> }",
+    "rule": "only-export-components",
+    "quality": 0,
+    "correctness": 0
+  },
+  {
+    "name": "refresh-constants",
+    "source": "export const label = \"Ready\"; export function Probe() { return <div>{label}</div> }",
+    "rule": "",
+    "quality": 0,
+    "correctness": 0
+  },
+  {
+    "name": "refresh-compound",
+    "source": "function Root() { return <div/> }; export const Compound = { Root }",
+    "rule": "",
+    "quality": 0,
+    "correctness": 0
+  }
+]

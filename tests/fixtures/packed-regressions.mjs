@@ -201,3 +201,12 @@ assert.equal(displayFonts.length, 1, "display CSS must reference one font")
 for (const [, font] of displayFonts) {
   await access(resolve(dirname(displayCssPath), font))
 }
+
+// These client entrypoints must remain client boundaries in consuming frameworks.
+for (const path of ["select", "popover", "toast"]) {
+  const source = await readFile(
+    fileURLToPath(import.meta.resolve(`@nextide/ui/components/${path}`)),
+    "utf8"
+  )
+  assert.match(source, /^['"]use client['"];/)
+}

@@ -1,0 +1,47 @@
+{
+  "extends": ["./.oxlintrc.json"],
+  "overrides": [
+    {
+      "files": ["**/*"],
+      "rules": {
+        "eslint/complexity": "off",
+        "eslint/max-lines-per-function": "off",
+        "eslint/no-unused-vars": "off",
+        "eslint/no-unused-labels": "off",
+        "eslint/no-unused-private-class-members": "off",
+        "eslint/no-extra-boolean-cast": "off",
+        "eslint/no-useless-catch": "off",
+        "eslint/no-useless-escape": "off",
+        "eslint/no-useless-rename": "off",
+        "typescript/no-duplicate-type-constituents": "off",
+        "typescript/no-redundant-type-constituents": "off",
+        "typescript/no-extra-non-null-assertion": "off",
+        "typescript/no-this-alias": "off",
+        "typescript/no-unnecessary-parameter-property-assignment": "off",
+        "typescript/no-useless-default-assignment": "off",
+        "typescript/no-useless-empty-export": "off",
+        "typescript/prefer-as-const": "off",
+        "typescript/prefer-namespace-keyword": "off",
+        "typescript/triple-slash-reference": "off",
+        "unicorn/no-empty-file": "off",
+        "unicorn/no-single-promise-in-promise-methods": "off",
+        "unicorn/no-unnecessary-await": "off",
+        "unicorn/no-useless-fallback-in-spread": "off",
+        "unicorn/no-useless-length-check": "off",
+        "unicorn/no-useless-spread": "off",
+        "unicorn/prefer-set-size": "off",
+        "unicorn/prefer-string-starts-ends-with": "off",
+        "eslint/no-empty-static-block": "off",
+        "eslint/no-var": "off",
+        "eslint/prefer-const": "off",
+        "eslint/prefer-rest-params": "off",
+        "eslint/prefer-spread": "off",
+        "eslint/no-array-constructor": "off",
+        "typescript/no-namespace": "off",
+        "typescript/no-require-imports": "off",
+        "typescript/no-unnecessary-type-constraint": "off",
+        "react/only-export-components": "off"
+      }
+    }
+  ]
+}
