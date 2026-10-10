@@ -24,6 +24,19 @@ Use `just setup` and `just check` for the shared development baseline; see READM
   `test:`, `chore:`, `ci:`).
 - Do not merge with failing or missing required checks.
 
+## Runtime checks
+
+- Add a validation, guard or limit only when both are true: you can name what
+  goes wrong without it (what breaks, gets corrupted or is exposed), and you
+  can describe a realistic way that situation arises in normal operation.
+  "It could theoretically happen" is not a reason.
+- Check untrusted input once, where it enters the system. Do not re-check
+  values the type system, schema or an upstream caller already guarantees.
+- Do not reject or drop data for missing an expected shape or value that
+  nothing downstream depends on. For example: A 299.95-second segment in a
+  five-minute pipeline is a perfectly usable segment.
+- When changing a path, remove checks on it that protect nothing.
+
 ## Testing
 
 - Remove ordinary unit tests; do not add standalone unit tests with each change.
