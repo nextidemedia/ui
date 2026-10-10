@@ -2,7 +2,7 @@
   "commands": [
     {
       "name": "knip",
-      "argv": ["pnpm", "exec", "knip", "--no-exit-code"]
+      "argv": ["npm", "exec", "--", "knip", "--no-exit-code"]
     }
   ]
 }

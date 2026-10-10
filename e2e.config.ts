@@ -1,7 +1,12 @@
+import { createRequire } from "node:module"
+import { dirname, join } from "node:path"
 import type { E2EConfig } from "e2e"
 import { web } from "@e2e-dev/web"
 import { chatgpt } from "e2e/oauth/chatgpt"
 
+const require = createRequire(
+  new URL("./apps/playground/package.json", import.meta.url)
+)
 const record = process.env.UI_E2E_RECORD === "1"
 if (!record) process.env.E2E_OAUTH_CREDENTIALS = "{}"
 const app = {
@@ -10,7 +15,7 @@ const app = {
   command: {
     executable: process.execPath,
     args: [
-      "node_modules/vite/bin/vite.js",
+      join(dirname(require.resolve("vite/package.json")), "bin/vite.js"),
       "preview",
       "--host",
       "127.0.0.1",

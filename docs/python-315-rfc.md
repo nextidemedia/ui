@@ -2,8 +2,7 @@
 
 The LOC checker and advisory dead-code launcher use final Python 3.15.0 with
 uv 0.13.0. The package and playground run on JavaScript and TypeScript; the
-Python scripts use only the standard library. Node dependencies and the frozen
-pnpm lockfile are unchanged.
+Python scripts use only the standard library. These checks do not change Node dependencies or the frozen npm lockfile.
 
 ## Validation
 

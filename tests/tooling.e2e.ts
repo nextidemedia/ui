@@ -1,7 +1,7 @@
 import { test } from "e2e"
 import assert from "node:assert/strict"
 import { execFileSync, spawnSync } from "node:child_process"
-import { mkdtemp, rm, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises"
 import { createRequire } from "node:module"
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
@@ -17,6 +17,55 @@ const recipes = JSON.parse(
 const lintCommands: string[] = recipes["lint-correctness"].body.map(
   (line: string[]) => line.join("")
 )
+
+test(
+  "supply-chain watchlist rejects blocked transitive packages in npm workspaces",
+  { platforms: ["api"] },
+  async () => {
+    const fixture = await mkdtemp(join(tmpdir(), "nextide-ui-watchlist-"))
+    const dependency = join(fixture, "packages/app/node_modules/axios")
+    try {
+      await mkdir(dependency, { recursive: true })
+      await writeFile(
+        join(fixture, "package.json"),
+        JSON.stringify({ private: true, workspaces: ["packages/app"] })
+      )
+      await writeFile(
+        join(fixture, "packages/app/package.json"),
+        JSON.stringify({
+          name: "watchlist-app",
+          version: "1.0.0",
+          devDependencies: { axios: "*" },
+        })
+      )
+      await mkdir(join(fixture, "node_modules"))
+      await symlink(
+        join(fixture, "packages/app"),
+        join(fixture, "node_modules/watchlist-app"),
+        "junction"
+      )
+      for (const [version, expected] of [
+        ["1.14.0", 0],
+        ["1.14.1", 1],
+      ] as const) {
+        await writeFile(
+          join(dependency, "package.json"),
+          JSON.stringify({ name: "axios", version })
+        )
+        const result = spawnSync(
+          process.execPath,
+          [join(root, "scripts/check-supply-chain.mjs")],
+          { cwd: fixture, encoding: "utf8" }
+        )
+        assert.equal(result.status, expected, result.stdout + result.stderr)
+        if (expected === 1) assert.match(result.stderr, /axios@1\.14\.1/)
+      }
+    } finally {
+      await rm(fixture, { recursive: true, force: true })
+    }
+  }
+)
+
 test(
   "deploy lint permits cosmetic debt but rejects unsafe operations and broken hooks",
   { platforms: ["api"] },
@@ -43,10 +92,10 @@ test(
       for (const [name, source, expected] of probes) {
         await writeFile(file, source)
         for (const [binary, command, cwd] of [
-          [oxlint, lintCommands[0].replace("pnpm exec oxlint ", ""), root],
+          [oxlint, lintCommands[0].replace("npm exec -- oxlint ", ""), root],
           [
             eslint,
-            lintCommands[1].replace("pnpm -r exec eslint ", ""),
+            lintCommands[1].replace("npm exec --workspaces -- eslint ", ""),
             packageRoot,
           ],
         ]) {

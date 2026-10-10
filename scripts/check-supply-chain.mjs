@@ -28,19 +28,15 @@ const blockedPrefixes = [
   "@uipath/",
 ]
 
-const raw = execSync("pnpm list -r --depth Infinity --json", {
+const raw = execSync("npm ls --all --json", {
   encoding: "utf8",
   stdio: ["ignore", "pipe", "inherit"],
 })
 
-const projects = JSON.parse(raw)
+const project = JSON.parse(raw)
 const seen = new Map()
 
-for (const project of projects) {
-  collect(project.dependencies)
-  collect(project.devDependencies)
-  collect(project.optionalDependencies)
-}
+collect(project.dependencies)
 
 const matches = []
 

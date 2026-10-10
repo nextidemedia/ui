@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: "24.18.0"
           package-manager-cache: false
-      - run: npm install --global pnpm@12.6.0
+      - run: npm install --global npm@12.0.2
       - run: just deadcode-setup
       - run: just deadcode
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

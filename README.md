@@ -2,11 +2,11 @@
 
 Shared Nextide shadcn/ui components with a Vite playground.
 
-Run `pnpm dev`, then open [http://127.0.0.1:5174](http://127.0.0.1:5174) to view the component catalogue.
+Run `npm run dev`, then open [http://127.0.0.1:5174](http://127.0.0.1:5174) to view the component catalogue.
 
 ## Development checks
 
-Install Node 22.22.3+ or 24.8+, pnpm 12.6.0, `just`, and uv. On Windows, install PowerShell 7.5+
+Install Node 24.18.0 (matching CI), npm 12.0.2, `just`, and uv. On Windows, install PowerShell 7.5+
 with `pwsh` available on PATH.
 
 - `just setup` installs the frozen workspace lockfile.
@@ -24,9 +24,9 @@ with `pwsh` available on PATH.
   Native tooling acceptance also invokes the real lint processes against disposable
   unsafe-operation and React Hooks probes; source-shape qualification units are removed.
 - `just test-integration` builds both workspaces and runs native TesterArmy E2E.
-  First run `pnpm exec e2e-web install chromium` (Linux CI adds `--with-deps`).
+  First run `npm exec -- e2e-web install chromium` (Linux CI adds `--with-deps`).
   The runner owns an isolated preview port and stops the server on exit.
-  Focus with `pnpm exec e2e run tests/schedule.e2e.ts --target mobile`.
+  Focus with `npm exec -- e2e run tests/schedule.e2e.ts --target mobile`.
 - Normal runs use committed recordings, strict read-only cache, zero retries, and
   unavailable model credentials. Tests use the built library through playground
   public exports at desktop (1440px) and mobile (390px) widths. The packed consumer
@@ -79,7 +79,7 @@ navigation, overflow, or responsive component behavior.
 To add components to the shared UI package, run:
 
 ```bash
-pnpm dlx shadcn@latest add button -c packages/ui
+npx shadcn@latest add button -c packages/ui
 ```
 
 This will place the ui components in the `packages/ui/src/components` directory.
@@ -90,8 +90,8 @@ The package expects React 19 and Tailwind CSS 4. Install an exact release so a
 consumer upgrades deliberately:
 
 ```bash
-pnpm add --save-exact @nextide/ui@2.6.2
-pnpm add --save-dev --save-exact tailwindcss@4.3.1 @tailwindcss/vite@4.3.1
+npm install --save-exact @nextide/ui@2.6.2
+npm install --save-dev --save-exact tailwindcss@4.3.1 @tailwindcss/vite@4.3.1
 ```
 
 Vite consumers need the Tailwind CSS Vite plugin. Import the shared stylesheet
@@ -144,25 +144,25 @@ for the complete component map.
 For local development against a sibling checkout, use a file dependency:
 
 ```bash
-pnpm add "@nextide/ui@file:../nextide-ui/packages/ui"
+npm install "@nextide/ui@file:../nextide-ui/packages/ui"
 ```
 
 ## Checks
 
 ```bash
-pnpm run check
-pnpm exec e2e-web install chromium
-pnpm run qualify
+npm run check
+npm exec -- e2e-web install chromium
+npm run qualify
 cd packages/ui
 npm pack --dry-run --access public
 ```
 
-`pnpm run check` keeps its lint, typecheck, build, and targeted supply-chain scope.
-Install Chromium once, then run the explicit, headless `pnpm run qualify` gate for packed-package consumer resolution and
+`npm run check` keeps its lint, typecheck, build, and targeted supply-chain scope.
+Install Chromium once, then run the explicit, headless `npm run qualify` gate for packed-package consumer resolution and
 representative Chromium interaction, accessibility, and responsive checks.
 Use `just qualify` for all checks or `just qualify-deploy` for release validation.
-Direct dependencies are pinned exactly. The workspace also enforces pnpm
-release-age and build-script guardrails.
+Direct dependencies are pinned exactly. The workspace also enforces a seven-day release age (except native E2E packages),
+strict peer dependencies, and explicitly approved dependency install scripts.
 
 ## Releasing
 
