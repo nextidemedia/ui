@@ -74,6 +74,15 @@ test(
     await budget.press("Home")
     await budget.press("ArrowRight")
     await budget.press("ArrowRight")
+    await expect
+      .poll(() =>
+        browser.evaluate(() => {
+          const input =
+            document.querySelector<HTMLInputElement>("#primitive-budget")
+          return [input?.selectionStart, input?.selectionEnd]
+        })
+      )
+      .toEqual([2, 2])
     await budget.pressSequentially("9")
     await expect(budget).toHaveValue("$19,234.05")
     await budget.press("Backspace")
