@@ -42,6 +42,6 @@
     "@modelcontextprotocol/core": "2.2.0"
   },
   "allowScripts": {
-    "esbuild": true
+    "fsevents": false
   }
 }
