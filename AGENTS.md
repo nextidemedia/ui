@@ -72,27 +72,25 @@ Use `just setup` and `just check` for the shared development baseline; see READM
 
 ## Validation
 
-- One owner consolidates worker results and covers combined changes. Reviewers
-  and orchestrators request only missing or invalidated checks.
-- Run required checks and cover changed behavior and reachable effects. Prefer
-  focused commands; keep cheap broad checks when simpler. Reuse passing results
-  while relevant inputs and execution conditions are unchanged.
-- Release coverage includes all changes since the target's last successful
-  deployment or publication, plus affected consumers. Broaden for shared
-  foundations, dependencies, migrations, or uncertain impact.
-- Qualify required behavior, packaging, configuration, and migration safety with
-  trusted evidence valid for the release candidate. Deployment verifies artifact
-  identity, current prerequisites, and health; run further checks for missing or
-  invalidated evidence.
-- Keep expensive lifecycle, load, and live-provider checks separate. Run them
-  only when cheaper checks cannot prove affected guarantees or on existing
-  schedules.
-- Keep check selection explicit and locally reproducible; record revision,
-  commands, and outcomes in existing PR notes or logs.
-- Replace redundant work without increasing PR or qualification/deployment
-  elapsed time or billed minutes, including shifted scheduled work. Existing
-  required gates remain binding until explicitly revised; missing prerequisites
-  or evidence are not passes.
+- Run targeted local checks as needed; run larger validation remotely on the
+  working branch. Required checks must pass before merge.
+- If remote validation is blocked, proceed with a reasonable local fallback.
+  Mention the reason, results and remaining gaps in the final response.
+  Required CI/platform gates still apply.
+- One owner verifies combined changes and consolidates results. Reuse passing
+  evidence while relevant inputs and conditions are unchanged; request only
+  missing or invalidated checks.
+- Cover changed behavior and reachable effects. Broaden for shared foundations,
+  dependencies, migrations or uncertain impact. Run expensive lifecycle, load
+  and live-provider checks only when cheaper checks cannot prove affected
+  guarantees or on existing schedules.
+- Release evidence must be valid for the candidate and cover changes since the
+  target's last successful deployment/publication, affected consumers, required
+  behavior, packaging, configuration and migration safety. Deployment verifies
+  artifact identity, prerequisites and health.
+- Use documented, reproducible commands; record revision, commands and results
+  in PR notes or logs. Avoid duplicate work; measure queue time, runtime and
+  cost when relocating checks.
 
 ## Adjacent cleanup
 
