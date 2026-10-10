@@ -3,15 +3,15 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "turbo build",
-    "check": "pnpm run lint && pnpm run typecheck && pnpm run build",
-    "dev": "turbo dev",
-    "lint": "pnpm exec oxlint --deny-warnings && turbo lint && pnpm run security:watchlist",
+    "build": "npm run build --workspace @nextide/ui && npm run build --workspace playground",
+    "check": "npm run lint && npm run typecheck && npm run build",
+    "dev": "npm run build --workspace @nextide/ui && npm run dev --workspace playground",
+    "lint": "oxlint --deny-warnings && npm run lint --workspaces && npm run security:watchlist",
     "format": "prettier --write .",
-    "qualify": "pnpm run build && e2e run",
-    "typecheck": "turbo typecheck && tsc --noEmit -p tsconfig.e2e.json",
+    "qualify": "npm run build && e2e run",
+    "typecheck": "npm run build --workspace @nextide/ui && npm run typecheck --workspaces && tsc --noEmit -p tsconfig.e2e.json",
     "security:watchlist": "node scripts/check-supply-chain.mjs",
-    "test:e2e": "pnpm run build && e2e run",
+    "test:e2e": "npm run qualify",
     "test:package": "e2e run --target package",
     "format:check": "prettier --check ."
   },
@@ -25,11 +25,23 @@
     "oxlint": "1.83.0",
     "prettier": "3.9.7",
     "prettier-plugin-tailwindcss": "0.8.1",
-    "turbo": "2.10.13",
     "typescript": "6.0.3"
   },
-  "packageManager": "pnpm@12.6.0",
+  "packageManager": "npm@12.0.2",
   "engines": {
-    "node": "^22.22.3 || >=24.8.0"
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0",
+    "npm": "12.0.2"
+  },
+  "workspaces": [
+    "packages/ui",
+    "apps/playground"
+  ],
+  "overrides": {
+    "flatted": "3.4.2",
+    "@modelcontextprotocol/server": "2.2.0",
+    "@modelcontextprotocol/core": "2.2.0"
+  },
+  "allowScripts": {
+    "esbuild": true
   }
 }

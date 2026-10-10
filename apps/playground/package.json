@@ -12,7 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@nextide/ui": "workspace:*",
+    "@nextide/ui": "*",
     "lucide-react": "1.46.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"

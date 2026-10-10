@@ -1,9 +1,7 @@
 dist/
 node_modules/
-.turbo/
 coverage/
-pnpm-lock.yaml
-.pnpm-store/
+package-lock.json
 output/
 .e2e/
 .agents/skills/e2e/
