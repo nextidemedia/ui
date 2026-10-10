@@ -79,7 +79,7 @@ test(
         browser.evaluate(() => {
           const input =
             document.querySelector<HTMLInputElement>("#primitive-budget")
-          return [input?.selectionStart, input?.selectionEnd]
+          return [input?.selectionStart ?? null, input?.selectionEnd ?? null]
         })
       )
       .toEqual([2, 2])
