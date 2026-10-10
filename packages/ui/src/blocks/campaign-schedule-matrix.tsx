@@ -28,6 +28,7 @@ import {
 } from "./campaign-schedule-matrix-views.js"
 import {
   useScheduleZoom,
+  type CampaignScheduleDefaultZoom,
   type ScrollRef,
 } from "./campaign-schedule-matrix-zoom.js"
 import { useScheduleDrag } from "./campaign-schedule-matrix-drag.js"
@@ -44,6 +45,7 @@ type CampaignScheduleMatrixProps = React.ComponentProps<typeof Surface> & {
   onBookingSelect?: (booking: CampaignScheduleBooking) => void
   minimumRows?: number
   showMetrics?: boolean
+  defaultZoom?: CampaignScheduleDefaultZoom
   campaignStartIndex?: number
   campaignEndIndex?: number
   editableStartIndex?: number
@@ -73,6 +75,7 @@ function CampaignScheduleMatrix({
   onBookingSelect,
   minimumRows = 0,
   showMetrics = true,
+  defaultZoom = "week",
   campaignStartIndex,
   campaignEndIndex,
   editableStartIndex = 0,
@@ -85,7 +88,7 @@ function CampaignScheduleMatrix({
   ...props
 }: CampaignScheduleMatrixProps) {
   const rootRef = React.useRef<HTMLElement>(null)
-  const view = useScheduleView(days)
+  const view = useScheduleView(days, defaultZoom)
   const tools = useScheduleTools(rootRef, view.expanded.change)
   const liveBookings = visibleBookings(creators, bookings)
   return (
@@ -130,7 +133,6 @@ function CampaignScheduleMatrix({
           campaignStartIndex={campaignStartIndex}
           campaignEndIndex={campaignEndIndex}
           {...view}
-          mountScroll={view.expanded.mountScroll}
         >
           <ScheduleRows
             creators={creators}
@@ -170,15 +172,18 @@ function visibleBookings(
   return bookings.filter((booking) => ids.has(booking.creatorId))
 }
 
-function useScheduleView(days: CampaignScheduleDay[]) {
+function useScheduleView(
+  days: CampaignScheduleDay[],
+  defaultZoom: CampaignScheduleDefaultZoom
+) {
   const expanded = useScheduleExpanded()
   const { scrollRef } = expanded
-  const headerLayers = useScheduleDays(days)
+  const layers = useScheduleDays(days)
   return {
     expanded,
     scrollRef,
-    headerLayers,
-    ...useScheduleZoom(scrollRef, headerLayers),
+    mountScroll: expanded.mountScroll,
+    ...useScheduleZoom(scrollRef, layers, defaultZoom),
   }
 }
 
@@ -192,10 +197,10 @@ function useScheduleDays(days: CampaignScheduleDay[]) {
       })),
     [days]
   )
-  const headerLayers = React.useMemo(() => {
-    const base = createScheduleHeaderLayers(datedDays)
+  return React.useMemo(() => {
+    const fitted = createScheduleHeaderLayers(datedDays)
     const last = datedDays.at(-1)
-    if (!last) return base
+    if (!last) return { fitted, standard: fitted }
     const padding = datedDays.map((_, index) => {
       const dateValue = new Date(last.dateValue)
       dateValue.setUTCDate(dateValue.getUTCDate() + index + 1)
@@ -203,11 +208,13 @@ function useScheduleDays(days: CampaignScheduleDay[]) {
       return { id: date, date, dateValue, index: datedDays.length + index }
     })
     return {
-      ...base,
-      month: createScheduleHeaderLayers([...datedDays, ...padding]).month,
+      fitted,
+      standard: {
+        ...fitted,
+        month: createScheduleHeaderLayers([...datedDays, ...padding]).month,
+      },
     }
   }, [datedDays])
-  return headerLayers
 }
 
 function ScheduleTimeline({
@@ -217,6 +224,8 @@ function ScheduleTimeline({
   scrollRef,
   mountScroll,
   timelineMinWidth,
+  fitting,
+  animateWidth,
   zoom,
   zoomTransition,
   headerLayers,
@@ -229,6 +238,8 @@ function ScheduleTimeline({
   scrollRef: ScrollRef
   mountScroll: React.RefCallback<HTMLDivElement>
   timelineMinWidth: number
+  fitting: boolean
+  animateWidth: boolean
   children: React.ReactNode
 }) {
   const { dragging, handlePointerDown, handleClickCapture } =
@@ -250,27 +261,33 @@ function ScheduleTimeline({
         onDragStart={(event) => event.preventDefault()}
         className="nextide-scrollbar-none relative overflow-x-auto rounded-xl border border-nextide-line bg-background/20 outline-none select-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring"
       >
-        <div
-          className="relative grid transition-[width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
-          style={{
-            width: `max(100%, ${creatorColumnWidth + timelineMinWidth}px)`,
-            gridTemplateColumns: `${creatorColumnWidth}px minmax(0, 1fr)`,
-          }}
-        >
-          <ScheduleTimelineHeader
-            rowLabel={rowLabel}
-            zoom={zoom}
-            zoomTransition={zoomTransition}
-            headerLayers={headerLayers}
-            boundedDays={boundedDays}
-          />
-          {children}
-          <ScheduleCampaignMarkers
-            start={campaignStartIndex}
-            end={campaignEndIndex}
-            boundedDays={boundedDays}
-          />
-        </div>
+        {!fitting && (
+          <div
+            className={cn(
+              "relative grid",
+              animateWidth &&
+                "transition-[width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none"
+            )}
+            style={{
+              width: `max(100%, ${creatorColumnWidth + timelineMinWidth}px)`,
+              gridTemplateColumns: `${creatorColumnWidth}px minmax(0, 1fr)`,
+            }}
+          >
+            <ScheduleTimelineHeader
+              rowLabel={rowLabel}
+              zoom={zoom}
+              zoomTransition={zoomTransition}
+              headerLayers={headerLayers}
+              boundedDays={boundedDays}
+            />
+            {children}
+            <ScheduleCampaignMarkers
+              start={campaignStartIndex}
+              end={campaignEndIndex}
+              boundedDays={boundedDays}
+            />
+          </div>
+        )}
       </div>
     </>
   )
@@ -323,6 +340,7 @@ function ScheduleCampaignMarkers({
 }
 
 export { CampaignScheduleMatrix }
+export type { CampaignScheduleDefaultZoom } from "./campaign-schedule-matrix-zoom.js"
 export type {
   CampaignScheduleBooking,
   CampaignScheduleCreator,

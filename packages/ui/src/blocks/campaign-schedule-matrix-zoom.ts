@@ -1,11 +1,13 @@
 import * as React from "react"
+import { flushSync } from "react-dom"
 
 import {
   clamp,
   creatorColumnWidth,
-  minimumTimelineWidth,
-  minimumUnitWidths,
+  fitScheduleZoom,
+  fittedTimelineMinWidth,
   readCssTime,
+  scheduleTimelineMinWidth,
   zoomDuration,
   zoomOrder,
   type CampaignScheduleZoom,
@@ -23,26 +25,35 @@ type ZoomTracking = {
 }
 
 type ScrollRef = React.RefObject<HTMLDivElement | null>
+type HeaderLayers = Record<CampaignScheduleZoom, ScheduleHeaderLayer>
+type CampaignScheduleDefaultZoom = CampaignScheduleZoom | "fit"
+type RequestZoom = (zoom: CampaignScheduleZoom, viewportX?: number) => void
+
+type ScheduleLayers = { standard: HeaderLayers; fitted: HeaderLayers }
 
 function useScheduleZoom(
   scrollRef: ScrollRef,
-  headerLayers: Record<CampaignScheduleZoom, ScheduleHeaderLayer>
+  layers: ScheduleLayers,
+  defaultZoom: CampaignScheduleDefaultZoom
 ) {
+  const fit = defaultZoom === "fit"
+  const startZoom = fit ? "week" : defaultZoom
   const tracking = React.useRef<ZoomTracking>({
-    zoom: "week",
+    zoom: startZoom,
     duration: zoomDuration,
     transitionId: 0,
     timer: null,
     focus: null,
   })
-  const [zoom, setZoom] = React.useState<CampaignScheduleZoom>("week")
+  const [zoom, setZoom] = React.useState<CampaignScheduleZoom>(startZoom)
+  // A fitted board spans only the supplied days without the standard width
+  // floor. The first toolbar or wheel zoom hands over to the standard board,
+  // with its trailing month padding and width floor, and ends re-fitting.
+  const [fitted, setFitted] = React.useState(fit)
   const [zoomTransition, setZoomTransition] =
     React.useState<ZoomTransition | null>(null)
+  const headerLayers = fitted ? layers.fitted : layers.standard
   const boundedDays = Math.max(headerLayers[zoom].dayCount, 1)
-  const timelineMinWidth = Math.max(
-    zoom === "month" ? minimumTimelineWidth / 2 : minimumTimelineWidth,
-    headerLayers[zoom].primary.length * minimumUnitWidths[zoom]
-  )
   const requestZoom = React.useCallback(
     (nextZoom: CampaignScheduleZoom, viewportX?: number) => {
       const state = tracking.current
@@ -51,7 +62,7 @@ function useScheduleZoom(
         state,
         scrollRef.current,
         nextZoom,
-        Math.max(headerLayers[state.zoom].dayCount, 1),
+        headerLayers[state.zoom],
         viewportX
       )
       setZoomTransition(transition)
@@ -60,7 +71,29 @@ function useScheduleZoom(
     },
     [scrollRef, headerLayers]
   )
-
+  const requestUserZoom = React.useCallback<RequestZoom>(
+    (nextZoom, viewportX) => {
+      if (tracking.current.zoom === nextZoom) return
+      setFitted(false)
+      requestZoom(nextZoom, viewportX)
+    },
+    [requestZoom]
+  )
+  const applyFit = React.useCallback((fittedZoom: CampaignScheduleZoom) => {
+    tracking.current.zoom = fittedZoom
+    setZoom(fittedZoom)
+  }, [])
+  const { fitting, fitWidth } = useScheduleFit(
+    scrollRef,
+    layers.fitted,
+    fit,
+    fitted,
+    applyFit,
+    requestZoom
+  )
+  const timelineMinWidth = fitted
+    ? Math.max(fittedTimelineMinWidth(zoom, headerLayers), fitWidth)
+    : scheduleTimelineMinWidth(zoom, headerLayers)
   useAnchoredZoom(
     scrollRef,
     tracking,
@@ -73,9 +106,10 @@ function useScheduleZoom(
     tracking,
     headerLayers,
     boundedDays,
-    timelineMinWidth
+    timelineMinWidth,
+    fit ? null : startZoom
   )
-  useScheduleWheel(scrollRef, tracking, requestZoom)
+  useScheduleWheel(scrollRef, tracking, requestUserZoom)
   React.useEffect(
     () => () => {
       if (tracking.current.timer) clearTimeout(tracking.current.timer)
@@ -85,19 +119,80 @@ function useScheduleZoom(
 
   const zoomBy = (step: -1 | 1) => {
     const nextZoom = zoomOrder[zoomOrder.indexOf(zoom) + step]
-    if (nextZoom) requestZoom(nextZoom)
+    if (nextZoom) requestUserZoom(nextZoom)
   }
-  return { zoom, zoomTransition, timelineMinWidth, zoomBy, boundedDays }
+  return {
+    zoom,
+    zoomTransition,
+    headerLayers,
+    timelineMinWidth,
+    zoomBy,
+    boundedDays,
+    fitting,
+    // A fitted board follows its container; only zoom transitions animate it.
+    animateWidth: !fitted || zoomTransition !== null,
+  }
+}
+
+// Fit mode measures the timeline before its content mounts and the first
+// paint, then re-measures on every resize until the viewer zooms. The fitted
+// track is floored at the measured width, not only stretched to it, so layout
+// passes that size the board intrinsically already see the final width and
+// size-dependent header labels resolve against it.
+function useScheduleFit(
+  scrollRef: ScrollRef,
+  fittedLayers: HeaderLayers,
+  fit: boolean,
+  fitted: boolean,
+  applyFit: (zoom: CampaignScheduleZoom) => void,
+  requestZoom: RequestZoom
+) {
+  const [fitting, setFitting] = React.useState(fit)
+  const [width, setWidth] = React.useState(0)
+  React.useLayoutEffect(() => {
+    const node = scrollRef.current
+    if (!fitting || !node) return
+    const measured = measureFitWidth(node)
+    setWidth(measured)
+    applyFit(fitScheduleZoom(measured, fittedLayers))
+    setFitting(false)
+  }, [scrollRef, fittedLayers, fitting, applyFit])
+  React.useEffect(() => {
+    const node = scrollRef.current
+    if (!fitted || fitting || !node) return
+    const observer = new ResizeObserver(() => {
+      const measured = measureFitWidth(node)
+      flushSync(() => {
+        setWidth(measured)
+        requestZoom(fitScheduleZoom(measured, fittedLayers))
+      })
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [scrollRef, fittedLayers, fitted, fitting, requestZoom])
+  return { fitting, fitWidth: width }
+}
+
+// The timeline width beside the creator column, rounded down so a track
+// floored at it never overflows.
+function measureFitWidth(node: HTMLDivElement) {
+  const style = window.getComputedStyle(node)
+  const width =
+    Number.parseFloat(style.width) -
+    Number.parseFloat(style.borderLeftWidth) -
+    Number.parseFloat(style.borderRightWidth)
+  return Math.floor(width) - creatorColumnWidth
 }
 
 function beginZoom(
   state: ZoomTracking,
   node: HTMLDivElement | null,
   nextZoom: CampaignScheduleZoom,
-  dayCount: number,
+  currentLayer: ScheduleHeaderLayer,
   viewportX?: number
 ): ZoomTransition {
   const currentZoom = state.zoom
+  const dayCount = Math.max(currentLayer.dayCount, 1)
   if (node) {
     state.duration = readCssTime(
       window.getComputedStyle(node).getPropertyValue("--nextide-motion-layout"),
@@ -122,6 +217,7 @@ function beginZoom(
   const transition: ZoomTransition = {
     id: ++state.transitionId,
     from: currentZoom,
+    fromLayer: currentLayer,
     direction: nextIndex > currentIndex ? "out" : "in",
   }
   if (state.timer) clearTimeout(state.timer)
@@ -171,29 +267,41 @@ function useAnchoredZoom(
 function useInitialScroll(
   scrollRef: ScrollRef,
   tracking: React.RefObject<ZoomTracking>,
-  headerLayers: Record<CampaignScheduleZoom, ScheduleHeaderLayer>,
+  headerLayers: HeaderLayers,
   boundedDays: number,
-  timelineMinWidth: number
+  timelineMinWidth: number,
+  initialZoom: CampaignScheduleZoom | null
 ) {
   const positioned = React.useRef(false)
   React.useLayoutEffect(() => {
     const node = scrollRef.current
-    if (!node || positioned.current || tracking.current.zoom !== "week") return
-    const todayWeekIndex = headerLayers.week.primary.findIndex(
-      (span) => span.today
+    if (
+      !node ||
+      !initialZoom ||
+      positioned.current ||
+      tracking.current.zoom !== initialZoom
     )
-    if (todayWeekIndex < 0) return
-    const firstVisibleWeek =
-      headerLayers.week.primary[Math.max(0, todayWeekIndex - 1)]
-    if (!firstVisibleWeek) return
+      return
+    const spans = headerLayers[initialZoom].primary
+    const todayIndex = spans.findIndex((span) => span.today)
+    if (todayIndex < 0) return
+    const firstVisibleSpan = spans[Math.max(0, todayIndex - 1)]
+    if (!firstVisibleSpan) return
     const timelineWidth = scheduleDateWidth(node)
     node.scrollLeft = clamp(
-      (firstVisibleWeek.startIndex / boundedDays) * timelineWidth,
+      (firstVisibleSpan.startIndex / boundedDays) * timelineWidth,
       0,
       Math.max(node.scrollWidth - node.clientWidth, 0)
     )
     positioned.current = true
-  }, [scrollRef, tracking, boundedDays, headerLayers, timelineMinWidth])
+  }, [
+    scrollRef,
+    tracking,
+    boundedDays,
+    headerLayers,
+    timelineMinWidth,
+    initialZoom,
+  ])
 }
 
 function scheduleDateWidth(node: HTMLDivElement) {
@@ -204,4 +312,9 @@ function scheduleDateWidth(node: HTMLDivElement) {
   )
 }
 
-export { useScheduleZoom, type ZoomTracking, type ScrollRef }
+export {
+  useScheduleZoom,
+  type CampaignScheduleDefaultZoom,
+  type ZoomTracking,
+  type ScrollRef,
+}

@@ -67,9 +67,7 @@ function SignalPlate({
               {eyebrow}
             </SurfaceDescription>
           ) : null}
-          <SurfaceTitle className="text-2xl leading-tight">
-            {title}
-          </SurfaceTitle>
+          <SurfaceTitle className="leading-tight">{title}</SurfaceTitle>
           {description ? (
             <p className="max-w-xl text-sm leading-6 text-muted-foreground">
               {description}

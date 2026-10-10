@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "e2e": {
+      "source": "tester-army/e2e",
+      "sourceType": "github",
+      "skillPath": "skills/e2e/SKILL.md",
+      "computedHash": "1191b5042192d78a4040e8829c349ec05b89339c5d42d1d67c620f0a897e41f0"
+    }
+  }
+}

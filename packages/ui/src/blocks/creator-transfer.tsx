@@ -219,7 +219,7 @@ function CreatorTransferPanel({
           }}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search creators..."
-          className="h-auto border-0 bg-transparent p-0 text-sm shadow-none focus-visible:shadow-none focus-visible:not-data-[pointer-focus]:ring-0 dark:bg-transparent"
+          className="h-auto border-0 bg-transparent p-0 shadow-none focus-visible:shadow-none focus-visible:not-data-[pointer-focus]:ring-0 dark:bg-transparent"
         />
       </label>
       <div

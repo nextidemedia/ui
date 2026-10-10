@@ -11,7 +11,7 @@ const statusBadgeVariants = cva(
         neutral: "border-nextide-line bg-nextide-panel text-muted-foreground",
         success: "border-nextide-tide/45 bg-nextide-tide/10 text-nextide-tide",
         processing:
-          "border-nextide-purple/45 bg-nextide-purple/10 text-nextide-purple",
+          "border-nextide-purple/45 bg-nextide-purple/10 text-[color-mix(in_srgb,var(--nextide-purple)_65%,var(--foreground))]",
         warning:
           "border-nextide-yellow/45 bg-nextide-yellow/10 text-nextide-yellow",
         danger: "border-nextide-red/45 bg-nextide-red/10 text-nextide-red",

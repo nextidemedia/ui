@@ -2,6 +2,9 @@ name: Qualification
 run-name: Qualification (${{ inputs.profile || 'full' }})
 
 on:
+  pull_request:
+  push:
+    branches: [main]
   schedule:
     - cron: "17 8 * * 0"
   workflow_dispatch:
@@ -75,6 +78,9 @@ jobs:
       - run: npm install --global pnpm@12.6.0
       - run: pnpm install --frozen-lockfile
       # Native commands also work on release tags predating the local just recipes.
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+        with:
+          just-version: "1.58.0"
       - name: Correctness lint
         run: |
           if node -e "process.exit(require('./package.json').devDependencies?.oxlint ? 0 : 1)"; then
@@ -84,9 +90,21 @@ jobs:
       - run: pnpm run security:watchlist
       - run: pnpm run typecheck
       - name: Install Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: |
+          if node -e "process.exit(require('./package.json').devDependencies?.['@e2e-dev/web'] ? 0 : 1)"; then
+            pnpm exec e2e-web install chromium --with-deps
+          else
+            pnpm exec playwright install --with-deps chromium
+          fi
       - name: Qualify packed package and browser
         run: pnpm run qualify
+      - name: Preserve native E2E evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: native-e2e-${{ github.sha }}
+          path: output/e2e/
+          if-no-files-found: ignore
 
   result:
     name: Qualification result

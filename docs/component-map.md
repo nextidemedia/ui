@@ -93,7 +93,9 @@ The global stylesheet also owns the v2 typography utilities `text-ui-brand`,
 `text-ui-label`, `text-ui-caption`, and `text-ui-micro`. Use the first two only
 for the primary product lockup and rare intro or report mastheads. Reserve Micro
 for short badges and dense chart labels; shared controls and blocks should use
-the semantic roles instead of arbitrary font sizes or baseline offsets.
+the semantic roles instead of arbitrary font sizes or baseline offsets. `cn`
+treats these roles as font sizes: a role beside a text colour keeps both, and a
+later role or Tailwind size in `className` replaces the component's role.
 
 Shared interactive primitives use the Tide focus ring width from
 `--nextide-focus-ring-width` (0.5px by default). Form fields use the inset
@@ -203,8 +205,20 @@ padding, and close-button clearance. Use `layout="flush"` when the dialog's
 own header and body sections provide their spacing.
 
 `blocks/campaign-schedule-matrix` derives day/week/month/quarter headers from
-each slot's ISO `date`. It opens at week scale and, when a `today` slot exists,
-positions that week after one visible week of history. Inside the schedule
+each slot's ISO `date`. `defaultZoom` sets the opening scale: `"day"`,
+`"week"` (default), `"month"`, or `"fit"`. A fixed scale with a `today` slot
+opens with that day, week, or month after one visible unit of history. `"fit"`
+spans exactly the supplied slots edge to edge, without trailing display dates or
+the standard minimum width, at the most detailed scale whose units keep their
+minimum width (88px per day, 112px per week, 176px per month) beside the
+creator column. When no scale fits it uses months, narrowed only while every
+header label stays readable, and scrolls beyond that. A partial week or month
+shorter than half the longest one may hide its label rather than truncate it.
+It settles before the first paint and follows container resizes until the
+viewer zooms with the toolbar or wheel; that zoom switches to the standard
+board, with its trailing month dates and minimum width. Changing `defaultZoom`
+after mount has no effect; remount with a `key` to reopen at another scale.
+Inside the schedule
 board, wheel interaction steps between day, week, and month zoom only while
 another level is available, then hands scrolling back to the page. The top and
 creator legends remain inert. Pointer users can drag the board horizontally; a
