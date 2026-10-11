@@ -15,7 +15,10 @@ const app = {
   command: {
     executable: process.execPath,
     args: [
-      join(dirname(require.resolve("vite-plus/package.json")), "bin/vp"),
+      join(
+        dirname(require.resolve("vite/package.json")),
+        "dist/vite/node/cli.js"
+      ),
       "preview",
       "--host",
       "127.0.0.1",

@@ -64,8 +64,9 @@ test(
     const directories: string[] = []
     try {
       for (const workspace of ["packages/ui", "apps/playground"]) {
+        await mkdir(join(root, workspace, ".artifacts"), { recursive: true })
         const directory = await mkdtemp(
-          join(root, workspace, "src/lint-probe-")
+          join(root, workspace, ".artifacts/lint-probe-")
         )
         directories.push(directory)
         for (const probe of probes) {
@@ -83,10 +84,13 @@ test(
             join(root, "node_modules/vite-plus/bin/vp"),
             "lint",
             ...args,
+            "--no-ignore",
             "--deny-warnings",
             "--format",
             "json",
-            ...directories,
+            ...directories.flatMap((directory) =>
+              probes.map((probe) => join(directory, `${probe.name}.tsx`))
+            ),
           ],
           { cwd: root, encoding: "utf8" }
         )

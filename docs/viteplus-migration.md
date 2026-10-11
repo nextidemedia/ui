@@ -21,7 +21,10 @@ The root Vite+ config imports the existing shared Oxlint policy as an object.
 `.oxlintrc.json` preserves both workspace TypeScript scopes, including tool
 configuration, and root Oxlint continues to cover maintained tests and scripts.
 The two baseline ESLint scans enumerated 119 package files and 29 playground
-files, with zero real-code diagnostics. Two retired ESLint configuration files
+files, with zero real-code diagnostics. All 145 baseline TypeScript files remain in native lint coverage. The old/new
+fixture comparison has identical normalized diagnostics: 21 in Quality and 18
+in Correctness across both workspace scopes.
+Two retired ESLint configuration files
 are replaced by Vite+ configuration files. Generated `dist` and test output
 remain excluded.
 
@@ -55,7 +58,10 @@ missing dependencies, render impurity, ref access, prop mutation, synchronous
 state in effects, explicit any, accessible labels, valid Hooks/purity, mixed
 exports, constant exports and compound components. The fixture expectations
 come from the old pipeline. They run through two real lint processes with zero
-model calls. The native tooling suite keeps its two logical cases and expands
+model calls. Probes live under ignored workspace `.artifacts` directories excluded from compiler inputs,
+with explicit `--no-ignore` for those inputs, so an interrupted test cannot leave
+files inside compiler or packaging source globs.
+The native tooling suite keeps its two logical cases and expands
 its existing lint case; no standalone unit suite or starter tests were added.
 
 The first sequential implementation took 123.44 seconds for lint probes. Batching
@@ -73,7 +79,10 @@ client entrypoints. The existing isolated consumer installs the actual tarball,
 checks TypeScript resolution and runtime exports, then checks chart, scroll and
 typography regressions. The playground still builds against package exports.
 
-The E2E preview process now starts the Vite+ CLI explicitly; recorded goals,
+The E2E preview process starts Vite+'s pinned core CLI directly, keeping the server
+as the runner-owned process on Windows as well as Linux. A focused Windows
+browser case reproduced a leftover child with the `vp preview` wrapper.
+Recorded goals,
 strict read-only replay, zero retries and unavailable model credentials are
 unchanged. Native package and desktop/mobile browser qualification remain the
 required integration surface. Vite+ bundles Vitest but no Vitest tests replace
