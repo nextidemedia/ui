@@ -6,7 +6,7 @@
     "build": "npm run build --workspace @nextide/ui && npm run build --workspace playground",
     "check": "npm run lint && npm run typecheck && npm run build",
     "dev": "npm run build --workspace @nextide/ui && npm run dev --workspace playground",
-    "lint": "oxlint --deny-warnings && npm run lint --workspaces && npm run security:watchlist",
+    "lint": "vp lint --deny-warnings && npm run security:watchlist",
     "format": "prettier --write .",
     "qualify": "npm run build && e2e run",
     "typecheck": "npm run build --workspace @nextide/ui && npm run typecheck --workspaces && tsc --noEmit -p tsconfig.e2e.json",
@@ -21,15 +21,17 @@
     "@types/node": "26.6.1",
     "ai": "7.0.126",
     "e2e": "0.18.0",
+    "eslint": "10.10.0",
+    "eslint-plugin-react-hooks": "7.1.1",
     "knip": "6.36.0",
-    "oxlint": "1.83.0",
     "prettier": "3.9.7",
     "prettier-plugin-tailwindcss": "0.8.1",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2",
+    "vite-plus": "1.1.0"
   },
   "packageManager": "npm@12.0.2",
   "engines": {
-    "node": "^22.22.3 || ^24.15.0 || >=26.0.0",
+    "node": ">=26.9.0 <27",
     "npm": "12.0.2"
   },
   "workspaces": [
@@ -39,9 +41,12 @@
   "overrides": {
     "flatted": "3.4.2",
     "@modelcontextprotocol/server": "2.2.0",
-    "@modelcontextprotocol/core": "2.2.0"
+    "@modelcontextprotocol/core": "2.2.0",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.1.0",
+    "vitest": "5.0.3"
   },
   "allowScripts": {
-    "fsevents": false
+    "fsevents": false,
+    "esbuild": true
   }
 }

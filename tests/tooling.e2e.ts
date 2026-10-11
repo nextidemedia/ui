@@ -1,22 +1,13 @@
 import { test } from "e2e"
 import assert from "node:assert/strict"
-import { execFileSync, spawnSync } from "node:child_process"
+import { spawnSync } from "node:child_process"
 import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises"
-import { createRequire } from "node:module"
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
-const recipes = JSON.parse(
-  execFileSync("just", ["--dump", "--dump-format", "json"], {
-    cwd: root,
-    encoding: "utf8",
-  })
-).recipes
-const lintCommands: string[] = recipes["lint-correctness"].body.map(
-  (line: string[]) => line.join("")
-)
+import probes from "./fixtures/lint-probes.json" with { type: "json" }
 
 test(
   "supply-chain watchlist rejects blocked transitive packages in npm workspaces",
@@ -67,79 +58,75 @@ test(
 )
 
 test(
-  "deploy lint permits cosmetic debt but rejects unsafe operations and broken hooks",
+  "lint profiles preserve safety, Hooks, accessibility and workspace export policy",
   { platforms: ["api"] },
   async () => {
-    const packageRoot = join(root, "packages/ui")
-    const require = createRequire(join(packageRoot, "package.json"))
-    const eslint = join(
-      dirname(require.resolve("eslint/package.json")),
-      "bin/eslint.js"
-    )
-    const oxlint = join(root, "node_modules/oxlint/bin/oxlint")
-    const probeRoot = await mkdtemp(join(tmpdir(), "nextide-ui-qualification-"))
-    const file = join(probeRoot, "probe.tsx")
-    const probes: [string, string, number][] = [
-      ["cosmetic", "const unused = 1\nexport const ready = true\n", 0],
-      ["unsafe", "export const broken = (globalThis.value?.foo).bar\n", 1],
-      [
-        "hooks",
-        'import { useState } from "react"\nexport function Probe({ enabled }) { if (enabled) useState(0); return null }\n',
-        1,
-      ],
-    ]
+    const directories: string[] = []
     try {
-      for (const [name, source, expected] of probes) {
-        await writeFile(file, source)
-        for (const [binary, command, cwd] of [
-          [oxlint, lintCommands[0].replace("npm exec -- oxlint ", ""), root],
+      for (const workspace of ["packages/ui", "apps/playground"]) {
+        await mkdir(join(root, workspace, ".artifacts"), { recursive: true })
+        const directory = await mkdtemp(
+          join(root, workspace, ".artifacts/lint-probe-")
+        )
+        directories.push(directory)
+        for (const probe of probes) {
+          await writeFile(join(directory, `${probe.name}.tsx`), probe.source)
+        }
+      }
+      for (const profile of ["quality", "correctness"] as const) {
+        const args =
+          profile === "correctness"
+            ? ["--config", ".oxlintrc.correctness.json"]
+            : []
+        const result = spawnSync(
+          process.execPath,
           [
-            eslint,
-            lintCommands[1].replace("npm exec --workspaces -- eslint ", ""),
-            packageRoot,
+            join(root, "node_modules/vite-plus/bin/vp"),
+            "lint",
+            ...args,
+            "--no-ignore",
+            "--deny-warnings",
+            "--format",
+            "json",
+            ...directories.flatMap((directory) =>
+              probes.map((probe) => join(directory, `${probe.name}.tsx`))
+            ),
           ],
-        ]) {
-          const inputArgs =
-            binary === eslint
-              ? [
-                  "--stdin",
-                  "--stdin-filename",
-                  join(packageRoot, "src/probe.tsx"),
-                ]
-              : ["--config", join(root, ".oxlintrc.json"), file]
-          const result = spawnSync(
-            process.execPath,
-            [binary, ...command.split(" "), ...inputArgs],
-            {
-              cwd,
-              input: source,
-              encoding: "utf8",
-            }
-          )
-          assert.equal(
-            result.status,
-            expected,
-            `${name}: ${result.stdout}${result.stderr}`
-          )
-          if (name === "cosmetic") {
-            const quality = spawnSync(
-              process.execPath,
-              [binary, ...inputArgs],
-              {
-                cwd,
-                input: source,
-              }
+          { cwd: root, encoding: "utf8" }
+        )
+        assert.equal(result.status, 1, result.stdout + result.stderr)
+        const { diagnostics } = JSON.parse(result.stdout) as {
+          diagnostics: { filename: string; code: string }[]
+        }
+        for (const directory of directories) {
+          for (const probe of probes) {
+            const file = join(directory, `${probe.name}.tsx`)
+            const findings = diagnostics.filter(
+              (d) => resolve(root, d.filename) === file
             )
+            const expected =
+              probe.name === "refresh" &&
+              directory.includes("playground") &&
+              profile === "quality"
+                ? 1
+                : probe[profile]
             assert.equal(
-              quality.status,
-              1,
-              "Full lint must retain unused-variable checks"
+              findings.length > 0,
+              expected === 1,
+              `${profile}/${file}: ${JSON.stringify(findings)}`
             )
+            if (expected === 1)
+              assert(
+                findings.some((d) => d.code.includes(probe.rule)),
+                JSON.stringify(findings)
+              )
           }
         }
       }
     } finally {
-      await rm(probeRoot, { recursive: true, force: true })
+      for (const directory of directories) {
+        await rm(directory, { recursive: true, force: true })
+      }
     }
   }
 )

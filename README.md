@@ -6,11 +6,11 @@ Run `npm run dev`, then open [http://127.0.0.1:5174](http://127.0.0.1:5174) to v
 
 ## Development checks
 
-Install Node 24.18.0 (matching CI), npm 12.0.2, `just`, and uv. On Windows, install PowerShell 7.5+
+Install Node 26.9.0 (matching `.node-version` and CI), npm 12.0.2, `just`, and uv. On Windows, install PowerShell 7.5+
 with `pwsh` available on PATH.
 
 - `just setup` installs the frozen workspace lockfile.
-- `just check` runs Prettier, Oxlint, existing ESLint, the supply-chain watchlist,
+- `just check` runs Prettier, Vite+ Oxlint, the supply-chain watchlist,
   LOC budgets, strict TypeScript checks, and packed-consumer qualification.
 - `just fmt`, `just fmt-check`, `just lint`, and `just typecheck` run separately.
 - `just quality` runs full formatting, lint, and LOC checks.
@@ -22,7 +22,7 @@ with `pwsh` available on PATH.
   isolated npm consumer, public TypeScript/runtime exports, stylesheet/font assets,
   and known chart, scroll-state, and typography regressions. It needs npm registry access.
   Native tooling acceptance also invokes the real lint processes against disposable
-  unsafe-operation and React Hooks probes; source-shape qualification units are removed.
+  unsafe-operation, React Hooks, accessibility and workspace export probes.
 - `just test-integration` builds both workspaces and runs native TesterArmy E2E.
   First run `npm exec -- e2e-web install chromium` (Linux CI adds `--with-deps`).
   The runner owns an isolated preview port and stops the server on exit.
@@ -41,9 +41,10 @@ The [shared baseline](https://github.com/nextidemedia/meta/blob/main/docs/develo
 sets complexity 12, function length 100, and source/test LOC limits. All source
 files meet the 600-line limit and browser suites meet the 900-line test limit;
 `.loc.json` has no exceptions. Accessibility exceptions explain specific SVG,
-forwarded-prop, or scroll-region semantics. Existing ESLint/React Hooks rules remain until parity
-with Oxlint is verified. Oxlint 1.80.0 was the newest stable npm release at least
-seven days old on 2026-09-08; the existing formatter and TypeScript remain pinned.
+forwarded-prop, or scroll-region semantics. Vite+ 1.1.0 owns lint and builds; TypeScript 7.0.2 owns compiler checks and declarations.
+The official React Hooks plugin retains three rules where native parity is incomplete.
+See [migration evidence](docs/viteplus-migration.md) for scopes, diagnostic comparisons,
+retained checks and the approved release-age waiver. Prettier remains the formatter.
 
 Correctness lint retains the configured React Hooks, accessibility, unsafe-operation,
 and accumulating-spread checks. Only explicit cosmetic rules (size/complexity,
@@ -163,6 +164,9 @@ representative Chromium interaction, accessibility, and responsive checks.
 Use `just qualify` for all checks or `just qualify-deploy` for release validation.
 Direct dependencies are pinned exactly. The workspace also enforces a seven-day release age (except native E2E packages),
 strict peer dependencies, and explicitly approved dependency install scripts.
+The library uses `vp pack` in unbundled mode, preserving public `.js`/`.d.ts`
+subpaths, client directives, stylesheets and fonts. Native E2E remains the test runner;
+there is no starter Vitest suite.
 
 ## Releasing
 
