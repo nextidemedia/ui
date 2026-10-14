@@ -7,9 +7,20 @@ Run `npm run dev`, then open [http://127.0.0.1:5174](http://127.0.0.1:5174) to v
 ## Development checks
 
 Install Node 26.9.0 (matching `.node-version` and CI), npm 12.0.2, `just`, and uv. On Windows, install PowerShell 7.5+
-with `pwsh` available on PATH.
+with `pwsh` available on PATH. Commit checks also need Python 3.15 on PATH.
 
-- `just setup` installs the frozen workspace lockfile.
+- `just setup` installs the frozen workspace lockfile and activates the tracked
+  commit hook. For an already prepared checkout, run `just hooks-install`.
+- `just pre-commit` checks the whole working tree: LOC limits, Prettier, full lint,
+  the supply-chain watchlist, and TypeScript for the package, playground, and E2E.
+  It uses installed tools without downloading, formatting, staging, or stashing.
+  Type checks read source directly; they do not rebuild package declarations.
+  Packed-package and browser qualification remain separate required CI checks.
+- Hook setup preserves custom `core.hooksPath` and existing Git hooks. Integrate
+  `just pre-commit` into those hooks explicitly. The relative `.githooks` path
+  applies to linked worktrees too; each worktree needs its own prepared tools.
+  Whole-tree checks include unstaged edits; use `git -c core.hooksPath=/dev/null commit`
+  for a deliberate one-off bypass, with CI still required before merge.
 - `just check` runs Prettier, Vite+ Oxlint, the supply-chain watchlist,
   LOC budgets, strict TypeScript checks, and packed-consumer qualification.
 - `just fmt`, `just fmt-check`, `just lint`, and `just typecheck` run separately.
@@ -53,8 +64,10 @@ the complete rule sets still run in Quality. Type safety restrictions and the
 supply-chain watchlist remain required in both profiles.
 
 Pull requests, main pushes, and the weekly **Qualification** workflow run full qualification. Manual runs select
-`full` or `deploy`; deploy deliberately skips **Quality**. **Qualification result**
-requires every selected group to succeed and reports the validated commit. The
+`full` or `deploy`; deploy deliberately skips **Quality**. Both profiles share one
+Node installation in **Correctness / Package and browser**. Full runs execute
+Quality first; its full lint also covers correctness lint and the watchlist.
+**Qualification result** requires the selected checks to succeed and reports the validated commit. The
 package has no service deployment or database integration lane; its integration
 surface is the packed consumer and playground browser suite.
 

@@ -24,6 +24,16 @@ Use `just setup` and `just check` for the shared development baseline; see READM
   `test:`, `chore:`, `ci:`).
 - Do not merge with failing or missing required checks.
 
+## Application secrets
+
+- Use Nextide's Infisical-backed secret service for application-secret editing;
+  follow the [secrets policy](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md#application-secrets)
+  and the service owner's startup/release contract. Existing services migrate
+  per owner and environment; `nextide-web` is exempt. Keep environment variables,
+  nonsecret config, schemas/examples, scoped bootstrap/verifier registries and
+  independent recovery; retire independent application-secret `.env` copies
+  after verified migration and the owning rollback window has passed.
+
 ## Runtime checks
 
 - Add a validation, guard or limit only when both are true: you can name what
@@ -85,6 +95,13 @@ Use `just setup` and `just check` for the shared development baseline; see READM
 
 ## Validation
 
+- Expose `just pre-commit` for measured-fast, check-only local feedback and run
+  it through the tracked Git hook after setup. Reuse prepared installed tools;
+  never install, fetch, format, fix, or alter source or staging in the hook.
+  Include type checks or existing tests only when measurements justify their
+  latency. Consolidate compatible tiny CI checks; CI qualifies committed
+  contents and retains the complete Quality and Correctness contract. See the
+  [local feedback and hook setup guide](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md#local-feedback-and-git-hooks).
 - Run targeted local checks as needed; run larger validation remotely on the
   working branch. Required checks must pass before merge.
 - If remote validation is blocked, proceed with a reasonable local fallback.

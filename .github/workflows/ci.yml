@@ -32,29 +32,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Quality
-    if: ${{ (inputs.profile || 'full') == 'full' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          ref: ${{ inputs.source_sha || github.sha }}
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .node-version
-          package-manager-cache: false
-      - run: npm install --global npm@12.0.2
-      - run: npm ci
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-        with:
-          version: "0.13.0"
-      - run: npm run format:check
-      - run: npm run lint
-      - run: uv run --no-project --python 3.15 python scripts/check_loc.py
-
   correctness:
     name: Correctness / Package and browser
     runs-on: ubuntu-latest
@@ -82,7 +59,15 @@ jobs:
       - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
         with:
           just-version: "1.58.0"
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        if: ${{ (inputs.profile || 'full') == 'full' }}
+        with:
+          version: "0.13.0"
+      - name: Quality
+        if: ${{ (inputs.profile || 'full') == 'full' }}
+        run: just quality
       - name: Correctness lint
+        if: ${{ inputs.profile == 'deploy' }}
         run: just lint-correctness
       - run: npm run typecheck
       - name: Install Chromium
@@ -105,7 +90,7 @@ jobs:
   result:
     name: Qualification result
     if: ${{ always() }}
-    needs: [quality, correctness]
+    needs: correctness
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -113,14 +98,12 @@ jobs:
         env:
           PROFILE: ${{ inputs.profile || 'full' }}
           SOURCE_SHA: ${{ needs.correctness.outputs.sha || inputs.source_sha || github.sha }}
-          QUALITY: ${{ needs.quality.result }}
           CORRECTNESS: ${{ needs.correctness.result }}
         run: |
           node <<'NODE'
-          const { PROFILE, SOURCE_SHA, QUALITY, CORRECTNESS } = process.env;
-          console.log(`Qualification ${PROFILE}: ${SOURCE_SHA}; Quality=${QUALITY}; Correctness=${CORRECTNESS}`);
-          const expectedQuality = { full: "success", deploy: "skipped" }[PROFILE];
-          if (!expectedQuality || QUALITY !== expectedQuality || CORRECTNESS !== "success") {
+          const { PROFILE, SOURCE_SHA, CORRECTNESS } = process.env;
+          console.log(`Qualification ${PROFILE}: ${SOURCE_SHA}; Correctness=${CORRECTNESS}`);
+          if (!["full", "deploy"].includes(PROFILE) || CORRECTNESS !== "success") {
             process.exit(1);
           }
           NODE
