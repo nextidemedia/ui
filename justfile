@@ -6,6 +6,20 @@ _forward_args := if os() == "windows" { "@forwarded" } else { '"$@"' }
 
 setup:
     npm ci
+    python scripts/install_hooks.py
+
+hooks-install:
+    python scripts/install_hooks.py
+
+pre-commit:
+    python scripts/check_loc.py
+    node node_modules/prettier/bin/prettier.cjs --check .
+    node node_modules/vite-plus/bin/vp lint --deny-warnings
+    npm run security:watchlist
+    node node_modules/typescript/bin/tsc --noEmit -p packages/ui/tsconfig.json
+    node node_modules/typescript/bin/tsc --noEmit -p apps/playground/tsconfig.app.json
+    node node_modules/typescript/bin/tsc --noEmit -p apps/playground/tsconfig.node.json
+    node node_modules/typescript/bin/tsc --noEmit -p tsconfig.e2e.json
 
 lint:
     npm run lint
