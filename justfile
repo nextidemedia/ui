@@ -6,13 +6,12 @@ _forward_args := if os() == "windows" { "@forwarded" } else { '"$@"' }
 
 setup:
     npm ci
-    python scripts/install_hooks.py
+    node scripts/install_hooks.mjs
 
 hooks-install:
-    python scripts/install_hooks.py
+    node scripts/install_hooks.mjs
 
 pre-commit:
-    python scripts/check_loc.py
     node node_modules/prettier/bin/prettier.cjs --check .
     node node_modules/vite-plus/bin/vp lint --deny-warnings
     npm run security:watchlist
@@ -23,7 +22,6 @@ pre-commit:
 
 lint:
     npm run lint
-    uv run --no-project --python 3.15 python scripts/check_loc.py
 
 fmt:
     npm run format
@@ -61,4 +59,4 @@ qualify-deploy: correctness
 deadcode-setup: setup
 
 deadcode:
-    uv run --no-project --python 3.15 python scripts/deadcode.py
+    node scripts/deadcode.mjs
