@@ -4,6 +4,7 @@
     {
       "files": ["**/*"],
       "rules": {
+        "eslint/max-lines": "off",
         "eslint/complexity": "off",
         "eslint/max-lines-per-function": "off",
         "eslint/no-unused-vars": "off",

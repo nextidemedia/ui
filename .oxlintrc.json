@@ -10,6 +10,10 @@
     "browser": true
   },
   "rules": {
+    "eslint/max-lines": [
+      "error",
+      { "max": 600, "skipBlankLines": true, "skipComments": false }
+    ],
     "jsx-a11y/label-has-associated-control": [
       "error",
       {
@@ -19,6 +23,21 @@
   },
   "ignorePatterns": ["**/dist/**", "output/**"],
   "overrides": [
+    {
+      "files": [
+        "**/tests/**",
+        "**/__tests__/**",
+        "**/test_*",
+        "**/*.test.*",
+        "**/*.spec.*"
+      ],
+      "rules": {
+        "eslint/max-lines": [
+          "error",
+          { "max": 900, "skipBlankLines": true, "skipComments": false }
+        ]
+      }
+    },
     {
       "files": ["packages/ui/**/*.{ts,tsx}", "apps/playground/**/*.{ts,tsx}"],
       "rules": {
