@@ -26,13 +26,9 @@ Use `just setup` and `just check` for the shared development baseline; see READM
 
 ## Application secrets
 
-- Use Nextide's Infisical-backed secret service for application-secret editing;
-  follow the [secrets policy](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md#application-secrets)
-  and the service owner's startup/release contract. Existing services migrate
-  per owner and environment; `nextide-web` is exempt. Keep environment variables,
-  nonsecret config, schemas/examples, scoped bootstrap/verifier registries and
-  independent recovery; retire independent application-secret `.env` copies
-  after verified migration and the owning rollback window has passed.
+- Edit application secrets through Nextide's Infisical-backed secret service.
+  Follow the [secrets policy](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md#application-secrets)
+  and the service's startup, release and recovery procedures.
 
 ## Runtime checks
 
@@ -49,78 +45,45 @@ Use `just setup` and `just check` for the shared development baseline; see READM
 
 ## Testing
 
-- Remove ordinary unit tests; do not add standalone unit tests with each change.
-  Preserve genuine known-bug outcomes in the owning journey; relabeling a unit
-  test as a regression does not justify keeping it. Delete implementation-shape
-  checks and same-guarantee duplicates. Coverage totals are not justification.
-- Plan user-visible acceptance outcomes before implementation, then implement
-  against the owning E2E suite. Derive expectations from requirements, known-bug
-  evidence, or external contracts, not the implementation. Agent-written browser
-  tests are not independent merely because they use a browser.
-- Retain integration checks only for a concrete, important, unique outcome at an
-  actual process, storage, or external boundary that cannot reasonably be proved
-  by the owning journey. Preserve safety, security, data-integrity guarantees
-  and relevant static/build checks; explicitly replace obsolete test gates as
-  part of conversion rather than silently bypassing required checks.
-- All E2E uses native TesterArmy: `npx skills add tester-army/e2e`.
-  Read the installed skill/references and the repo's verified record/replay
-  runbook. Do not wrap an old Playwright or unit suite. Use tools-only targets
-  for meaningful API/service boundaries without an artificial browser or model.
-  Pin compatible `e2e` and `@e2e-dev/*` versions; only these packages are exempt
-  from the seven-day release-age requirement.
-- Initially record bounded, meaningful `agent.act` goals with `gpt-6-luna` at low
-  reasoning and immediate native locator/engine `expect` checks. Use exact
-  mechanical actions where the skill recommends them. Record explicitly in
-  read-write mode; review and commit generated cache unchanged. Never edit
-  cache JSON or manufacture passing evidence. No larger-model fallback.
-- Routine replay is read-only and strict, with retries zero, model transport
-  disabled, and live model/external-provider credentials unavailable; disposable
-  local test authentication remains available. Missing recordings can still
-  call a model under strict mode. Avoid live `agent.assert`, `agent.waitFor`, and
-  `agent.extract` in the zero-call gate. Preserve recordings until an intentional
-  behavior/goal/engine change or reproducible replay break requires re-recording.
-  Run automated checks in the background and browsers headless.
-- Test time-dependent production logic with controlled clocks or prepared
-  history without bypassing the behavior being proved. Account for other
-  components' clocks; use real elapsed time only when the guarantee requires it.
-  Wait on observable conditions, not arbitrary sleeps.
-- Keep focused suites independently runnable, with discoverable commands,
-  prerequisites, and rough runtimes. Keep required model-quality and
-  live-provider qualification separate from routine zero-call acceptance.
-- Preserve revision, commands, inputs, outcomes, and useful failure evidence.
-  For conversions, report logical cases before/after, absolute and percentage
-  reduction, classifications, and retained regression guarantees. Separate
-  handwritten LOC from vendored/generated cache; report comparable timings with
-  caveats and recording/replay calls and tokens, including failures.
+- Define acceptance outcomes from requirements, known bugs or external contracts
+  before implementation. Prove them in the owning E2E journey.
+- Do not add ordinary unit tests. When changing a suite, consolidate meaningful
+  regressions into the owning E2E journey and remove implementation-shape
+  checks and duplicates.
+- Keep integration tests only for important, unique boundary guarantees the
+  journey cannot reasonably prove. Preserve safety, security, data integrity
+  and static/build checks. Replace obsolete gates explicitly.
+- Use native TesterArmy E2E; follow its installed skill, the
+  [recording/replay runbook](https://github.com/nextidemedia/meta/blob/main/docs/e2e-recording-and-replay.md)
+  and the repo's test commands. Use tools-only targets for API/service boundaries;
+  do not wrap legacy suites.
+- Routine replay must make no model or live-provider calls, including on cache
+  misses. Run model/provider qualification separately.
+- Use controlled clocks or prepared history without bypassing the behavior
+  under test; account for interacting components' clocks. Use real elapsed time
+  only when necessary. Wait on observable conditions, not arbitrary sleeps.
+- Keep focused suites independently runnable; document commands, prerequisites
+  and approximate runtimes.
 
 ## Validation
 
-- Expose `just pre-commit` for measured-fast, check-only local feedback and run
-  it through the tracked Git hook after setup. Reuse prepared installed tools;
-  never install, fetch, format, fix, or alter source or staging in the hook.
-  Include type checks or existing tests only when measurements justify their
-  latency. Consolidate compatible tiny CI checks; CI qualifies committed
-  contents and retains the complete Quality and Correctness contract. See the
-  [local feedback and hook setup guide](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md#local-feedback-and-git-hooks).
-- Run targeted local checks as needed; run larger validation remotely on the
-  working branch. Required checks must pass before merge.
-- If remote validation is blocked, proceed with a reasonable local fallback.
-  Mention the reason, results and remaining gaps in the final response.
-  Required CI/platform gates still apply.
-- One owner verifies combined changes and consolidates results. Reuse passing
-  evidence while relevant inputs and conditions are unchanged; request only
-  missing or invalidated checks.
-- Cover changed behavior and reachable effects. Broaden for shared foundations,
-  dependencies, migrations or uncertain impact. Run expensive lifecycle, load
-  and live-provider checks only when cheaper checks cannot prove affected
-  guarantees or on existing schedules.
-- Release evidence must be valid for the candidate and cover changes since the
-  target's last successful deployment/publication, affected consumers, required
-  behavior, packaging, configuration and migration safety. Deployment verifies
-  artifact identity, prerequisites and health.
-- Use documented, reproducible commands; record revision, commands and results
-  in PR notes or logs. Avoid duplicate work; measure queue time, runtime and
-  cost when relocating checks.
+- Use native linters for supported rules and retain only necessary supplemental
+  checks. Follow the [development baseline](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md)
+  for tool ownership, hook setup and qualification.
+- Run targeted local checks for changed behavior and reachable effects.
+  The tracked `just pre-commit` hook provides fast, check-only feedback using
+  prepared tools; CI validates committed code and required checks gate merging.
+  Run larger validation remotely; if blocked, use local checks and report the
+  reason and remaining gaps. This does not waive required CI gates.
+- Broaden checks for shared foundations, dependencies, migrations or uncertain
+  impact. Run expensive lifecycle, load or provider checks only when needed
+  to prove affected guarantees or on existing schedules.
+- One owner verifies combined changes. Reuse passing evidence while its inputs
+  and conditions remain valid. Record the revision, reproducible commands,
+  results and useful failure evidence in PR notes or logs.
+- Qualify the release candidate against all changes since the target's last
+  successful release, including affected consumers, packaging, configuration and
+  migrations. Verify the deployed artifact, prerequisites and health.
 
 ## Adjacent cleanup
 
