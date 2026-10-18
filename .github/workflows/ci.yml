@@ -34,7 +34,7 @@ concurrency:
 jobs:
   correctness:
     name: Correctness / Package and browser
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nextide-ci-docker]
     timeout-minutes: 30
     outputs:
       sha: ${{ steps.source.outputs.sha }}
@@ -69,9 +69,9 @@ jobs:
       - name: Install Chromium
         run: |
           if node -e "process.exit(require('./package.json').devDependencies?.['@e2e-dev/web'] ? 0 : 1)"; then
-            npm exec -- e2e-web install chromium --with-deps
+            npm exec -- e2e-web install chromium
           else
-            npm exec -- playwright install --with-deps chromium
+            npm exec -- playwright install chromium
           fi
       - name: Qualify packed package and browser
         run: npm run qualify
@@ -87,7 +87,7 @@ jobs:
     name: Qualification result
     if: ${{ always() }}
     needs: correctness
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nextide-ci-docker]
     timeout-minutes: 5
     steps:
       - name: Require selected groups
