@@ -20,7 +20,7 @@ concurrency:
 jobs:
   safety:
     name: Deploy safety
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nextide-ci-docker]
     timeout-minutes: 5
     outputs:
       sha: ${{ steps.tag.outputs.sha }}
