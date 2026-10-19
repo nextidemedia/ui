@@ -16,15 +16,15 @@
     "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "@ai-sdk/openai": "4.0.86",
-    "@e2e-dev/web": "0.13.0",
-    "@types/node": "26.6.4",
-    "ai": "7.0.130",
-    "e2e": "0.18.0",
+    "@ai-sdk/openai": "4.0.91",
+    "@e2e-dev/web": "0.14.0",
+    "@types/node": "26.6.5",
+    "ai": "7.0.137",
+    "e2e": "0.19.0",
     "eslint": "10.12.0",
     "eslint-plugin-react-hooks": "7.1.1",
-    "knip": "6.40.0",
-    "prettier": "3.9.9",
+    "knip": "6.41.0",
+    "prettier": "3.9.10",
     "prettier-plugin-tailwindcss": "0.8.1",
     "typescript": "7.0.2",
     "vite-plus": "1.1.0"
