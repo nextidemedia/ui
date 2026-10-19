@@ -189,13 +189,13 @@ The system uses tonal layers at rest and state lift in motion. Default surfaces 
 
 - **Overlay:** A broad, low-opacity shadow for dialogs, menus, popovers, and drawers.
 - **State lift:** A shallow shadow paired with a small transform for a hovered draggable or explicitly raised work item. Never for selection.
-- **Focus:** A high-contrast opaque ring, not a glow cloud. Use Focus Teal on light surfaces and Signal Turquoise on dark surfaces. A soft tone halo may sit behind the ring; it never replaces it.
+- **Focus:** One look for every control: a high-contrast opaque ring with a soft tone halo behind it. Use Focus Teal on light surfaces and Signal Turquoise on dark surfaces. The halo never replaces the ring.
 
 ### Glow
 
 Glow is the shared state light for selection, hover, focus, primary-action hover, and overlays. One tone drives it (`--nextide-glow-tone`, Signal Turquoise by default), so a choice can glow in its own colour, such as an A/B option's tone.
 
-- **Selected:** Toned border plus the selected glow. The glow is what marks selection; selected cards never translate, scale, or otherwise lift. A selected item may sit on a higher stacking layer so its light spills over neighbours, but it never moves.
+- **Selected:** Toned border, a fine toned ring, and a soft backlight. The glow is what marks selection; selected cards never translate, scale, or otherwise lift. The selected item sits on a higher stacking layer so its light spills over neighbours, but it never moves.
 - **Status:** Recommended, winning, playing, and similar states use a toned border only, never the selection glow.
 - **Hover:** A softer toned border and halo on choosable items and primary actions. Secondary, outline, and ghost buttons keep their tonal hover.
 - **Focus:** The opaque focus ring plus a tone halo; on a selected item the ring sits on top of the selected glow.
@@ -257,7 +257,7 @@ Components are quiet at rest and decisive in action. Base UI owns interaction se
 ### Inputs / Fields
 
 - **Style:** Solid neutral fill, one quiet boundary, readable body text, and aligned labels/errors.
-- **Focus:** Crisp turquoise ring plus border shift; no layout movement.
+- **Focus:** The shared focus ring, drawn inside the border, plus the focus halo; no layout movement.
 - **Error / Disabled:** Error copy stays attached to the affected field. Disabled controls remain readable and never masquerade as unavailable data.
 
 ### Navigation

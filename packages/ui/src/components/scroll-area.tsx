@@ -28,7 +28,7 @@ function ScrollArea({
         {...viewportProps}
         className={(state) =>
           cn(
-            "flex size-full flex-col rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-1",
+            "flex size-full flex-col rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden",
             typeof viewportProps?.className === "function"
               ? viewportProps.className(state)
               : viewportProps?.className

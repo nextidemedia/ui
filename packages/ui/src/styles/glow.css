@@ -5,39 +5,31 @@
  *
  * The selected look is built from the tokens below, so a product can change it
  * without new classes. Strengths are tone percentages; sizes are blur and
- * spread. A strength of 0% switches that layer off.
+ * spread. A strength of 0% switches that layer off. The default backlight
+ * spills light onto neighbouring items: the selected item sits on a higher
+ * stacking layer (grid and flex items, or positioned elements) but never
+ * moves.
  */
 
 :where(:root) {
+  --nextide-glow-border: 70%;
+  --nextide-glow-ring: 40%;
+  --nextide-glow-halo: 26%;
+  --nextide-glow-halo-size: 30px -2px;
+  --nextide-glow-backlight: 14%;
+  --nextide-glow-backlight-size: 64px 14px;
+  --nextide-glow-layer: 1;
+}
+
+/* A tighter halo that stays close to the item. Put the attribute on any
+   ancestor. */
+:where([data-nextide-glow="halo"]) {
   --nextide-glow-border: 65%;
   --nextide-glow-ring: 35%;
   --nextide-glow-halo: 55%;
   --nextide-glow-halo-size: 28px -10px;
   --nextide-glow-backlight: 0%;
-  --nextide-glow-backlight-size: 72px 6px;
-  --nextide-glow-inset: 0%;
-  --nextide-glow-inset-size: 22px -6px;
-  --nextide-glow-wash: 0%;
   --nextide-glow-layer: auto;
-}
-
-/* Alternative selected looks. Put the attribute on any ancestor. */
-:where([data-nextide-glow="backlight"]) {
-  --nextide-glow-border: 80%;
-  --nextide-glow-ring: 60%;
-  --nextide-glow-halo: 40%;
-  --nextide-glow-halo-size: 36px 2px;
-  --nextide-glow-backlight: 35%;
-  --nextide-glow-layer: 1;
-}
-
-:where([data-nextide-glow="inner"]) {
-  --nextide-glow-border: 85%;
-  --nextide-glow-ring: 0%;
-  --nextide-glow-halo: 70%;
-  --nextide-glow-halo-size: 14px -6px;
-  --nextide-glow-inset: 55%;
-  --nextide-glow-wash: 30%;
 }
 
 @theme inline {
@@ -49,18 +41,6 @@
       transparent
     );
   --shadow-glow-selected:
-    inset 0 -36px 40px -28px
-      color-mix(
-        in oklab,
-        var(--nextide-glow-tone, var(--nextide-tide)) var(--nextide-glow-wash),
-        transparent
-      ),
-    inset 0 0 var(--nextide-glow-inset-size)
-      color-mix(
-        in oklab,
-        var(--nextide-glow-tone, var(--nextide-tide)) var(--nextide-glow-inset),
-        transparent
-      ),
     0 0 0 1px
       color-mix(
         in oklab,
@@ -120,6 +100,12 @@
   }
 }
 
+/* The shared keyboard-focus look for stylesheets: border and thin ring in the
+   focus colour plus a tone halo. Shared components carry the same classes. */
+@utility nextide-focus-ring {
+  @apply border-ring shadow-glow-focus ring-(length:--nextide-focus-ring-width) ring-ring outline-hidden;
+}
+
 /* The selected look on its own, for selection that is not expressed through
    the element's attributes. [class] lets it outrank the element's resting
    border and shadow utilities. */
@@ -165,7 +151,7 @@
   /* Matches the selected rule's weight and follows it, so keyboard focus
      stays visible on a selected element. */
   &:focus-visible:not([aria-disabled="true"]) {
-    @apply border-ring ring-(length:--nextide-focus-ring-width) ring-ring outline-2 outline-offset-2 outline-transparent;
+    @apply border-ring ring-(length:--nextide-focus-ring-width) ring-ring outline-hidden;
   }
 
   &:focus-visible:not(

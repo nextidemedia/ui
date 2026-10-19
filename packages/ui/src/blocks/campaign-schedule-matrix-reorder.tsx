@@ -77,7 +77,7 @@ function ScheduleReorderHandle({
         aria-labelledby={`${actionId} ${nameId}`}
         aria-describedby={hintId}
         aria-pressed={position !== null}
-        className="-mr-1 -ml-2 grid min-h-9 w-6 shrink-0 cursor-grab touch-none place-items-center rounded-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
+        className="-mr-1 -ml-2 grid min-h-9 w-6 shrink-0 cursor-grab touch-none place-items-center rounded-sm text-muted-foreground outline-none focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden active:cursor-grabbing"
         onPointerDown={(event) =>
           start(event, {
             axis: "y",

@@ -259,7 +259,7 @@ function ScheduleTimeline({
         onPointerDown={handlePointerDown}
         onClickCapture={handleClickCapture}
         onDragStart={(event) => event.preventDefault()}
-        className="nextide-scrollbar-none relative overflow-x-auto rounded-xl border border-nextide-line bg-background/20 outline-none select-none focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring"
+        className="nextide-scrollbar-none relative overflow-x-auto rounded-xl border border-nextide-line bg-background/20 outline-none select-none focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden"
       >
         {!fitting && (
           <div

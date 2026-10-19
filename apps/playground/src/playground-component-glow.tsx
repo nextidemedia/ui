@@ -23,15 +23,14 @@ const options = [
 ] as const
 
 const looks = [
-  { value: "halo", label: "Halo" },
   { value: "backlight", label: "Backlight" },
-  { value: "inner", label: "Inner" },
+  { value: "halo", label: "Halo" },
 ]
 
 function GlowPreview() {
   const [choice, setChoice] = useState<string>("a")
   const [focused, setFocused] = useState(false)
-  const [look, setLook] = useState("halo")
+  const [look, setLook] = useState("backlight")
 
   return (
     <Card>
@@ -51,7 +50,7 @@ function GlowPreview() {
       </CardHeader>
       <CardContent
         className="grid gap-4"
-        data-nextide-glow={look === "halo" ? undefined : look}
+        data-nextide-glow={look === "backlight" ? undefined : look}
       >
         <SegmentedControl
           aria-label="Selected look"

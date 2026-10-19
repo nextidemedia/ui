@@ -171,7 +171,7 @@ function BookingBody({
       aria-pressed={onBookingSelect ? active : undefined}
       aria-describedby={edit.canEdit || cut.armed ? hintId : undefined}
       className={cn(
-        "flex min-w-0 flex-1 items-center overflow-hidden px-[min(0.75rem,8%)] text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "flex min-w-0 flex-1 items-center overflow-hidden px-[min(0.75rem,8%)] text-left outline-none focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden",
         edit.canEdit && "cursor-grab touch-none active:cursor-grabbing"
       )}
       onPointerDown={(event) => {
@@ -244,7 +244,7 @@ function BookingEdge({
       type="button"
       aria-labelledby={`${actionId} ${titleId}`}
       aria-describedby={hintId}
-      className="z-10 w-[min(0.75rem,15%)] shrink-0 cursor-ew-resize touch-none rounded-sm outline-none after:mx-auto after:block after:h-5 after:w-0.5 after:rounded-full after:bg-current after:opacity-50 hover:bg-nextide-tide/20 focus-visible:ring-2 focus-visible:ring-ring"
+      className="z-10 w-[min(0.75rem,15%)] shrink-0 cursor-ew-resize touch-none rounded-sm outline-none after:mx-auto after:block after:h-5 after:w-0.5 after:rounded-full after:bg-current after:opacity-50 hover:bg-nextide-tide/20 focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden"
       onPointerDown={(event) => {
         onStart()
         edit.pointerDown(event, edge)
