@@ -1,0 +1,191 @@
+/*
+ * Shared glow states. One tone drives every recipe: set --nextide-glow-tone on
+ * the element or an ancestor; Signal Turquoise is the default. Glows mark
+ * selection, hover, and focus. Nothing here moves, scales, or lifts an element.
+ *
+ * The selected look is built from the tokens below, so a product can change it
+ * without new classes. Strengths are tone percentages; sizes are blur and
+ * spread. A strength of 0% switches that layer off.
+ */
+
+:where(:root) {
+  --nextide-glow-border: 65%;
+  --nextide-glow-ring: 35%;
+  --nextide-glow-halo: 55%;
+  --nextide-glow-halo-size: 28px -10px;
+  --nextide-glow-backlight: 0%;
+  --nextide-glow-backlight-size: 72px 6px;
+  --nextide-glow-inset: 0%;
+  --nextide-glow-inset-size: 22px -6px;
+  --nextide-glow-wash: 0%;
+  --nextide-glow-layer: auto;
+}
+
+/* Alternative selected looks. Put the attribute on any ancestor. */
+:where([data-nextide-glow="backlight"]) {
+  --nextide-glow-border: 80%;
+  --nextide-glow-ring: 60%;
+  --nextide-glow-halo: 40%;
+  --nextide-glow-halo-size: 36px 2px;
+  --nextide-glow-backlight: 35%;
+  --nextide-glow-layer: 1;
+}
+
+:where([data-nextide-glow="inner"]) {
+  --nextide-glow-border: 85%;
+  --nextide-glow-ring: 0%;
+  --nextide-glow-halo: 70%;
+  --nextide-glow-halo-size: 14px -6px;
+  --nextide-glow-inset: 55%;
+  --nextide-glow-wash: 30%;
+}
+
+@theme inline {
+  --color-glow: var(--nextide-glow-tone, var(--nextide-tide));
+  --shadow-glow-hover: 0 0 22px -8px
+    color-mix(
+      in oklab,
+      var(--nextide-glow-tone, var(--nextide-tide)) 40%,
+      transparent
+    );
+  --shadow-glow-selected:
+    inset 0 -36px 40px -28px
+      color-mix(
+        in oklab,
+        var(--nextide-glow-tone, var(--nextide-tide)) var(--nextide-glow-wash),
+        transparent
+      ),
+    inset 0 0 var(--nextide-glow-inset-size)
+      color-mix(
+        in oklab,
+        var(--nextide-glow-tone, var(--nextide-tide)) var(--nextide-glow-inset),
+        transparent
+      ),
+    0 0 0 1px
+      color-mix(
+        in oklab,
+        var(--nextide-glow-tone, var(--nextide-tide)) var(--nextide-glow-ring),
+        transparent
+      ),
+    0 0 var(--nextide-glow-halo-size)
+      color-mix(
+        in oklab,
+        var(--nextide-glow-tone, var(--nextide-tide)) var(--nextide-glow-halo),
+        transparent
+      ),
+    0 0 var(--nextide-glow-backlight-size)
+      color-mix(
+        in oklab,
+        var(--nextide-glow-tone, var(--nextide-tide))
+          var(--nextide-glow-backlight),
+        transparent
+      );
+  --shadow-glow-focus: 0 0 28px -10px
+    color-mix(
+      in oklab,
+      var(--nextide-glow-tone, var(--nextide-tide)) 55%,
+      transparent
+    );
+  --shadow-glow-overlay: 0 0 48px -12px
+    color-mix(
+      in oklab,
+      var(--nextide-glow-tone, var(--nextide-tide)) 50%,
+      transparent
+    );
+}
+
+/* A soft tone wash behind a hero panel or a full-screen moment. Move its
+   centre with --nextide-glow-origin. */
+@utility nextide-glow-wash {
+  background-image: radial-gradient(
+    120% 90% at var(--nextide-glow-origin, 0% 0%),
+    color-mix(
+      in oklab,
+      var(--nextide-glow-tone, var(--nextide-tide)) 14%,
+      transparent
+    ),
+    transparent 60%
+  );
+}
+
+/* Status such as recommended, winning, or playing: a toned border only.
+   Selection keeps the glow. [class] outranks the resting border utility. */
+@utility nextide-tone-border {
+  &[class] {
+    border-color: color-mix(
+      in oklab,
+      var(--nextide-glow-tone, var(--nextide-tide)) 55%,
+      var(--border)
+    );
+  }
+}
+
+/* The selected look on its own, for selection that is not expressed through
+   the element's attributes. [class] lets it outrank the element's resting
+   border and shadow utilities. */
+@utility nextide-glow-selected {
+  &[class] {
+    @apply shadow-glow-selected;
+    z-index: var(--nextide-glow-layer);
+    border-color: color-mix(
+      in oklab,
+      var(--nextide-glow-tone, var(--nextide-tide)) var(--nextide-glow-border),
+      transparent
+    );
+  }
+}
+
+/* Hover, keyboard focus, and selection for a choosable card, row, or tile.
+   Selection follows data-selected, aria-pressed, aria-selected, or
+   aria-checked on the same element. */
+@utility nextide-glow {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-duration: var(--nextide-motion-state);
+  transition-timing-function: var(--nextide-ease-out-quart);
+
+  &:hover:not(:disabled, [aria-disabled="true"], [data-disabled]) {
+    @apply border-glow/40 shadow-glow-hover;
+  }
+
+  &:is(
+    [data-selected]:not([data-selected="false"]),
+    [aria-pressed="true"],
+    [aria-selected="true"],
+    [aria-checked="true"]
+  ) {
+    @apply shadow-glow-selected;
+    z-index: var(--nextide-glow-layer);
+    border-color: color-mix(
+      in oklab,
+      var(--nextide-glow-tone, var(--nextide-tide)) var(--nextide-glow-border),
+      transparent
+    );
+  }
+
+  /* Matches the selected rule's weight and follows it, so keyboard focus
+     stays visible on a selected element. */
+  &:focus-visible:not([aria-disabled="true"]) {
+    @apply border-ring ring-(length:--nextide-focus-ring-width) ring-ring outline-2 outline-offset-2 outline-transparent;
+  }
+
+  &:focus-visible:not(
+      [data-selected]:not([data-selected="false"]),
+      [aria-pressed="true"],
+      [aria-selected="true"],
+      [aria-checked="true"]
+    ) {
+    @apply shadow-glow-focus;
+  }
+
+  @media (forced-colors: active) {
+    &:is(
+      [data-selected]:not([data-selected="false"]),
+      [aria-pressed="true"],
+      [aria-selected="true"],
+      [aria-checked="true"]
+    ) {
+      outline: 2px solid Highlight;
+      outline-offset: 1px;
+    }
+  }
+}

@@ -44,6 +44,7 @@ import {
   ProcessingPreview,
   StatusPreview,
 } from "./playground-component-feedback"
+import { GlowPreview } from "./playground-component-glow"
 import { OverlayPreview } from "./playground-component-overlays"
 function ComponentMatrix({
   density,
@@ -78,6 +79,8 @@ function ComponentMatrix({
         <FieldStatesPreview />
 
         <ButtonPreview />
+
+        <GlowPreview />
 
         <OverlayPreview />
 

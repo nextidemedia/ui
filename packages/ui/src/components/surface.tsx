@@ -3,40 +3,46 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@nextide/ui/lib/utils"
 
-const surfaceVariants = cva(
-  "rounded-lg border text-card-foreground transition-colors",
-  {
-    variants: {
-      variant: {
-        panel: "border-nextide-line bg-nextide-panel",
-        strong: "border-nextide-line bg-nextide-panel-strong",
-        plain: "border-border bg-card",
-        ghost: "border-transparent bg-transparent",
-      },
-      padding: {
-        none: "p-0",
-        sm: "p-3",
-        md: "p-4",
-        lg: "p-5",
-      },
+const surfaceVariants = cva("rounded-lg border text-card-foreground", {
+  variants: {
+    variant: {
+      panel: "border-nextide-line bg-nextide-panel",
+      strong: "border-nextide-line bg-nextide-panel-strong",
+      plain: "border-border bg-card",
+      ghost: "border-transparent bg-transparent",
     },
-    defaultVariants: {
-      variant: "panel",
-      padding: "md",
+    padding: {
+      none: "p-0",
+      sm: "p-3",
+      md: "p-4",
+      lg: "p-5",
     },
-  }
-)
+    selectable: {
+      false: "transition-colors",
+      true: "nextide-glow",
+    },
+  },
+  defaultVariants: {
+    variant: "panel",
+    padding: "md",
+    selectable: false,
+  },
+})
 
 function Surface({
   className,
   variant,
   padding,
+  selectable,
   ...props
 }: React.ComponentProps<"section"> & VariantProps<typeof surfaceVariants>) {
   return (
     <section
       data-slot="surface"
-      className={cn(surfaceVariants({ variant, padding }), className)}
+      className={cn(
+        surfaceVariants({ variant, padding, selectable }),
+        className
+      )}
       {...props}
     />
   )

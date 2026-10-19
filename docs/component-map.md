@@ -106,6 +106,23 @@ Use `blocks/signal-plate` for a top-level summary with a current status. Its
 accent follows the semantic status tone. Use `components/surface` for ordinary
 work areas, forms, and operational containers; those stay visually plain.
 
+Choosable cards, rows, and tiles use the shared glow states from the global
+stylesheet. Add `nextide-glow` to the interactive element, or pass `selectable`
+to `Card` or `Surface`; selection follows `data-selected`, `aria-pressed`,
+`aria-selected`, or `aria-checked` on that element. Hover, keyboard focus, and
+selection glow in one tone, set with `--nextide-glow-tone` on the element or an
+ancestor. Nothing lifts. Use `nextide-glow-selected` when selection is decided
+in code, `nextide-tone-border` for status such as recommended or playing, and
+`nextide-glow-wash` or `shadow-glow-overlay` for hero and overlay light. Buttons
+carry the focus halo, and primary buttons the hover glow, without extra classes.
+
+The selected look comes from tokens: `--nextide-glow-border`, `-ring`, `-halo`,
+`-halo-size`, `-backlight`, `-backlight-size`, `-inset`, `-inset-size`, `-wash`,
+and `-layer`. Set them on `:root` to change the default, or put
+`data-nextide-glow="backlight"` or `data-nextide-glow="inner"` on an ancestor
+for the alternative looks. The playground's Glow states example switches
+between them.
+
 Navigation uses the quiet active rail. Report history uses a contained outline
 so navigation and record selection remain visually distinct.
 

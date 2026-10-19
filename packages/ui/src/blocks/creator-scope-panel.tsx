@@ -91,7 +91,7 @@ function scopeRowClass(active: boolean) {
   return cn(
     "grid min-h-10 w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center rounded-lg border text-left transition-[background-color,border-color,box-shadow]",
     active
-      ? "border-nextide-tide/55 bg-nextide-tide/10 text-foreground shadow-[0_0_24px_rgb(30_228_188/0.14)]"
+      ? "nextide-glow-selected bg-nextide-tide/10 text-foreground"
       : "border-transparent bg-transparent text-muted-foreground hover:bg-nextide-panel"
   )
 }

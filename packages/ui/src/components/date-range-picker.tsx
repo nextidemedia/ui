@@ -231,7 +231,7 @@ function CalendarGrid({
                 today &&
                   "border-nextide-yellow/55 text-nextide-yellow ring-1 ring-nextide-yellow/25",
                 selected &&
-                  "border-nextide-tide/65 bg-nextide-tide/18 text-nextide-tide shadow-[0_0_20px_rgb(30_228_188/0.12)]",
+                  "border-glow/65 bg-nextide-tide/18 text-nextide-tide shadow-glow-selected",
                 active && "ring-1 ring-nextide-tide/35"
               )}
             >
@@ -264,7 +264,7 @@ function RangeEdgeButton({
       className={cn(
         "rounded-md border px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow]",
         active
-          ? "border-nextide-tide/65 bg-nextide-tide/12 text-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.14)]"
+          ? "nextide-glow-selected bg-nextide-tide/12 text-nextide-tide"
           : "border-nextide-line bg-background/25 text-muted-foreground"
       )}
       onClick={onClick}
