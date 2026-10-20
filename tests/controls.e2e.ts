@@ -71,17 +71,18 @@ test(
     await budget.fill("")
     await budget.pressSequentially("1234.05")
     await expect(budget).toHaveValue("$1,234.05")
-    await budget.press("Home")
-    await budget.press("ArrowRight")
-    await budget.press("ArrowRight")
+    // The formatter can restore the previous caret after its value has settled.
     await expect
-      .poll(() =>
-        browser.evaluate(() => {
+      .poll(async () => {
+        await budget.press("Home")
+        await budget.press("ArrowRight")
+        await budget.press("ArrowRight")
+        return browser.evaluate(() => {
           const input =
             document.querySelector<HTMLInputElement>("#primitive-budget")
           return [input?.selectionStart ?? null, input?.selectionEnd ?? null]
         })
-      )
+      })
       .toEqual([2, 2])
     await budget.pressSequentially("9")
     await expect(budget).toHaveValue("$19,234.05")
