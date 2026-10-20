@@ -190,6 +190,19 @@ for (const role of typeRoles) {
   )
 }
 
+const glowCss = await readFile(resolve(dirname(cssPath), "glow.css"), "utf8")
+const glowShadows = [...glowCss.matchAll(/--shadow-(glow-[a-z-]+):/g)].map(
+  ([, name]) => "shadow-" + name
+)
+assert(glowShadows.length > 0, "glow shadows must be readable from glow.css")
+for (const shadow of glowShadows) {
+  assert.equal(
+    cn("shadow-md", shadow),
+    shadow,
+    shadow + " must replace another shadow, not merge as a shadow colour"
+  )
+}
+
 const displayCssPath = fileURLToPath(
   import.meta.resolve("@nextide/ui/display-font.css")
 )

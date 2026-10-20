@@ -240,7 +240,7 @@ function NavigationActions({ item, state }: BranchProps) {
           aria-hidden={drawerCollapsed}
           inert={drawerCollapsed}
           className={cn(
-            "grid size-8 place-items-center rounded-md text-muted-foreground transition-[opacity,color] duration-[var(--nextide-drawer-duration)] hover:bg-nextide-panel-strong hover:text-nextide-tide focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:outline-none max-lg:size-11 [&_svg]:size-4",
+            "grid size-8 place-items-center rounded-md text-muted-foreground transition-[opacity,color] duration-[var(--nextide-drawer-duration)] hover:bg-nextide-panel-strong hover:text-nextide-tide focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden max-lg:size-11 [&_svg]:size-4",
             actionVisibility
           )}
           onClick={() => onActionItem(item)}
@@ -257,7 +257,7 @@ function NavigationActions({ item, state }: BranchProps) {
           aria-hidden={drawerCollapsed}
           inert={drawerCollapsed}
           className={cn(
-            "grid size-8 place-items-center rounded-md text-muted-foreground transition-[opacity,color] duration-[var(--nextide-drawer-duration)] hover:bg-nextide-panel-strong hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:outline-none max-lg:size-11",
+            "grid size-8 place-items-center rounded-md text-muted-foreground transition-[opacity,color] duration-[var(--nextide-drawer-duration)] hover:bg-nextide-panel-strong hover:text-foreground focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden max-lg:size-11",
             actionVisibility
           )}
           onClick={() => onToggleItem(item)}

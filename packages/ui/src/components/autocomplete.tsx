@@ -20,7 +20,7 @@ function AutocompleteInputGroup({
     <AutocompletePrimitive.InputGroup
       data-slot="autocomplete-input-group"
       className={cn(
-        "flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-background px-3 text-ui-body transition-colors outline-none focus-within:border-ring focus-within:ring-ring focus-within:ring-inset focus-within:not-data-[pointer-focus]:ring-1 has-aria-invalid:border-destructive/60 has-aria-invalid:ring-destructive/60 dark:bg-input/30 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-muted-foreground",
+        "flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-background px-3 text-ui-body transition-colors outline-none focus-within:border-ring focus-within:ring-ring focus-within:ring-inset focus-within:not-data-[pointer-focus]:shadow-glow-focus focus-within:not-data-[pointer-focus]:ring-(length:--nextide-focus-ring-width) has-aria-invalid:border-destructive/60 has-aria-invalid:ring-destructive/60 dark:bg-input/30 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-muted-foreground",
         className
       )}
       {...props}
@@ -55,7 +55,7 @@ function AutocompleteClear({
     <AutocompletePrimitive.Clear
       data-slot="autocomplete-clear"
       className={cn(
-        "ml-auto grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+        "ml-auto grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50",
         className
       )}
       {...props}

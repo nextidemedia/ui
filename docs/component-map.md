@@ -97,14 +97,38 @@ the semantic roles instead of arbitrary font sizes or baseline offsets. `cn`
 treats these roles as font sizes: a role beside a text colour keeps both, and a
 later role or Tailwind size in `className` replaces the component's role.
 
-Shared interactive primitives use the Tide focus ring width from
-`--nextide-focus-ring-width` (0.5px by default). Form fields use the inset
-keyboard-focus treatment described below. Invalid fields use a muted red border
-without an extra ring at rest; keyboard focus adds the same inset emphasis.
+Every shared control uses one keyboard-focus look: the border and a thin ring
+in the focus colour (`--nextide-focus-ring-width`, 0.5px by default) plus a
+tone halo. In class form that is `focus-visible:border-ring
+focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring
+focus-visible:shadow-glow-focus focus-visible:outline-hidden`; stylesheets use
+`nextide-focus-ring`. The transparent outline appears only in forced-colours
+mode, where shadows are not drawn. Destructive controls keep the shared ring
+and take a destructive halo. Form fields draw the same ring inside their border,
+as described below. Invalid fields use a muted red border without an extra ring
+at rest; keyboard focus adds the same emphasis.
 
 Use `blocks/signal-plate` for a top-level summary with a current status. Its
 accent follows the semantic status tone. Use `components/surface` for ordinary
 work areas, forms, and operational containers; those stay visually plain.
+
+Choosable cards, rows, and tiles use the shared glow states from the global
+stylesheet. Add `nextide-glow` to the interactive element, or pass `selectable`
+to `Card` or `Surface`; selection follows `data-selected`, `aria-pressed`,
+`aria-selected`, or `aria-checked` on that element. Hover, keyboard focus, and
+selection glow in one tone, set with `--nextide-glow-tone` on the element or an
+ancestor. Nothing lifts. Use `nextide-glow-selected` when selection is decided
+in code, `nextide-tone-border` for status such as recommended or playing, and
+`nextide-glow-wash` or `shadow-glow-overlay` for hero and overlay light. Buttons
+carry the focus halo, and primary buttons the hover glow, without extra classes.
+
+The selected look comes from tokens: `--nextide-glow-border`, `-ring`, `-halo`,
+`-halo-size`, `-backlight`, `-backlight-size`, and `-layer`. The default is a
+soft backlight that spills onto neighbouring items; the selected item sits on a
+higher stacking layer (`-layer`, effective for grid and flex items or positioned
+elements) but never moves. Set the tokens on `:root` to change the default, or
+put `data-nextide-glow="halo"` on an ancestor for a tighter halo. The
+playground's Glow states example switches between them.
 
 Navigation uses the quiet active rail. Report history uses a contained outline
 so navigation and record selection remain visually distinct.
@@ -285,9 +309,9 @@ Reorganize only when there is a repeated lookup problem or repeated import ambig
 
 ### Form focus and popup placement
 
-Input, Select and Autocomplete use the same control radius and a single inset
-keyboard-focus edge, without an additional outer halo. Pointer focus uses only
-the turquoise border and stays quiet while typing. Autocomplete owns focus on the
+Input, Select and Autocomplete use the same control radius and draw the shared
+focus ring inside their border, with the shared halo, on keyboard focus.
+Pointer focus uses only the turquoise border and stays quiet while typing. Autocomplete owns focus on the
 complete input group. Consumers should not add a second outline to its inner
 input or a second focus treatment to shared controls.
 

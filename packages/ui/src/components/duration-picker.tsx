@@ -450,7 +450,7 @@ const DurationField = React.forwardRef<
       className={cn(
         "flex h-12 min-w-0 items-center gap-1 bg-secondary px-3 text-secondary-foreground transition-[border-radius,padding,transform,box-shadow] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
         showFocus &&
-          "focus-within:ring-(length:--nextide-focus-ring-width) focus-within:ring-ring",
+          "focus-within:shadow-glow-focus focus-within:ring-(length:--nextide-focus-ring-width) focus-within:ring-ring",
         editing
           ? cn("rounded-xl", compact && "px-2")
           : position === "first"

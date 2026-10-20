@@ -70,7 +70,7 @@ function ToastList() {
         key={item.id}
         toast={item}
         data-slot="toast"
-        className="nextide-toast pointer-events-auto rounded-xl border border-nextide-tide/35 bg-nextide-panel p-4 text-foreground shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring data-[type=warning]:border-nextide-yellow/40"
+        className="nextide-toast pointer-events-auto rounded-xl border border-nextide-tide/35 bg-nextide-panel p-4 text-foreground shadow-lg outline-none focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden data-[type=warning]:border-nextide-yellow/40"
       >
         <ToastPrimitive.Content className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3">
           <span

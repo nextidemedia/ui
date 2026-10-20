@@ -379,7 +379,7 @@ function flowContinuation(
       before && "rounded-l-none border-l-0",
       after && "rounded-r-none border-r-0",
       continuing &&
-        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
+        "focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden focus-visible:ring-inset"
     ),
   }
 }
@@ -420,7 +420,7 @@ function FlowSession({
       ? "cursor-grab grid-cols-[0.75rem_minmax(0,1fr)_0.75rem] px-1 active:cursor-grabbing"
       : "px-2",
     interactive &&
-      "transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+      "transition-[filter] hover:brightness-110 focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden",
     continuation.className
   )
   const style = {

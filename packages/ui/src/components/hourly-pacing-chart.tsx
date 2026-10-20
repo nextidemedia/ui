@@ -242,7 +242,7 @@ function renderPacingBars(
           <button
             key={bucket.id ?? bucket.hour}
             type="button"
-            className="group relative flex h-full min-w-0 cursor-pointer items-end justify-center rounded-sm px-0.5 focus-visible:outline-none"
+            className="group relative flex h-full min-w-0 cursor-pointer items-end justify-center rounded-sm px-0.5 focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden"
             onClick={() => {
               setSelectedHour(bucket.hour)
               onActiveHourChange?.(bucket)

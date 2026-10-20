@@ -113,7 +113,7 @@ The Signal Desk is a focused place where complex activity becomes clear, actiona
 
 The foundation stays quiet at rest. Product identity comes from composition: Daedalus Console is a dense operational workbench, Creator Portal is a guided mobile task flow, and Kraken is an evidence-led analytical product. They share primitives and interaction truth without sharing a page template or product theme fork.
 
-The system rejects generic shadcn dashboard output, card grids without hierarchy, unbounded decorative glow and glass, universal brand-font treatment, and compressed-desktop mobile layouts. A precise turquoise glow is reserved for the primary product lockup and live signal marks.
+The system rejects generic shadcn dashboard output, card grids without hierarchy, unbounded decorative glow and glass, universal brand-font treatment, and compressed-desktop mobile layouts. A precise turquoise glow is reserved for the primary product lockup, live signal marks, and the shared state glow described under Elevation.
 
 **Key Characteristics:**
 
@@ -188,8 +188,20 @@ The system uses tonal layers at rest and state lift in motion. Default surfaces 
 ### Shadow Vocabulary
 
 - **Overlay:** A broad, low-opacity shadow for dialogs, menus, popovers, and drawers.
-- **State lift:** A shallow shadow paired with a small transform for a hovered draggable or explicitly raised work item.
-- **Focus:** A high-contrast opaque ring, not a glow cloud. Use Focus Teal on light surfaces and Signal Turquoise on dark surfaces.
+- **State lift:** A shallow shadow paired with a small transform for a hovered draggable or explicitly raised work item. Never for selection.
+- **Focus:** One look for every control: a high-contrast opaque ring with a soft tone halo behind it. Use Focus Teal on light surfaces and Signal Turquoise on dark surfaces. The halo never replaces the ring.
+
+### Glow
+
+Glow is the shared state light for selection, hover, focus, primary-action hover, and overlays. One tone drives it (`--nextide-glow-tone`, Signal Turquoise by default), so a choice can glow in its own colour, such as an A/B option's tone.
+
+- **Selected:** Toned border, a fine toned ring, and a soft backlight. The glow is what marks selection; selected cards never translate, scale, or otherwise lift. The selected item sits on a higher stacking layer so its light spills over neighbours, but it never moves.
+- **Status:** Recommended, winning, playing, and similar states use a toned border only, never the selection glow.
+- **Hover:** A softer toned border and halo on choosable items and primary actions. Secondary, outline, and ghost buttons keep their tonal hover.
+- **Focus:** The opaque focus ring plus a tone halo; on a selected item the ring sits on top of the selected glow.
+- **Overlay:** A tone halo around a floating mark, or a radial wash behind a hero panel or full-screen moment.
+
+**The Glow-Is-State Rule.** A glow always answers "what is chosen, live, or under the pointer". Decorative glow stays out.
 
 **The Flat-at-Rest Rule.** If every panel appears to float, remove elevation until only the active layer moves forward.
 
@@ -226,7 +238,7 @@ Components are quiet at rest and decisive in action. Base UI owns interaction se
 
 - **Shape:** Gently squared control corners (`0.5rem`), not pills by default.
 - **Primary:** Signal Turquoise with dark ink, medium label weight, and a minimum `2.5rem` desktop height; use `2.75rem` where touch is primary.
-- **Hover / Focus:** Small tonal change and crisp focus ring. No permanent glow. Motion uses opacity, color, or transform and respects reduced motion.
+- **Hover / Focus:** Small tonal change and crisp focus ring with the shared focus halo; primary actions add the hover glow. No permanent glow. Motion uses opacity, color, or shadow and respects reduced motion.
 - **Secondary / Ghost:** Neutral surfaces or transparent treatment. Destructive is visually quieter than primary until the decision is confirmed.
 
 ### Chips
@@ -238,14 +250,14 @@ Components are quiet at rest and decisive in action. Base UI owns interaction se
 
 - **Corner Style:** Restrained surface corners (`0.625rem`).
 - **Background:** One tonal step from the canvas.
-- **Shadow Strategy:** Flat at rest; see Elevation.
+- **Shadow Strategy:** Flat at rest; see Elevation. Choosable cards use the shared glow states and never lift.
 - **Border:** At most one quiet one-pixel boundary. Nested cards require a demonstrated interaction or grouping need.
 - **Internal Padding:** Compact (`0.75rem`) for dense data; standard (`1rem`) for forms; roomy (`1.5rem`) only for focused reading or empty states.
 
 ### Inputs / Fields
 
 - **Style:** Solid neutral fill, one quiet boundary, readable body text, and aligned labels/errors.
-- **Focus:** Crisp turquoise ring plus border shift; no layout movement.
+- **Focus:** The shared focus ring, drawn inside the border, plus the focus halo; no layout movement.
 - **Error / Disabled:** Error copy stays attached to the affected field. Disabled controls remain readable and never masquerade as unavailable data.
 
 ### Navigation

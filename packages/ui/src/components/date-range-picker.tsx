@@ -224,14 +224,14 @@ function CalendarGrid({
               aria-current={today ? "date" : undefined}
               onClick={() => onSelectDate(date)}
               className={cn(
-                "relative grid place-items-center rounded-lg border border-transparent font-medium transition-[background-color,border-color,color,box-shadow] duration-[var(--nextide-motion-state)] outline-none hover:border-nextide-tide/35 hover:bg-nextide-tide/10 focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring",
+                "relative grid place-items-center rounded-lg border border-transparent font-medium transition-[background-color,border-color,color,box-shadow] duration-[var(--nextide-motion-state)] outline-none hover:border-nextide-tide/35 hover:bg-nextide-tide/10 focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden",
                 size === "compact" ? "h-9 text-xs" : "h-11 text-sm sm:h-12",
                 !inMonth && "text-muted-foreground/35",
                 inRange && "bg-nextide-tide/8 text-foreground",
                 today &&
                   "border-nextide-yellow/55 text-nextide-yellow ring-1 ring-nextide-yellow/25",
                 selected &&
-                  "border-nextide-tide/65 bg-nextide-tide/18 text-nextide-tide shadow-[0_0_20px_rgb(30_228_188/0.12)]",
+                  "border-glow/65 bg-nextide-tide/18 text-nextide-tide shadow-glow-selected",
                 active && "ring-1 ring-nextide-tide/35"
               )}
             >
@@ -264,7 +264,7 @@ function RangeEdgeButton({
       className={cn(
         "rounded-md border px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow]",
         active
-          ? "border-nextide-tide/65 bg-nextide-tide/12 text-nextide-tide shadow-[0_0_16px_rgb(30_228_188/0.14)]"
+          ? "nextide-glow-selected bg-nextide-tide/12 text-nextide-tide"
           : "border-nextide-line bg-background/25 text-muted-foreground"
       )}
       onClick={onClick}
@@ -321,6 +321,6 @@ function isSameMonth(left: Date, right: Date) {
 }
 
 const calendarIconButtonClassName =
-  "grid size-8 place-items-center rounded-lg border border-nextide-line bg-background/25 text-muted-foreground transition-[background-color,color,border-color] hover:border-nextide-tide/45 hover:bg-nextide-tide/10 hover:text-nextide-tide focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring"
+  "grid size-8 place-items-center rounded-lg border border-nextide-line bg-background/25 text-muted-foreground transition-[background-color,color,border-color] hover:border-nextide-tide/45 hover:bg-nextide-tide/10 hover:text-nextide-tide focus-visible:border-ring focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:shadow-glow-focus focus-visible:outline-hidden"
 
 export { SingleCalendarDateRangePicker, SingleDatePicker, type DateRange }

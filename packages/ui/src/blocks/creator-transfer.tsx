@@ -195,7 +195,7 @@ function CreatorTransferPanel({
       <h3 className="text-sm">{title}</h3>
       <label
         htmlFor={searchId}
-        className="grid h-10 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-lg border border-nextide-line bg-nextide-panel px-3 text-nextide-tide focus-within:border-ring focus-within:ring-1 focus-within:ring-ring focus-within:ring-inset"
+        className="grid h-10 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-lg border border-nextide-line bg-nextide-panel px-3 text-nextide-tide focus-within:border-ring focus-within:shadow-glow-focus focus-within:ring-(length:--nextide-focus-ring-width) focus-within:ring-ring focus-within:ring-inset"
       >
         <Search className="size-4" />
         <Input
@@ -219,7 +219,7 @@ function CreatorTransferPanel({
           }}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search creators..."
-          className="h-auto border-0 bg-transparent p-0 shadow-none focus-visible:shadow-none focus-visible:not-data-[pointer-focus]:ring-0 dark:bg-transparent"
+          className="h-auto border-0 bg-transparent p-0 shadow-none focus-visible:shadow-none focus-visible:not-data-[pointer-focus]:shadow-none focus-visible:not-data-[pointer-focus]:ring-0 dark:bg-transparent"
         />
       </label>
       <div
@@ -337,7 +337,7 @@ function CreatorTransferActionButton({
       aria-hidden={hidden || undefined}
       disabled={action === "add" && Boolean(creator.disabledReason)}
       className={cn(
-        "min-w-0 flex-1 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+        "min-w-0 flex-1 rounded-lg outline-none focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden disabled:opacity-50",
         hidden && "pointer-events-none opacity-0"
       )}
       onClick={() => onTransfer(id, action)}
@@ -363,7 +363,7 @@ function CreatorLockButton({
       aria-label={`${locked ? "Unlock" : "Lock"} ${creator.name}`}
       aria-pressed={locked}
       className={cn(
-        "grid size-10 shrink-0 place-items-center rounded-lg border border-nextide-line bg-nextide-panel text-muted-foreground outline-none hover:border-nextide-tide/45 focus-visible:ring-2 focus-visible:ring-ring",
+        "grid size-10 shrink-0 place-items-center rounded-lg border border-nextide-line bg-nextide-panel text-muted-foreground outline-none hover:border-nextide-tide/45 focus-visible:border-ring focus-visible:shadow-glow-focus focus-visible:ring-(length:--nextide-focus-ring-width) focus-visible:ring-ring focus-visible:outline-hidden",
         locked && "border-nextide-tide bg-nextide-tide/10 text-nextide-tide"
       )}
       onClick={() =>

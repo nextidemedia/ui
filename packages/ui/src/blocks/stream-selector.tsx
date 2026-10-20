@@ -128,8 +128,7 @@ function StreamRow({
       ref={(node) => setRowRef(stream.id, node)}
       className={cn(
         "grid min-h-[4.9rem] w-full min-w-0 grid-cols-[5.5rem_minmax(0,1fr)_7rem_auto_1.75rem] items-center gap-3 rounded-lg border border-nextide-line bg-nextide-panel px-3 py-2 text-left transition-[background-color,border-color,box-shadow]",
-        selected &&
-          "border-nextide-tide/55 bg-nextide-tide/10 shadow-[0_0_24px_rgb(30_228_188/0.13)]",
+        selected && "nextide-glow-selected bg-nextide-tide/10",
         "disabled:cursor-not-allowed disabled:opacity-45"
       )}
       style={

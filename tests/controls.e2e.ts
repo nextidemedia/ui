@@ -150,3 +150,49 @@ test(
     await expect(note).toHaveValue("Keep this draft")
   }
 )
+
+test(
+  "a chosen card glows in its own tone without lifting and keeps keyboard focus visible",
+  { platforms: ["web"] },
+  async ({ app, screen, browser }) => {
+    await app.open("/?view=report")
+    await screen.getByRole("button", /Primitives/).tap()
+    const optionA = screen.getByRole("button", /^Option A/)
+    const optionB = screen.getByRole("button", /^Option B/)
+    const read = () =>
+      browser.evaluate(() => {
+        const node = [...document.querySelectorAll("button")].find((button) =>
+          button.textContent?.startsWith("Option B")
+        )!
+        const style = getComputedStyle(node)
+        const probe = document.createElement("span")
+        probe.style.color = "var(--ring)"
+        document.body.append(probe)
+        const ring = getComputedStyle(probe).color
+        probe.remove()
+        const { top, left, width, height } = node.getBoundingClientRect()
+        const group = node.parentElement!.getBoundingClientRect()
+        return {
+          box: [top - group.top, left - group.left, width, height],
+          moved: [style.transform, style.translate, style.scale],
+          shadow: style.boxShadow,
+          ringed: style.boxShadow.includes(ring),
+        }
+      })
+    const resting = await read()
+    await optionB.tap()
+    await expect(optionB).toHaveAttribute("aria-pressed", "true")
+    await expect(optionA).toHaveAttribute("aria-pressed", "false")
+    const chosen = await read()
+    expect(chosen.box).toEqual(resting.box)
+    expect(chosen.moved).toEqual(["none", "none", "none"])
+    expect(chosen.shadow).not.toEqual(resting.shadow)
+    expect(chosen.ringed).toBe(false)
+    await optionB.press("Shift+Tab")
+    await expect(optionA).toBeFocused()
+    await optionA.press("Tab")
+    await expect(optionB).toBeFocused()
+    await expect.poll(async () => (await read()).ringed).toBe(true)
+    expect((await read()).box).toEqual(resting.box)
+  }
+)
