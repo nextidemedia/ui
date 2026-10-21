@@ -6,7 +6,7 @@ Run `npm run dev`, then open [http://127.0.0.1:5174](http://127.0.0.1:5174) to v
 
 ## Development checks
 
-Install Node 26.9.0 (matching `.node-version` and CI), npm 12.0.2, and `just`. On Windows, install PowerShell 7.5+
+Install Node 26.12.1 (matching `.node-version` and CI), npm 12.0.2, and `just`. On Windows, install PowerShell 7.5+
 with `pwsh` available on PATH.
 
 - `just setup` installs the frozen workspace lockfile and activates the tracked
