@@ -1,7 +1,9 @@
 # Vite+ migration evidence — 2026-10-11
 
+Historical migration record. Current tool versions are pinned in `package.json`.
+
 This migration starts at `2e4939c` and adopts the approved Meta PR #47 toolchain:
-Node 26.9.0, npm 12.2.1, Vite+ 1.3.0, its Vite-core 1.1.0 alias and Vitest 5.0.3,
+Node 26.9.0, npm 12.0.2, Vite+ 1.1.0, its Vite-core 1.1.0 alias and Vitest 5.0.3,
 and TypeScript 7.0.2. The maintainer waived the seven-day release age for these
 aligned pins. npm generated the lock; `npm ci` remains the frozen installation
 command. Prettier 3.9.7, its Tailwind plugin and native TesterArmy stay unchanged.

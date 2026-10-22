@@ -172,6 +172,8 @@ representative Chromium interaction, accessibility, and responsive checks.
 Use `just qualify` for all checks or `just qualify-deploy` for release validation.
 Direct dependencies are pinned exactly. The workspace also enforces a seven-day release age (except native E2E packages),
 strict peer dependencies, and explicitly approved dependency install scripts.
+The 2026-10-22 dependency refresh uses the maintainer's explicit waiver of the
+release-age hold for latest stable versions.
 The library uses `vp pack` in unbundled mode, preserving public `.js`/`.d.ts`
 subpaths, client directives, stylesheets and fonts. Native E2E remains the test runner;
 there is no starter Vitest suite.
