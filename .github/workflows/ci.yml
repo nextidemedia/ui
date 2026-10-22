@@ -50,15 +50,15 @@ jobs:
           ref: ${{ inputs.source_sha || github.sha }}
       - id: source
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
           package-manager-cache: false
-      - run: npm install --global npm@12.0.2
+      - run: npm install --global npm@12.2.1
       - run: npm ci
       - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
         with:
-          just-version: "1.58.0"
+          just-version: "1.59.0"
       - name: Quality
         if: ${{ (inputs.profile || 'full') == 'full' }}
         run: just quality
@@ -77,7 +77,7 @@ jobs:
         run: npm run qualify
       - name: Preserve native E2E evidence
         if: ${{ always() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-e2e-${{ github.sha }}
           path: output/e2e/

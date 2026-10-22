@@ -2,13 +2,10 @@ import { createRequire } from "node:module"
 import { dirname, join } from "node:path"
 import type { E2EConfig } from "e2e"
 import { web } from "@e2e-dev/web"
-import { chatgpt } from "e2e/oauth/chatgpt"
 
 const require = createRequire(
   new URL("./apps/playground/package.json", import.meta.url)
 )
-const record = process.env.UI_E2E_RECORD === "1"
-if (!record) process.env.E2E_OAUTH_CREDENTIALS = "{}"
 const app = {
   url: "http://127.0.0.1:0",
   identity: "nextide-ui-packed-playground",
@@ -35,14 +32,8 @@ export default {
   tests: "tests/**/*.e2e.ts",
   workers: 1,
   retries: 0,
-  cache: { mode: record ? "read-write" : "read-only", strict: !record },
+  cache: { mode: "read-only", strict: true },
   output: "output/e2e",
-  agents: {
-    default: {
-      model: chatgpt("gpt-6-luna"),
-      providerOptions: { openai: { reasoningEffort: "low" } },
-    },
-  },
   targets: [
     {
       name: "desktop",

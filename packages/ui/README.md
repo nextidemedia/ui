@@ -8,8 +8,8 @@ shadcn/ui, Base UI, Tailwind CSS 4, and React 19.
 Pin an exact release so upgrades remain deliberate:
 
 ```bash
-npm install --save-exact @nextide/ui@2.7.0
-npm install --save-dev --save-exact tailwindcss@4.3.1 @tailwindcss/vite@4.3.1
+npm install --save-exact @nextide/ui@2.7.1
+npm install --save-dev --save-exact tailwindcss@4.3.3 @tailwindcss/vite@4.3.3
 ```
 
 The consumer must provide React 19, React DOM 19, and Tailwind CSS 4. In a Vite

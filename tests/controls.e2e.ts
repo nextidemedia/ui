@@ -53,10 +53,10 @@ test(
 
 test(
   "a reviewer opens and dismisses project review",
-  { platforms: ["web"], tags: ["recording"] },
-  async ({ app, agent, screen }) => {
+  { platforms: ["web"] },
+  async ({ app, screen }) => {
     await app.open("/qualification")
-    await agent.act("Open Project review using Review settings.")
+    await screen.getByRole("button", "Review settings").click()
     await expect(screen.getByRole("dialog", "Project review")).toBeVisible()
     await screen.getByRole("dialog", "Project review").press("Escape")
     await expect(screen.getByRole("button", "Review settings")).toBeFocused()
