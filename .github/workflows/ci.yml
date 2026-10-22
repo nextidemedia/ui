@@ -56,9 +56,22 @@ jobs:
           package-manager-cache: false
       - run: npm install --global npm@12.2.1
       - run: npm ci
-      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
-        with:
-          just-version: "1.59.0"
+      - name: Install just
+        # Direct asset installation avoids the release-discovery failure on fresh runners.
+        # SHA-256 from casey/just's official 1.59.0 SHA256SUMS release asset.
+        run: |
+          archive="just-1.59.0-x86_64-unknown-linux-musl.tar.gz"
+          install_dir="$RUNNER_TEMP/just-1.59.0"
+          mkdir -p "$install_dir"
+          curl --fail --silent --show-error --location \
+            "https://github.com/casey/just/releases/download/1.59.0/$archive" \
+            --output "$install_dir/$archive"
+          printf '%s  %s\n' \
+            '409044617b6f06517c1035e55ca38c8c856ff8b650e41bc2aa1ef82d5903a23e' \
+            "$install_dir/$archive" | sha256sum --check --strict
+          tar -xzf "$install_dir/$archive" -C "$install_dir" just
+          "$install_dir/just" --version
+          echo "$install_dir" >> "$GITHUB_PATH"
       - name: Quality
         if: ${{ (inputs.profile || 'full') == 'full' }}
         run: just quality
