@@ -33,11 +33,11 @@ typecheck:
     npm run typecheck
 
 test *args:
-    npm exec -- e2e run --target package {{_forward_args}}
+    node node_modules/e2e/dist/cli/bin.js run --target package {{_forward_args}}
 
 test-integration *args:
     npm run build
-    npm exec -- e2e run {{_forward_args}}
+    node node_modules/e2e/dist/cli/bin.js run {{_forward_args}}
 
 check: fmt-check lint typecheck test
 
@@ -45,7 +45,7 @@ quality: fmt-check lint
 
 # Both local and CI qualification use these same native rule profiles.
 lint-correctness:
-    npm exec -- vp lint --config .oxlintrc.correctness.json --deny-warnings
+    node node_modules/vite-plus/bin/vp lint --config .oxlintrc.correctness.json --deny-warnings
     npm run security:watchlist
 
 correctness: lint-correctness typecheck

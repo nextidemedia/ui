@@ -6,7 +6,7 @@ Run `npm run dev`, then open [http://127.0.0.1:5174](http://127.0.0.1:5174) to v
 
 ## Development checks
 
-Install Node 26.12.1 (matching `.node-version` and CI), npm 12.0.2, and `just`. On Windows, install PowerShell 7.5+
+Install Node 26.12.1 (matching `.node-version` and CI), npm 12.2.1, and `just`. On Windows, install PowerShell 7.5+
 with `pwsh` available on PATH.
 
 - `just setup` installs the frozen workspace lockfile and activates the tracked
@@ -37,22 +37,17 @@ with `pwsh` available on PATH.
 - `just test-integration` builds both workspaces and runs native TesterArmy E2E.
   First run `npm exec -- e2e-web install chromium` (Linux CI adds `--with-deps`).
   The runner owns an isolated preview port and stops the server on exit.
-  Focus with `npm exec -- e2e run tests/schedule.e2e.ts --target mobile`.
-- Normal runs use committed recordings, strict read-only cache, zero retries, and
-  unavailable model credentials. Tests use the built library through playground
-  public exports at desktop (1440px) and mobile (390px) widths. The packed consumer
-  separately proves installation without workspace links. No visible browser is opened.
-- To author a changed recorded goal, set `UI_E2E_RECORD=1` with saved ChatGPT OAuth,
-  then run the affected case and one target with `--grep` and `--max-failures 1`.
-  Use `gpt-6-luna` with low reasoning. Inspect the generated `.e2e/cache` JSON for
-  sensitive data and literal origins before committing it unchanged. Clear the
-  recording variable and replay without credentials; never edit cache outcomes.
+  Focus with `node node_modules/e2e/dist/cli/bin.js run tests/schedule.e2e.ts --target mobile`.
+- Normal runs use exact browser actions, strict read-only cache, and zero retries.
+  Tests use the built library through playground public exports at desktop (1440px)
+  and mobile (390px) widths. The packed consumer separately proves installation
+  without workspace links. No model credentials or visible browser are needed.
 
 The [shared baseline](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md)
 sets complexity 12, function length 100, and source/test LOC limits. All source
 files meet the 600-line limit and browser suites meet the 900-line test limit;
 Oxlint counts nonblank lines, including comments, with no size exceptions. Accessibility exceptions explain specific SVG,
-forwarded-prop, or scroll-region semantics. Vite+ 1.1.0 owns lint and builds; TypeScript 7.0.2 owns compiler checks and declarations.
+forwarded-prop, or scroll-region semantics. Vite+ 1.3.0 owns lint and builds; TypeScript 7.0.2 owns compiler checks and declarations.
 The official React Hooks plugin retains three rules where native parity is incomplete.
 See [migration evidence](docs/viteplus-migration.md) for scopes, diagnostic comparisons,
 retained checks and the approved release-age waiver. Prettier remains the formatter.
@@ -104,8 +99,8 @@ The package expects React 19 and Tailwind CSS 4. Install an exact release so a
 consumer upgrades deliberately:
 
 ```bash
-npm install --save-exact @nextide/ui@2.7.0
-npm install --save-dev --save-exact tailwindcss@4.3.1 @tailwindcss/vite@4.3.1
+npm install --save-exact @nextide/ui@2.7.1
+npm install --save-dev --save-exact tailwindcss@4.3.3 @tailwindcss/vite@4.3.3
 ```
 
 Vite consumers need the Tailwind CSS Vite plugin. Import the shared stylesheet
@@ -177,6 +172,8 @@ representative Chromium interaction, accessibility, and responsive checks.
 Use `just qualify` for all checks or `just qualify-deploy` for release validation.
 Direct dependencies are pinned exactly. The workspace also enforces a seven-day release age (except native E2E packages),
 strict peer dependencies, and explicitly approved dependency install scripts.
+The 2026-10-22 dependency refresh uses the maintainer's explicit waiver of the
+release-age hold for latest stable versions.
 The library uses `vp pack` in unbundled mode, preserving public `.js`/`.d.ts`
 subpaths, client directives, stylesheets and fonts. Native E2E remains the test runner;
 there is no starter Vitest suite.
