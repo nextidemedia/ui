@@ -37,7 +37,7 @@ with `pwsh` available on PATH.
 - `just test-integration` builds both workspaces and runs native TesterArmy E2E.
   First run `npm exec -- e2e-web install chromium` (Linux CI adds `--with-deps`).
   The runner owns an isolated preview port and stops the server on exit.
-  Focus with `npm exec -- e2e run tests/schedule.e2e.ts --target mobile`.
+  Focus with `node node_modules/e2e/dist/cli/bin.js run tests/schedule.e2e.ts --target mobile`.
 - Normal runs use exact browser actions, strict read-only cache, and zero retries.
   Tests use the built library through playground public exports at desktop (1440px)
   and mobile (390px) widths. The packed consumer separately proves installation
