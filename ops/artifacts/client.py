@@ -264,6 +264,8 @@ def pack(archive, patterns, include_hidden):
                         add(child)
                     return
                 added.add(item)
+                if len(added) > 100000:
+                    raise ValueError('Artifact exceeds the 100000 file limit; no upload was started')
                 total += item.stat().st_size
                 if total > MAX_EXPANDED:
                     raise ValueError('Artifact exceeds the 4 GiB expanded file limit')
