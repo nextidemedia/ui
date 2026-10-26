@@ -10,6 +10,9 @@ permissions:
 
 jobs:
   report:
+    permissions:
+      contents: read
+      id-token: write
     runs-on: [self-hosted, Linux, X64, nextide-ci-docker]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -23,7 +26,7 @@ jobs:
       - run: npm install --global npm@12.2.1
       - run: just deadcode-setup
       - run: just deadcode
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: nextidemedia/ui/.github/actions/upload-owned-artifact@2344a59e3863da5d89780163004bb175f01dd626
         if: always()
         with:
           name: deadcode-reports
