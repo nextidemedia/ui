@@ -1,0 +1,29 @@
+name: Upload owned CI artifact
+description: Preserve workflow evidence in Nextide artifact storage
+inputs:
+  name:
+    description: Artifact name
+    required: true
+  path:
+    description: Newline-separated file patterns
+    required: true
+  include-hidden-files:
+    description: Include hidden files and directories
+    default: "false"
+  if-no-files-found:
+    description: Behavior when no files match (error, warn or ignore)
+    default: warn
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        ARTIFACT_NAME: ${{ inputs.name }}
+        ARTIFACT_PATHS: ${{ inputs.path }}
+        ARTIFACT_HIDDEN: ${{ inputs.include-hidden-files }}
+        ARTIFACT_MISSING: ${{ inputs.if-no-files-found }}
+      run: >-
+        python3 -B "$GITHUB_ACTION_PATH/../../../ops/artifacts/client.py"
+        upload-artifact "$ARTIFACT_NAME" "$ARTIFACT_PATHS"
+        --include-hidden-files "$ARTIFACT_HIDDEN"
+        --if-no-files-found "$ARTIFACT_MISSING"
