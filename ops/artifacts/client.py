@@ -26,6 +26,7 @@ AUDIENCE = 'nextide-ci-artifacts'
 BUCKETS = {'ci-release': 'ci-releases', 'linux-source-evidence': 'ci-evidence'}
 MAX_ARCHIVE = 16 * MAX_SIZE
 MAX_EXPANDED = 4 * MAX_ARCHIVE
+MAX_TAR_SIZE = MAX_EXPANDED + 64 * 1024 * 1024
 MAX_MANIFEST = 16 * 1024
 RETENTIONS = (1, 3, 7, 14, 90, 180)
 NAME = r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}'
@@ -274,6 +275,10 @@ def pack(archive, patterns, include_hidden):
                 info.uname = info.gname = ''
                 with item.open('rb') as content:
                     bundle.addfile(info, content)
+                tar_size = bundle.offset + 2 * tarfile.BLOCKSIZE
+                tar_size += -tar_size % tarfile.RECORDSIZE
+                if tar_size > MAX_TAR_SIZE:
+                    raise ValueError('Artifact exceeds the expanded archive limit; no upload was started')
                 if raw.tell() > MAX_ARCHIVE:
                     raise ValueError('Artifact exceeds the 1 GiB compressed limit')
             for item in includes:
@@ -343,7 +348,7 @@ class ExpandedArchive:
     def read(self, size):
         block = self.stream.read(size)
         self.size += len(block)
-        if self.size > MAX_EXPANDED + 64 * 1024 * 1024:
+        if self.size > MAX_TAR_SIZE:
             raise ValueError('Artifact exceeds the expanded archive limit')
         return block
 
