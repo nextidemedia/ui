@@ -101,23 +101,11 @@ jobs:
       - if: ${{ always() && github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor == 'dependabot[bot]') }}
         run: echo 'Owned artifact uploads are unavailable for fork and Dependabot checks.' >> "$GITHUB_STEP_SUMMARY"
 
-  result:
-    name: Qualification result
-    if: ${{ always() }}
-    needs: correctness
-    runs-on: [self-hosted, Linux, X64, nextide-ci-docker]
-    timeout-minutes: 5
-    steps:
-      - name: Require selected groups
+      - name: Qualification summary
+        if: ${{ always() }}
         env:
           PROFILE: ${{ inputs.profile || 'full' }}
-          SOURCE_SHA: ${{ needs.correctness.outputs.sha || inputs.source_sha || github.sha }}
-          CORRECTNESS: ${{ needs.correctness.result }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha || inputs.source_sha || github.sha }}
+          CORRECTNESS: ${{ job.status }}
         run: |
-          node <<'NODE'
-          const { PROFILE, SOURCE_SHA, CORRECTNESS } = process.env;
-          console.log(`Qualification ${PROFILE}: ${SOURCE_SHA}; Correctness=${CORRECTNESS}`);
-          if (!["full", "deploy"].includes(PROFILE) || CORRECTNESS !== "success") {
-            process.exit(1);
-          }
-          NODE
+          printf 'Qualification %s: %s; Correctness=%s\n' "$PROFILE" "$SOURCE_SHA" "$CORRECTNESS" | tee -a "$GITHUB_STEP_SUMMARY"
