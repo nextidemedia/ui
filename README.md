@@ -62,7 +62,7 @@ Pull requests, main pushes, and the weekly **Qualification** workflow run full q
 `full` or `deploy`; deploy deliberately skips **Quality**. Both profiles share one
 Node installation in **Correctness / Package and browser**. Full runs execute
 Quality first; its full lint also covers correctness lint and the watchlist.
-**Qualification result** requires the selected checks to succeed and reports the validated commit. The
+That job requires the selected checks to succeed and reports the profile, validated commit, and status. The
 package has no service deployment or database integration lane; its integration
 surface is the packed consumer and playground browser suite.
 
