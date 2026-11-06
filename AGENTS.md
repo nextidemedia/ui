@@ -32,17 +32,32 @@ Follow [coding guidance](docs/coding-guidance.md) for language-specific tooling 
   Follow the [secrets policy](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md#application-secrets)
   and the service's startup, release and recovery procedures.
 
+## Production
+
+- Deploying to dev needs no approval.
+- Deploying to an internal production service is approved when the caller
+  lets its PR merge.
+- Deploying to a user-facing production service (Kraken, Daedalus once live)
+  needs the caller's explicit approval before the deploy.
+
 ## Runtime checks
 
-- Add a validation, guard or limit only when both are true: you can name what
-  goes wrong without it (what breaks, gets corrupted or is exposed), and you
-  can describe a realistic way that situation arises in normal operation.
-  "It could theoretically happen" is not a reason.
-- Check untrusted input once, where it enters the system. Do not re-check
-  values the type system, schema or an upstream caller already guarantees.
-- Do not reject or drop data for missing an expected shape or value that
-  nothing downstream depends on. For example: A 299.95-second segment in a
-  five-minute pipeline is a perfectly usable segment.
+- Validate data once, where it enters the system (the
+  [data entry map](https://github.com/nextidemedia/meta/blob/main/docs/architecture/data-entry-map.md)
+  lists known entry points):
+  - Requests from outside callers, including webhooks: check authentication,
+    authorization, schema and limits.
+  - External data the system consumes, such as provider responses, media and
+    model output: reject only what downstream code cannot use, and leave
+    missing values empty rather than guessing.
+  - Data from an authenticated internal service: trust what its contract
+    guarantees, not content it only relays. Inside one process: trust the
+    types.
+- Never remove authentication, authorization, idempotency, data-integrity
+  constraints, output encoding or other security boundaries as redundant.
+- Tolerate unknown fields unless the contract requires strictness.
+- Add a check or limit only when you can name what breaks or is exposed
+  without it and a realistic way that happens.
 - When changing a path, remove checks on it that protect nothing.
 
 ## Testing
