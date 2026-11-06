@@ -15,6 +15,18 @@ import {
   type CreatorTransferSide,
   type CreatorTransferTarget,
 } from "./creator-transfer-types.js"
+// One creator moves at a time: "spacing" opens room in the target list, then
+// "flying" moves a copy of the row across. Requests made meanwhile queue until
+// the transfer returns to idle.
+type TransferPhase =
+  | { kind: "idle" }
+  | { kind: "spacing"; target: CreatorTransferTarget }
+  | {
+      kind: "flying"
+      target: CreatorTransferTarget
+      flyer: CreatorTransferFlyer
+    }
+const idleTransfer: TransferPhase = { kind: "idle" }
 function useCreatorTransfer({
   creators,
   selectedIds,
@@ -29,9 +41,7 @@ function useCreatorTransfer({
     intendedSelectedIdsRef.current = selectedIds
     queue.clearQueuedTransfers()
     motion.clearTransferTimers()
-    state.setTransferTarget(null)
-    state.setTransferFlyer(null)
-    state.setMotionLocked(false)
+    state.setTransfer(idleTransfer)
   })
   const animateTransfer = createTransferCreator(creators, state, motion)
   const transferCreator = (id: string, direction: "add" | "remove") => {
@@ -77,11 +87,7 @@ function useTransferState(
     creatorIdsReducer,
     selectedIds
   )
-  const [motionLocked, setMotionLocked] = React.useState(false)
-  const [transferTarget, setTransferTarget] =
-    React.useState<CreatorTransferTarget | null>(null)
-  const [transferFlyer, setTransferFlyer] =
-    React.useState<CreatorTransferFlyer | null>(null)
+  const [transfer, setTransfer] = React.useState<TransferPhase>(idleTransfer)
   const creatorIds = React.useMemo(
     () => new Set(creators.map((creator) => creator.id)),
     [creators]
@@ -108,12 +114,10 @@ function useTransferState(
     setAvailableIds,
     addedIds,
     setAddedIds,
-    motionLocked,
-    setMotionLocked,
-    transferTarget,
-    setTransferTarget,
-    transferFlyer,
-    setTransferFlyer,
+    setTransfer,
+    motionLocked: transfer.kind !== "idle",
+    transferTarget: transfer.kind === "idle" ? null : transfer.target,
+    transferFlyer: transfer.kind === "flying" ? transfer.flyer : null,
     creatorIds,
     creatorById,
     visibleAvailableIds,
@@ -213,8 +217,7 @@ function createTransferCreator(
   const {
     availableIds,
     addedIds,
-    setMotionLocked,
-    setTransferTarget,
+    setTransfer,
     visibleAddedIds,
     setAddedIds,
     visibleAvailableIds,
@@ -248,8 +251,8 @@ function createTransferCreator(
         ? availableIds.filter((creatorId) => creatorId !== id)
         : sortCreatorIds([...availableIds, id], creators)
 
-    setMotionLocked(true)
-    setTransferTarget({ id, side: target })
+    const transferTarget = { id, side: target }
+    setTransfer({ kind: "spacing", target: transferTarget })
 
     if (target === "selected") {
       addedReflowRef.current = captureRows(visibleAddedIds, addedRefs)
@@ -263,7 +266,7 @@ function createTransferCreator(
     }
 
     queueTransferTimer(() => {
-      const didStart = startFlyer(id, source, target, state, motion)
+      const didStart = startFlyer(transferTarget, source, state, motion)
       queueTransferTimer(
         () => {
           completeTransfer(
@@ -281,14 +284,13 @@ function createTransferCreator(
   }
 }
 function startFlyer(
-  id: string,
+  transferTarget: CreatorTransferTarget,
   source: CreatorTransferSide,
-  target: CreatorTransferSide,
   state: TransferState,
   motion: TransferMotion
 ) {
+  const { id, side: target } = transferTarget
   const { availableRefs, addedRefs } = motion
-  const { setTransferFlyer } = state
   const sourceRow = (source === "available" ? availableRefs : addedRefs)
     .current[id]
   const targetRow = (target === "available" ? availableRefs : addedRefs)
@@ -302,12 +304,16 @@ function startFlyer(
       ?.focus({ preventScroll: true })
   revealTransferRow(sourceRow)
   revealTransferRow(targetRow)
-  setTransferFlyer({
-    id,
-    source,
-    side: target,
-    from: sourceRow.getBoundingClientRect(),
-    to: targetRow.getBoundingClientRect(),
+  state.setTransfer({
+    kind: "flying",
+    target: transferTarget,
+    flyer: {
+      id,
+      source,
+      side: target,
+      from: sourceRow.getBoundingClientRect(),
+      to: targetRow.getBoundingClientRect(),
+    },
   })
   return true
 }
@@ -327,9 +333,7 @@ function completeTransfer(
     setAvailableIds,
     visibleAddedIds,
     setAddedIds,
-    setTransferTarget,
-    setTransferFlyer,
-    setMotionLocked,
+    setTransfer,
   } = state
 
   if (collapseSide === "available") {
@@ -348,9 +352,7 @@ function completeTransfer(
       ?.querySelector("input")
       ?.focus({ preventScroll: true })
   }
-  setTransferTarget(null)
-  setTransferFlyer(null)
-  setMotionLocked(false)
+  setTransfer(idleTransfer)
 }
 
 function filterCreatorIds(
