@@ -138,11 +138,31 @@ test(
 )
 
 test(
-  "carousel reordering preserves an edited draft",
+  "looped carousel wraps both ways and reordering preserves an edited draft",
   { platforms: ["web"] },
   async ({ app, screen, browser }) => {
     await app.open("/?view=report")
     await screen.getByRole("button", /Primitives/).tap()
+    // Text of the real slide resting in view; null while sliding or on a loop clone.
+    const shownSlide = () =>
+      browser.evaluate(() => {
+        const viewport = document
+          .querySelector('[data-slot="carousel-viewport"]')!
+          .getBoundingClientRect()
+        const shown = [
+          ...document.querySelectorAll('[data-slot="carousel-content"] > *'),
+        ].find(
+          (slide) =>
+            Math.abs(slide.getBoundingClientRect().left - viewport.left) < 1
+        )
+        return shown?.getAttribute("data-slot") === "carousel-item"
+          ? shown.textContent
+          : null
+      })
+    await screen.getByRole("button", "Previous slide").tap()
+    await expect.poll(shownSlide).toBe("Safety review")
+    await screen.getByRole("button", "Next slide").tap()
+    await expect.poll(shownSlide).toBe("Campaign delivery")
     const slides = browser.locator(
       '[data-slot="carousel-content"] > [data-slot="carousel-item"]'
     )

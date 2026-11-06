@@ -124,7 +124,33 @@ test(
       .toBe(0)
     expect((await header.boundingBox())!.y).toBeCloseTo(before.y, 0)
     const collapse = screen.getByRole("button", "Collapse sidebar").first()
-    if (await collapse.isVisible()) await collapse.tap()
+    if (await collapse.isVisible()) {
+      const shell = browser.locator('[data-slot="app-shell"]')
+      const frame = browser
+        .locator('[data-slot="navigation-panel-frame"]')
+        .first()
+      const expectSettled = async (collapsed: "true" | "false") => {
+        await expect(shell).toHaveAttribute(
+          "data-sidebar-transitioning",
+          "false"
+        )
+        await expect(frame).toHaveAttribute("data-drawer-collapsed", collapsed)
+        await expect(frame).toHaveAttribute("data-collapsed", collapsed)
+      }
+      // Reverse a collapse while its text is still leaving.
+      await browser.evaluate(async () => {
+        const toggle = document.querySelector<HTMLButtonElement>(
+          '[data-slot="sidebar-toggle"]'
+        )!
+        toggle.click()
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        toggle.click()
+        return null
+      })
+      await expectSettled("false")
+      await collapse.tap()
+      await expectSettled("true")
+    }
     const command = browser
       .locator('[data-slot="navigation-panel-command-control"]')
       .first()

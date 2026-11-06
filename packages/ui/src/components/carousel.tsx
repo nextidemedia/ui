@@ -32,6 +32,13 @@ type CarouselProps = ComponentProps<"div"> & {
   onValueChange?: (value: number) => void
 }
 
+// A looped wrap slides onto a clone slide, then snaps to the matching real
+// slide with transitions off for two frames.
+type CarouselTrack =
+  | { kind: "idle"; index: number }
+  | { kind: "wrapping"; index: number; snapTo: number; value: number }
+  | { kind: "snapping"; index: number }
+
 const CarouselContext = createContext<CarouselContextValue | null>(null)
 
 function Carousel({
@@ -47,20 +54,25 @@ function Carousel({
   const [itemCount, setItemCount] = useState(0)
   const loopEnabled = loop && itemCount > 1
   const index = clampCarouselIndex(value ?? internalIndex, itemCount)
-  const [trackIndex, setTrackIndex] = useState(defaultValue)
-  const [trackTransitionEnabled, setTrackTransitionEnabled] = useState(true)
-  const pendingSnapTrackIndex = useRef<number | null>(null)
-  const pendingValueIndex = useRef<number | null>(null)
-
-  useLayoutEffect(() => {
-    if (pendingSnapTrackIndex.current !== null) {
-      if (value === undefined || value === pendingValueIndex.current) return
-    }
-    pendingSnapTrackIndex.current = null
-    pendingValueIndex.current = null
-    setTrackTransitionEnabled(true)
-    setTrackIndex(loopEnabled ? index + 1 : index)
-  }, [index, loopEnabled, value])
+  const trackIndex = loopEnabled ? index + 1 : index
+  const [track, setTrack] = useState<CarouselTrack>({
+    kind: "idle",
+    index: trackIndex,
+  })
+  const [trackSource, setTrackSource] = useState({ index, loopEnabled, value })
+  if (
+    trackSource.index !== index ||
+    trackSource.loopEnabled !== loopEnabled ||
+    trackSource.value !== value
+  ) {
+    setTrackSource({ index, loopEnabled, value })
+    // A wrap in flight keeps going until its own value arrives; any other value wins.
+    if (
+      track.kind !== "wrapping" ||
+      (value !== undefined && value !== track.value)
+    )
+      setTrack({ kind: "idle", index: trackIndex })
+  }
 
   const context = useMemo<CarouselContextValue>(
     () => ({
@@ -68,7 +80,7 @@ function Carousel({
       itemCount,
       loop: loopEnabled,
       setIndex: (nextIndex) => {
-        if (itemCount <= 0 || pendingSnapTrackIndex.current !== null) return
+        if (itemCount <= 0 || track.kind === "wrapping") return
 
         const maxIndex = itemCount - 1
         const normalized = loopEnabled
@@ -77,43 +89,42 @@ function Carousel({
         const wrapsBackward = loopEnabled && nextIndex < 0
         const wrapsForward = loopEnabled && nextIndex > maxIndex
 
-        setTrackTransitionEnabled(true)
         if (wrapsBackward || wrapsForward) {
-          pendingSnapTrackIndex.current = normalized + 1
-          pendingValueIndex.current = normalized
-          setTrackIndex(wrapsForward ? itemCount + 1 : 0)
+          setTrack({
+            kind: "wrapping",
+            index: wrapsForward ? itemCount + 1 : 0,
+            snapTo: normalized + 1,
+            value: normalized,
+          })
         } else {
-          setTrackIndex(loopEnabled ? normalized + 1 : normalized)
+          setTrack({
+            kind: "idle",
+            index: loopEnabled ? normalized + 1 : normalized,
+          })
         }
 
         if (value === undefined) setInternalIndex(normalized)
         onValueChange?.(normalized)
       },
       setItemCount,
-      trackIndex,
-      trackTransitionEnabled,
+      trackIndex: track.index,
+      trackTransitionEnabled: track.kind !== "snapping",
       onTrackTransitionEnd: () => {
-        const snapTrackIndex = pendingSnapTrackIndex.current
-        if (snapTrackIndex === null) return
+        if (track.kind !== "wrapping") return
 
-        pendingSnapTrackIndex.current = null
-        pendingValueIndex.current = null
-        setTrackTransitionEnabled(false)
-        setTrackIndex(snapTrackIndex)
+        setTrack({ kind: "snapping", index: track.snapTo })
         window.requestAnimationFrame(() =>
-          window.requestAnimationFrame(() => setTrackTransitionEnabled(true))
+          window.requestAnimationFrame(() =>
+            setTrack((current) =>
+              current.kind === "snapping"
+                ? { kind: "idle", index: current.index }
+                : current
+            )
+          )
         )
       },
     }),
-    [
-      index,
-      itemCount,
-      loopEnabled,
-      onValueChange,
-      trackIndex,
-      trackTransitionEnabled,
-      value,
-    ]
+    [index, itemCount, loopEnabled, onValueChange, track, value]
   )
 
   return (
