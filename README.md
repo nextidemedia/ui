@@ -95,12 +95,12 @@ This will place the ui components in the `packages/ui/src/components` directory.
 
 ## Consuming `@nextide/ui`
 
-The package expects React 19 and Tailwind CSS 4. Install an exact release so a
-consumer upgrades deliberately:
+The package expects React 19 and Tailwind CSS 4. Use compatible manifest ranges
+and commit the consumer's lockfile:
 
 ```bash
-npm install --save-exact @nextide/ui@2.7.1
-npm install --save-dev --save-exact tailwindcss@4.3.3 @tailwindcss/vite@4.3.3
+npm install @nextide/ui@2.7.1
+npm install --save-dev tailwindcss@4.3.3 @tailwindcss/vite@4.3.3
 ```
 
 Vite consumers need the Tailwind CSS Vite plugin. Import the shared stylesheet
