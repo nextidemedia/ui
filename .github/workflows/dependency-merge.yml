@@ -4,7 +4,7 @@ on:
     branches: [main]
     types: [opened, synchronize, reopened]
   issue_comment:
-    types: [created]
+    types: [created, edited]
   workflow_run:
     workflows: [Qualification]
     types: [completed]
@@ -23,6 +23,7 @@ jobs:
       pull-requests: write
       statuses: write
       actions: read
+      issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -47,8 +48,9 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      statuses: read
+      statuses: write
       actions: read
+      issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

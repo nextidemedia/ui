@@ -1,4 +1,6 @@
 const ELIGIBILITY = "Dependency eligibility"
+const REVIEW = "Dependency review"
+const REVIEW_BOT = "chatgpt-codex-connector[bot]"
 const QUALIFICATION = "Correctness / Package and browser"
 
 function eligible(dependencies) {
@@ -43,8 +45,7 @@ async function classify({ github, context }, metadata) {
     pull_number: number,
   })
   const event = context.payload.pull_request
-  if (pr.head.sha !== event.head.sha || pr.base.sha !== event.base.sha)
-    throw new Error("Candidate changed")
+  if (pr.head.sha !== event.head.sha) throw new Error("Candidate changed")
   const commits = await github.paginate(github.rest.pulls.listCommits, {
     ...context.repo,
     pull_number: number,
@@ -65,6 +66,14 @@ async function classify({ github, context }, metadata) {
         ? "Agent-owned review lane"
         : "Agent compatibility upgrade required",
   })
+  if (!bot)
+    await github.rest.repos.createCommitStatus({
+      ...context.repo,
+      sha: pr.head.sha,
+      context: REVIEW,
+      state: "success",
+      description: "Ordinary review lane",
+    })
   return allowed
 }
 
@@ -73,7 +82,7 @@ async function requireProtection(github, repo) {
   const { repository } = await github.graphql(
     `query($owner:String!, $repo:String!) {
       repository(owner:$owner,name:$repo) { ref(qualifiedName:"refs/heads/main") {
-        refUpdateRule { requiredApprovingReviewCount requiredStatusCheckContexts }
+        refUpdateRule { requiredStatusCheckContexts }
       }}
     }`,
     repo
@@ -81,8 +90,7 @@ async function requireProtection(github, repo) {
   const rule = repository.ref.refUpdateRule
   if (
     !rule ||
-    rule.requiredApprovingReviewCount < 1 ||
-    ![ELIGIBILITY, QUALIFICATION].every((name) =>
+    ![ELIGIBILITY, REVIEW, QUALIFICATION].every((name) =>
       rule.requiredStatusCheckContexts.includes(name)
     )
   ) {
@@ -90,33 +98,44 @@ async function requireProtection(github, repo) {
   }
 }
 
-async function mergeQualified(github, pr, pause) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const { node } = await github.graphql(
-      `query($id:ID!) {
-    node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefOid } }
-  }`,
-      { id: pr.node_id }
-    )
-    if (node.headRefOid !== pr.head.sha || node.baseRefOid !== pr.base.sha)
-      return false
-    if (node.mergeStateStatus !== "CLEAN") {
-      if (attempt < 2) await pause()
-      continue
-    }
-    // Like gh pr merge --auto, merge an already CLEAN PR instead of arming it.
-    // GitHub enforces native protections; the expected head makes synchronize races fail.
-    await github.graphql(
-      `mutation($id:ID!, $head:GitObjectID!) {
-    mergePullRequest(input:{pullRequestId:$id,expectedHeadOid:$head,mergeMethod:SQUASH}) {
+async function nativeMerge(github, pr, operation) {
+  await github.graphql(
+    `mutation($id:ID!, $head:GitObjectID!) {
+    ${operation}(input:{pullRequestId:$id,expectedHeadOid:$head,mergeMethod:SQUASH}) {
       pullRequest { number }
     }
   }`,
-      { id: pr.node_id, head: pr.head.sha }
+    { id: pr.node_id, head: pr.head.sha }
+  )
+}
+
+async function mergeQualified(github, pr) {
+  const { node } = await github.graphql(
+    `query($id:ID!) {
+    node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefOid } }
+  }`,
+    { id: pr.node_id }
+  )
+  if (node.headRefOid !== pr.head.sha || node.baseRefOid !== pr.base.sha)
+    return false
+  // Use native auto-merge to observe pending mergeability, without a scheduler or polling.
+  const operation =
+    node.mergeStateStatus === "CLEAN"
+      ? "mergePullRequest"
+      : "enablePullRequestAutoMerge"
+  try {
+    await nativeMerge(github, pr, operation)
+    return operation
+  } catch (error) {
+    // GitHub can become CLEAN between the read and auto-merge mutation.
+    if (
+      operation !== "enablePullRequestAutoMerge" ||
+      !/clean status/i.test(error.message)
     )
-    return true
+      throw error
+    await nativeMerge(github, pr, "mergePullRequest")
+    return "mergePullRequest"
   }
-  return false
 }
 
 async function qualified(github, context, pr) {
@@ -159,18 +178,57 @@ async function qualified(github, context, pr) {
   return true
 }
 
-function reviewed(submitted, head) {
-  const latest = new Map()
-  for (const review of submitted) {
-    if (["APPROVED", "CHANGES_REQUESTED", "DISMISSED"].includes(review.state))
-      latest.set(review.user.login, review)
-  }
-  return (
-    ![...latest.values()].some((r) => r.state === "CHANGES_REQUESTED") &&
-    [...latest.values()].some(
-      (r) => r.state === "APPROVED" && r.commit_id === head
+function reviewResult(comments, head) {
+  const comment = comments
+    .filter((c) => c.user.login === REVIEW_BOT && c.user.type === "Bot")
+    .findLast((c) =>
+      c.body.startsWith("<!-- codex-pull-request-review-summary -->")
     )
+  const raw = comment?.body.match(/<!-- codex-review-state:v1 (.*?) -->/s)?.[1]
+  if (!raw) return "pending"
+  let review
+  try {
+    review = JSON.parse(raw).code_review
+  } catch {
+    return "pending"
+  }
+  if (review?.commit_sha !== head || review.status !== "completed")
+    return "pending"
+  if (
+    review.has_any_findings === false &&
+    review.has_unresolved_findings === false
   )
+    return "success"
+  return "failure"
+}
+
+async function checkReview(github, context, pr) {
+  const args = { ...context.repo, issue_number: pr.number }
+  const comments = await github.paginate(github.rest.issues.listComments, args)
+  const state = reviewResult(comments, pr.head.sha)
+  await github.rest.repos.createCommitStatus({
+    ...context.repo,
+    sha: pr.head.sha,
+    context: REVIEW,
+    state,
+    description:
+      state === "success"
+        ? "Current-head automated review clean"
+        : "Automated review incomplete or findings",
+  })
+  const marker = `<!-- dependency-review-request:${pr.head.sha} -->`
+  if (
+    state === "pending" &&
+    !comments.some(
+      (c) => c.user.login === "github-actions[bot]" && c.body.includes(marker)
+    )
+  ) {
+    await github.rest.issues.createComment({
+      ...args,
+      body: `@codex review\n\n${marker}`,
+    })
+  }
+  return state === "success"
 }
 
 function candidate(pr) {
@@ -199,12 +257,7 @@ function candidateNumbers(payload) {
       : (payload.workflow_run?.pull_requests || []).map((pr) => pr.number)
 }
 
-async function finish({
-  github,
-  context,
-  core,
-  pause = () => new Promise((resolve) => setTimeout(resolve, 2000)),
-}) {
+async function finish({ github, context, core }) {
   const numbers = candidateNumbers(context.payload)
   for (const number of numbers) {
     const args = { ...context.repo, pull_number: number }
@@ -223,6 +276,7 @@ async function finish({
       { ...context.repo, ref: head }
     )
     const status = statuses.find((s) => s.context === ELIGIBILITY)
+    const reviewClean = await checkReview(github, context, pr)
     if (!eligibleStatus(status)) {
       wait("no eligible current-head classification")
       continue
@@ -231,17 +285,12 @@ async function finish({
       wait("qualification missing or unsuccessful")
       continue
     }
-    const submitted = await github.paginate(github.rest.pulls.listReviews, args)
-    if (!reviewed(submitted, head)) {
-      wait("current-head review required")
+    if (!reviewClean) {
+      wait("current-head automated review required")
       continue
     }
-    const merged = await mergeQualified(github, pr, pause)
-    wait(
-      merged
-        ? "qualified dependency update merged"
-        : "native merge requirements pending"
-    )
+    const result = await mergeQualified(github, pr)
+    wait(result ? "qualified native merge requested" : "candidate changed")
   }
 }
 
@@ -250,4 +299,4 @@ async function classifyAndFinish(client, metadata) {
   await finish(client)
 }
 
-module.exports = { eligible, classify, finish, classifyAndFinish }
+module.exports = { eligible, classify, finish, classifyAndFinish, reviewResult }

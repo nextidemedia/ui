@@ -35,14 +35,27 @@ function updates(denial: string) {
 }
 
 function evidence(denial: string, head: string, base: string) {
+  const state = {
+    code_review: {
+      commit_sha: denial === "stale-review" ? base : head,
+      status: "completed",
+      has_any_findings: denial === "review-findings",
+      has_unresolved_findings: denial === "review-findings",
+    },
+  }
   const reviews =
     denial === "no-review"
       ? []
       : [
           {
-            user: { login: "review-owner" },
-            state: "APPROVED",
-            commit_id: denial === "stale-review" ? base : head,
+            user: {
+              login:
+                denial === "forged-review"
+                  ? "other[bot]"
+                  : "chatgpt-codex-connector[bot]",
+              type: "Bot",
+            },
+            body: `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify(state)} -->`,
           },
         ]
   const jobs = [
@@ -81,9 +94,9 @@ function evidence(denial: string, head: string, base: string) {
           },
         ]
   const protection = {
-    requiredApprovingReviewCount: 1,
     requiredStatusCheckContexts: [
       "Dependency eligibility",
+      "Dependency review",
       "Correctness / Package and browser",
     ],
   }
@@ -97,10 +110,17 @@ function nativeAPI(
   armed: any[],
   protection: any
 ) {
-  let reads = 0
   return async (query: string, input: any) => {
     if (query.startsWith("mutation")) {
-      armed.push(input)
+      if (
+        denial === "clean-race" &&
+        query.includes("enablePullRequestAutoMerge")
+      )
+        throw new Error("Pull request is in clean status")
+      armed.push({
+        ...input,
+        mode: query.includes("enablePullRequestAutoMerge") ? "arm" : "merge",
+      })
       return {}
     }
     if (query.includes("mergeStateStatus"))
@@ -111,7 +131,7 @@ function nativeAPI(
           mergeStateStatus:
             denial === "native-blocked"
               ? "BLOCKED"
-              : denial === "settling" && reads++ === 0
+              : ["settling", "clean-race"].includes(denial)
                 ? "UNKNOWN"
                 : "CLEAN",
         },
@@ -144,7 +164,46 @@ const scenarios = [
   "metadata-failed",
   "agent-owned",
   "multiple-bot-commits",
+  "classification-base-race",
+  "clean-race",
+  "review-findings",
+  "forged-review",
 ]
+
+async function assertOutcome(
+  client: any,
+  denial: string,
+  armed: any[],
+  statuses: any[],
+  reviews: any[],
+  head: string
+) {
+  assert.equal(
+    armed.length,
+    [
+      "none",
+      "settling",
+      "native-blocked",
+      "classification-base-race",
+      "clean-race",
+    ].includes(denial)
+      ? 1
+      : 0,
+    denial
+  )
+  if (denial === "agent-owned") assert.equal(statuses[0].state, "success")
+  if (["settling", "native-blocked"].includes(denial))
+    assert.equal(armed[0].mode, "arm")
+  if (denial === "clean-race") assert.equal(armed[0].mode, "merge")
+  if (denial === "no-review") {
+    await finish(client)
+    assert.equal(
+      reviews.filter((c: any) => c.body.includes("@codex review")).length,
+      1
+    )
+  }
+  if (armed.length) assert.equal(armed[0].head, head)
+}
 
 // This API boundary owns the decision to grant native merge permission. No live mutations.
 test(
@@ -179,10 +238,17 @@ test(
         commits.unshift({ ...commits[0], sha: base })
       const { reviews, jobs, runs, protection } = evidence(denial, head, base)
       const rest = {
+        issues: {
+          listComments: async () => reviews,
+          createComment: async (comment: any) =>
+            reviews.push({
+              ...comment,
+              user: { login: "github-actions[bot]", type: "Bot" },
+            }),
+        },
         pulls: {
           get: async () => ({ data: pr }),
           listCommits: async () => commits,
-          listReviews: async () => reviews,
         },
         repos: {
           get: async () => ({
@@ -213,29 +279,15 @@ test(
           issue: { number: 113, pull_request: {} },
         },
       }
-      let pauses = 0
-      const client = {
-        github,
-        context,
-        core: { info() {} },
-        pause: async () => {
-          pauses++
-        },
-      }
+      if (denial === "classification-base-race")
+        context.payload.pull_request.base.sha = head
+      const client = { github, context, core: { info() {} } }
       if (denial === "changed-head") {
         await classify(client, metadata)
         pr.head.sha = "c".repeat(40)
         await finish(client)
       } else await classifyAndFinish(client, metadata)
-      assert.equal(
-        armed.length,
-        ["none", "settling"].includes(denial) ? 1 : 0,
-        denial
-      )
-      if (denial === "agent-owned") assert.equal(statuses[0].state, "success")
-      if (denial === "settling") assert.equal(pauses, 1)
-      if (denial === "native-blocked") assert.equal(pauses, 2)
-      if (armed.length) assert.equal(armed[0].head, head)
+      await assertOutcome(client, denial, armed, statuses, reviews, head)
     }
   }
 )
