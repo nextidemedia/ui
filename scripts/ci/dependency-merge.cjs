@@ -140,7 +140,9 @@ async function mergeQualified(github, pr, confirm, pause = pauseNative) {
         )
         return mergePullRequest.pullRequest.mergeCommit.oid
       }
-    } else if (!["UNKNOWN", "BLOCKED"].includes(node.mergeStateStatus)) {
+    } else if (
+      !["UNKNOWN", "BLOCKED", "UNSTABLE"].includes(node.mergeStateStatus)
+    ) {
       throw new Error("Native merge requirements are not satisfied")
     }
     if (attempt < 29) await pause()

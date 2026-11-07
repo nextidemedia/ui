@@ -131,16 +131,20 @@ function nativeAPI(
           baseRefOid: base,
           baseRef: { target: { oid: denial === "base-race" ? head : base } },
           baseRefName: denial === "retargeted" ? "release" : "main",
-          mergeStateStatus:
-            denial === "native-blocked"
-              ? "BLOCKED"
-              : [
-                    "settling",
-                    "review-changed",
-                    "qualification-changed",
-                  ].includes(denial) && reads++ === 0
-                ? "UNKNOWN"
-                : "CLEAN",
+          mergeStateStatus: denial.startsWith("native-")
+            ? denial === "native-unstable"
+              ? "UNSTABLE"
+              : "BLOCKED"
+            : [
+                  "settling",
+                  "unstable",
+                  "review-changed",
+                  "qualification-changed",
+                ].includes(denial) && reads++ === 0
+              ? denial === "unstable"
+                ? "UNSTABLE"
+                : "UNKNOWN"
+              : "CLEAN",
         },
       }
     return { repository: { ref: { refUpdateRule: protection } } }
@@ -170,6 +174,8 @@ const scenarios = [
   "unknown",
   "downgrade",
   "native-blocked",
+  "native-unstable",
+  "unstable",
   "base-race",
   "retargeted",
   "settling",
@@ -211,6 +217,7 @@ async function assertOutcome(
     [
       "none",
       "settling",
+      "unstable",
       "classification-base-race",
       "review-resolved",
       "dispatch-failed",
@@ -406,7 +413,7 @@ test(
           classifyAndFinish(client, metadata),
           /Dispatch unavailable/
         )
-      } else if (denial === "native-blocked") {
+      } else if (["native-blocked", "native-unstable"].includes(denial)) {
         await assert.rejects(
           classifyAndFinish(client, metadata),
           /did not settle/
