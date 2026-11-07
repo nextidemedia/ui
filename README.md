@@ -170,7 +170,11 @@ npm pack --dry-run --access public
 Install Chromium once, then run the explicit, headless `npm run qualify` gate for packed-package consumer resolution and
 representative Chromium interaction, accessibility, and responsive checks.
 Use `just qualify` for all checks or `just qualify-deploy` for release validation.
-Direct dependencies are pinned exactly. The workspace also enforces a seven-day release age (except native E2E packages),
+Stable direct dependencies use compatible caret ranges; pre-1.0 dependencies,
+aliases, peers, overrides and immutable releases retain their existing contracts.
+New dependency intake saves exact versions by default; choose its compatible
+range deliberately. See [dependency updates](docs/dependency-updates.md).
+The workspace also enforces a seven-day release age (except native E2E packages),
 strict peer dependencies, and explicitly approved dependency install scripts.
 The 2026-10-22 dependency refresh uses the maintainer's explicit waiver of the
 release-age hold for latest stable versions.

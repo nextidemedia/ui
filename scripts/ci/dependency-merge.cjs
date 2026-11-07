@@ -35,6 +35,35 @@ function updaterAuthor(commit) {
   )
 }
 
+function signedVersionsMatch(message, dependencies) {
+  // Upstream metadata can disagree with its own signed update text (UI #100).
+  // Never authorize the YAML version while testing a different installed one.
+  const updates = Array.from(
+    message.matchAll(/^Updates `(\S+)` from (\S+) to (\S+)$/gm),
+    ([, name, old, next]) => [name, old, next]
+  )
+  if (!updates.length && dependencies.length === 1) {
+    const single = message.match(
+      /^Bumps .* from (v?\d[^ ]*) to (v?\d[^ ]*)\.$/m
+    )
+    if (single)
+      updates.push([dependencies[0].dependencyName, single[1], single[2]])
+  }
+  if (updates.length !== dependencies.length) return false
+  const normalize = (version) => version.replace(/^v/, "")
+  return dependencies.every((dependency) => {
+    const index = updates.findIndex(
+      ([name, old, next]) =>
+        name === dependency.dependencyName &&
+        normalize(old) === normalize(dependency.prevVersion) &&
+        normalize(next) === normalize(dependency.newVersion)
+    )
+    if (index < 0) return false
+    updates.splice(index, 1)
+    return true
+  })
+}
+
 function verifiedCommits(commits, head) {
   // fetch-metadata v3.1.0 reads the first commit, so it must also be the head.
   return (
@@ -62,7 +91,10 @@ async function classify({ github, context }, metadata) {
   })
   const bot = pr.user.login === "dependabot[bot]"
   const verified = bot && verifiedCommits(commits, pr.head.sha)
-  const allowed = verified && eligible(metadata)
+  const allowed =
+    verified &&
+    eligible(metadata) &&
+    signedVersionsMatch(commits[0].commit.message || "", metadata)
   // Agent-edited heads use ordinary review, never unattended merge.
   const ordinary = !bot || !updaterAuthor(commits.at(-1))
   await github.rest.repos.createCommitStatus({

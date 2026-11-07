@@ -211,6 +211,10 @@ const scenarios = [
   "review-changed",
   "qualification-changed",
   "metadata-failed",
+  "metadata-version-conflict",
+  "metadata-missing-target",
+  "metadata-extra-target",
+  "metadata-single",
   "agent-owned",
   "agent-owned-no-review",
   "agent-owned-unenrolled",
@@ -253,6 +257,7 @@ async function assertOutcome(
       "classification-base-race",
       "review-resolved",
       "dispatch-failed",
+      "metadata-single",
     ].includes(denial)
       ? 1
       : 0,
@@ -309,6 +314,45 @@ function pauseFor(
     if (denial === "review-changed")
       reviews[0].body = evidence("review-findings", head, base).reviews[0].body
   }
+}
+
+function updaterCommits(
+  denial: string,
+  metadata: any[],
+  head: string,
+  base: string
+) {
+  let message = metadata
+    .map(
+      (d: any) =>
+        `Updates \`${d.dependencyName}\` from ${d.prevVersion} to ${d.newVersion}`
+    )
+    .join("\n")
+  if (denial === "metadata-version-conflict")
+    message = message.replace("from 0.1.0 to 0.1.1", "from 0.1.0 to 0.2.0")
+  if (denial === "metadata-missing-target") message = message.split("\n")[0]
+  if (denial === "metadata-extra-target")
+    message += "\nUpdates `extra` from 0.1.0 to 0.2.0"
+  if (denial === "metadata-single") {
+    metadata.splice(1)
+    message = "Bumps example from v1.2.3 to v1.2.4."
+  }
+  const commits = [
+    {
+      sha: head,
+      parents: [{ sha: denial === "stale-parent" ? head : base }],
+      author: {
+        login: denial.startsWith("agent-owned")
+          ? "review-owner"
+          : "dependabot[bot]",
+      },
+      committer: { login: denial === "forged-signer" ? "writer" : "web-flow" },
+      commit: { verification: { verified: denial !== "unsigned" }, message },
+    },
+  ]
+  if (denial === "multiple-bot-commits")
+    commits.unshift({ ...commits[0], sha: base })
+  return commits
 }
 
 function restAPI(
@@ -494,21 +538,7 @@ test(
       if (denial === "forged") pr.user.login = "other[bot]"
       if (denial === "closed") pr.state = "closed"
       if (denial === "historical-base") pr.base.sha = "c".repeat(40)
-      const commits = [
-        {
-          sha: head,
-          parents: [{ sha: denial === "stale-parent" ? head : base }],
-          author: { login: "dependabot[bot]" },
-          committer: {
-            login: denial === "forged-signer" ? "writer" : "web-flow",
-          },
-          commit: { verification: { verified: denial !== "unsigned" } },
-        },
-      ]
-      if (denial.startsWith("agent-owned"))
-        commits[0].author.login = "review-owner"
-      if (denial === "multiple-bot-commits")
-        commits.unshift({ ...commits[0], sha: base })
+      const commits = updaterCommits(denial, metadata, head, base)
       const { reviews, jobs, runs, protection } = evidence(denial, head, base)
       const rest = restAPI(
         denial,
