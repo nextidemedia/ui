@@ -129,7 +129,11 @@ function nativeAPI(
           mergeStateStatus:
             denial === "native-blocked"
               ? "BLOCKED"
-              : denial === "settling" && reads++ === 0
+              : [
+                    "settling",
+                    "review-changed",
+                    "qualification-changed",
+                  ].includes(denial) && reads++ === 0
                 ? "UNKNOWN"
                 : "CLEAN",
         },
@@ -162,6 +166,8 @@ const scenarios = [
   "base-race",
   "retargeted",
   "settling",
+  "review-changed",
+  "qualification-changed",
   "metadata-failed",
   "agent-owned",
   "agent-owned-no-review",
@@ -221,6 +227,20 @@ function seedStatuses(denial: string, head: string) {
       creator: { login: "github-actions[bot]" },
     })
   return statuses
+}
+
+function pauseFor(
+  denial: string,
+  reviews: any[],
+  head: string,
+  base: string,
+  runs: any[]
+) {
+  return async () => {
+    if (denial === "qualification-changed") runs[0].conclusion = "cancelled"
+    if (denial === "review-changed")
+      reviews[0].body = evidence("review-findings", head, base).reviews[0].body
+  }
 }
 
 // This API boundary owns the decision to grant native merge permission. No live mutations.
@@ -312,7 +332,7 @@ test(
         github,
         context,
         core: { info() {} },
-        pause: async () => {},
+        pause: pauseFor(denial, reviews, head, base, runs),
       }
       if (denial === "changed-head") {
         await classify(client, metadata)

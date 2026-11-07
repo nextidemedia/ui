@@ -116,38 +116,59 @@ function pauseNative() {
   return new Promise((resolve) => setTimeout(resolve, 2000))
 }
 
-async function mergeQualified(github, pr, pause = pauseNative) {
+async function readNative(github, pr) {
+  const { node } = await github.graphql(
+    `query($id:ID!) {
+    node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefOid baseRefName } }
+  }`,
+    { id: pr.node_id }
+  )
+  return node
+}
+
+function sameCandidate(node, pr) {
+  return (
+    node.headRefOid === pr.head.sha &&
+    node.baseRefOid === pr.base.sha &&
+    node.baseRefName === "main"
+  )
+}
+
+async function mergeQualified(github, pr, confirm, pause = pauseNative) {
   for (let attempt = 0; attempt < 30; attempt++) {
-    const { node } = await github.graphql(
-      `query($id:ID!) {
-      node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefOid baseRefName } }
-    }`,
-      { id: pr.node_id }
-    )
-    if (
-      node.headRefOid !== pr.head.sha ||
-      node.baseRefOid !== pr.base.sha ||
-      node.baseRefName !== "main"
-    )
-      return false
+    const node = await readNative(github, pr)
+    if (!sameCandidate(node, pr)) return false
     if (node.mergeStateStatus === "CLEAN") {
-      await github.graphql(
-        `mutation($id:ID!, $head:GitObjectID!) {
-        mergePullRequest(input:{pullRequestId:$id,expectedHeadOid:$head,mergeMethod:SQUASH}) {
-          pullRequest { number }
-        }
-      }`,
-        { id: pr.node_id, head: pr.head.sha }
-      )
-      return true
-    }
-    if (!["UNKNOWN", "BLOCKED"].includes(node.mergeStateStatus))
+      if (!(await confirm())) return false
+      const latest = await readNative(github, pr)
+      if (!sameCandidate(latest, pr)) return false
+      if (latest.mergeStateStatus === "CLEAN") {
+        await github.graphql(
+          `mutation($id:ID!, $head:GitObjectID!) {
+          mergePullRequest(input:{pullRequestId:$id,expectedHeadOid:$head,mergeMethod:SQUASH}) {
+            pullRequest { number }
+          }
+        }`,
+          { id: pr.node_id, head: pr.head.sha }
+        )
+        return true
+      }
+    } else if (!["UNKNOWN", "BLOCKED"].includes(node.mergeStateStatus)) {
       throw new Error("Native merge requirements are not satisfied")
+    }
     if (attempt < 29) await pause()
   }
   throw new Error(
     "Native mergeability did not settle; retry this workflow after checking GitHub merge requirements"
   )
+}
+
+async function confirmEvidence(github, context, pr) {
+  const { data: repo } = await github.rest.repos.get(context.repo)
+  if (!repo.allow_auto_merge) return false
+  await requireProtection(github, context.repo)
+  if (!(await qualified(github, context, pr))) return false
+  return checkReview(github, context, pr)
 }
 
 async function qualified(github, context, pr) {
@@ -210,20 +231,36 @@ function reviewResult(comments, head) {
   return "failure"
 }
 
-async function checkReview(github, context, pr) {
-  const args = { ...context.repo, issue_number: pr.number }
-  const comments = await github.paginate(github.rest.issues.listComments, args)
-  const state = reviewResult(comments, pr.head.sha)
+async function publishReview(github, context, pr, state) {
+  const description =
+    state === "success"
+      ? "Current-head automated review clean"
+      : "Automated review incomplete or findings"
+  const statuses = await github.paginate(
+    github.rest.repos.listCommitStatusesForRef,
+    { ...context.repo, ref: pr.head.sha }
+  )
+  const current = statuses.find((s) => s.context === REVIEW)
+  if (
+    current?.state === state &&
+    current.description === description &&
+    current.creator?.login === "github-actions[bot]"
+  )
+    return
   await github.rest.repos.createCommitStatus({
     ...context.repo,
     sha: pr.head.sha,
     context: REVIEW,
     state,
-    description:
-      state === "success"
-        ? "Current-head automated review clean"
-        : "Automated review incomplete or findings",
+    description,
   })
+}
+
+async function checkReview(github, context, pr) {
+  const args = { ...context.repo, issue_number: pr.number }
+  const comments = await github.paginate(github.rest.issues.listComments, args)
+  const state = reviewResult(comments, pr.head.sha)
+  await publishReview(github, context, pr, state)
   const marker = `<!-- dependency-review-request:${pr.head.sha} -->`
   if (
     state === "pending" &&
@@ -302,8 +339,17 @@ async function finish({ github, context, core, pause }) {
       continue
     }
     await requireProtection(github, context.repo)
-    const result = await mergeQualified(github, pr, pause)
-    wait(result ? "qualified native merge requested" : "candidate changed")
+    const result = await mergeQualified(
+      github,
+      pr,
+      () => confirmEvidence(github, context, pr),
+      pause
+    )
+    wait(
+      result
+        ? "qualified native merge requested"
+        : "current evidence no longer qualifies"
+    )
   }
 }
 
