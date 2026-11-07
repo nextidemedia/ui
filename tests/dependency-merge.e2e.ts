@@ -20,7 +20,10 @@ function updates(denial: string) {
     newVersion,
     updateType: `version-update:semver-${kind}`,
   })
-  if (["metadata-failed", "agent-owned"].includes(denial)) return []
+  if (
+    ["metadata-failed", "agent-owned", "agent-owned-no-review"].includes(denial)
+  )
+    return []
   const metadata = [
     dependency("1.2.3", "1.2.4"),
     dependency("2.1.0", "2.2.0", "minor"),
@@ -43,21 +46,20 @@ function evidence(denial: string, head: string, base: string) {
       has_unresolved_findings: denial === "review-findings",
     },
   }
-  const reviews =
-    denial === "no-review"
-      ? []
-      : [
-          {
-            user: {
-              login:
-                denial === "forged-review"
-                  ? "other[bot]"
-                  : "chatgpt-codex-connector[bot]",
-              type: "Bot",
-            },
-            body: `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify(state)} -->`,
+  const reviews = ["no-review", "agent-owned-no-review"].includes(denial)
+    ? []
+    : [
+        {
+          user: {
+            login:
+              denial === "forged-review"
+                ? "other[bot]"
+                : "chatgpt-codex-connector[bot]",
+            type: "Bot",
           },
-        ]
+          body: `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify(state)} -->`,
+        },
+      ]
   const jobs = [
     {
       name: "Correctness / Package and browser",
@@ -167,6 +169,7 @@ const scenarios = [
   "settling",
   "metadata-failed",
   "agent-owned",
+  "agent-owned-no-review",
   "multiple-bot-commits",
   "classification-base-race",
   "clean-race",
@@ -196,8 +199,11 @@ async function assertOutcome(
       : 0,
     denial
   )
-  if (denial === "agent-owned") {
-    assert.equal(statuses[0].state, "success")
+  if (denial.startsWith("agent-owned")) {
+    assert.equal(
+      statuses[0].state,
+      denial === "agent-owned-no-review" ? "pending" : "success"
+    )
     assert.equal(armed[0].mode, "disable")
   }
   if (["settling", "native-blocked"].includes(denial))
@@ -222,7 +228,7 @@ test(
       const head = "a".repeat(40),
         base = "b".repeat(40)
       const pr = {
-        auto_merge: denial === "agent-owned" ? {} : null,
+        auto_merge: denial.startsWith("agent-owned") ? {} : null,
         number: 113,
         node_id: "PR_test",
         state: "open",
@@ -242,7 +248,8 @@ test(
           commit: { verification: { verified: denial !== "unsigned" } },
         },
       ]
-      if (denial === "agent-owned") commits[0].author.login = "review-owner"
+      if (denial.startsWith("agent-owned"))
+        commits[0].author.login = "review-owner"
       if (denial === "multiple-bot-commits")
         commits.unshift({ ...commits[0], sha: base })
       const { reviews, jobs, runs, protection } = evidence(denial, head, base)

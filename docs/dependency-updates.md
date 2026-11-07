@@ -11,8 +11,10 @@ current commit and checks every targeted dependency. The pinned metadata action
 reads the first commit; multiple commits or failed metadata cannot grant unattended
 eligibility. Agent-edited heads receive ordinary review-lane status even when
 metadata extraction fails. Any previously armed native auto-merge is revoked before
-ordinary statuses are posted. The owning agent retains the ordinary configured
-review process; this workflow never finalizes that lane. Classification depends on the head; qualification
+ordinary eligibility is posted. Agent-edited dependency heads still require an
+authentic current-source automated review, never a fabricated ordinary green
+review status. The owning agent retains compatibility work and finalization; this
+workflow never finalizes that lane. Classification depends on the head; qualification
 separately binds the current head and base. No privileged PR code is executed.
 
 For eligible updates the workflow posts `@codex review` once per head, using the

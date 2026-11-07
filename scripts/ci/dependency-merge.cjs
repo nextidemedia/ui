@@ -48,6 +48,7 @@ async function enterOrdinaryLane(github, context, pr, ordinary) {
       { id: pr.node_id }
     )
   }
+  if (pr.user.login === "dependabot[bot]") return
   await github.rest.repos.createCommitStatus({
     ...context.repo,
     sha: pr.head.sha,
@@ -289,6 +290,11 @@ async function finish({ github, context, core }) {
     )
     const status = statuses.find((s) => s.context === ELIGIBILITY)
     if (!eligibleStatus(status)) {
+      if (
+        status?.description === "Agent-owned review lane" &&
+        status.creator?.login === "github-actions[bot]"
+      )
+        await checkReview(github, context, pr)
       wait("no eligible current-head classification")
       continue
     }
