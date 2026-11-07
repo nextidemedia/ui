@@ -1,0 +1,88 @@
+name: Dependency merge
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+  issue_comment:
+    types: [created, edited]
+  workflow_run:
+    workflows: [Qualification]
+    types: [completed]
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  candidates:
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    outputs:
+      numbers: ${{ steps.candidates.outputs.numbers }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        id: candidates
+        with:
+          script: |
+            const {candidateNumbers} = require('./scripts/ci/dependency-merge.cjs');
+            core.setOutput('numbers', candidateNumbers(context.payload));
+  process:
+    needs: candidates
+    if: needs.candidates.outputs.numbers != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        number: ${{ fromJSON(needs.candidates.outputs.numbers) }}
+    concurrency:
+      group: dependency-merge-${{ matrix.number }}
+      cancel-in-progress: false
+      queue: max
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      statuses: write
+      actions: write
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        id: candidate
+        env:
+          PR_NUMBER: ${{ matrix.number }}
+        with:
+          script: |
+            const {data: pr} = await github.rest.pulls.get({
+              ...context.repo, pull_number: Number(process.env.PR_NUMBER)});
+            // The pinned metadata action reads this PR snapshot on every event.
+            // No PR source is checked out or executed.
+            // Only the signed commit may supply classification versions.
+            pr.title = "";
+            context.payload.pull_request = pr;
+            require('node:fs').writeFileSync(
+              `${process.env.RUNNER_TEMP}/dependency-pr.json`, JSON.stringify(context.payload));
+            core.setOutput('bot', pr.user.login === 'dependabot[bot]');
+      - uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        if: steps.candidate.outputs.bot == 'true'
+        id: metadata
+        continue-on-error: true
+        env:
+          # Runner resets its event file each step. Preload only this action's
+          # trusted candidate snapshot; keep the native pin updater-managed.
+          NODE_OPTIONS: --require ./scripts/ci/dependency-metadata-event.cjs
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          DEPENDENCIES: ${{ steps.metadata.outcome == 'success' && steps.metadata.outputs.updated-dependencies-json || '[]' }}
+        with:
+          script: |
+            context.payload.pull_request = JSON.parse(require('node:fs').readFileSync(
+              `${process.env.RUNNER_TEMP}/dependency-pr.json`, 'utf8')).pull_request;
+            await require('./scripts/ci/dependency-merge.cjs').classifyAndFinish(
+              {github, context, core}, JSON.parse(process.env.DEPENDENCIES));
