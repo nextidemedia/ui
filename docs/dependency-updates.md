@@ -15,8 +15,11 @@ When an update is blocked:
 - Diagnose failed, cancelled or skipped qualification and fix the cause.
 - Complete the configured review for the current revision and address or
   explicitly adjudicate its findings. An old review does not qualify a new revision.
-  After resolving findings without changing code, leave a PR comment with the
-  disposition so automation rechecks the same revision; no new review is needed.
+  After resolving findings without changing code, leave a PR disposition comment.
+  Automatic merging needs the App's completed clean result; an older resolved
+  review cannot clear a newer review. If its summary remains stale, the owning
+  agent completes the existing review/disposition process and finalizes the PR.
+  No cosmetic commit, repeat review solely to clear history, or approval click is needed.
 - Refresh a stale branch through Dependabot or the owning agent, then qualify it.
   Unconflicted stale updates can wait for the next weekly check; conflicts refresh
   earlier.

@@ -46,8 +46,6 @@ function evidence(denial: string, head: string, base: string) {
         "review-findings",
         "cached-resolved",
         "cached-empty",
-        "cached-forged",
-        "cached-new-finding",
       ].includes(denial),
     },
   }
@@ -173,8 +171,6 @@ const scenarios = [
   "none",
   "cached-resolved",
   "cached-empty",
-  "cached-forged",
-  "cached-new-finding",
   "thread-reopened",
   "thread-last-page",
   "historical-base",
@@ -249,7 +245,6 @@ async function assertOutcome(
     grants.length,
     [
       "none",
-      "cached-resolved",
       "historical-base",
       "pr-attached",
       "settling",
@@ -377,22 +372,6 @@ function restAPI(
     pulls: {
       get: async () => ({ data: pr }),
       listCommits: async () => commits,
-      listReviews: async () => [
-        {
-          id: 2,
-          user: { node_id: "BOT_review" },
-          commit_id: pr.head.sha,
-          state: "COMMENTED",
-          body: "<!-- codex-review-receipt:v1 -->",
-        },
-      ],
-      listCommentsForReview: async () => [
-        {
-          id: denial === "cached-new-finding" ? 2 : 1,
-          user: { node_id: "BOT_review" },
-          body: "<!-- codex-code-review-finding:v1 -->",
-        },
-      ],
     },
     repos: {
       get: async () => ({
@@ -428,11 +407,10 @@ function reviewPage(denial: string, reviews: any[], after: string | null) {
   )
   const present =
     cachedFailure || ["thread-reopened", "thread-last-page"].includes(denial)
+  // Even all resolved older same-head findings cannot clear a newer failed
+  // summary while that review's receipt/threads have not been published.
   const resolved =
-    ["cached-resolved", "cached-forged", "cached-new-finding"].includes(
-      denial
-    ) ||
-    (denial === "thread-last-page" && !after)
+    denial === "cached-resolved" || (denial === "thread-last-page" && !after)
   const nodes =
     present && denial !== "cached-empty"
       ? [
@@ -441,10 +419,7 @@ function reviewPage(denial: string, reviews: any[], after: string | null) {
             comments: {
               nodes: [
                 {
-                  databaseId: 1,
-                  author: {
-                    id: denial === "cached-forged" ? "other" : "BOT_review",
-                  },
+                  author: { id: "BOT_review" },
                   body: "<!-- codex-code-review-finding:v1 -->",
                 },
               ],

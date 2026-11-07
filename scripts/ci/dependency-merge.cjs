@@ -265,19 +265,14 @@ function reviewResult(comments, head) {
 async function liveReviewState(github, pr, comment, cached) {
   if (cached === "pending") return cached
   if (!comment.user.node_id) return "failure"
-  const resolved = await resolvedFindingIds(github, pr, comment.user.node_id)
-  if (!resolved) return "failure"
-  if (cached === "success") return cached
-  const expected = await currentFindingIds(github, pr, comment.user.node_id)
-  // Only all findings from the latest completed current-head review can
-  // reconcile its lagging summary; older resolved findings are insufficient.
-  return expected.size && [...expected].every((id) => resolved.has(id))
-    ? "success"
-    : "failure"
+  if (await hasUnresolvedFindings(github, pr, comment.user.node_id))
+    return "failure"
+  // The summary has no receipt ID. An older resolved review on the same head
+  // cannot prove that a newer summary's unpublished findings were resolved.
+  return cached
 }
 
-async function resolvedFindingIds(github, pr, actor) {
-  const resolved = new Set()
+async function hasUnresolvedFindings(github, pr, actor) {
   let after = null
   do {
     const { node } = await github.graphql(
@@ -285,7 +280,7 @@ async function resolvedFindingIds(github, pr, actor) {
         node(id:$id) { ... on PullRequest {
           reviewThreads(first:100, after:$after) {
             nodes { isResolved comments(first:1) { nodes {
-              databaseId author { ... on Bot { id } } body
+              author { ... on Bot { id } } body
             } } }
             pageInfo { hasNextPage endCursor }
           }
@@ -301,38 +296,11 @@ async function resolvedFindingIds(github, pr, actor) {
         !first.body.includes("<!-- codex-code-review-finding:v1 -->")
       )
         continue
-      if (!thread.isResolved) return null
-      resolved.add(first.databaseId)
+      if (!thread.isResolved) return true
     }
     after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null
   } while (after)
-  return resolved
-}
-
-async function currentFindingIds(github, pr, actor) {
-  const args = { owner: "nextidemedia", repo: "ui", pull_number: pr.number }
-  const reviews = await github.paginate(github.rest.pulls.listReviews, args)
-  const current = reviews.findLast(
-    (r) =>
-      r.user?.node_id === actor &&
-      r.commit_id === pr.head.sha &&
-      r.state === "COMMENTED" &&
-      r.body?.startsWith("<!-- codex-review-receipt:v1 -->")
-  )
-  if (!current) return new Set()
-  const comments = await github.paginate(
-    github.rest.pulls.listCommentsForReview,
-    { ...args, review_id: current.id }
-  )
-  return new Set(
-    comments
-      .filter(
-        (c) =>
-          c.user?.node_id === actor &&
-          c.body?.includes("<!-- codex-code-review-finding:v1 -->")
-      )
-      .map((c) => c.id)
-  )
+  return false
 }
 
 async function publishReview(github, context, pr, state) {
