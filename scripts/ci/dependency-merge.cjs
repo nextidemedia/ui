@@ -119,7 +119,7 @@ function pauseNative() {
 async function readNative(github, pr) {
   const { node } = await github.graphql(
     `query($id:ID!) {
-    node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefOid baseRefName } }
+    node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefName baseRef { target { oid } } } }
   }`,
     { id: pr.node_id }
   )
@@ -129,7 +129,7 @@ async function readNative(github, pr) {
 function sameCandidate(node, pr) {
   return (
     node.headRefOid === pr.head.sha &&
-    node.baseRefOid === pr.base.sha &&
+    node.baseRef?.target.oid === pr.base.sha &&
     node.baseRefName === "main"
   )
 }
@@ -172,7 +172,9 @@ async function confirmEvidence(github, context, pr) {
 }
 
 async function qualified(github, context, pr) {
-  // Accept only PR qualification for this head and current base, never dispatch/push green.
+  // Dependabot refreshes stale PRs on its configured checks and on conflicts.
+  // Accept only PR qualification for its tested head/base; readNative checks the
+  // live base ref, since GitHub's PR base.sha/baseRefOid are historical snapshots.
   const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
     ...context.repo,
     workflow_id: "ci.yml",

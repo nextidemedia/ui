@@ -124,7 +124,8 @@ function nativeAPI(
       return {
         node: {
           headRefOid: head,
-          baseRefOid: denial === "base-race" ? head : base,
+          baseRefOid: base,
+          baseRef: { target: { oid: denial === "base-race" ? head : base } },
           baseRefName: denial === "retargeted" ? "release" : "main",
           mergeStateStatus:
             denial === "native-blocked"

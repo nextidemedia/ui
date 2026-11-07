@@ -5,6 +5,9 @@ routine cooldown. Stable patch/minor groups and pre-1.0 patches can merge after
 full qualification and genuine current-source automated review. Majors, pre-1.0
 minors and unknown versions go to the agent-owned compatibility upgrade lane.
 No formal GitHub approval is required, including on ordinary agent-authored PRs.
+Dependabot refreshes stale branches during its configured checks and on conflicts.
+After main advances, an unconflicted update can wait for the next weekly pass;
+this workflow refuses the stale base and adds no separate refresh scheduler.
 
 The trusted base/default workflow authenticates the updater's single verified
 current commit and checks every targeted dependency. The pinned metadata action
