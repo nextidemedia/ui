@@ -3,7 +3,11 @@ import assert from "node:assert/strict"
 import { createRequire } from "node:module"
 
 const require = createRequire(import.meta.url)
-const { classify, finish } = require("../scripts/ci/dependency-merge.cjs")
+const {
+  classify,
+  finish,
+  classifyAndFinish,
+} = require("../scripts/ci/dependency-merge.cjs")
 
 function updates(denial: string) {
   const dependency = (
@@ -186,9 +190,12 @@ test(
           issue: { number: 113, pull_request: {} },
         },
       }
-      await classify({ github, context }, metadata)
-      if (denial === "changed-head") pr.head.sha = "c".repeat(40)
-      await finish({ github, context, core: { info() {} } })
+      const client = { github, context, core: { info() {} } }
+      if (denial === "changed-head") {
+        await classify(client, metadata)
+        pr.head.sha = "c".repeat(40)
+        await finish(client)
+      } else await classifyAndFinish(client, metadata)
       assert.equal(armed.length, denial === "none" ? 1 : 0, denial)
       if (armed.length) assert.equal(armed[0].head, head)
     }

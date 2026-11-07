@@ -187,11 +187,16 @@ function eligibleStatus(status) {
   )
 }
 
+function candidateNumbers(payload) {
+  return payload.pull_request
+    ? [payload.pull_request.number]
+    : payload.issue?.pull_request
+      ? [payload.issue.number]
+      : (payload.workflow_run?.pull_requests || []).map((pr) => pr.number)
+}
+
 async function finish({ github, context, core }) {
-  const payload = context.payload
-  const numbers = payload.issue?.pull_request
-    ? [payload.issue.number]
-    : (payload.workflow_run?.pull_requests || []).map((pr) => pr.number)
+  const numbers = candidateNumbers(context.payload)
   for (const number of numbers) {
     const args = { ...context.repo, pull_number: number }
     const { data: pr } = await github.rest.pulls.get(args)
@@ -231,4 +236,9 @@ async function finish({ github, context, core }) {
   }
 }
 
-module.exports = { eligible, classify, finish }
+async function classifyAndFinish(client, metadata) {
+  await classify(client, metadata)
+  await finish(client)
+}
+
+module.exports = { eligible, classify, finish, classifyAndFinish }
