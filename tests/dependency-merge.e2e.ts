@@ -76,44 +76,43 @@ function evidence(denial: string, head: string, base: string) {
           },
         ]
   const protection = {
-    requiresStatusChecks: true,
-    requiresStrictStatusChecks: true,
-    requiresApprovingReviews: true,
-    isAdminEnforced: true,
-    dismissesStaleReviews: true,
     requiredApprovingReviewCount: 1,
-    requiredStatusChecks: [
+    requiredStatusCheckContexts: [
       "Dependency eligibility",
       "Correctness / Package and browser",
-    ].map((context) => ({ context, app: { databaseId: 15368 } })),
+    ],
   }
   return { reviews, jobs, runs, protection }
 }
 
+const scenarios = [
+  "none",
+  "red",
+  "missing",
+  "cancelled",
+  "skip",
+  "stale-run",
+  "dispatch",
+  "stale-review",
+  "no-review",
+  "forged",
+  "unsigned",
+  "changed-head",
+  "unenrolled",
+  "major",
+  "pre-minor",
+  "unknown",
+  "downgrade",
+  "native-blocked",
+  "base-race",
+]
+
 // This API boundary owns the decision to grant native merge permission. No live mutations.
 test(
-  "dependency groups arm only after verified exact-source qualification and review",
+  "dependency groups merge only after verified exact-source qualification and review",
   { platforms: ["api"] },
   async () => {
-    for (const denial of [
-      "none",
-      "red",
-      "missing",
-      "cancelled",
-      "skip",
-      "stale-run",
-      "dispatch",
-      "stale-review",
-      "no-review",
-      "forged",
-      "unsigned",
-      "changed-head",
-      "unenrolled",
-      "major",
-      "pre-minor",
-      "unknown",
-      "downgrade",
-    ]) {
+    for (const denial of scenarios) {
       const head = "a".repeat(40),
         base = "b".repeat(40)
       const pr = {
@@ -168,7 +167,16 @@ test(
             armed.push(input)
             return {}
           }
-          return { repository: { ref: { branchProtectionRule: protection } } }
+          if (query.includes("mergeStateStatus"))
+            return {
+              node: {
+                headRefOid: head,
+                baseRefOid: denial === "base-race" ? head : base,
+                mergeStateStatus:
+                  denial === "native-blocked" ? "BLOCKED" : "CLEAN",
+              },
+            }
+          return { repository: { ref: { refUpdateRule: protection } } }
         },
       }
       const context = {

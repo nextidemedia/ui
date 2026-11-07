@@ -19,7 +19,8 @@ in a group. An agent-edited head takes the ordinary reviewed lane. The native
 merge workflow uses trusted main/base code only, checks current-head full PR
 qualification against the current base, requires successful quality, typecheck
 and package/browser steps, and requires a current-head approval. It uses an
-atomic expected-head precondition. Missing or unsuccessful evidence leaves the
+atomic expected-head merge precondition. Already mergeable candidates use the
+native merge API; blocked candidates stay open rather than arming a future merge. Missing or unsuccessful evidence leaves the
 PR open. Qualification for a different candidate or a dispatch does not count.
 
 Before enrollment, the integrating owner must protect `main` with strict required
@@ -27,8 +28,11 @@ checks `Dependency eligibility` and `Correctness / Package and browser`, both
 bound to GitHub Actions (App ID 15368), enforce rules for administrators, require
 one approval, and dismiss stale approvals. Enable repository native auto-merge
 only after the implementation and qualification are accepted. The workflow
-checks these protection settings before arming; changing only the auto-merge
-setting is insufficient. Settings are intentionally applied by the integrating
+checks the effective required check names and review count through GitHub's
+readable rule view and merges only when GitHub reports the unchanged candidate
+as CLEAN. The integrating owner verifies the full protection payload (including
+strictness, App bindings and stale-review dismissal); the workflow token has no
+administration permission. Changing only the auto-merge setting is insufficient. Settings are intentionally applied by the integrating
 owner, not by this PR.
 
 Publishing remains a separate manual tag dispatch. A token-based merge may

@@ -68,31 +68,51 @@ async function classify({ github, context }, metadata) {
 }
 
 async function requireProtection(github, repo) {
+  // Effective rules are readable without an administration credential.
   const { repository } = await github.graphql(
     `query($owner:String!, $repo:String!) {
       repository(owner:$owner,name:$repo) { ref(qualifiedName:"refs/heads/main") {
-        branchProtectionRule { requiresStatusChecks requiresStrictStatusChecks requiresApprovingReviews isAdminEnforced dismissesStaleReviews
-          requiredApprovingReviewCount requiredStatusChecks { context app { databaseId } }
-        }
+        refUpdateRule { requiredApprovingReviewCount requiredStatusCheckContexts }
       }}
     }`,
     repo
   )
-  const protection = repository.ref.branchProtectionRule
+  const rule = repository.ref.refUpdateRule
   if (
-    !protection?.requiresStatusChecks ||
-    !protection.requiresStrictStatusChecks ||
+    !rule ||
+    rule.requiredApprovingReviewCount < 1 ||
     ![ELIGIBILITY, QUALIFICATION].every((name) =>
-      protection.requiredStatusChecks?.some(
-        (c) => c.context === name && c.app?.databaseId === 15368
-      )
-    ) ||
-    !protection.requiresApprovingReviews ||
-    !protection.dismissesStaleReviews ||
-    protection.requiredApprovingReviewCount < 1 ||
-    !protection.isAdminEnforced
-  )
+      rule.requiredStatusCheckContexts.includes(name)
+    )
+  ) {
     throw new Error("Native merge gates are not enrolled")
+  }
+}
+
+async function mergeQualified(github, pr) {
+  const { node } = await github.graphql(
+    `query($id:ID!) {
+    node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefOid } }
+  }`,
+    { id: pr.node_id }
+  )
+  if (
+    node.headRefOid !== pr.head.sha ||
+    node.baseRefOid !== pr.base.sha ||
+    node.mergeStateStatus !== "CLEAN"
+  )
+    return false
+  // Like gh pr merge --auto, merge an already CLEAN PR instead of arming it.
+  // GitHub enforces native protections; the expected head makes synchronize races fail.
+  await github.graphql(
+    `mutation($id:ID!, $head:GitObjectID!) {
+    mergePullRequest(input:{pullRequestId:$id,expectedHeadOid:$head,mergeMethod:SQUASH}) {
+      pullRequest { number }
+    }
+  }`,
+    { id: pr.node_id, head: pr.head.sha }
+  )
+  return true
 }
 
 async function qualified(github, context, pr) {
@@ -202,15 +222,12 @@ async function finish({ github, context, core }) {
       wait("current-head review required")
       continue
     }
-    await github.graphql(
-      `mutation($id:ID!, $head:GitObjectID!) {
-      enablePullRequestAutoMerge(input:{pullRequestId:$id,expectedHeadOid:$head,mergeMethod:SQUASH}) {
-        pullRequest { number }
-      }
-    }`,
-      { id: pr.node_id, head }
+    const merged = await mergeQualified(github, pr)
+    wait(
+      merged
+        ? "qualified dependency update merged"
+        : "native merge requirements pending"
     )
-    wait("native auto-merge enabled after qualification and review")
   }
 }
 
