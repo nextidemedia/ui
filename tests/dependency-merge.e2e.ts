@@ -20,6 +20,7 @@ function updates(denial: string) {
     newVersion,
     updateType: `version-update:semver-${kind}`,
   })
+  if (["metadata-failed", "agent-owned"].includes(denial)) return []
   const metadata = [
     dependency("1.2.3", "1.2.4"),
     dependency("2.1.0", "2.2.0", "minor"),
@@ -89,6 +90,36 @@ function evidence(denial: string, head: string, base: string) {
   return { reviews, jobs, runs, protection }
 }
 
+function nativeAPI(
+  denial: string,
+  head: string,
+  base: string,
+  armed: any[],
+  protection: any
+) {
+  let reads = 0
+  return async (query: string, input: any) => {
+    if (query.startsWith("mutation")) {
+      armed.push(input)
+      return {}
+    }
+    if (query.includes("mergeStateStatus"))
+      return {
+        node: {
+          headRefOid: head,
+          baseRefOid: denial === "base-race" ? head : base,
+          mergeStateStatus:
+            denial === "native-blocked"
+              ? "BLOCKED"
+              : denial === "settling" && reads++ === 0
+                ? "UNKNOWN"
+                : "CLEAN",
+        },
+      }
+    return { repository: { ref: { refUpdateRule: protection } } }
+  }
+}
+
 const scenarios = [
   "none",
   "red",
@@ -109,6 +140,10 @@ const scenarios = [
   "downgrade",
   "native-blocked",
   "base-race",
+  "settling",
+  "metadata-failed",
+  "agent-owned",
+  "multiple-bot-commits",
 ]
 
 // This API boundary owns the decision to grant native merge permission. No live mutations.
@@ -139,6 +174,9 @@ test(
           commit: { verification: { verified: denial !== "unsigned" } },
         },
       ]
+      if (denial === "agent-owned") commits[0].author.login = "review-owner"
+      if (denial === "multiple-bot-commits")
+        commits.unshift({ ...commits[0], sha: base })
       const { reviews, jobs, runs, protection } = evidence(denial, head, base)
       const rest = {
         pulls: {
@@ -166,22 +204,7 @@ test(
       const github = {
         rest,
         paginate: async (method: any) => method(),
-        graphql: async (query: string, input: any) => {
-          if (query.startsWith("mutation")) {
-            armed.push(input)
-            return {}
-          }
-          if (query.includes("mergeStateStatus"))
-            return {
-              node: {
-                headRefOid: head,
-                baseRefOid: denial === "base-race" ? head : base,
-                mergeStateStatus:
-                  denial === "native-blocked" ? "BLOCKED" : "CLEAN",
-              },
-            }
-          return { repository: { ref: { refUpdateRule: protection } } }
-        },
+        graphql: nativeAPI(denial, head, base, armed, protection),
       }
       const context = {
         repo: { owner: "nextidemedia", repo: "ui" },
@@ -190,13 +213,28 @@ test(
           issue: { number: 113, pull_request: {} },
         },
       }
-      const client = { github, context, core: { info() {} } }
+      let pauses = 0
+      const client = {
+        github,
+        context,
+        core: { info() {} },
+        pause: async () => {
+          pauses++
+        },
+      }
       if (denial === "changed-head") {
         await classify(client, metadata)
         pr.head.sha = "c".repeat(40)
         await finish(client)
       } else await classifyAndFinish(client, metadata)
-      assert.equal(armed.length, denial === "none" ? 1 : 0, denial)
+      assert.equal(
+        armed.length,
+        ["none", "settling"].includes(denial) ? 1 : 0,
+        denial
+      )
+      if (denial === "agent-owned") assert.equal(statuses[0].state, "success")
+      if (denial === "settling") assert.equal(pauses, 1)
+      if (denial === "native-blocked") assert.equal(pauses, 2)
       if (armed.length) assert.equal(armed[0].head, head)
     }
   }

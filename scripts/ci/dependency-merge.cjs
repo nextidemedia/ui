@@ -26,7 +26,8 @@ function eligible(dependencies) {
 
 function verifiedCommits(commits, head) {
   return (
-    commits.length > 0 &&
+    // fetch-metadata v3.1.0 reads the first commit, so it must also be the head.
+    commits.length === 1 &&
     commits.at(-1).sha === head &&
     commits.every(
       (c) =>
@@ -89,30 +90,33 @@ async function requireProtection(github, repo) {
   }
 }
 
-async function mergeQualified(github, pr) {
-  const { node } = await github.graphql(
-    `query($id:ID!) {
+async function mergeQualified(github, pr, pause) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { node } = await github.graphql(
+      `query($id:ID!) {
     node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefOid } }
   }`,
-    { id: pr.node_id }
-  )
-  if (
-    node.headRefOid !== pr.head.sha ||
-    node.baseRefOid !== pr.base.sha ||
-    node.mergeStateStatus !== "CLEAN"
-  )
-    return false
-  // Like gh pr merge --auto, merge an already CLEAN PR instead of arming it.
-  // GitHub enforces native protections; the expected head makes synchronize races fail.
-  await github.graphql(
-    `mutation($id:ID!, $head:GitObjectID!) {
+      { id: pr.node_id }
+    )
+    if (node.headRefOid !== pr.head.sha || node.baseRefOid !== pr.base.sha)
+      return false
+    if (node.mergeStateStatus !== "CLEAN") {
+      if (attempt < 2) await pause()
+      continue
+    }
+    // Like gh pr merge --auto, merge an already CLEAN PR instead of arming it.
+    // GitHub enforces native protections; the expected head makes synchronize races fail.
+    await github.graphql(
+      `mutation($id:ID!, $head:GitObjectID!) {
     mergePullRequest(input:{pullRequestId:$id,expectedHeadOid:$head,mergeMethod:SQUASH}) {
       pullRequest { number }
     }
   }`,
-    { id: pr.node_id, head: pr.head.sha }
-  )
-  return true
+      { id: pr.node_id, head: pr.head.sha }
+    )
+    return true
+  }
+  return false
 }
 
 async function qualified(github, context, pr) {
@@ -195,7 +199,12 @@ function candidateNumbers(payload) {
       : (payload.workflow_run?.pull_requests || []).map((pr) => pr.number)
 }
 
-async function finish({ github, context, core }) {
+async function finish({
+  github,
+  context,
+  core,
+  pause = () => new Promise((resolve) => setTimeout(resolve, 2000)),
+}) {
   const numbers = candidateNumbers(context.payload)
   for (const number of numbers) {
     const args = { ...context.repo, pull_number: number }
@@ -227,7 +236,7 @@ async function finish({ github, context, core }) {
       wait("current-head review required")
       continue
     }
-    const merged = await mergeQualified(github, pr)
+    const merged = await mergeQualified(github, pr, pause)
     wait(
       merged
         ? "qualified dependency update merged"

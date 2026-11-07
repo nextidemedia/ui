@@ -15,12 +15,17 @@ This repository has no unattended Review Suite dispatcher: an agent still owns
 review initiation. Do not substitute an unconditional approval workflow.
 
 `Dependency eligibility` authenticates Dependabot commits and checks every target
-in a group. An agent-edited head takes the ordinary reviewed lane. The native
+in a group. The pinned metadata action reads the first commit, so unattended eligibility
+requires that verified commit to be the only commit and current head. Failed or
+missing metadata never grants unattended eligibility; an agent-edited head still
+receives its ordinary reviewed-lane status. The native
 merge workflow uses trusted main/base code only, checks current-head full PR
 qualification against the current base, requires successful quality, typecheck
 and package/browser steps, and requires a current-head approval. It uses an
 atomic expected-head merge precondition. Already mergeable candidates use the
-native merge API; blocked candidates stay open rather than arming a future merge. Missing or unsuccessful evidence leaves the
+native merge API; blocked candidates stay open rather than arming a future merge. Native mergeability
+is polled up to three times over four seconds to allow GitHub's status calculation
+to settle; a changed head or base aborts immediately. Missing or unsuccessful evidence leaves the
 PR open. Qualification for a different candidate or a dispatch does not count.
 
 Before enrollment, the integrating owner must protect `main` with strict required
