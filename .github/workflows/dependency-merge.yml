@@ -61,19 +61,23 @@ jobs:
               ...context.repo, pull_number: Number(process.env.PR_NUMBER)});
             // The pinned metadata action reads this PR snapshot on every event.
             // No PR source is checked out or executed.
+            // Only the signed commit may supply classification versions.
+            pr.title = "";
             context.payload.pull_request = pr;
             require('node:fs').writeFileSync(
               `${process.env.RUNNER_TEMP}/dependency-pr.json`, JSON.stringify(context.payload));
             core.setOutput('bot', pr.user.login === 'dependabot[bot]');
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: steps.candidate.outputs.bot == 'true'
+        id: metadata-source
+        continue-on-error: true
         with:
           repository: dependabot/fetch-metadata
           ref: 25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
           path: .dependency-metadata
           persist-credentials: false
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        if: steps.candidate.outputs.bot == 'true'
+        if: steps.metadata-source.outcome == 'success'
         id: metadata
         continue-on-error: true
         env:

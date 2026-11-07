@@ -40,8 +40,13 @@ main package/browser checks and evidence despite suppressed token-generated push
 events. This does not publish packages.
 
 Before enrollment, root must apply and verify strict required checks `Dependency
-eligibility`, `Dependency review` and `Correctness / Package and browser`, bound to
-GitHub Actions App 15368, and administrator enforcement. Required approving-review
+eligibility` and `Correctness / Package and browser`, bound to GitHub Actions App
+15368, and administrator enforcement. Classification reports the eligible or owner
+lane; a completed owner classification is not a failed required check. Owners can
+qualify compatible major/unknown updates without cosmetic commits. `Dependency
+review` is informational: automatic finalization always reads the actual App
+result directly. SHA-shared review statuses must not impose a gate on unrelated
+owner PRs; owners retain their configured Review Suite/GitHub process. Required approving-review
 count stays zero. The workflow token reads effective check names without requesting
 administration credentials. Publishing remains manual and requalifies its exact tag.
 

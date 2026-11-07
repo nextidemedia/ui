@@ -101,7 +101,6 @@ function evidence(denial: string, head: string, base: string) {
   const protection = {
     requiredStatusCheckContexts: [
       "Dependency eligibility",
-      "Dependency review",
       "Correctness / Package and browser",
     ],
   }
@@ -156,6 +155,7 @@ const scenarios = [
   "skip",
   "stale-run",
   "dispatch",
+  "dispatch-failed",
   "stale-review",
   "no-review",
   "shared-ordinary-status",
@@ -165,6 +165,7 @@ const scenarios = [
   "changed-head",
   "unenrolled",
   "major",
+  "closed",
   "pre-minor",
   "unknown",
   "downgrade",
@@ -194,6 +195,17 @@ async function assertOutcome(
   head: string
 ) {
   const grants = merges
+  if (["major", "pre-minor", "unknown", "metadata-failed"].includes(denial)) {
+    assert.equal(
+      statuses.find((s) => s.context === "Dependency eligibility").state,
+      "success"
+    )
+    assert.equal(
+      statuses.find((s) => s.context === "Dependency review").state,
+      "success"
+    )
+  }
+  if (denial === "closed") assert.equal(statuses.length, 1)
   assert.equal(
     grants.length,
     [
@@ -201,6 +213,7 @@ async function assertOutcome(
       "settling",
       "classification-base-race",
       "review-resolved",
+      "dispatch-failed",
     ].includes(denial)
       ? 1
       : 0,
@@ -299,7 +312,11 @@ function restAPI(
         statuses.filter((s) => s.sha === pr.head.sha),
     },
     actions: {
-      createWorkflowDispatch: async (input: any) => dispatches.push(input),
+      createWorkflowDispatch: async (input: any) => {
+        dispatches.push(input)
+        if (denial === "dispatch-failed")
+          throw new Error("Dispatch unavailable")
+      },
       listWorkflowRuns: async () => runs,
       listJobsForWorkflowRun: async () => jobs,
     },
@@ -334,6 +351,7 @@ test(
         dispatches: any[] = []
       const metadata = updates(denial)
       if (denial === "forged") pr.user.login = "other[bot]"
+      if (denial === "closed") pr.state = "closed"
       const commits = [
         {
           sha: head,
@@ -383,6 +401,11 @@ test(
         const classification = await classify(client, metadata)
         pr.head.sha = "c".repeat(40)
         await finish(client, classification)
+      } else if (denial === "dispatch-failed") {
+        await assert.rejects(
+          classifyAndFinish(client, metadata),
+          /Dispatch unavailable/
+        )
       } else if (denial === "native-blocked") {
         await assert.rejects(
           classifyAndFinish(client, metadata),

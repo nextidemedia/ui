@@ -45,26 +45,14 @@ function verifiedCommits(commits, head) {
   )
 }
 
-async function enterOrdinaryLane(github, context, pr, ordinary) {
-  if (!ordinary) return
-  if (pr.user.login === "dependabot[bot]") return
-  // This marks the owner's ordinary lane, not automated review evidence.
-  // Immediate dependency merges independently require the actual App result.
-  await github.rest.repos.createCommitStatus({
-    ...context.repo,
-    sha: pr.head.sha,
-    context: REVIEW,
-    state: "success",
-    description: "Ordinary review lane",
-  })
-}
-
 async function classify({ github, context }, metadata) {
   const number = context.payload.pull_request.number
   const { data: pr } = await github.rest.pulls.get({
     ...context.repo,
     pull_number: number,
   })
+  if (pr.state !== "open" || pr.base.ref !== "main")
+    return { head: pr.head.sha, allowed: false }
   const event = context.payload.pull_request
   if (pr.head.sha !== event.head.sha) throw new Error("Candidate changed")
   const commits = await github.paginate(github.rest.pulls.listCommits, {
@@ -76,19 +64,18 @@ async function classify({ github, context }, metadata) {
   const allowed = verified && eligible(metadata)
   // Agent-edited heads use ordinary review, never unattended merge.
   const ordinary = !bot || !updaterAuthor(commits.at(-1))
-  await enterOrdinaryLane(github, context, pr, ordinary)
   await github.rest.repos.createCommitStatus({
     ...context.repo,
     sha: pr.head.sha,
     context: ELIGIBILITY,
-    state: allowed || ordinary ? "success" : "failure",
+    state: "success",
     description: allowed
       ? "Eligible verified patch/minor group"
       : ordinary
         ? "Agent-owned review lane"
-        : "Agent compatibility upgrade required",
+        : "Agent compatibility upgrade lane",
   })
-  return { head: pr.head.sha, allowed, ordinary }
+  return { head: pr.head.sha, allowed }
 }
 
 async function requireProtection(github, repo) {
@@ -104,7 +91,7 @@ async function requireProtection(github, repo) {
   const rule = repository.ref.refUpdateRule
   if (
     !rule ||
-    ![ELIGIBILITY, REVIEW, QUALIFICATION].every((name) =>
+    ![ELIGIBILITY, QUALIFICATION].every((name) =>
       rule.requiredStatusCheckContexts.includes(name)
     )
   ) {
@@ -307,7 +294,7 @@ async function finish({ github, context, core, pause }, classification) {
   // Authorization comes from this invocation's authenticated metadata, never
   // from a commit status another workflow using the same Actions App can write.
   if (!classification.allowed) {
-    if (classification.ordinary) await checkReview(github, context, pr)
+    await checkReview(github, context, pr)
     wait("no eligible current-head classification")
     return
   }
@@ -333,6 +320,7 @@ async function finish({ github, context, core, pause }, classification) {
     pause
   )
   if (merged) {
+    core.info(`merged_source: ${merged}`)
     // GITHUB_TOKEN merges suppress push workflows. Dispatch is an explicit
     // supported exception and preserves full main qualification/evidence.
     await github.rest.actions.createWorkflowDispatch({
