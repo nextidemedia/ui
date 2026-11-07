@@ -36,6 +36,17 @@ updates:
         update-types:
           - minor
           - patch
+      # Each vite-plus release must ship with the matching
+      # `vite: npm:@voidzero-dev/vite-plus-core@<version>` override, which
+      # Dependabot does not update. Keep it apart so it cannot block the
+      # rest of the tooling group; align the override on its PR.
+      vite-plus:
+        applies-to: version-updates
+        patterns:
+          - vite-plus
+        update-types:
+          - minor
+          - patch
       runtime:
         applies-to: version-updates
         dependency-type: production
