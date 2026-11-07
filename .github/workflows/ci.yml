@@ -93,7 +93,7 @@ jobs:
         run: npm run qualify
       - name: Preserve native E2E evidence
         if: ${{ always() && !(github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor == 'dependabot[bot]')) }}
-        uses: nextidemedia/ui/.github/actions/upload-owned-artifact@2344a59e3863da5d89780163004bb175f01dd626
+        uses: nextidemedia/ui/.github/actions/upload-owned-artifact@98ab54a99d140cccbbf55aacf5412623c76a2ee0
         with:
           name: native-e2e-${{ github.sha }}
           path: output/e2e/
