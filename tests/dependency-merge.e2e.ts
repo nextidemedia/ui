@@ -125,6 +125,7 @@ function nativeAPI(
         node: {
           headRefOid: head,
           baseRefOid: denial === "base-race" ? head : base,
+          baseRefName: denial === "retargeted" ? "release" : "main",
           mergeStateStatus:
             denial === "native-blocked"
               ? "BLOCKED"
@@ -150,6 +151,7 @@ const scenarios = [
   "shared-ordinary-status",
   "forged",
   "unsigned",
+  "forged-signer",
   "changed-head",
   "unenrolled",
   "major",
@@ -158,6 +160,7 @@ const scenarios = [
   "downgrade",
   "native-blocked",
   "base-race",
+  "retargeted",
   "settling",
   "metadata-failed",
   "agent-owned",
@@ -245,6 +248,9 @@ test(
         {
           sha: head,
           author: { login: "dependabot[bot]" },
+          committer: {
+            login: denial === "forged-signer" ? "writer" : "web-flow",
+          },
           commit: { verification: { verified: denial !== "unsigned" } },
         },
       ]

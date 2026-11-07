@@ -26,21 +26,30 @@ function eligible(dependencies) {
   )
 }
 
-function verifiedCommits(commits, head) {
+function updaterAuthor(commit) {
+  // GitHub signs genuine Dependabot updates as web-flow. A different committing
+  // account is an agent-owned edit even if it preserves Dependabot's author.
   return (
-    // fetch-metadata v3.1.0 reads the first commit, so it must also be the head.
+    commit?.author?.login === "dependabot[bot]" &&
+    ["dependabot[bot]", "web-flow"].includes(commit?.committer?.login)
+  )
+}
+
+function verifiedCommits(commits, head) {
+  // fetch-metadata v3.1.0 reads the first commit, so it must also be the head.
+  return (
     commits.length === 1 &&
-    commits.at(-1).sha === head &&
-    commits.every(
-      (c) =>
-        c.author?.login === "dependabot[bot]" && c.commit.verification?.verified
-    )
+    commits[0].sha === head &&
+    updaterAuthor(commits[0]) &&
+    commits[0].commit.verification?.verified
   )
 }
 
 async function enterOrdinaryLane(github, context, pr, ordinary) {
   if (!ordinary) return
   if (pr.user.login === "dependabot[bot]") return
+  // This marks the owner's ordinary lane, not automated review evidence.
+  // Immediate dependency merges independently require the actual App result.
   await github.rest.repos.createCommitStatus({
     ...context.repo,
     sha: pr.head.sha,
@@ -66,7 +75,7 @@ async function classify({ github, context }, metadata) {
   const verified = bot && verifiedCommits(commits, pr.head.sha)
   const allowed = verified && eligible(metadata)
   // Agent-edited heads use ordinary review, never unattended merge.
-  const ordinary = !bot || commits.at(-1)?.author?.login !== "dependabot[bot]"
+  const ordinary = !bot || !updaterAuthor(commits.at(-1))
   await enterOrdinaryLane(github, context, pr, ordinary)
   await github.rest.repos.createCommitStatus({
     ...context.repo,
@@ -111,11 +120,15 @@ async function mergeQualified(github, pr, pause = pauseNative) {
   for (let attempt = 0; attempt < 30; attempt++) {
     const { node } = await github.graphql(
       `query($id:ID!) {
-      node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefOid } }
+      node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefOid baseRefName } }
     }`,
       { id: pr.node_id }
     )
-    if (node.headRefOid !== pr.head.sha || node.baseRefOid !== pr.base.sha)
+    if (
+      node.headRefOid !== pr.head.sha ||
+      node.baseRefOid !== pr.base.sha ||
+      node.baseRefName !== "main"
+    )
       return false
     if (node.mergeStateStatus === "CLEAN") {
       await github.graphql(
