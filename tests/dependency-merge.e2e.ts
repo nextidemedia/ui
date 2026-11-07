@@ -119,7 +119,11 @@ function nativeAPI(
         throw new Error("Pull request is in clean status")
       armed.push({
         ...input,
-        mode: query.includes("enablePullRequestAutoMerge") ? "arm" : "merge",
+        mode: query.includes("disablePullRequestAutoMerge")
+          ? "disable"
+          : query.includes("enablePullRequestAutoMerge")
+            ? "arm"
+            : "merge",
       })
       return {}
     }
@@ -178,8 +182,9 @@ async function assertOutcome(
   reviews: any[],
   head: string
 ) {
+  const grants = armed.filter((a) => a.mode !== "disable")
   assert.equal(
-    armed.length,
+    grants.length,
     [
       "none",
       "settling",
@@ -191,7 +196,10 @@ async function assertOutcome(
       : 0,
     denial
   )
-  if (denial === "agent-owned") assert.equal(statuses[0].state, "success")
+  if (denial === "agent-owned") {
+    assert.equal(statuses[0].state, "success")
+    assert.equal(armed[0].mode, "disable")
+  }
   if (["settling", "native-blocked"].includes(denial))
     assert.equal(armed[0].mode, "arm")
   if (denial === "clean-race") assert.equal(armed[0].mode, "merge")
@@ -202,7 +210,7 @@ async function assertOutcome(
       1
     )
   }
-  if (armed.length) assert.equal(armed[0].head, head)
+  if (grants.length) assert.equal(grants[0].head, head)
 }
 
 // This API boundary owns the decision to grant native merge permission. No live mutations.
@@ -214,6 +222,7 @@ test(
       const head = "a".repeat(40),
         base = "b".repeat(40)
       const pr = {
+        auto_merge: denial === "agent-owned" ? {} : null,
         number: 113,
         node_id: "PR_test",
         state: "open",

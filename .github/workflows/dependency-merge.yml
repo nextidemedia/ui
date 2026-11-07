@@ -2,7 +2,7 @@ name: Dependency merge
 on:
   pull_request_target:
     branches: [main]
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
   issue_comment:
     types: [created, edited]
   workflow_run:
@@ -12,7 +12,7 @@ permissions:
   contents: read
   pull-requests: read
 concurrency:
-  group: dependency-merge-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.id }}
+  group: dependency-merge-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id }}
   cancel-in-progress: false
 jobs:
   classify:

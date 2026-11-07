@@ -38,6 +38,25 @@ function verifiedCommits(commits, head) {
   )
 }
 
+async function enterOrdinaryLane(github, context, pr, ordinary) {
+  if (!ordinary) return
+  if (pr.user.login === "dependabot[bot]" && pr.auto_merge) {
+    await github.graphql(
+      `mutation($id:ID!) {
+      disablePullRequestAutoMerge(input:{pullRequestId:$id}) { pullRequest { number } }
+    }`,
+      { id: pr.node_id }
+    )
+  }
+  await github.rest.repos.createCommitStatus({
+    ...context.repo,
+    sha: pr.head.sha,
+    context: REVIEW,
+    state: "success",
+    description: "Ordinary review lane",
+  })
+}
+
 async function classify({ github, context }, metadata) {
   const number = context.payload.pull_request.number
   const { data: pr } = await github.rest.pulls.get({
@@ -55,6 +74,7 @@ async function classify({ github, context }, metadata) {
   const allowed = verified && eligible(metadata)
   // Agent-edited heads use ordinary review, never unattended merge.
   const ordinary = !bot || commits.at(-1)?.author?.login !== "dependabot[bot]"
+  await enterOrdinaryLane(github, context, pr, ordinary)
   await github.rest.repos.createCommitStatus({
     ...context.repo,
     sha: pr.head.sha,
@@ -66,14 +86,6 @@ async function classify({ github, context }, metadata) {
         ? "Agent-owned review lane"
         : "Agent compatibility upgrade required",
   })
-  if (!bot)
-    await github.rest.repos.createCommitStatus({
-      ...context.repo,
-      sha: pr.head.sha,
-      context: REVIEW,
-      state: "success",
-      description: "Ordinary review lane",
-    })
   return allowed
 }
 
@@ -276,11 +288,11 @@ async function finish({ github, context, core }) {
       { ...context.repo, ref: head }
     )
     const status = statuses.find((s) => s.context === ELIGIBILITY)
-    const reviewClean = await checkReview(github, context, pr)
     if (!eligibleStatus(status)) {
       wait("no eligible current-head classification")
       continue
     }
+    const reviewClean = await checkReview(github, context, pr)
     if (!(await qualified(github, context, pr))) {
       wait("qualification missing or unsuccessful")
       continue
