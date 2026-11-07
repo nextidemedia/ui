@@ -233,15 +233,27 @@ function reviewResult(comments, head) {
 async function liveReviewState(github, pr, comment, cached) {
   if (cached === "pending") return cached
   if (!comment.user.node_id) return "failure"
-  let after = null,
-    found = false
+  const resolved = await resolvedFindingIds(github, pr, comment.user.node_id)
+  if (!resolved) return "failure"
+  if (cached === "success") return cached
+  const expected = await currentFindingIds(github, pr, comment.user.node_id)
+  // Only all findings from the latest completed current-head review can
+  // reconcile its lagging summary; older resolved findings are insufficient.
+  return expected.size && [...expected].every((id) => resolved.has(id))
+    ? "success"
+    : "failure"
+}
+
+async function resolvedFindingIds(github, pr, actor) {
+  const resolved = new Set()
+  let after = null
   do {
     const { node } = await github.graphql(
       `query($id:ID!, $after:String) {
         node(id:$id) { ... on PullRequest {
           reviewThreads(first:100, after:$after) {
             nodes { isResolved comments(first:1) { nodes {
-              author { ... on Bot { id } } body
+              databaseId author { ... on Bot { id } } body
             } } }
             pageInfo { hasNextPage endCursor }
           }
@@ -253,18 +265,42 @@ async function liveReviewState(github, pr, comment, cached) {
     for (const thread of page.nodes) {
       const first = thread.comments.nodes[0]
       if (
-        first?.author?.id !== comment.user.node_id ||
+        first?.author?.id !== actor ||
         !first.body.includes("<!-- codex-code-review-finding:v1 -->")
       )
         continue
-      found = true
-      if (!thread.isResolved) return "failure"
+      if (!thread.isResolved) return null
+      resolved.add(first.databaseId)
     }
     after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null
   } while (after)
-  // The App's summary can lag thread resolution. Never infer resolution from
-  // an empty/foreign thread set when its genuine summary still reports findings.
-  return found ? "success" : cached
+  return resolved
+}
+
+async function currentFindingIds(github, pr, actor) {
+  const args = { owner: "nextidemedia", repo: "ui", pull_number: pr.number }
+  const reviews = await github.paginate(github.rest.pulls.listReviews, args)
+  const current = reviews.findLast(
+    (r) =>
+      r.user?.node_id === actor &&
+      r.commit_id === pr.head.sha &&
+      r.state === "COMMENTED" &&
+      r.body?.startsWith("<!-- codex-review-receipt:v1 -->")
+  )
+  if (!current) return new Set()
+  const comments = await github.paginate(
+    github.rest.pulls.listCommentsForReview,
+    { ...args, review_id: current.id }
+  )
+  return new Set(
+    comments
+      .filter(
+        (c) =>
+          c.user?.node_id === actor &&
+          c.body?.includes("<!-- codex-code-review-finding:v1 -->")
+      )
+      .map((c) => c.id)
+  )
 }
 
 async function publishReview(github, context, pr, state) {

@@ -47,6 +47,7 @@ function evidence(denial: string, head: string, base: string) {
         "cached-resolved",
         "cached-empty",
         "cached-forged",
+        "cached-new-finding",
       ].includes(denial),
     },
   }
@@ -173,6 +174,7 @@ const scenarios = [
   "cached-resolved",
   "cached-empty",
   "cached-forged",
+  "cached-new-finding",
   "thread-reopened",
   "thread-last-page",
   "historical-base",
@@ -331,6 +333,22 @@ function restAPI(
     pulls: {
       get: async () => ({ data: pr }),
       listCommits: async () => commits,
+      listReviews: async () => [
+        {
+          id: 2,
+          user: { node_id: "BOT_review" },
+          commit_id: pr.head.sha,
+          state: "COMMENTED",
+          body: "<!-- codex-review-receipt:v1 -->",
+        },
+      ],
+      listCommentsForReview: async () => [
+        {
+          id: denial === "cached-new-finding" ? 2 : 1,
+          user: { node_id: "BOT_review" },
+          body: "<!-- codex-code-review-finding:v1 -->",
+        },
+      ],
     },
     repos: {
       get: async () => ({
@@ -367,7 +385,9 @@ function reviewPage(denial: string, reviews: any[], after: string | null) {
   const present =
     cachedFailure || ["thread-reopened", "thread-last-page"].includes(denial)
   const resolved =
-    ["cached-resolved", "cached-forged"].includes(denial) ||
+    ["cached-resolved", "cached-forged", "cached-new-finding"].includes(
+      denial
+    ) ||
     (denial === "thread-last-page" && !after)
   const nodes =
     present && denial !== "cached-empty"
@@ -377,6 +397,7 @@ function reviewPage(denial: string, reviews: any[], after: string | null) {
             comments: {
               nodes: [
                 {
+                  databaseId: 1,
                   author: {
                     id: denial === "cached-forged" ? "other" : "BOT_review",
                   },
