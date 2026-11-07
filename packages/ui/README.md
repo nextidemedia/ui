@@ -5,11 +5,11 @@ shadcn/ui, Base UI, Tailwind CSS 4, and React 19.
 
 ## Install
 
-Pin an exact release so upgrades remain deliberate:
+Use compatible manifest ranges and commit the consumer's lockfile:
 
 ```bash
-npm install --save-exact @nextide/ui@2.7.1
-npm install --save-dev --save-exact tailwindcss@4.3.3 @tailwindcss/vite@4.3.3
+npm install @nextide/ui@2.7.1
+npm install --save-dev tailwindcss@4.3.3 @tailwindcss/vite@4.3.3
 ```
 
 The consumer must provide React 19, React DOM 19, and Tailwind CSS 4. In a Vite
