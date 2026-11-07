@@ -9,10 +9,11 @@ Dependabot refreshes stale branches during its configured checks and on conflict
 After main advances, an unconflicted update can wait for the next weekly pass;
 this workflow refuses the stale base and adds no separate refresh scheduler.
 
-The trusted base/default workflow authenticates the updater's single verified
+The trusted current-main workflow authenticates the updater's single verified
 current commit and checks every targeted dependency. The pinned metadata action
 reads the first commit; multiple commits or failed metadata cannot grant unattended
-eligibility. Agent-edited heads receive ordinary review-lane status even when
+eligibility. Every completion event re-authenticates and classifies the current
+head using the pinned action; commit statuses never authorize a merge. Agent-edited heads receive ordinary review-lane status even when
 metadata extraction fails. Agent-edited dependency heads still require genuine
 current-source review; the owner retains compatibility work and finalization.
 This workflow never finalizes that lane. Classification depends on the head;
@@ -33,7 +34,10 @@ expected-head mutation. The workflow observes pending GitHub mergeability for up
 to 30 queries, two seconds apart, then fails visibly if it does not settle. A
 changed head/base aborts. No future-head auto-merge permission is granted: GitHub
 commit statuses can be shared by ordinary PRs and cannot safely authorize a later
-head of an already-armed dependency PR. No new scheduler or service is added.
+head of an already-armed dependency PR. No new scheduler or service is added. After a merge, the token explicitly
+dispatches existing full qualification for the returned merge commit, preserving
+main package/browser checks and evidence despite suppressed token-generated push
+events. This does not publish packages.
 
 Before enrollment, root must apply and verify strict required checks `Dependency
 eligibility`, `Dependency review` and `Correctness / Package and browser`, bound to

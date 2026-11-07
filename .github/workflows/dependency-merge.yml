@@ -11,46 +11,40 @@ on:
 permissions:
   contents: read
   pull-requests: read
-concurrency:
-  group: dependency-merge-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id }}
-  cancel-in-progress: false
-  queue: max
 jobs:
-  classify:
-    if: github.event_name == 'pull_request_target'
+  candidates:
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      statuses: write
-      actions: read
-      issues: write
+    outputs:
+      numbers: ${{ steps.candidates.outputs.numbers }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: refs/heads/main
           persist-credentials: false
-      - uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-        if: github.event.pull_request.user.login == 'dependabot[bot]'
-        id: metadata
-        continue-on-error: true
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          DEPENDENCIES: ${{ steps.metadata.outcome == 'success' && steps.metadata.outputs.updated-dependencies-json || '[]' }}
+        id: candidates
         with:
           script: |
-            await require('./scripts/ci/dependency-merge.cjs').classifyAndFinish(
-              {github, context, core}, JSON.parse(process.env.DEPENDENCIES));
-  merge:
-    if: github.event_name == 'workflow_run' || github.event.issue.pull_request
+            const {candidateNumbers} = require('./scripts/ci/dependency-merge.cjs');
+            core.setOutput('numbers', candidateNumbers(context.payload));
+  process:
+    needs: candidates
+    if: needs.candidates.outputs.numbers != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        number: ${{ fromJSON(needs.candidates.outputs.numbers) }}
+    concurrency:
+      group: dependency-merge-${{ matrix.number }}
+      cancel-in-progress: false
+      queue: max
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
       statuses: write
-      actions: read
+      actions: write
       issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -58,6 +52,50 @@ jobs:
           ref: refs/heads/main
           persist-credentials: false
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        id: candidate
+        env:
+          PR_NUMBER: ${{ matrix.number }}
         with:
           script: |
-            await require('./scripts/ci/dependency-merge.cjs').finish({github, context, core});
+            const {data: pr} = await github.rest.pulls.get({
+              ...context.repo, pull_number: Number(process.env.PR_NUMBER)});
+            // The pinned metadata action reads this PR snapshot on every event.
+            // No PR source is checked out or executed.
+            context.payload.pull_request = pr;
+            require('node:fs').writeFileSync(
+              `${process.env.RUNNER_TEMP}/dependency-pr.json`, JSON.stringify(context.payload));
+            core.setOutput('bot', pr.user.login === 'dependabot[bot]');
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.candidate.outputs.bot == 'true'
+        with:
+          repository: dependabot/fetch-metadata
+          ref: 25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+          path: .dependency-metadata
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        if: steps.candidate.outputs.bot == 'true'
+        id: metadata
+        continue-on-error: true
+        env:
+          INPUT_GITHUB-TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_SKIP-COMMIT-VERIFICATION: "false"
+          INPUT_SKIP-VERIFICATION: "false"
+        with:
+          script: |
+            // Run the pinned action's bundle with its candidate snapshot. Runner
+            // rewrites GITHUB_EVENT_PATH before each step; no global override.
+            require('node:child_process').execFileSync(process.execPath,
+              ['.dependency-metadata/dist/index.js'], {
+                stdio: 'inherit',
+                env: {...process.env,
+                  GITHUB_EVENT_PATH: `${process.env.RUNNER_TEMP}/dependency-pr.json`}
+              });
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          DEPENDENCIES: ${{ steps.metadata.outcome == 'success' && steps.metadata.outputs.updated-dependencies-json || '[]' }}
+        with:
+          script: |
+            context.payload.pull_request = JSON.parse(require('node:fs').readFileSync(
+              `${process.env.RUNNER_TEMP}/dependency-pr.json`, 'utf8')).pull_request;
+            await require('./scripts/ci/dependency-merge.cjs').classifyAndFinish(
+              {github, context, core}, JSON.parse(process.env.DEPENDENCIES));

@@ -7,6 +7,7 @@ const {
   classify,
   finish,
   classifyAndFinish,
+  candidateNumbers,
 } = require("../scripts/ci/dependency-merge.cjs")
 
 function updates(denial: string) {
@@ -118,7 +119,11 @@ function nativeAPI(
   return async (query: string, input: any) => {
     if (query.startsWith("mutation")) {
       merges.push(input)
-      return {}
+      return {
+        mergePullRequest: {
+          pullRequest: { mergeCommit: { oid: "d".repeat(40) } },
+        },
+      }
     }
     if (query.includes("mergeStateStatus"))
       return {
@@ -208,7 +213,7 @@ async function assertOutcome(
     )
   }
   if (denial === "no-review") {
-    await finish(client)
+    await classifyAndFinish(client, updates(denial))
     assert.equal(
       reviews.filter((c: any) => c.body.includes("@codex review")).length,
       1
@@ -218,7 +223,17 @@ async function assertOutcome(
 }
 
 function seedStatuses(denial: string, head: string) {
-  const statuses: any[] = []
+  // Another Actions workflow can forge this status on the same SHA. It must
+  // never substitute for this invocation's verified per-target classification.
+  const statuses: any[] = [
+    {
+      sha: head,
+      context: "Dependency eligibility",
+      state: "success",
+      description: "Eligible verified patch/minor group",
+      creator: { login: "github-actions[bot]" },
+    },
+  ]
   if (denial === "shared-ordinary-status")
     statuses.push({
       sha: head,
@@ -244,11 +259,64 @@ function pauseFor(
   }
 }
 
+function restAPI(
+  denial: string,
+  pr: any,
+  commits: any[],
+  statuses: any[],
+  reviews: any[],
+  dispatches: any[],
+  runs: any[],
+  jobs: any[]
+) {
+  return {
+    issues: {
+      listComments: async () => reviews,
+      createComment: async (comment: any) =>
+        reviews.push({
+          ...comment,
+          user: { login: "github-actions[bot]", type: "Bot" },
+        }),
+    },
+    pulls: {
+      get: async () => ({ data: pr }),
+      listCommits: async () => commits,
+    },
+    repos: {
+      get: async () => ({
+        data: {
+          allow_auto_merge: !["unenrolled", "agent-owned-unenrolled"].includes(
+            denial
+          ),
+        },
+      }),
+      createCommitStatus: async (s: any) =>
+        statuses.unshift({
+          ...s,
+          creator: { login: "github-actions[bot]" },
+        }),
+      listCommitStatusesForRef: async () =>
+        statuses.filter((s) => s.sha === pr.head.sha),
+    },
+    actions: {
+      createWorkflowDispatch: async (input: any) => dispatches.push(input),
+      listWorkflowRuns: async () => runs,
+      listJobsForWorkflowRun: async () => jobs,
+    },
+  }
+}
+
 // This API boundary owns the decision to grant native merge permission. No live mutations.
 test(
   "dependency groups merge only after verified exact-source qualification and review",
   { platforms: ["api"] },
   async () => {
+    assert.deepEqual(
+      candidateNumbers({
+        workflow_run: { pull_requests: [{ number: 113 }, { number: 114 }] },
+      }),
+      [113, 114]
+    )
     for (const denial of scenarios) {
       const head = "a".repeat(40),
         base = "b".repeat(40)
@@ -262,7 +330,8 @@ test(
         user: { login: "dependabot[bot]" },
       }
       const statuses: any[] = seedStatuses(denial, head),
-        merges: any[] = []
+        merges: any[] = [],
+        dispatches: any[] = []
       const metadata = updates(denial)
       if (denial === "forged") pr.user.login = "other[bot]"
       const commits = [
@@ -280,41 +349,16 @@ test(
       if (denial === "multiple-bot-commits")
         commits.unshift({ ...commits[0], sha: base })
       const { reviews, jobs, runs, protection } = evidence(denial, head, base)
-      const rest = {
-        issues: {
-          listComments: async () => reviews,
-          createComment: async (comment: any) =>
-            reviews.push({
-              ...comment,
-              user: { login: "github-actions[bot]", type: "Bot" },
-            }),
-        },
-        pulls: {
-          get: async () => ({ data: pr }),
-          listCommits: async () => commits,
-        },
-        repos: {
-          get: async () => ({
-            data: {
-              allow_auto_merge: ![
-                "unenrolled",
-                "agent-owned-unenrolled",
-              ].includes(denial),
-            },
-          }),
-          createCommitStatus: async (s: any) =>
-            statuses.unshift({
-              ...s,
-              creator: { login: "github-actions[bot]" },
-            }),
-          listCommitStatusesForRef: async () =>
-            statuses.filter((s) => s.sha === pr.head.sha),
-        },
-        actions: {
-          listWorkflowRuns: async () => runs,
-          listJobsForWorkflowRun: async () => jobs,
-        },
-      }
+      const rest = restAPI(
+        denial,
+        pr,
+        commits,
+        statuses,
+        reviews,
+        dispatches,
+        runs,
+        jobs
+      )
       const github = {
         rest,
         paginate: async (method: any) => method(),
@@ -336,9 +380,9 @@ test(
         pause: pauseFor(denial, reviews, head, base, runs),
       }
       if (denial === "changed-head") {
-        await classify(client, metadata)
+        const classification = await classify(client, metadata)
         pr.head.sha = "c".repeat(40)
-        await finish(client)
+        await finish(client, classification)
       } else if (denial === "native-blocked") {
         await assert.rejects(
           classifyAndFinish(client, metadata),
@@ -346,6 +390,15 @@ test(
         )
       } else await classifyAndFinish(client, metadata)
       await assertOutcome(client, denial, merges, statuses, reviews, head)
+      assert.equal(dispatches.length, merges.length, denial)
+      if (dispatches.length)
+        assert.deepEqual(dispatches[0], {
+          owner: "nextidemedia",
+          repo: "ui",
+          workflow_id: "ci.yml",
+          ref: "main",
+          inputs: { profile: "full", source_sha: "d".repeat(40) },
+        })
     }
   }
 )

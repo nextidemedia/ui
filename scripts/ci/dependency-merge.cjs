@@ -88,7 +88,7 @@ async function classify({ github, context }, metadata) {
         ? "Agent-owned review lane"
         : "Agent compatibility upgrade required",
   })
-  return allowed
+  return { head: pr.head.sha, allowed, ordinary }
 }
 
 async function requireProtection(github, repo) {
@@ -143,15 +143,15 @@ async function mergeQualified(github, pr, confirm, pause = pauseNative) {
       const latest = await readNative(github, pr)
       if (!sameCandidate(latest, pr)) return false
       if (latest.mergeStateStatus === "CLEAN") {
-        await github.graphql(
+        const { mergePullRequest } = await github.graphql(
           `mutation($id:ID!, $head:GitObjectID!) {
           mergePullRequest(input:{pullRequestId:$id,expectedHeadOid:$head,mergeMethod:SQUASH}) {
-            pullRequest { number }
+            pullRequest { mergeCommit { oid } }
           }
         }`,
           { id: pr.node_id, head: pr.head.sha }
         )
-        return true
+        return mergePullRequest.pullRequest.mergeCommit.oid
       }
     } else if (!["UNKNOWN", "BLOCKED"].includes(node.mergeStateStatus)) {
       throw new Error("Native merge requirements are not satisfied")
@@ -288,14 +288,6 @@ function candidate(pr) {
   )
 }
 
-function eligibleStatus(status) {
-  return (
-    status?.state === "success" &&
-    status.description === "Eligible verified patch/minor group" &&
-    status.creator?.login === "github-actions[bot]"
-  )
-}
-
 function candidateNumbers(payload) {
   return payload.pull_request
     ? [payload.pull_request.number]
@@ -304,60 +296,69 @@ function candidateNumbers(payload) {
       : (payload.workflow_run?.pull_requests || []).map((pr) => pr.number)
 }
 
-async function finish({ github, context, core, pause }) {
-  const numbers = candidateNumbers(context.payload)
-  for (const number of numbers) {
-    const args = { ...context.repo, pull_number: number }
-    const { data: pr } = await github.rest.pulls.get(args)
-    const wait = (reason) => core.info(`PR ${number}: ${reason}`)
-    if (!candidate(pr)) continue
-    const head = pr.head.sha
-    const statuses = await github.paginate(
-      github.rest.repos.listCommitStatusesForRef,
-      { ...context.repo, ref: head }
-    )
-    const status = statuses.find((s) => s.context === ELIGIBILITY)
-    if (!eligibleStatus(status)) {
-      if (
-        status?.description === "Agent-owned review lane" &&
-        status.creator?.login === "github-actions[bot]"
-      )
-        await checkReview(github, context, pr)
-      wait("no eligible current-head classification")
-      continue
-    }
-    const reviewClean = await checkReview(github, context, pr)
-    if (!(await qualified(github, context, pr))) {
-      wait("qualification missing or unsuccessful")
-      continue
-    }
-    if (!reviewClean) {
-      wait("current-head automated review required")
-      continue
-    }
-    const { data: repo } = await github.rest.repos.get(context.repo)
-    if (!repo.allow_auto_merge) {
-      wait("dependency automation not enrolled")
-      continue
-    }
-    await requireProtection(github, context.repo)
-    const result = await mergeQualified(
-      github,
-      pr,
-      () => confirmEvidence(github, context, pr),
-      pause
-    )
-    wait(
-      result
-        ? "qualified native merge requested"
-        : "current evidence no longer qualifies"
-    )
+async function finish({ github, context, core, pause }, classification) {
+  const number = context.payload.pull_request.number
+  const { data: pr } = await github.rest.pulls.get({
+    ...context.repo,
+    pull_number: number,
+  })
+  const wait = (reason) => core.info(`PR ${number}: ${reason}`)
+  if (!candidate(pr) || pr.head.sha !== classification.head) return
+  // Authorization comes from this invocation's authenticated metadata, never
+  // from a commit status another workflow using the same Actions App can write.
+  if (!classification.allowed) {
+    if (classification.ordinary) await checkReview(github, context, pr)
+    wait("no eligible current-head classification")
+    return
   }
+  const reviewClean = await checkReview(github, context, pr)
+  if (!(await qualified(github, context, pr))) {
+    wait("qualification missing or unsuccessful")
+    return
+  }
+  if (!reviewClean) {
+    wait("current-head automated review required")
+    return
+  }
+  const { data: repo } = await github.rest.repos.get(context.repo)
+  if (!repo.allow_auto_merge) {
+    wait("dependency automation not enrolled")
+    return
+  }
+  await requireProtection(github, context.repo)
+  const merged = await mergeQualified(
+    github,
+    pr,
+    () => confirmEvidence(github, context, pr),
+    pause
+  )
+  if (merged) {
+    // GITHUB_TOKEN merges suppress push workflows. Dispatch is an explicit
+    // supported exception and preserves full main qualification/evidence.
+    await github.rest.actions.createWorkflowDispatch({
+      ...context.repo,
+      workflow_id: "ci.yml",
+      ref: "main",
+      inputs: { profile: "full", source_sha: merged },
+    })
+  }
+  wait(
+    merged
+      ? "native merge and exact-commit qualification requested"
+      : "current evidence no longer qualifies"
+  )
 }
 
 async function classifyAndFinish(client, metadata) {
-  await classify(client, metadata)
-  await finish(client)
+  const classification = await classify(client, metadata)
+  await finish(client, classification)
 }
 
-module.exports = { eligible, classify, finish, classifyAndFinish, reviewResult }
+module.exports = {
+  eligible,
+  classify,
+  finish,
+  classifyAndFinish,
+  reviewResult,
+  candidateNumbers,
+}
