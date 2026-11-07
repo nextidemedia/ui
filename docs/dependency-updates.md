@@ -15,6 +15,8 @@ When an update is blocked:
 - Diagnose failed, cancelled or skipped qualification and fix the cause.
 - Complete the configured review for the current revision and address or
   explicitly adjudicate its findings. An old review does not qualify a new revision.
+  After resolving findings without changing code, leave a PR comment with the
+  disposition so automation rechecks the same revision; no new review is needed.
 - Refresh a stale branch through Dependabot or the owning agent, then qualify it.
   Unconflicted stale updates can wait for the next weekly check; conflicts refresh
   earlier.

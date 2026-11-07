@@ -40,6 +40,7 @@ function verifiedCommits(commits, head) {
   return (
     commits.length === 1 &&
     commits[0].sha === head &&
+    commits[0].parents?.length === 1 &&
     updaterAuthor(commits[0]) &&
     commits[0].commit.verification?.verified
   )
@@ -75,7 +76,11 @@ async function classify({ github, context }, metadata) {
         ? "Agent-owned review lane"
         : "Agent compatibility upgrade lane",
   })
-  return { head: pr.head.sha, allowed }
+  return {
+    head: pr.head.sha,
+    allowed,
+    base: allowed ? commits[0].parents[0].sha : null,
+  }
 }
 
 async function requireProtection(github, repo) {
@@ -116,7 +121,7 @@ async function readNative(github, pr) {
 function sameCandidate(node, pr) {
   return (
     node.headRefOid === pr.head.sha &&
-    node.baseRef?.target.oid === pr.base.sha &&
+    node.baseRef?.target.oid === pr.qualificationBase &&
     node.baseRefName === "main"
   )
 }
@@ -161,9 +166,9 @@ async function confirmEvidence(github, context, pr) {
 }
 
 async function qualified(github, context, pr) {
-  // Dependabot refreshes stale PRs on its configured checks and on conflicts.
-  // Accept only PR qualification for its tested head/base; readNative checks the
-  // live base ref, since GitHub's PR base.sha/baseRefOid are historical snapshots.
+  // CI verifies that its tested merge tree equals the exact dependency head's
+  // tree. Its verified single parent must still be live main at merge.
+  // PR base.sha and workflow association base.sha are historical, not authority.
   const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
     ...context.repo,
     workflow_id: "ci.yml",
@@ -172,10 +177,7 @@ async function qualified(github, context, pr) {
   })
   const run = runs.find((r) =>
     r.pull_requests?.some(
-      (p) =>
-        p.number === pr.number &&
-        p.head.sha === pr.head.sha &&
-        p.base.sha === pr.base.sha
+      (p) => p.number === pr.number && p.head.sha === pr.head.sha
     )
   )
   if (!run || run.conclusion !== "success") {
@@ -187,6 +189,7 @@ async function qualified(github, context, pr) {
   )
   const job = jobs.find((j) => j.name === QUALIFICATION)
   const required = [
+    "Verify dependency qualification source",
     "Quality",
     "Run npm run typecheck",
     "Qualify packed package and browser",
@@ -202,13 +205,18 @@ async function qualified(github, context, pr) {
   return true
 }
 
-function reviewResult(comments, head) {
-  const comment = comments
+function reviewSummary(comments) {
+  return comments
     .filter((c) => c.user.login === REVIEW_BOT && c.user.type === "Bot")
     .findLast((c) =>
       c.body.startsWith("<!-- codex-pull-request-review-summary -->")
     )
-  const raw = comment?.body.match(/<!-- codex-review-state:v1 (.*?) -->/s)?.[1]
+}
+
+function reviewResult(comments, head) {
+  const raw = reviewSummary(comments)?.body.match(
+    /<!-- codex-review-state:v1 (.*?) -->/s
+  )?.[1]
   if (!raw) return "pending"
   let review
   try {
@@ -220,6 +228,43 @@ function reviewResult(comments, head) {
     return "pending"
   if (review.has_unresolved_findings === false) return "success"
   return "failure"
+}
+
+async function liveReviewState(github, pr, comment, cached) {
+  if (cached === "pending") return cached
+  if (!comment.user.node_id) return "failure"
+  let after = null,
+    found = false
+  do {
+    const { node } = await github.graphql(
+      `query($id:ID!, $after:String) {
+        node(id:$id) { ... on PullRequest {
+          reviewThreads(first:100, after:$after) {
+            nodes { isResolved comments(first:1) { nodes {
+              author { ... on Bot { id } } body
+            } } }
+            pageInfo { hasNextPage endCursor }
+          }
+        } }
+      }`,
+      { id: pr.node_id, after }
+    )
+    const page = node.reviewThreads
+    for (const thread of page.nodes) {
+      const first = thread.comments.nodes[0]
+      if (
+        first?.author?.id !== comment.user.node_id ||
+        !first.body.includes("<!-- codex-code-review-finding:v1 -->")
+      )
+        continue
+      found = true
+      if (!thread.isResolved) return "failure"
+    }
+    after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null
+  } while (after)
+  // The App's summary can lag thread resolution. Never infer resolution from
+  // an empty/foreign thread set when its genuine summary still reports findings.
+  return found ? "success" : cached
 }
 
 async function publishReview(github, context, pr, state) {
@@ -250,7 +295,12 @@ async function publishReview(github, context, pr, state) {
 async function checkReview(github, context, pr) {
   const args = { ...context.repo, issue_number: pr.number }
   const comments = await github.paginate(github.rest.issues.listComments, args)
-  const state = reviewResult(comments, pr.head.sha)
+  const state = await liveReviewState(
+    github,
+    pr,
+    reviewSummary(comments),
+    reviewResult(comments, pr.head.sha)
+  )
   await publishReview(github, context, pr, state)
   const marker = `<!-- dependency-review-request:${pr.head.sha} -->`
   if (
@@ -278,6 +328,7 @@ function candidate(pr) {
 }
 
 function candidateNumbers(payload) {
+  if (payload.inputs?.pull_number) return [Number(payload.inputs.pull_number)]
   return payload.pull_request
     ? [payload.pull_request.number]
     : payload.issue?.pull_request
@@ -287,10 +338,11 @@ function candidateNumbers(payload) {
 
 async function finish({ github, context, core, pause }, classification) {
   const number = context.payload.pull_request.number
-  const { data: pr } = await github.rest.pulls.get({
+  const { data: current } = await github.rest.pulls.get({
     ...context.repo,
     pull_number: number,
   })
+  const pr = { ...current, qualificationBase: classification.base }
   const wait = (reason) => core.info(`PR ${number}: ${reason}`)
   if (!candidate(pr) || pr.head.sha !== classification.head) return
   // Authorization comes from this invocation's authenticated metadata, never
@@ -315,6 +367,18 @@ async function finish({ github, context, core, pause }, classification) {
     return
   }
   await requireProtection(github, context.repo)
+  if (context.eventName === "pull_request_target") {
+    // Finish the PR-attached job before observing mergeability. The native
+    // dispatch is queued behind it by the existing per-PR concurrency group.
+    await github.rest.actions.createWorkflowDispatch({
+      ...context.repo,
+      workflow_id: "dependency-merge.yml",
+      ref: "main",
+      inputs: { pull_number: String(number) },
+    })
+    wait("ready; fresh finalization dispatched")
+    return
+  }
   const merged = await mergeQualified(
     github,
     pr,

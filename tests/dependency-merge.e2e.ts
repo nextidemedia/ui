@@ -42,7 +42,12 @@ function evidence(denial: string, head: string, base: string) {
       commit_sha: denial === "stale-review" ? base : head,
       status: "completed",
       has_any_findings: ["review-findings", "review-resolved"].includes(denial),
-      has_unresolved_findings: denial === "review-findings",
+      has_unresolved_findings: [
+        "review-findings",
+        "cached-resolved",
+        "cached-empty",
+        "cached-forged",
+      ].includes(denial),
     },
   }
   const reviews = [
@@ -59,6 +64,7 @@ function evidence(denial: string, head: string, base: string) {
                 ? "other[bot]"
                 : "chatgpt-codex-connector[bot]",
             type: "Bot",
+            node_id: "BOT_review",
           },
           body: `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify(state)} -->`,
         },
@@ -68,12 +74,18 @@ function evidence(denial: string, head: string, base: string) {
       name: "Correctness / Package and browser",
       conclusion: "success",
       steps: [
+        "Verify dependency qualification source",
         "Quality",
         "Run npm run typecheck",
         "Qualify packed package and browser",
       ].map((name) => ({
         name,
-        conclusion: denial === "skip" ? "skipped" : "success",
+        conclusion:
+          denial === "skip" ||
+          (denial === "source-skip" &&
+            name === "Verify dependency qualification source")
+            ? "skipped"
+            : "success",
       })),
     },
   ]
@@ -112,10 +124,15 @@ function nativeAPI(
   head: string,
   base: string,
   merges: any[],
-  protection: any
+  protection: any,
+  reviews: any[]
 ) {
   let reads = 0
   return async (query: string, input: any) => {
+    if (query.includes("reviewThreads"))
+      return {
+        node: { reviewThreads: reviewPage(denial, reviews, input.after) },
+      }
     if (query.startsWith("mutation")) {
       merges.push(input)
       return {
@@ -153,6 +170,16 @@ function nativeAPI(
 
 const scenarios = [
   "none",
+  "cached-resolved",
+  "cached-empty",
+  "cached-forged",
+  "thread-reopened",
+  "thread-last-page",
+  "historical-base",
+  "stale-parent",
+  "source-skip",
+  "pr-attached",
+  "deferred-changed",
   "red",
   "missing",
   "cancelled",
@@ -216,6 +243,9 @@ async function assertOutcome(
     grants.length,
     [
       "none",
+      "cached-resolved",
+      "historical-base",
+      "pr-attached",
       "settling",
       "unstable",
       "classification-base-race",
@@ -330,11 +360,94 @@ function restAPI(
   }
 }
 
+function reviewPage(denial: string, reviews: any[], after: string | null) {
+  const cachedFailure = reviews.some((c) =>
+    c.body.includes('"has_unresolved_findings":true')
+  )
+  const present =
+    cachedFailure || ["thread-reopened", "thread-last-page"].includes(denial)
+  const resolved =
+    ["cached-resolved", "cached-forged"].includes(denial) ||
+    (denial === "thread-last-page" && !after)
+  const nodes =
+    present && denial !== "cached-empty"
+      ? [
+          {
+            isResolved: resolved,
+            comments: {
+              nodes: [
+                {
+                  author: {
+                    id: denial === "cached-forged" ? "other" : "BOT_review",
+                  },
+                  body: "<!-- codex-code-review-finding:v1 -->",
+                },
+              ],
+            },
+          },
+        ]
+      : []
+  return {
+    nodes,
+    pageInfo: {
+      hasNextPage: denial === "thread-last-page" && !after,
+      endCursor: "next",
+    },
+  }
+}
+
+async function exerciseController(
+  client: any,
+  denial: string,
+  metadata: any[],
+  pr: any,
+  commits: any[],
+  merges: any[],
+  dispatches: any[]
+) {
+  if (["pr-attached", "deferred-changed"].includes(denial)) {
+    client.context.eventName = "pull_request_target"
+    await classifyAndFinish(client, metadata)
+    assert.equal(merges.length, 0)
+    assert.deepEqual(dispatches.shift(), {
+      owner: "nextidemedia",
+      repo: "ui",
+      workflow_id: "dependency-merge.yml",
+      ref: "main",
+      inputs: { pull_number: "113" },
+    })
+    client.context.eventName = "workflow_dispatch"
+    if (denial === "deferred-changed") {
+      pr.head.sha = "c".repeat(40)
+      commits[0].sha = pr.head.sha
+      client.context.payload.pull_request = structuredClone(pr)
+    }
+    await classifyAndFinish(client, metadata)
+    return
+  }
+  if (denial === "changed-head") {
+    const classification = await classify(client, metadata)
+    pr.head.sha = "c".repeat(40)
+    await finish(client, classification)
+  } else if (denial === "dispatch-failed") {
+    await assert.rejects(
+      classifyAndFinish(client, metadata),
+      /Dispatch unavailable/
+    )
+  } else if (["native-blocked", "native-unstable"].includes(denial)) {
+    await assert.rejects(classifyAndFinish(client, metadata), /did not settle/)
+  } else await classifyAndFinish(client, metadata)
+}
+
 // This API boundary owns the decision to grant native merge permission. No live mutations.
 test(
   "dependency groups merge only after verified exact-source qualification and review",
   { platforms: ["api"] },
   async () => {
+    assert.deepEqual(
+      candidateNumbers({ inputs: { pull_number: "113" } }),
+      [113]
+    )
     assert.deepEqual(
       candidateNumbers({
         workflow_run: { pull_requests: [{ number: 113 }, { number: 114 }] },
@@ -359,9 +472,11 @@ test(
       const metadata = updates(denial)
       if (denial === "forged") pr.user.login = "other[bot]"
       if (denial === "closed") pr.state = "closed"
+      if (denial === "historical-base") pr.base.sha = "c".repeat(40)
       const commits = [
         {
           sha: head,
+          parents: [{ sha: denial === "stale-parent" ? head : base }],
           author: { login: "dependabot[bot]" },
           committer: {
             login: denial === "forged-signer" ? "writer" : "web-flow",
@@ -387,9 +502,10 @@ test(
       const github = {
         rest,
         paginate: async (method: any) => method(),
-        graphql: nativeAPI(denial, head, base, merges, protection),
+        graphql: nativeAPI(denial, head, base, merges, protection, reviews),
       }
       const context = {
+        eventName: "workflow_run",
         repo: { owner: "nextidemedia", repo: "ui" },
         payload: {
           pull_request: structuredClone(pr),
@@ -404,21 +520,15 @@ test(
         core: { info() {} },
         pause: pauseFor(denial, reviews, head, base, runs),
       }
-      if (denial === "changed-head") {
-        const classification = await classify(client, metadata)
-        pr.head.sha = "c".repeat(40)
-        await finish(client, classification)
-      } else if (denial === "dispatch-failed") {
-        await assert.rejects(
-          classifyAndFinish(client, metadata),
-          /Dispatch unavailable/
-        )
-      } else if (["native-blocked", "native-unstable"].includes(denial)) {
-        await assert.rejects(
-          classifyAndFinish(client, metadata),
-          /did not settle/
-        )
-      } else await classifyAndFinish(client, metadata)
+      await exerciseController(
+        client,
+        denial,
+        metadata,
+        pr,
+        commits,
+        merges,
+        dispatches
+      )
       await assertOutcome(client, denial, merges, statuses, reviews, head)
       assert.equal(dispatches.length, merges.length, denial)
       if (dispatches.length)

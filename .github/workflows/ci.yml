@@ -55,8 +55,18 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 2
       - id: source
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      # Preserve merged-result qualification. For an automatic update, prove
+      # that result's tree is also the exact verified dependency head's tree.
+      - name: Verify dependency qualification source
+        if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          expected_tree=$(git rev-parse "$EXPECTED_HEAD^{tree}")
+          test "$(git rev-parse HEAD^{tree})" = "$expected_tree"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version

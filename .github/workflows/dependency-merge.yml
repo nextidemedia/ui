@@ -1,5 +1,11 @@
 name: Dependency merge
 on:
+  workflow_dispatch:
+    inputs:
+      pull_number:
+        description: Pull request to re-evaluate from trusted main
+        type: string
+        required: true
   pull_request_target:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review, edited]
