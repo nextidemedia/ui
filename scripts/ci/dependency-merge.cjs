@@ -40,14 +40,6 @@ function verifiedCommits(commits, head) {
 
 async function enterOrdinaryLane(github, context, pr, ordinary) {
   if (!ordinary) return
-  if (pr.user.login === "dependabot[bot]" && pr.auto_merge) {
-    await github.graphql(
-      `mutation($id:ID!) {
-      disablePullRequestAutoMerge(input:{pullRequestId:$id}) { pullRequest { number } }
-    }`,
-      { id: pr.node_id }
-    )
-  }
   if (pr.user.login === "dependabot[bot]") return
   await github.rest.repos.createCommitStatus({
     ...context.repo,
@@ -111,44 +103,38 @@ async function requireProtection(github, repo) {
   }
 }
 
-async function nativeMerge(github, pr, operation) {
-  await github.graphql(
-    `mutation($id:ID!, $head:GitObjectID!) {
-    ${operation}(input:{pullRequestId:$id,expectedHeadOid:$head,mergeMethod:SQUASH}) {
-      pullRequest { number }
-    }
-  }`,
-    { id: pr.node_id, head: pr.head.sha }
-  )
+function pauseNative() {
+  return new Promise((resolve) => setTimeout(resolve, 2000))
 }
 
-async function mergeQualified(github, pr) {
-  const { node } = await github.graphql(
-    `query($id:ID!) {
-    node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefOid } }
-  }`,
-    { id: pr.node_id }
-  )
-  if (node.headRefOid !== pr.head.sha || node.baseRefOid !== pr.base.sha)
-    return false
-  // Use native auto-merge to observe pending mergeability, without a scheduler or polling.
-  const operation =
-    node.mergeStateStatus === "CLEAN"
-      ? "mergePullRequest"
-      : "enablePullRequestAutoMerge"
-  try {
-    await nativeMerge(github, pr, operation)
-    return operation
-  } catch (error) {
-    // GitHub can become CLEAN between the read and auto-merge mutation.
-    if (
-      operation !== "enablePullRequestAutoMerge" ||
-      !/clean status/i.test(error.message)
+async function mergeQualified(github, pr, pause = pauseNative) {
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const { node } = await github.graphql(
+      `query($id:ID!) {
+      node(id:$id) { ... on PullRequest { mergeStateStatus headRefOid baseRefOid } }
+    }`,
+      { id: pr.node_id }
     )
-      throw error
-    await nativeMerge(github, pr, "mergePullRequest")
-    return "mergePullRequest"
+    if (node.headRefOid !== pr.head.sha || node.baseRefOid !== pr.base.sha)
+      return false
+    if (node.mergeStateStatus === "CLEAN") {
+      await github.graphql(
+        `mutation($id:ID!, $head:GitObjectID!) {
+        mergePullRequest(input:{pullRequestId:$id,expectedHeadOid:$head,mergeMethod:SQUASH}) {
+          pullRequest { number }
+        }
+      }`,
+        { id: pr.node_id, head: pr.head.sha }
+      )
+      return true
+    }
+    if (!["UNKNOWN", "BLOCKED"].includes(node.mergeStateStatus))
+      throw new Error("Native merge requirements are not satisfied")
+    if (attempt < 29) await pause()
   }
+  throw new Error(
+    "Native mergeability did not settle; retry this workflow after checking GitHub merge requirements"
+  )
 }
 
 async function qualified(github, context, pr) {
@@ -207,11 +193,7 @@ function reviewResult(comments, head) {
   }
   if (review?.commit_sha !== head || review.status !== "completed")
     return "pending"
-  if (
-    review.has_any_findings === false &&
-    review.has_unresolved_findings === false
-  )
-    return "success"
+  if (review.has_unresolved_findings === false) return "success"
   return "failure"
 }
 
@@ -270,7 +252,7 @@ function candidateNumbers(payload) {
       : (payload.workflow_run?.pull_requests || []).map((pr) => pr.number)
 }
 
-async function finish({ github, context, core }) {
+async function finish({ github, context, core, pause }) {
   const numbers = candidateNumbers(context.payload)
   for (const number of numbers) {
     const args = { ...context.repo, pull_number: number }
@@ -303,11 +285,11 @@ async function finish({ github, context, core }) {
     }
     const { data: repo } = await github.rest.repos.get(context.repo)
     if (!repo.allow_auto_merge) {
-      wait("native auto-merge not enrolled")
+      wait("dependency automation not enrolled")
       continue
     }
     await requireProtection(github, context.repo)
-    const result = await mergeQualified(github, pr)
+    const result = await mergeQualified(github, pr, pause)
     wait(result ? "qualified native merge requested" : "candidate changed")
   }
 }

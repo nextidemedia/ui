@@ -40,11 +40,15 @@ function evidence(denial: string, head: string, base: string) {
     code_review: {
       commit_sha: denial === "stale-review" ? base : head,
       status: "completed",
-      has_any_findings: denial === "review-findings",
+      has_any_findings: ["review-findings", "review-resolved"].includes(denial),
       has_unresolved_findings: denial === "review-findings",
     },
   }
-  const reviews = ["no-review", "agent-owned-no-review"].includes(denial)
+  const reviews = [
+    "no-review",
+    "agent-owned-no-review",
+    "shared-ordinary-status",
+  ].includes(denial)
     ? []
     : [
         {
@@ -107,24 +111,13 @@ function nativeAPI(
   denial: string,
   head: string,
   base: string,
-  armed: any[],
+  merges: any[],
   protection: any
 ) {
+  let reads = 0
   return async (query: string, input: any) => {
     if (query.startsWith("mutation")) {
-      if (
-        denial === "clean-race" &&
-        query.includes("enablePullRequestAutoMerge")
-      )
-        throw new Error("Pull request is in clean status")
-      armed.push({
-        ...input,
-        mode: query.includes("disablePullRequestAutoMerge")
-          ? "disable"
-          : query.includes("enablePullRequestAutoMerge")
-            ? "arm"
-            : "merge",
-      })
+      merges.push(input)
       return {}
     }
     if (query.includes("mergeStateStatus"))
@@ -135,7 +128,7 @@ function nativeAPI(
           mergeStateStatus:
             denial === "native-blocked"
               ? "BLOCKED"
-              : ["settling", "clean-race"].includes(denial)
+              : denial === "settling" && reads++ === 0
                 ? "UNKNOWN"
                 : "CLEAN",
         },
@@ -154,6 +147,7 @@ const scenarios = [
   "dispatch",
   "stale-review",
   "no-review",
+  "shared-ordinary-status",
   "forged",
   "unsigned",
   "changed-head",
@@ -171,28 +165,27 @@ const scenarios = [
   "agent-owned-unenrolled",
   "multiple-bot-commits",
   "classification-base-race",
-  "clean-race",
   "review-findings",
+  "review-resolved",
   "forged-review",
 ]
 
 async function assertOutcome(
   client: any,
   denial: string,
-  armed: any[],
+  merges: any[],
   statuses: any[],
   reviews: any[],
   head: string
 ) {
-  const grants = armed.filter((a) => a.mode !== "disable")
+  const grants = merges
   assert.equal(
     grants.length,
     [
       "none",
       "settling",
-      "native-blocked",
       "classification-base-race",
-      "clean-race",
+      "review-resolved",
     ].includes(denial)
       ? 1
       : 0,
@@ -203,11 +196,7 @@ async function assertOutcome(
       statuses[0].state,
       denial === "agent-owned-no-review" ? "pending" : "success"
     )
-    assert.equal(armed[0].mode, "disable")
   }
-  if (["settling", "native-blocked"].includes(denial))
-    assert.equal(armed[0].mode, "arm")
-  if (denial === "clean-race") assert.equal(armed[0].mode, "merge")
   if (denial === "no-review") {
     await finish(client)
     assert.equal(
@@ -216,6 +205,19 @@ async function assertOutcome(
     )
   }
   if (grants.length) assert.equal(grants[0].head, head)
+}
+
+function seedStatuses(denial: string, head: string) {
+  const statuses: any[] = []
+  if (denial === "shared-ordinary-status")
+    statuses.push({
+      sha: head,
+      context: "Dependency review",
+      state: "success",
+      description: "Ordinary review lane",
+      creator: { login: "github-actions[bot]" },
+    })
+  return statuses
 }
 
 // This API boundary owns the decision to grant native merge permission. No live mutations.
@@ -227,7 +229,6 @@ test(
       const head = "a".repeat(40),
         base = "b".repeat(40)
       const pr = {
-        auto_merge: denial.startsWith("agent-owned") ? {} : null,
         number: 113,
         node_id: "PR_test",
         state: "open",
@@ -236,8 +237,8 @@ test(
         base: { ref: "main", sha: base },
         user: { login: "dependabot[bot]" },
       }
-      const statuses: any[] = [],
-        armed: any[] = []
+      const statuses: any[] = seedStatuses(denial, head),
+        merges: any[] = []
       const metadata = updates(denial)
       if (denial === "forged") pr.user.login = "other[bot]"
       const commits = [
@@ -290,7 +291,7 @@ test(
       const github = {
         rest,
         paginate: async (method: any) => method(),
-        graphql: nativeAPI(denial, head, base, armed, protection),
+        graphql: nativeAPI(denial, head, base, merges, protection),
       }
       const context = {
         repo: { owner: "nextidemedia", repo: "ui" },
@@ -301,13 +302,23 @@ test(
       }
       if (denial === "classification-base-race")
         context.payload.pull_request.base.sha = head
-      const client = { github, context, core: { info() {} } }
+      const client = {
+        github,
+        context,
+        core: { info() {} },
+        pause: async () => {},
+      }
       if (denial === "changed-head") {
         await classify(client, metadata)
         pr.head.sha = "c".repeat(40)
         await finish(client)
+      } else if (denial === "native-blocked") {
+        await assert.rejects(
+          classifyAndFinish(client, metadata),
+          /did not settle/
+        )
       } else await classifyAndFinish(client, metadata)
-      await assertOutcome(client, denial, armed, statuses, reviews, head)
+      await assertOutcome(client, denial, merges, statuses, reviews, head)
     }
   }
 )

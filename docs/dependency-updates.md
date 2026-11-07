@@ -10,25 +10,27 @@ The trusted base/default workflow authenticates the updater's single verified
 current commit and checks every targeted dependency. The pinned metadata action
 reads the first commit; multiple commits or failed metadata cannot grant unattended
 eligibility. Agent-edited heads receive ordinary review-lane status even when
-metadata extraction fails. Any previously armed native auto-merge is revoked before
-ordinary eligibility is posted. Agent-edited dependency heads still require an
-authentic current-source automated review, never a fabricated ordinary green
-review status. The owning agent retains compatibility work and finalization; this
-workflow never finalizes that lane. Classification depends on the head; qualification
-separately binds the current head and base. No privileged PR code is executed.
+metadata extraction fails. Agent-edited dependency heads still require genuine
+current-source review; the owner retains compatibility work and finalization.
+This workflow never finalizes that lane. Classification depends on the head;
+qualification separately binds the current head and base. No privileged PR code
+is executed.
 
 For eligible updates the workflow posts `@codex review` once per head, using the
 existing App trigger. It requires an authentic `chatgpt-codex-connector[bot]`
 structured summary with the full current commit, completed code review, and no
-findings. Missing, stale, malformed or finding-bearing results keep `Dependency
+unresolved findings. Resolved findings do not require an empty code change or a
+new review merely to erase their history. Missing, stale, malformed or unresolved-finding results keep `Dependency
 review` pending or failed. Comments cannot manufacture approval; only the App's
 current-source result qualifies. Summary creation and edits re-evaluate readiness.
 
 Full PR package/browser qualification and successful mandatory quality, typecheck
 and package/browser steps remain required. CLEAN candidates merge through GitHub's
-expected-head mutation; pending native state uses expected-head native auto-merge,
-including a CLEAN-state race fallback. GitHub observes pending mergeability; no
-scheduler or polling is added. A changed head/base aborts finalization.
+expected-head mutation. The workflow observes pending GitHub mergeability for up
+to 30 queries, two seconds apart, then fails visibly if it does not settle. A
+changed head/base aborts. No future-head auto-merge permission is granted: GitHub
+commit statuses can be shared by ordinary PRs and cannot safely authorize a later
+head of an already-armed dependency PR. No new scheduler or service is added.
 
 Before enrollment, root must apply and verify strict required checks `Dependency
 eligibility`, `Dependency review` and `Correctness / Package and browser`, bound to
