@@ -278,12 +278,6 @@ async function finish({ github, context, core }) {
     const wait = (reason) => core.info(`PR ${number}: ${reason}`)
     if (!candidate(pr)) continue
     const head = pr.head.sha
-    const { data: repo } = await github.rest.repos.get(context.repo)
-    if (!repo.allow_auto_merge) {
-      wait("native auto-merge not enrolled")
-      continue
-    }
-    await requireProtection(github, context.repo)
     const statuses = await github.paginate(
       github.rest.repos.listCommitStatusesForRef,
       { ...context.repo, ref: head }
@@ -307,6 +301,12 @@ async function finish({ github, context, core }) {
       wait("current-head automated review required")
       continue
     }
+    const { data: repo } = await github.rest.repos.get(context.repo)
+    if (!repo.allow_auto_merge) {
+      wait("native auto-merge not enrolled")
+      continue
+    }
+    await requireProtection(github, context.repo)
     const result = await mergeQualified(github, pr)
     wait(result ? "qualified native merge requested" : "candidate changed")
   }

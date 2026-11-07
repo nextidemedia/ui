@@ -20,9 +20,7 @@ function updates(denial: string) {
     newVersion,
     updateType: `version-update:semver-${kind}`,
   })
-  if (
-    ["metadata-failed", "agent-owned", "agent-owned-no-review"].includes(denial)
-  )
+  if (denial === "metadata-failed" || denial.startsWith("agent-owned"))
     return []
   const metadata = [
     dependency("1.2.3", "1.2.4"),
@@ -170,6 +168,7 @@ const scenarios = [
   "metadata-failed",
   "agent-owned",
   "agent-owned-no-review",
+  "agent-owned-unenrolled",
   "multiple-bot-commits",
   "classification-base-race",
   "clean-race",
@@ -268,7 +267,12 @@ test(
         },
         repos: {
           get: async () => ({
-            data: { allow_auto_merge: denial !== "unenrolled" },
+            data: {
+              allow_auto_merge: ![
+                "unenrolled",
+                "agent-owned-unenrolled",
+              ].includes(denial),
+            },
           }),
           createCommitStatus: async (s: any) =>
             statuses.unshift({
