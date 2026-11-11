@@ -21,7 +21,9 @@ Follow [coding guidance](docs/coding-guidance.md) for language-specific tooling 
 <!-- BEGIN NEXTIDE-META:GOVERNANCE -->
 ## Delivery Baseline
 
-- Use short-lived branches from `main`; update them before merging.
+- Branch from `main` and target it; never build on another unmerged branch.
+  Update a branch only to resolve a conflict; `main` moving is not a reason to
+  rebase or re-run reviews unless there is a good reason for it.
 - Use Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`,
   `test:`, `chore:`, `ci:`).
 - Do not merge with failing or missing required checks.
@@ -31,6 +33,10 @@ Follow [coding guidance](docs/coding-guidance.md) for language-specific tooling 
 - Edit application secrets through Nextide's Infisical-backed secret service.
   Follow the [secrets policy](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md#application-secrets)
   and the service's startup, release and recovery procedures.
+
+## Cloud workstations
+
+Use the `grafana` MCP (datasource `loki`) for read-only production logs; bound queries by service and UTC window.
 
 ## Production
 
@@ -90,8 +96,10 @@ Follow [coding guidance](docs/coding-guidance.md) for language-specific tooling 
 - Run targeted local checks for changed behavior and reachable effects.
   The tracked `just pre-commit` hook provides fast, check-only feedback using
   prepared tools; CI validates committed code and required checks gate merging.
-  Run larger validation remotely; if blocked, use local checks and report the
-  reason and remaining gaps. This does not waive required CI gates.
+  Run larger validation remotely. If CI can't run it, run it locally on a
+  machine with spare CPU and memory, don't run several heavy suites at once on
+  one shared machine, and report what ran where. This does not waive required
+  CI gates.
 - Broaden checks for shared foundations, dependencies, migrations or uncertain
   impact. Run expensive lifecycle, load or provider checks only when needed
   to prove affected guarantees or on existing schedules.
