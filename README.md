@@ -49,8 +49,7 @@ files meet the 600-line limit and browser suites meet the 900-line test limit;
 Oxlint counts nonblank lines, including comments, with no size exceptions. Accessibility exceptions explain specific SVG,
 forwarded-prop, or scroll-region semantics. Vite+ 1.3.0 owns lint and builds; TypeScript 7.0.2 owns compiler checks and declarations.
 The official React Hooks plugin retains three rules where native parity is incomplete.
-See [migration evidence](docs/viteplus-migration.md) for scopes, diagnostic comparisons,
-retained checks and the approved release-age waiver. Prettier remains the formatter.
+Prettier remains the formatter.
 
 Correctness lint retains the configured React Hooks, accessibility, unsafe-operation,
 and accumulating-spread checks. Only explicit cosmetic rules (size/complexity,
