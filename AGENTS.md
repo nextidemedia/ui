@@ -1,120 +1,45 @@
-# Repository Guidance
+## Repository rules
 
-This repo is the shared `@nextide/ui` package. The playground exists only as a local harness for exercising package exports.
+- Keep the playground a consumer of public package exports; put shared behavior in `packages/ui`.
+- Update `docs/component-map.md` when adding, renaming or substantially changing shared components, blocks or hooks.
 
-- Put reusable UI, motion, tokens, and behavior in `packages/ui`.
-- Keep `apps/playground` as a consumer of `@nextide/ui` public exports.
-- Do not treat the playground as a first-class product surface or build bespoke playground-only components when the change belongs in the package.
-- Playground code may own demo state, sample data, and layout wiring, but package components should remain the source of truth for shared behavior.
-- Preserve the primitive/block separation: primitives belong under `packages/ui/src/components`, composed product patterns belong under `packages/ui/src/blocks`.
-- Keep `docs/component-map.md` current when adding, renaming, or substantially changing shared components, blocks, or hooks.
-- Follow `docs/responsive-support.md` for layout and responsive work; validate affected behavior at its four required CSS viewport widths.
-- Treat `@nextide/ui` as the reusable shadcn-based component pack for Nextide apps: polish shared components here first, and keep app-specific data/copy/state in consuming apps.
-- Keep React Doctor healthy from time to time with `npx react-doctor@latest`; treat warnings as cleanup candidates before they pile up.
-- Do not assume backwards compatibility. If compatibility expectations are unclear, ask before locking the direction.
-- Never write product decisions, implementation details, API routing, fallback mechanics, or other internal plumbing into user-facing or agent-facing text. UI copy, notices, docs, prompts, labels, and tool messages should describe the user goal, required action, or visible state, not how the system is internally wired.
+## Publishing
 
-Use `just setup` and `just check` for the shared development baseline; see README.md for focused tests and browser prerequisites. Keep source files within 600 lines, tests within 900 lines, functions within 100 lines, and complexity within 12; do not add legacy debt exceptions.
-
-Follow [coding guidance](docs/coding-guidance.md) for language-specific tooling and local exceptions.
+- Publish with `.github/workflows/publish.yml`, manually dispatched with an existing tag matching the package version; see `README.md`.
 
 <!-- BEGIN NEXTIDE-META:GOVERNANCE -->
-## Delivery Baseline
+## Delivery
 
-- Branch from `main` and target it; never build on another unmerged branch.
-  Update a branch only to resolve a conflict; `main` moving is not a reason to
-  rebase or re-run reviews unless there is a good reason for it.
-- Use Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`,
-  `test:`, `chore:`, `ci:`).
+- Branch from `main` and target it; do not build on unmerged branches.
+- Never push directly to `main` unless the user explicitly asks.
+- Update branches only to resolve conflicts; do not rebase or repeat reviews just because `main` moved.
+- Use Conventional Commits.
 - Do not merge with failing or missing required checks.
-
-## Application secrets
-
-- Edit application secrets through Nextide's Infisical-backed secret service.
-  Follow the [secrets policy](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md#application-secrets)
-  and the service's startup, release and recovery procedures.
-
-## Cloud workstations
-
-Use the `grafana` MCP (datasource `loki`) for read-only production logs; bound queries by service and UTC window.
-
-## Production
-
+- Edit application secrets through Nextide's Infisical-backed secret service using the [secrets policy](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md#application-secrets).
+- Use the `grafana` MCP, datasource `loki`, for read-only production logs bounded by service and UTC window.
 - Deploying to dev needs no approval.
-- Deploying to an internal production service is approved when the caller
-  lets its PR merge.
-- Deploying to a user-facing production service (Kraken, Daedalus once live)
-  needs the caller's explicit approval before the deploy.
+- A merge the caller explicitly allowed counts as approval to deploy an internal production service.
+- Obtain explicit caller approval before deploying a user-facing production service (Kraken, Daedalus once live).
 
-## Runtime checks
+## Runtime boundaries
 
-- Validate data once, where it enters the system (the
-  [data entry map](https://github.com/nextidemedia/meta/blob/main/docs/architecture/data-entry-map.md)
-  lists known entry points):
-  - Requests from outside callers, including webhooks: check authentication,
-    authorization, schema and limits.
-  - External data the system consumes, such as provider responses, media and
-    model output: reject only what downstream code cannot use, and leave
-    missing values empty rather than guessing.
-  - Data from an authenticated internal service: trust what its contract
-    guarantees, not content it only relays. Inside one process: trust the
-    types.
-- Never remove authentication, authorization, idempotency, data-integrity
-  constraints, output encoding or other security boundaries as redundant.
+- For requests from outside callers, including webhooks, check authentication, authorization, schema and limits; see the [data entry map](https://github.com/nextidemedia/meta/blob/main/docs/architecture/data-entry-map.md).
+- For consumed external data (provider responses, media, model output), reject only what downstream code cannot use; leave missing values empty.
+- Trust authenticated internal services for what their contracts guarantee, not content they relay; inside one process, trust the types.
 - Tolerate unknown fields unless the contract requires strictness.
-- Add a check or limit only when you can name what breaks or is exposed
-  without it and a realistic way that happens.
-- When changing a path, remove checks on it that protect nothing.
+- Add a check or limit only when you can name what breaks without it and a realistic trigger; remove checks on a changed path that protect nothing.
+- Do not remove authentication, authorization, idempotency, data-integrity constraints, output encoding or other security boundaries as redundant.
 
-## Testing
+## Testing and validation
 
-- Define acceptance outcomes from requirements, known bugs or external contracts
-  before implementation. Prove them in the owning E2E journey.
-- Do not add ordinary unit tests. When changing a suite, consolidate meaningful
-  regressions into the owning E2E journey and remove implementation-shape
-  checks and duplicates.
-- Keep integration tests only for important, unique boundary guarantees the
-  journey cannot reasonably prove. Preserve safety, security, data integrity
-  and static/build checks. Replace obsolete gates explicitly.
-- Use native TesterArmy E2E; follow its installed skill, the
-  [recording/replay runbook](https://github.com/nextidemedia/meta/blob/main/docs/e2e-recording-and-replay.md)
-  and the repo's test commands. Use tools-only targets for API/service boundaries;
-  do not wrap legacy suites.
-- Routine replay must make no model or live-provider calls, including on cache
-  misses. Run model/provider qualification separately.
-- Use controlled clocks or prepared history without bypassing the behavior
-  under test; account for interacting components' clocks. Use real elapsed time
-  only when necessary. Wait on observable conditions, not arbitrary sleeps.
-- Keep focused suites independently runnable; document commands, prerequisites
-  and approximate runtimes.
-
-## Validation
-
-- Use native linters for supported rules and retain only necessary supplemental
-  checks. Follow the [development baseline](https://github.com/nextidemedia/meta/blob/main/docs/development-baseline.md)
-  for tool ownership, hook setup and qualification.
-- Run targeted local checks for changed behavior and reachable effects.
-  The tracked `just pre-commit` hook provides fast, check-only feedback using
-  prepared tools; CI validates committed code and required checks gate merging.
-  Run larger validation remotely. If CI can't run it, run it locally on a
-  machine with spare CPU and memory, don't run several heavy suites at once on
-  one shared machine, and report what ran where. This does not waive required
-  CI gates.
-- Broaden checks for shared foundations, dependencies, migrations or uncertain
-  impact. Run expensive lifecycle, load or provider checks only when needed
-  to prove affected guarantees or on existing schedules.
-- One owner verifies combined changes. Reuse passing evidence while its inputs
-  and conditions remain valid. Record the revision, reproducible commands,
-  results and useful failure evidence in PR notes or logs.
-- Qualify the release candidate against all changes since the target's last
-  successful release, including affected consumers, packaging, configuration and
-  migrations. Verify the deployed artifact, prerequisites and health.
-
-## Adjacent cleanup
-
-- Include small, behavior-preserving cleanup that directly simplifies the
-  changed path without materially expanding review or validation.
-- Flag worthwhile broader cleanup to the orchestrator with its location and
-  a brief reason. Continue assigned work unless correctness is blocked; the
-  orchestrator decides whether to include it, dispatch separately, or defer it.
+- Prove acceptance outcomes in the owning native TesterArmy E2E journey using the installed skill and [recording/replay runbook](https://github.com/nextidemedia/meta/blob/main/docs/e2e-recording-and-replay.md).
+- Consolidate meaningful regressions into the owning journey when changing a suite; remove implementation-shape checks and duplicates.
+- Do not add ordinary unit tests; keep integration tests only for unique, important boundary guarantees the journey cannot reasonably prove.
+- Preserve safety, security, data-integrity and static/build checks; replace obsolete gates explicitly.
+- Use tools-only E2E targets for API/service boundaries; do not wrap legacy suites.
+- Keep routine replay free of model and live-provider calls, including cache misses; qualify models/providers separately.
+- Run larger validation remotely, or on a machine with spare CPU and memory if CI cannot run it; do not run several heavy suites concurrently on one shared machine.
+- Report the revision, commands, results, execution location and useful failure evidence.
+- Qualify release candidates against all changes since the target's last successful release, including affected consumers, packaging, configuration and migrations; verify deployed artifacts, prerequisites and health.
+- Include small cleanup that simplifies the path you change; flag broader cleanup to the orchestrator instead of doing it.
 <!-- END NEXTIDE-META:GOVERNANCE -->
