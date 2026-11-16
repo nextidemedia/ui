@@ -39,6 +39,7 @@ import {
   FieldStatesPreview,
   InputPreview,
 } from "./playground-component-controls"
+import { MoneyPickerPreview } from "./playground-component-money"
 import {
   IdentityPreview,
   ProcessingPreview,
@@ -90,6 +91,8 @@ function ComponentMatrix({
           onCheckedChange={onCheckedChange}
           onEnabledChange={onEnabledChange}
         />
+
+        <MoneyPickerPreview />
 
         <FilterPreview
           density={density}

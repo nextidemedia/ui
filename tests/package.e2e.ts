@@ -130,6 +130,8 @@ test(
       ["@nextide/ui/components/signal-ridge-chart", "SignalRidgeChart"],
       ["@nextide/ui/components/line-item-graph", "LineItemGraph"],
       ["@nextide/ui/components/duration-picker", "DurationPicker"],
+      ["@nextide/ui/components/money-picker", "MoneyPicker"],
+      ["@nextide/ui/components/edit-toggle", "EditToggle"],
       ["@nextide/ui/hooks/use-contained-scroll", "useContainedScroll"],
       ["@nextide/ui/lib/format-number", "formatCompactNumber"],
       ["@nextide/ui/lib/utils", "cn"],

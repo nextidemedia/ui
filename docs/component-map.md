@@ -46,8 +46,8 @@ the named public component rather than its supporting modules.
 
 | Need                       | Start with                                                                                                                                                                                                                                                                                                                                                                                        |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Actions and commands       | `components/button`, `components/badge`, `components/status-badge`                                                                                                                                                                                                                                                                                                                                |
-| Forms and inputs           | `components/input`, `components/currency-input`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/autocomplete`, `components/token-list-editor`                                                                                                                                |
+| Actions and commands       | `components/button`, `components/edit-toggle`, `components/badge`, `components/status-badge`                                                                                                                                                                                                                                                                                                      |
+| Forms and inputs           | `components/input`, `components/currency-input`, `components/money-picker`, `components/field`, `components/label`, `components/checkbox`, `components/switch`, `components/slider`, `components/select`, `components/select-menu`, `components/autocomplete`, `components/token-list-editor`                                                                                                     |
 | Choice controls            | `components/segmented-control`, `components/tabs`, `components/collapsible`, `components/dropdown-menu`, `components/dialog`, `components/popover`, `components/tooltip`                                                                                                                                                                                                                          |
 | Date and schedule controls | `components/date-range-picker`, `components/duration-picker`, `components/schedule-control`                                                                                                                                                                                                                                                                                                       |
 | Layout and surfaces        | `components/surface`, `components/card`, `components/separator`, `components/scroll-area`, `components/carousel`, `components/table`, `components/alert`, `components/notice`, `components/metric`, `components/kbd`                                                                                                                                                                              |
@@ -443,6 +443,24 @@ to a JavaScript number. Supply values with at most two fraction digits; numeric
 conversion and domain limits belong to the consumer. Negative amounts are disabled
 unless `allowNegative` is set. Standard input labels, refs, disabled/read-only,
 and error attributes use the same `Input` surface.
+
+### In-place amounts
+
+`MoneyPicker` reads as a formatted amount until it is edited, like
+`DurationPicker`. Clicking the amount or its pencil opens the field in place;
+Enter, the check, or clicking away confirms, and Escape keeps the previous
+amount. `value` is a number in major units (`null` when unset) and
+`onConfirm` receives the confirmed amount only when it changes. Whole units are
+the default; `cents` adds a separate cents field that the decimal separator
+jumps to. `currency` (ISO 4217, default USD) and `locale` (default en-US)
+choose the symbol, its position, and the separators. `suggestion` shows muted
+and italic while no amount is set and as the placeholder while editing; Enter or
+the check on an empty field takes it as the amount, while clicking away leaves
+the amount unset. `size="compact"` fits 24px rows. Give each picker a
+`label` such as "Fee for Huskerrs"; the toggle reads "Edit fee for Huskerrs".
+
+`EditToggle` is the pencil-to-check button both pickers share. Use it for other
+in-place editors so they open, confirm, and return focus the same way.
 
 CampaignScheduleMatrix accepts `rowLabel` for creative and other schedule lanes; its default is Creator.
 
