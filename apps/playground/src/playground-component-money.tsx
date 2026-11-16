@@ -118,9 +118,9 @@ function CompactFees() {
             />
           </div>
         ))}
-        <div className="flex h-6 items-center justify-between gap-3 px-2.5 font-medium">
+        <div className="flex h-6 items-center justify-between gap-3 pl-2.5 font-medium">
           <span>Total</span>
-          <span className="pr-6 tabular-nums">{usd.format(total)}</span>
+          <span className="pr-6.5 tabular-nums">{usd.format(total)}</span>
         </div>
       </div>
     </div>

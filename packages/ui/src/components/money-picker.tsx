@@ -502,7 +502,7 @@ function MoneyToggle({
       aria-label={editing ? "Save " + name : "Edit " + name}
       disabled={disabled}
       className={cn(
-        "relative overflow-hidden transition-[border-radius,opacity,background-color] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
+        "relative overflow-hidden bg-clip-border transition-[border-radius,opacity,background-color] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
         compact
           ? cn(
               "size-6 rounded-md text-muted-foreground [&_svg]:size-3",

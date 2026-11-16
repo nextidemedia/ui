@@ -96,6 +96,7 @@ const MoneyInput = React.forwardRef<
   ref
 ) {
   const mirrorRef = React.useRef<HTMLSpanElement>(null)
+  const wasEditing = React.useRef(editing)
   const longest = value.length >= placeholder.length ? value : placeholder
   // Room for the next digit while editing, so typing never waits on the width motion.
   const mirrorText = sizeTo ?? (editing ? longest + "0" : value || placeholder)
@@ -107,12 +108,15 @@ const MoneyInput = React.forwardRef<
     const fit = () => {
       input.style.width = String(mirror.getBoundingClientRect().width) + "px"
     }
+    // Width follows opening and closing; while typing it keeps up instantly.
+    input.style.transitionDuration = wasEditing.current === editing ? "0s" : ""
+    wasEditing.current = editing
     fit()
     // Font loading changes the measured width after the first paint.
     const observer = new ResizeObserver(fit)
     observer.observe(mirror)
     return () => observer.disconnect()
-  }, [mirrorText])
+  }, [editing, mirrorText])
 
   return (
     <span
