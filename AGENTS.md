@@ -5,7 +5,7 @@
 
 ## Publishing
 
-- Publish with `.github/workflows/publish.yml`, manually dispatched with an existing tag matching the package version; see `README.md`.
+- Publishing runs only through `publish.yml` (manual, existing `v<version>` tag; see README).
 
 <!-- BEGIN NEXTIDE-META:GOVERNANCE -->
 ## Delivery
