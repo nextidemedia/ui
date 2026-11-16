@@ -19,7 +19,7 @@
     "@e2e-dev/web": "^0.15.2",
     "@types/node": "^26.6.5",
     "e2e": "^0.22.0",
-    "eslint": "^10.13.0",
+    "eslint": "^10.15.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "knip": "^6.42.1",
     "prettier": "^3.9.10",
