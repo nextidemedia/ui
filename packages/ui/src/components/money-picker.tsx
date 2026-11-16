@@ -205,7 +205,8 @@ function useMoneyPickerState({
   const close = (restoreFocus: boolean) => {
     setMode("resting")
     onEditingChange?.(false)
-    if (restoreFocus) toggleRef.current?.focus()
+    // Focus returns to the toggle for the next keystroke without lighting it up.
+    if (restoreFocus) toggleRef.current?.focus({ focusVisible: false })
   }
 
   const startEditing = () => {
