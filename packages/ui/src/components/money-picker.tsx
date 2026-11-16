@@ -458,7 +458,14 @@ function moneyFieldText(
     format,
     options.showCents
   )
-  const hint = amountToDraft(suggestion, format, options.showCents)
+  // The suggestion shows only while nothing is typed, so no fragment of it
+  // appears beside a different partial amount.
+  const typed = state.draft.whole !== "" || state.draft.cents !== ""
+  const hint = amountToDraft(
+    typed ? null : suggestion,
+    format,
+    options.showCents
+  )
   const cents =
     options.showCents && tone !== "empty"
       ? editing

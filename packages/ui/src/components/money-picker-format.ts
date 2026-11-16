@@ -34,7 +34,12 @@ function useMoneyFormat(locale: string, currency: string): MoneyFormat {
       symbolFirst: symbolAt < integerAt,
       symbolSpaced: between.some((part) => part.type === "literal"),
       group: find("group") ?? ",",
-      decimal: find("decimal") ?? ".",
+      // Read from a fractional number so currencies without minor units still get
+      // the locale's decimal mark rather than one that matches its grouping.
+      decimal:
+        new Intl.NumberFormat(locale, { minimumFractionDigits: 1 })
+          .formatToParts(1.5)
+          .find((part) => part.type === "decimal")?.value ?? ".",
       fractionDigits: formatter.resolvedOptions().maximumFractionDigits ?? 2,
     }
   }, [locale, currency])
