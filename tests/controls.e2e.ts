@@ -138,6 +138,47 @@ test(
 )
 
 test(
+  "money edits confirm, Escape keeps the amount, and Enter takes a suggestion",
+  { platforms: ["web"] },
+  async ({ app, screen, browser }) => {
+    await app.open("/?view=report")
+    await screen.getByRole("button", /Primitives/).tap()
+    const picker = browser.locator('[data-slot="money-picker"]').first()
+    const output = browser.locator('[data-slot="money-picker-output"]')
+    const edit = picker.getByRole("button", "Edit fee")
+    const amount = picker.getByRole("textbox", "Fee")
+    await edit.tap()
+    await expect(amount).toBeFocused()
+    await amount.fill("")
+    await amount.pressSequentially("1250000")
+    await expect(amount).toHaveValue("1,250,000")
+    await amount.press("Enter")
+    await expect(output).toHaveText("1250000")
+    await expect(edit).toBeFocused()
+    await edit.press("Enter")
+    await amount.pressSequentially("9")
+    await amount.press("Escape")
+    await expect(amount).toHaveValue("1,250,000")
+    await expect(output).toHaveText("1250000")
+    await edit.tap()
+    await amount.fill("42")
+    await screen.getByRole("textbox", "Report name").tap()
+    await expect(output).toHaveText("42")
+    await screen.getByRole("button", "Edit fee for Aydan").tap()
+    const suggested = screen.getByRole("textbox", "Fee for Aydan")
+    await expect(suggested).toHaveValue("")
+    await expect(suggested).toHaveAttribute("placeholder", "2,400")
+    await suggested.press("Enter")
+    await expect(suggested).toHaveValue("2,400")
+    await expect(
+      browser.locator(
+        '[data-slot="money-picker-field"][data-tone="set"]:has([aria-label="Fee for Aydan"])'
+      )
+    ).toBeVisible()
+  }
+)
+
+test(
   "looped carousel wraps both ways and reordering preserves an edited draft",
   { platforms: ["web"] },
   async ({ app, screen, browser }) => {
