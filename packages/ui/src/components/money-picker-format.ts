@@ -33,7 +33,10 @@ function useMoneyFormat(locale: string, currency: string): MoneyFormat {
       symbol: find("currency") ?? currency,
       symbolFirst: symbolAt < integerAt,
       symbolSpaced: between.some((part) => part.type === "literal"),
-      group: find("group") ?? ",",
+      // Some locales leave four-digit amounts ungrouped, so probe a larger one.
+      group:
+        formatter.formatToParts(1234567.5).find((part) => part.type === "group")
+          ?.value ?? ",",
       // Read from a fractional number so currencies without minor units still get
       // the locale's decimal mark rather than one that matches its grouping.
       decimal:
