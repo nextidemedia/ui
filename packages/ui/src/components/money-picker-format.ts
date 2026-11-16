@@ -37,10 +37,15 @@ function useMoneyFormat(locale: string, currency: string): MoneyFormat {
       group:
         formatter.formatToParts(1234567.5).find((part) => part.type === "group")
           ?.value ?? ",",
-      // Read from a fractional number so currencies without minor units still get
-      // the locale's decimal mark rather than one that matches its grouping.
+      // Forcing a fraction gives currencies without minor units the decimal mark
+      // their currency format would use, distinct from its grouping.
       decimal:
-        new Intl.NumberFormat(locale, { minimumFractionDigits: 1 })
+        new Intl.NumberFormat(locale, {
+          style: "currency",
+          currency,
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        })
           .formatToParts(1.5)
           .find((part) => part.type === "decimal")?.value ?? ".",
       fractionDigits: formatter.resolvedOptions().maximumFractionDigits ?? 2,

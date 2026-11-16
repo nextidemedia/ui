@@ -65,10 +65,7 @@ function EditToggle({
 
 /** Returns focus to the toggle after editing without lighting up its focus ring. */
 function focusEditToggle(toggle: HTMLButtonElement | null) {
-  if (!toggle) return
-  // Confirming on the toggle itself leaves it focused; blur first so the ring clears.
-  if (toggle === document.activeElement) toggle.blur()
-  toggle.focus({ focusVisible: false })
+  toggle?.focus({ focusVisible: false })
 }
 
 export { EditToggle, focusEditToggle, type EditToggleProps }
