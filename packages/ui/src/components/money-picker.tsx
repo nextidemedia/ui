@@ -82,6 +82,7 @@ function MoneyPicker({
     onConfirm,
     onEditingChange,
     defaultEditing,
+    suggestion,
     disabled,
     showCents,
     format,
@@ -175,12 +176,18 @@ function useMoneyPickerState({
   onConfirm,
   onEditingChange,
   defaultEditing = false,
+  suggestion,
   disabled,
   showCents,
   format,
 }: Pick<
   MoneyPickerProps,
-  "value" | "defaultValue" | "onConfirm" | "onEditingChange" | "defaultEditing"
+  | "value"
+  | "defaultValue"
+  | "suggestion"
+  | "onConfirm"
+  | "onEditingChange"
+  | "defaultEditing"
 > & { disabled: boolean; showCents: boolean; format: MoneyFormat }) {
   const controlled = value !== undefined
   const [internalValue, setInternalValue] = React.useState(defaultValue)
@@ -213,9 +220,13 @@ function useMoneyPickerState({
     onEditingChange?.(true)
   }
 
-  const confirm = (restoreFocus = true) => {
-    const nextValue = draftToAmount(draft, showCents)
-    close(restoreFocus)
+  // Enter or the check on an empty field takes the suggestion as if it were typed;
+  // clicking away from an empty field leaves the amount unset.
+  const confirm = (explicit = true) => {
+    const nextValue =
+      draftToAmount(draft, showCents) ??
+      (explicit ? roundAmount(suggestion ?? null, showCents) : null)
+    close(explicit)
     if (nextValue === currentValue) return
     if (!controlled) setInternalValue(nextValue)
     onConfirm?.(nextValue)
@@ -377,12 +388,17 @@ function MoneyFields({
     settled: mode === "editing",
     tone: text.tone,
   }
-  const symbol = <MoneySymbol format={format} editing={editing} />
-  const shown = text.tone !== "empty"
+  const symbol = (
+    <MoneySymbol
+      format={format}
+      editing={editing}
+      collapsed={text.tone === "empty"}
+    />
+  )
   return (
     <>
       <MoneySegment {...segment} position={text.cents ? "first" : "only"}>
-        {format.symbolFirst && shown && symbol}
+        {format.symbolFirst && symbol}
         <MoneyInput
           ref={wholeRef}
           aria-label={label}
@@ -392,7 +408,7 @@ function MoneyFields({
           placeholder={text.wholePlaceholder}
           onChange={(event) => state.updateWhole(event.currentTarget)}
         />
-        {!format.symbolFirst && !text.cents && shown && symbol}
+        {!format.symbolFirst && !text.cents && symbol}
       </MoneySegment>
       {text.cents && (
         <MoneySegment {...segment} position="last">

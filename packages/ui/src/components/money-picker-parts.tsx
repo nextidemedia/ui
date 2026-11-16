@@ -10,17 +10,25 @@ type MoneyTone = "set" | "suggested" | "empty"
 function MoneySymbol({
   format,
   editing,
+  collapsed = false,
 }: {
   format: MoneyFormat
   editing: boolean
+  /** Folds the symbol away while no amount is shown. */
+  collapsed?: boolean
 }) {
   return (
     <span
       aria-hidden="true"
       className={cn(
-        "shrink-0 transition-colors duration-[var(--nextide-motion-control)] motion-reduce:transition-none",
+        "inline-block shrink-0 overflow-hidden whitespace-nowrap transition-[max-width,margin,opacity,color] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
         editing && "text-muted-foreground",
-        format.symbolSpaced && (format.symbolFirst ? "mr-1" : "ml-1")
+        collapsed
+          ? "m-0 max-w-0 opacity-0"
+          : cn(
+              "max-w-[4em] opacity-100",
+              format.symbolSpaced && (format.symbolFirst ? "mr-1" : "ml-1")
+            )
       )}
     >
       {format.symbol}
@@ -135,8 +143,8 @@ const MoneyInput = React.forwardRef<
         readOnly={!editing}
         tabIndex={editing ? 0 : -1}
         className={cn(
-          "h-full min-w-0 border-0 bg-transparent p-0 transition-[width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] outline-none placeholder:text-muted-foreground motion-reduce:transition-none",
-          editing ? "text-right placeholder:italic" : "pointer-events-none",
+          "h-full min-w-0 border-0 bg-transparent p-0 text-right transition-[width] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] outline-none placeholder:text-muted-foreground motion-reduce:transition-none",
+          editing ? "placeholder:italic" : "pointer-events-none",
           className
         )}
         {...props}
