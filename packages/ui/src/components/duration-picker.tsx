@@ -1,9 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, Pencil } from "lucide-react"
-
-import { Button } from "@nextide/ui/components/button"
+import { EditToggle, focusEditToggle } from "@nextide/ui/components/edit-toggle"
 import { cn } from "@nextide/ui/lib/utils"
 
 type DurationValue = {
@@ -191,7 +189,7 @@ function useDurationPickerState({
     setEditing(false)
     onEditingChange?.(false)
     onConfirm?.(nextValue)
-    if (restoreFocus) toggleRef.current?.focus()
+    if (restoreFocus) focusEditToggle(toggleRef.current)
   }
 
   const shownDraft = editing ? draft : durationToDraft(currentValue)
@@ -384,34 +382,13 @@ function DurationToggle({
 }) {
   const { editing, confirm, toggleRef } = state
   return (
-    <Button
+    <EditToggle
       ref={toggleRef}
-      type="button"
-      variant="secondary"
-      size="icon-lg"
+      editing={editing}
       aria-label={editing ? "Save duration" : "Edit duration"}
       disabled={disabled}
-      className={cn(
-        "relative size-12 overflow-hidden transition-[border-radius,transform] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
-        editing ? "rounded-xl" : "rounded-l-none rounded-r-xl"
-      )}
       onClick={editing ? () => confirm() : undefined}
-    >
-      <Pencil
-        aria-hidden="true"
-        className={cn(
-          "absolute transition-[opacity,transform] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none",
-          editing ? "scale-75 rotate-45 opacity-0" : "scale-100 opacity-100"
-        )}
-      />
-      <Check
-        aria-hidden="true"
-        className={cn(
-          "absolute transition-[opacity,transform] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none",
-          editing ? "scale-100 opacity-100" : "scale-75 -rotate-45 opacity-0"
-        )}
-      />
-    </Button>
+    />
   )
 }
 

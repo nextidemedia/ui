@@ -1,9 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, Pencil } from "lucide-react"
-
-import { Button } from "@nextide/ui/components/button"
+import { EditToggle, focusEditToggle } from "@nextide/ui/components/edit-toggle"
 import { cn } from "@nextide/ui/lib/utils"
 import {
   amountToDraft,
@@ -205,8 +203,7 @@ function useMoneyPickerState({
   const close = (restoreFocus: boolean) => {
     setMode("resting")
     onEditingChange?.(false)
-    // Focus returns to the toggle for the next keystroke without lighting it up.
-    if (restoreFocus) toggleRef.current?.focus({ focusVisible: false })
+    if (restoreFocus) focusEditToggle(toggleRef.current)
   }
 
   const startEditing = () => {
@@ -490,48 +487,21 @@ function MoneyToggle({
 }) {
   const { mode, confirm, toggleRef } = state
   const editing = mode !== "resting"
-  const compact = size === "compact"
   const name = lowerFirst(label)
-  const icon =
-    "absolute transition-[opacity,transform] duration-[var(--nextide-motion-control)] ease-[var(--nextide-ease-out-quart)] motion-reduce:transition-none"
   return (
-    <Button
+    <EditToggle
       ref={toggleRef}
-      type="button"
-      variant={compact ? "ghost" : "secondary"}
-      size={compact ? "icon-xs" : "icon-lg"}
+      editing={editing}
+      size={size}
       aria-label={editing ? "Save " + name : "Edit " + name}
       disabled={disabled}
       className={cn(
-        "relative overflow-hidden bg-clip-border transition-[border-radius,opacity,background-color] duration-[var(--nextide-motion-layout)] ease-[var(--nextide-ease-in-out-quart)] motion-reduce:transition-none",
-        compact
-          ? cn(
-              "size-6 rounded-md text-muted-foreground [&_svg]:size-3",
-              !editing &&
-                "opacity-60 group-hover/money:opacity-100 focus-visible:opacity-100"
-            )
-          : cn(
-              "size-12",
-              editing ? "rounded-xl" : "rounded-l-none rounded-r-xl"
-            )
+        size === "compact" &&
+          !editing &&
+          "opacity-60 group-hover/money:opacity-100 focus-visible:opacity-100"
       )}
       onClick={editing ? () => confirm() : undefined}
-    >
-      <Pencil
-        aria-hidden="true"
-        className={cn(
-          icon,
-          editing ? "scale-75 rotate-45 opacity-0" : "scale-100 opacity-100"
-        )}
-      />
-      <Check
-        aria-hidden="true"
-        className={cn(
-          icon,
-          editing ? "scale-100 opacity-100" : "scale-75 -rotate-45 opacity-0"
-        )}
-      />
-    </Button>
+    />
   )
 }
 
