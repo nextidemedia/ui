@@ -28,8 +28,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: qualification-${{ github.workflow }}-${{ inputs.source_sha || github.ref }}-${{ inputs.profile || 'full' }}
-  cancel-in-progress: true
+  # Main pushes and the schedule share a queue. Explicit requests use their run ID.
+  group: >-
+    qualification-${{ github.workflow }}-${{
+      inputs.source_sha && format('{0}-{1}', inputs.source_sha, github.run_id)
+      || (github.event_name == 'push' || github.event_name == 'schedule') && 'main'
+      || github.event_name == 'pull_request' && github.ref
+      || github.run_id }}-${{ inputs.profile || 'full' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' && !inputs.source_sha }}
 
 jobs:
   correctness:
