@@ -179,7 +179,7 @@ there is no starter Vitest suite.
 
 ## Releasing
 
-1. Update the package version in `packages/ui/package.json`.
+1. Update `packages/ui/package.json` and the install examples in `packages/ui/README.md`.
 2. Run `just qualify-deploy` and the package dry run above (`just qualify` includes Quality too).
 3. Merge the release commit and create a matching `v<version>` tag on that merge.
 4. Run **Publish @nextide/ui** manually with the exact tag.
