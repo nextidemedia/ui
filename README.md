@@ -48,7 +48,8 @@ The [shared baseline](https://github.com/nextidemedia/meta/blob/main/docs/develo
 sets complexity 12, function length 100, and source/test LOC limits. All source
 files meet the 600-line limit and browser suites meet the 900-line test limit;
 Oxlint counts nonblank lines, including comments, with no size exceptions. Accessibility exceptions explain specific SVG,
-forwarded-prop, or scroll-region semantics. Vite+ 1.3.0 owns lint and builds; TypeScript 7.0.2 owns compiler checks and declarations.
+forwarded-prop, or scroll-region semantics. Vite+ runs lint and builds, and
+TypeScript checks types and generates declarations.
 The official React Hooks plugin retains three rules where native parity is incomplete.
 Prettier remains the formatter.
 
@@ -95,13 +96,9 @@ This will place the ui components in the `packages/ui/src/components` directory.
 
 ## Consuming `@nextide/ui`
 
-The package expects React 19 and Tailwind CSS 4. Use compatible manifest ranges
-and commit the consumer's lockfile:
-
-```bash
-npm install @nextide/ui@2.7.1
-npm install --save-dev tailwindcss@4.3.3 @tailwindcss/vite@4.3.3
-```
+`@nextide/ui` requires React 19 and Tailwind CSS 4. Use the
+[installation guide](packages/ui/README.md#install) for the install commands and
+commit your lockfile.
 
 Vite consumers need the Tailwind CSS Vite plugin. Import the shared stylesheet
 once in the application entry point, before app-specific styles:
@@ -146,7 +143,7 @@ function DetailsTrigger() {
 
 Do not import from `src` or `dist`, and do not copy shared components into a
 consumer. Fix reusable behavior here, publish a release, then update the
-consumer's exact package version. See [packages/ui/README.md](packages/ui/README.md)
+dependency in the consumer and commit the updated lockfile. See [packages/ui/README.md](packages/ui/README.md)
 for the npm-facing quick start and [docs/component-map.md](docs/component-map.md)
 for the complete component map.
 
@@ -170,8 +167,10 @@ npm pack --dry-run --access public
 Install Chromium once, then run the explicit, headless `npm run qualify` gate for packed-package consumer resolution and
 representative Chromium interaction, accessibility, and responsive checks.
 Use `just qualify` for all checks or `just qualify-deploy` for release validation.
-Direct dependencies are pinned exactly. The workspace also enforces a seven-day release age (except native E2E packages),
-strict peer dependencies, and explicitly approved dependency install scripts.
+Workspace manifests use compatible version ranges, and `npm ci` installs the
+versions from the root lockfile. The workspace also enforces a seven-day release
+age (except native E2E packages), strict peer dependencies, and explicitly
+approved dependency install scripts.
 The 2026-10-22 dependency refresh uses the maintainer's explicit waiver of the
 release-age hold for latest stable versions.
 The library uses `vp pack` in unbundled mode, preserving public `.js`/`.d.ts`
@@ -180,7 +179,7 @@ there is no starter Vitest suite.
 
 ## Releasing
 
-1. Update `packages/ui/package.json` and the install examples in both READMEs.
+1. Update `packages/ui/package.json` and the install examples in `packages/ui/README.md`.
 2. Run `just qualify-deploy` and the package dry run above (`just qualify` includes Quality too).
 3. Merge the release commit and create a matching `v<version>` tag on that merge.
 4. Run **Publish @nextide/ui** manually with the exact tag.
