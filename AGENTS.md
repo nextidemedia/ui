@@ -12,6 +12,7 @@
 
 - Branch from `main` and target it; do not build on unmerged branches.
 - Never push directly to `main` unless the user explicitly asks.
+- Push release tags, run production deploys and publish packages only when the user asks.
 - Update branches only to resolve conflicts; do not rebase or repeat reviews just because `main` moved.
 - Use Conventional Commits.
 - Do not merge with failing or missing required checks.
@@ -19,7 +20,7 @@
 - Use the `grafana` MCP, datasource `loki`, for read-only production logs bounded by service and UTC window.
 - Deploying to dev needs no approval.
 - A merge the caller explicitly allowed counts as approval to deploy an internal production service.
-- Obtain explicit caller approval before deploying a user-facing production service (Kraken, Daedalus once live).
+- Obtain explicit caller approval before deploying a user-facing production service (Kraken, Live, Daedalus once live).
 
 ## Runtime boundaries
 
