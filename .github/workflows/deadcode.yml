@@ -23,7 +23,7 @@ jobs:
         with:
           node-version-file: .node-version
           package-manager-cache: false
-      - run: npm install --global npm@12.2.1
+      - run: npm install --global "$(node -p 'require("./package.json").packageManager')"
       - run: just deadcode-setup
       - run: just deadcode
       - uses: nextidemedia/ui/.github/actions/upload-owned-artifact@0ef8b5a3449daf805bb41d5d77b65d6595a26139
