@@ -6,8 +6,9 @@ Run `npm run dev`, then open [http://127.0.0.1:5174](http://127.0.0.1:5174) to v
 
 ## Development checks
 
-Install Node 26.12.1 (matching `.node-version` and CI), npm 12.2.1, and `just`. On Windows, install PowerShell 7.5+
-with `pwsh` available on PATH.
+Install the Node version from `.node-version`, the npm version specified by the
+`packageManager` field in the root `package.json`, and `just`. Windows users also
+need PowerShell 7.5 or later and `pwsh` on PATH.
 
 - `just setup` installs the frozen workspace lockfile and activates the tracked
   commit hook. For an already prepared checkout, run `just hooks-install`.

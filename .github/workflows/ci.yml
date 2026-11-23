@@ -63,7 +63,7 @@ jobs:
         with:
           node-version-file: .node-version
           package-manager-cache: false
-      - run: npm install --global npm@12.2.1
+      - run: npm install --global "$(node -p 'require("./package.json").packageManager')"
       - run: npm ci
       - name: Install just
         # Direct asset installation avoids the release-discovery failure on fresh runners.
