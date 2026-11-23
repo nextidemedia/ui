@@ -9,7 +9,7 @@ updates:
       timezone: Europe/Berlin
     cooldown:
       default-days: 7
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 0
     groups:
       security:
         applies-to: security-updates
@@ -72,7 +72,7 @@ updates:
       timezone: Europe/Berlin
     cooldown:
       default-days: 7
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 0
     groups:
       security:
         applies-to: security-updates
