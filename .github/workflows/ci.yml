@@ -28,17 +28,112 @@ permissions:
   contents: read
 
 concurrency:
-  # Only first attempts of automatic full runs share the main queue.
+  # Supersede old PR runs, including scope selection.
   group: >-
     qualification-${{ github.workflow }}-${{
       inputs.source_sha && format('{0}-{1}', inputs.source_sha, github.run_id)
-      || (github.event_name == 'push' || github.event_name == 'schedule') && github.run_attempt == '1' && 'main'
       || github.event_name == 'pull_request' && github.ref
       || github.run_id }}-${{ inputs.profile || 'full' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' && !inputs.source_sha }}
 
 jobs:
+  scope:
+    name: Select qualification scope
+    if: ${{ !inputs.source_sha && !inputs.profile && (github.event_name == 'pull_request' || github.event_name == 'push') }}
+    permissions: {}
+    runs-on: [self-hosted, Linux, X64, nextide-ci-docker]
+    timeout-minutes: 2
+    outputs:
+      passive_only: ${{ steps.changes.outputs.passive_only }}
+    steps:
+      - id: changes
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.event.after }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          import tempfile
+
+          # Only these Markdown files are passive. The package README, agent and
+          # design inputs, assets, fixtures and unclassified paths qualify normally.
+          passive_docs = {
+              b".github/actions/upload-owned-artifact/README.md",
+              b"README.md",
+              b"docs/coding-guidance.md",
+              b"docs/coding-guidance/typescript-application.md",
+              b"docs/component-map.md",
+              b"docs/responsive-support.md",
+          }
+          regular_file_modes = (b":000000 100644 ", b":100644 100644 ", b":100644 000000 ")
+
+          def git(directory, *args):
+              return subprocess.check_output(
+                  ["git", "-C", directory, *args],
+                  env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
+                  timeout=20,
+              )
+
+          def passive_only():
+              event = os.environ["GITHUB_EVENT_NAME"]
+              source = os.environ["GITHUB_SHA"]
+              if event == "pull_request":
+                  base = os.environ.get("PR_BASE", "")
+              elif event == "push" and source == os.environ.get("PUSH_AFTER"):
+                  base = os.environ.get("PUSH_BEFORE", "")
+              else:
+                  return False
+              if any(not re.fullmatch(r"[0-9a-f]{40}", sha) or sha == "0" * 40 for sha in (base, source)):
+                  return False
+
+              # The repository is public. Fetch only commit and tree objects into
+              # a bare repository, independently of any branch or PR ref moving.
+              remote = f'{os.environ["GITHUB_SERVER_URL"]}/{os.environ["GITHUB_REPOSITORY"]}.git'
+              with tempfile.TemporaryDirectory(dir=os.environ["RUNNER_TEMP"]) as directory:
+                  git(directory, "init", "--bare", "--quiet")
+                  git(directory, "fetch", "--quiet", "--depth=1", "--filter=blob:none",
+                      "--no-tags", remote, base, source)
+                  if event == "pull_request":
+                      # Read literal parents even in the shallow repository.
+                      header = git(directory, "cat-file", "commit", source).split(b"\n\n", 1)[0]
+                      parents = [line[7:] for line in header.splitlines() if line.startswith(b"parent ")]
+                      if parents != [base.encode(), os.environ.get("PR_HEAD", "").encode()]:
+                          return False
+                  # Both ends of a rename appear as independent paths.
+                  diff = git(directory, "diff-tree", "-r", "-z", "--no-renames", "--ignore-submodules=none", base, source)
+
+              if not diff.endswith(b"\0"):
+                  return False
+              records = diff[:-1].split(b"\0")
+              return all(
+                  path in passive_docs and header.startswith(regular_file_modes)
+                  for header, path in zip(records[::2], records[1::2], strict=True)
+              )
+
+          try:
+              if passive_only():
+                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                      print("passive_only=true", file=output)
+          except (OSError, subprocess.SubprocessError, ValueError):
+              print("Change evidence unavailable. Running qualification.")
+          PY
+
   correctness:
+    needs: scope
+    if: ${{ !cancelled() }}
+    concurrency:
+      # Only first attempts doing full qualification share the main queue.
+      group: >-
+        ${{ needs.scope.outputs.passive_only != 'true' && !inputs.source_sha
+            && (github.event_name == 'push' || github.event_name == 'schedule') && github.run_attempt == '1'
+            && format('qualification-{0}-main-{1}', github.workflow, inputs.profile || 'full')
+            || format('qualification-correctness-{0}', github.run_id) }}
+      # Scope jobs can finish out of order. Preserve each pending qualification.
+      queue: max
     permissions:
       contents: read
       id-token: write
@@ -54,18 +149,24 @@ jobs:
         run: |
           case "$PROFILE" in full|deploy) ;; *) echo "Unknown profile: $PROFILE"; exit 1 ;; esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ needs.scope.outputs.passive_only != 'true' }}
         with:
           persist-credentials: false
           ref: ${{ inputs.source_sha || github.sha }}
       - id: source
+        if: ${{ needs.scope.outputs.passive_only != 'true' }}
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: ${{ needs.scope.outputs.passive_only != 'true' }}
         with:
           node-version-file: .node-version
           package-manager-cache: false
       - run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+        if: ${{ needs.scope.outputs.passive_only != 'true' }}
       - run: npm ci
+        if: ${{ needs.scope.outputs.passive_only != 'true' }}
       - name: Install just
+        if: ${{ needs.scope.outputs.passive_only != 'true' }}
         # Direct asset installation avoids the release-discovery failure on fresh runners.
         # SHA-256 from casey/just's official 1.59.0 SHA256SUMS release asset.
         run: |
@@ -82,13 +183,15 @@ jobs:
           "$install_dir/just" --version
           echo "$install_dir" >> "$GITHUB_PATH"
       - name: Quality
-        if: ${{ (inputs.profile || 'full') == 'full' }}
+        if: ${{ needs.scope.outputs.passive_only != 'true' && (inputs.profile || 'full') == 'full' }}
         run: just quality
       - name: Correctness lint
-        if: ${{ inputs.profile == 'deploy' }}
+        if: ${{ needs.scope.outputs.passive_only != 'true' && inputs.profile == 'deploy' }}
         run: just lint-correctness
       - run: npm run typecheck
+        if: ${{ needs.scope.outputs.passive_only != 'true' }}
       - name: Install Chromium
+        if: ${{ needs.scope.outputs.passive_only != 'true' }}
         run: |
           if node -e "process.exit(require('./package.json').devDependencies?.['@e2e-dev/web'] ? 0 : 1)"; then
             npm exec -- e2e-web install chromium
@@ -96,15 +199,16 @@ jobs:
             npm exec -- playwright install chromium
           fi
       - name: Qualify packed package and browser
+        if: ${{ needs.scope.outputs.passive_only != 'true' }}
         run: npm run qualify
       - name: Preserve native E2E evidence
-        if: ${{ always() && !(github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor == 'dependabot[bot]')) }}
+        if: ${{ always() && needs.scope.outputs.passive_only != 'true' && !(github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor == 'dependabot[bot]')) }}
         uses: nextidemedia/ui/.github/actions/upload-owned-artifact@0ef8b5a3449daf805bb41d5d77b65d6595a26139
         with:
           name: native-e2e-${{ github.sha }}
           path: output/e2e/
           if-no-files-found: ignore
-      - if: ${{ always() && github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor == 'dependabot[bot]') }}
+      - if: ${{ always() && needs.scope.outputs.passive_only != 'true' && github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor == 'dependabot[bot]') }}
         run: echo 'Owned artifact uploads are unavailable for fork and Dependabot checks.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Qualification summary
@@ -113,5 +217,11 @@ jobs:
           PROFILE: ${{ inputs.profile || 'full' }}
           SOURCE_SHA: ${{ steps.source.outputs.sha || inputs.source_sha || github.sha }}
           CORRECTNESS: ${{ job.status }}
+          PASSIVE_ONLY: ${{ needs.scope.outputs.passive_only }}
         run: |
+          if [[ "$PASSIVE_ONLY" == true && "$CORRECTNESS" == success ]]; then
+            printf 'Qualification %s: %s. Passed without package or browser checks because only documentation changed.\n' \
+              "$PROFILE" "$SOURCE_SHA" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           printf 'Qualification %s: %s; Correctness=%s\n' "$PROFILE" "$SOURCE_SHA" "$CORRECTNESS" | tee -a "$GITHUB_STEP_SUMMARY"
