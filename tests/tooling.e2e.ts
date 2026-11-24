@@ -1,4 +1,4 @@
-import { test } from "e2e"
+import { describe, test } from "e2e"
 import assert from "node:assert/strict"
 import { execFileSync, spawnSync } from "node:child_process"
 import { existsSync } from "node:fs"
@@ -13,10 +13,230 @@ import {
 } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { delimiter, dirname, join, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
+import { fileURLToPath, pathToFileURL } from "node:url"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 import probes from "./fixtures/lint-probes.json" with { type: "json" }
+
+async function qualificationScopeFixture(directory: string) {
+  const workflow = await readFile(
+    join(root, ".github/workflows/ci.yml"),
+    "utf8"
+  )
+  // Execute the actual selector that runs before candidate checkout.
+  const step = workflow.split("\n      - id: changes\n")[1]
+  const command = step?.match(/^        run: \|\n((?:^ {10}.*\n|^\n)+)/m)
+  assert(command, "Qualification scope command is missing")
+  const script = command[1].replace(/^ {10}/gm, "")
+  const repo = join(directory, "ui.git")
+  const output = join(directory, "output")
+  const git = (...args: string[]) =>
+    execFileSync("git", args, { cwd: repo, encoding: "utf8" }).trim()
+  await mkdir(repo)
+  git("init", "--quiet")
+  git("config", "user.name", "UI tooling")
+  git("config", "user.email", "tooling@example.invalid")
+  git("config", "commit.gpgSign", "false")
+  git("config", "uploadpack.allowFilter", "true")
+  git("config", "uploadpack.allowAnySHA1InWant", "true")
+
+  async function commit(
+    changes: Record<string, string | null>,
+    parent?: string
+  ) {
+    if (parent) git("checkout", "--detach", "--quiet", parent)
+    for (const [path, contents] of Object.entries(changes)) {
+      const file = join(repo, path)
+      if (contents === null) {
+        await rm(file)
+      } else {
+        await mkdir(dirname(file), { recursive: true })
+        await writeFile(file, contents)
+      }
+    }
+    git("add", "--all")
+    git("commit", "--quiet", "-m", "Scope fixture")
+    return git("rev-parse", "HEAD")
+  }
+
+  async function expectScope(
+    name: string,
+    skip: boolean,
+    event: Record<string, string>
+  ) {
+    await writeFile(output, "")
+    const result = spawnSync("bash", ["-eo", "pipefail"], {
+      cwd: directory,
+      input: script,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        GITHUB_SERVER_URL: pathToFileURL(directory).href,
+        GITHUB_REPOSITORY: "ui",
+        GITHUB_OUTPUT: output,
+        RUNNER_TEMP: directory,
+        ...event,
+      },
+    })
+    const details = [
+      name,
+      result.stdout,
+      result.stderr,
+      result.error?.message,
+    ].join("\n")
+    assert.equal(result.status, 0, details)
+    assert.equal(
+      await readFile(output, "utf8"),
+      skip ? "passive_only=true\n" : "",
+      details
+    )
+  }
+
+  return { git, commit, expectScope }
+}
+
+async function verifyPullRequestScope() {
+  const directory = await mkdtemp(join(tmpdir(), "nextide-ui-scope-"))
+  try {
+    const { git, commit, expectScope } =
+      await qualificationScopeFixture(directory)
+    const shipped = "packages/ui/README.md"
+    const base = await commit({
+      "README.md": "Guide",
+      [shipped]: "Package guide",
+    })
+    const merge = (head: string) =>
+      git(
+        "commit-tree",
+        `${head}^{tree}`,
+        "-p",
+        base,
+        "-p",
+        head,
+        "-m",
+        "PR merge"
+      )
+    const pr = (head: string, source = merge(head)) => ({
+      GITHUB_EVENT_NAME: "pull_request",
+      GITHUB_SHA: source,
+      PR_BASE: base,
+      PR_HEAD: head,
+    })
+    const passive = await commit(
+      { "README.md": "Updated guide", "docs/component-map.md": "Map" },
+      base
+    )
+    const deletion = await commit({ "README.md": null }, base)
+    const activeChanges: Record<string, Record<string, string | null>> = {
+      "mixed PR": {
+        "README.md": "Updated",
+        "packages/ui/src/input.ts": "export {}",
+      },
+      "active deletion": { [shipped]: null },
+      "active to passive rename": {
+        [shipped]: null,
+        "docs/component-map.md": "Package guide",
+      },
+      "passive to active rename": {
+        "README.md": null,
+        "packages/ui/docs.md": "Guide",
+      },
+    }
+
+    await expectScope("passive PR", true, pr(passive))
+    await expectScope("passive deletion", true, pr(deletion))
+    await expectScope(
+      "PR merge does not contain the event head",
+      false,
+      pr(passive, merge(deletion))
+    )
+    git("checkout", "--detach", "--quiet", base)
+    await rm(join(directory, "ui.git/README.md"))
+    await symlink(shipped, join(directory, "ui.git/README.md"))
+    await expectScope(
+      "README changed to a symlink",
+      false,
+      pr(await commit({}))
+    )
+    for (const [name, changes] of Object.entries(activeChanges)) {
+      await expectScope(name, false, pr(await commit(changes, base)))
+    }
+    for (const path of [
+      shipped,
+      "docs/brand_assets/NEXTIDE_BRAND_AGENT_GUIDE.md",
+      "docs/new-note.md",
+      "packages/ui/src/assets/logos/nextide-mark-white.png",
+      "scripts/ci/tool.mjs",
+      "tests/fixtures/packed-regressions.mjs",
+    ]) {
+      const changed = await commit({ [path]: "Changed" }, base)
+      await expectScope(path, false, pr(changed))
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+}
+
+async function verifyPushScope() {
+  const directory = await mkdtemp(join(tmpdir(), "nextide-ui-scope-"))
+  try {
+    const { commit, expectScope } = await qualificationScopeFixture(directory)
+    const base = await commit({ "README.md": "Guide" })
+    const source = await commit(
+      { "packages/ui/src/input.ts": "export {}" },
+      base
+    )
+    const passive = await commit({ "README.md": "Updated guide" }, source)
+    const replacement = await commit({ "README.md": "Replacement guide" }, base)
+    const push = (before: string, after: string) => ({
+      GITHUB_EVENT_NAME: "push",
+      GITHUB_SHA: after,
+      PUSH_BEFORE: before,
+      PUSH_AFTER: after,
+    })
+
+    for (const [name, before, after, skip] of [
+      ["passive push", source, passive, true],
+      ["multi-commit push including source", base, passive, false],
+      ["non-ancestor push deleting source", source, replacement, false],
+      ["missing push base", "0".repeat(40), passive, false],
+      ["unavailable push base", "1".repeat(40), passive, false],
+      ["empty comparison", base, base, false],
+    ] as const) {
+      await expectScope(name, skip, push(before, after))
+    }
+    await expectScope("push event points at a different commit", false, {
+      ...push(source, passive),
+      GITHUB_SHA: replacement,
+    })
+    for (const event of ["schedule", "workflow_dispatch", "workflow_call"]) {
+      await expectScope(event, false, {
+        ...push(source, passive),
+        GITHUB_EVENT_NAME: event,
+      })
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+}
+
+describe("Qualification scope", () => {
+  // Match the Linux qualification runner, which supplies Bash and Python.
+  const options = {
+    platforms: ["api" as const],
+    skip: process.platform !== "linux",
+  }
+  test(
+    "PRs skip only passive changes in the exact merge tree",
+    options,
+    verifyPullRequestScope
+  )
+  test(
+    "main pushes use the full event range and fall back on incomplete evidence",
+    options,
+    verifyPushScope
+  )
+})
 
 test(
   "native file budgets count comments, skip blanks and retain source/test discovery",
