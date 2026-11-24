@@ -11,10 +11,3 @@ output/
 # Upstream-owned copy from meta; preserve its original formatting.
 AGENTS.md
 docs/brand_assets/NEXTIDE_BRAND_AGENT_GUIDE.md
-# Passive repository documentation.
-/.github/actions/upload-owned-artifact/README.md
-/README.md
-/docs/coding-guidance.md
-/docs/coding-guidance/typescript-application.md
-/docs/component-map.md
-/docs/responsive-support.md

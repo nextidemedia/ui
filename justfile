@@ -26,8 +26,8 @@ lint:
 fmt:
     npm run format
 
-fmt-check:
-    npm run format:check
+fmt-check *args:
+    npm run format:check -- {{_forward_args}}
 
 typecheck:
     npm run typecheck
@@ -41,7 +41,14 @@ test-integration *args:
 
 check: fmt-check lint typecheck test
 
-quality: fmt-check lint
+# Match the exact passive documentation paths in the Qualification workflow.
+quality: (fmt-check \
+    '!./.github/actions/upload-owned-artifact/README.md' \
+    '!./README.md' \
+    '!./docs/coding-guidance.md' \
+    '!./docs/coding-guidance/typescript-application.md' \
+    '!./docs/component-map.md' \
+    '!./docs/responsive-support.md') lint
 
 # Both local and CI qualification use these same native rule profiles.
 lint-correctness:
