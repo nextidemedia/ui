@@ -39,14 +39,7 @@ concurrency:
 jobs:
   scope:
     name: Select qualification scope
-    if: ${{ !inputs.source_sha && !inputs.profile && (github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'schedule') }}
-    concurrency:
-      # Keep automatic main runs in admission order before the one-pending check queue.
-      group: >-
-        qualification-scope-${{ github.workflow }}-${{
-          (github.event_name == 'push' || github.event_name == 'schedule') && github.run_attempt == '1' && 'main'
-          || github.run_id }}
-      queue: max
+    if: ${{ !inputs.source_sha && !inputs.profile && (github.event_name == 'pull_request' || github.event_name == 'push') }}
     permissions: {}
     runs-on: [self-hosted, Linux, X64, nextide-ci-docker]
     timeout-minutes: 2
@@ -139,6 +132,8 @@ jobs:
             && (github.event_name == 'push' || github.event_name == 'schedule') && github.run_attempt == '1'
             && format('qualification-{0}-main-{1}', github.workflow, inputs.profile || 'full')
             || format('qualification-correctness-{0}', github.run_id) }}
+      # Scope jobs can finish out of order. Preserve each pending qualification.
+      queue: max
     permissions:
       contents: read
       id-token: write

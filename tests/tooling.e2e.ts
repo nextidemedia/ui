@@ -209,10 +209,6 @@ async function verifyPushScope() {
       ...push(source, passive),
       GITHUB_SHA: replacement,
     })
-    await expectScope("scheduled qualification", false, {
-      ...push(source, passive),
-      GITHUB_EVENT_NAME: "schedule",
-    })
   } finally {
     await rm(directory, { recursive: true, force: true })
   }
