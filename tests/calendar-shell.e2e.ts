@@ -217,43 +217,124 @@ test(
   }
 )
 
+type NotificationClockWindow = typeof window & {
+  advanceNotificationClock: (milliseconds: number) => void
+}
+
+// The pinned browser fixture has no clock API. Control timeout time in
+// this page while leaving the browser's input and exit animation native.
+function installNotificationClock() {
+  let now = Date.now()
+  let nextId = -1
+  const timers = new Map<number, { due: number; run: () => void }>()
+  const page: Window = window
+  const realSetTimeout = page.setTimeout.bind(page)
+  const realClearTimeout = page.clearTimeout.bind(page)
+  const clock = window as NotificationClockWindow
+
+  Date.now = () => now
+  page.setTimeout = (handler, delay = 0, ...args: unknown[]) => {
+    if (typeof handler === "string") {
+      return realSetTimeout(handler, delay, ...args)
+    }
+    const id = nextId--
+    timers.set(id, {
+      due: now + Math.max(1, delay),
+      run: () => handler(...args),
+    })
+    return id
+  }
+  page.clearTimeout = (id) => {
+    if (id !== undefined && id < 0) timers.delete(id)
+    else realClearTimeout(id)
+  }
+  clock.advanceNotificationClock = (milliseconds) => {
+    const end = now + milliseconds
+    while (true) {
+      const next = [...timers].sort(([, a], [, b]) => a.due - b.due)[0]
+      if (!next || next[1].due > end) break
+      const [id, { due, run }] = next
+      timers.delete(id)
+      now = due
+      run()
+    }
+    now = end
+  }
+}
+
 test(
   "notification expiry preserves overlapping hover and focus pauses",
   { platforms: ["web"] },
   async ({ app, screen, browser }) => {
+    await browser.addInitScript(installNotificationClock)
     await app.open("/qualification")
     const trigger = screen.getByRole("button", "success notification")
-    await trigger.tap()
-    const notification = browser.locator('[data-slot="toast"]')
-    await notification.hover()
-    await expect(notification).toBeVisible()
+    const toastSelector = '[data-slot="toast"]'
+    const notification = browser.locator(toastSelector)
+    const openNotification = browser.locator(
+      `${toastSelector}:not([data-ending-style])`
+    )
     const dismiss = notification.getByRole("button", "Dismiss notification")
-    await dismiss.focus()
-    async function remainsFor(duration: number) {
-      const started = Date.now()
-      await expect
-        .poll(
-          async () =>
-            (await notification.count()) === 1 ? Date.now() - started : -1,
-          { timeout: duration + 1500 }
-        )
-        .toBeGreaterThanOrEqual(duration)
+
+    async function focusDismiss() {
+      await browser.keyboard.press("F6")
+      await browser.keyboard.press("Tab")
+      await browser.keyboard.press("Tab")
+      await expect(dismiss).toBeFocused()
     }
-    await remainsFor(4500)
-    await browser.mouse.move(0, 0)
-    await expect(dismiss).toBeFocused()
-    await remainsFor(4500)
-    await trigger.focus()
-    await remainsFor(3200)
-    await expect(notification).toHaveCount(0, { timeout: 2800 })
+
+    async function advanceClock(milliseconds: number) {
+      await browser.evaluate((elapsed) => {
+        const clock = window as NotificationClockWindow
+        clock.advanceNotificationClock(elapsed)
+        return null
+      }, milliseconds)
+    }
+
+    async function remainsOpenFor(milliseconds: number) {
+      await advanceClock(milliseconds)
+      expect(await openNotification.count()).toBe(1)
+    }
+
+    async function expiresAfterResume() {
+      await remainsOpenFor(3999)
+      await advanceClock(1)
+      // Closing starts at the timer boundary. Removal follows the exit animation.
+      expect(await openNotification.count()).toBe(0)
+      await browser.evaluate(async (selector) => {
+        const toast = document.querySelector(selector)
+        if (!toast) return null
+        await new Promise<void>((resolve) => {
+          const observer = new MutationObserver(() => {
+            if (toast.isConnected) return
+            observer.disconnect()
+            resolve()
+          })
+          observer.observe(document.body, { childList: true, subtree: true })
+        })
+        return null
+      }, toastSelector)
+      expect(await notification.count()).toBe(0)
+    }
 
     await trigger.tap()
     await notification.hover()
-    await dismiss.focus()
-    await trigger.focus()
-    await remainsFor(4500)
+    await focusDismiss()
+    await remainsOpenFor(4500)
     await browser.mouse.move(0, 0)
-    await remainsFor(3200)
-    await expect(notification).toHaveCount(0, { timeout: 2800 })
+    await expect(dismiss).toBeFocused()
+    await remainsOpenFor(4500)
+    await browser.keyboard.press("Tab")
+    await expect(trigger).toBeFocused()
+    await expiresAfterResume()
+
+    await trigger.tap()
+    await notification.hover()
+    await focusDismiss()
+    await browser.keyboard.press("Tab")
+    await expect(trigger).toBeFocused()
+    await remainsOpenFor(4500)
+    await browser.mouse.move(0, 0)
+    await expiresAfterResume()
   }
 )
