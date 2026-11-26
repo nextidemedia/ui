@@ -184,26 +184,61 @@ test(
   async ({ app, screen, browser }) => {
     await app.open("/?view=report")
     await screen.getByRole("button", /Primitives/).tap()
-    // Text of the real slide resting in view; null while sliding or on a loop clone.
-    const shownSlide = () =>
-      browser.evaluate(() => {
-        const viewport = document
-          .querySelector('[data-slot="carousel-viewport"]')!
-          .getBoundingClientRect()
-        const shown = [
-          ...document.querySelectorAll('[data-slot="carousel-content"] > *'),
-        ].find(
-          (slide) =>
-            Math.abs(slide.getBoundingClientRect().left - viewport.left) < 1
-        )
-        return shown?.getAttribute("data-slot") === "carousel-item"
-          ? shown.textContent
-          : null
-      })
+    const waitForSettledSlide = (label: string) =>
+      browser.evaluate((label) => {
+        const viewport = document.querySelector(
+          '[data-slot="carousel-viewport"]'
+        )!
+        const track = viewport.querySelector<HTMLElement>(
+          '[data-slot="carousel-content"]'
+        )!
+        return new Promise<null>((resolve) => {
+          const observer = new MutationObserver(check)
+          const events = new AbortController()
+          function check() {
+            const left = viewport.getBoundingClientRect().left
+            const shown = [...track.children].find(
+              (slide) => Math.abs(slide.getBoundingClientRect().left - left) < 1
+            )
+            if (
+              shown?.getAttribute("data-slot") !== "carousel-item" ||
+              shown.textContent !== label ||
+              track
+                .getAnimations()
+                .some(
+                  (animation) =>
+                    animation instanceof CSSTransition &&
+                    animation.transitionProperty === "transform" &&
+                    animation.playState !== "finished"
+                )
+            )
+              return
+
+            observer.disconnect()
+            events.abort()
+            resolve(null)
+          }
+
+          // The transform transition ends on a clone. The snap changes the track's style.
+          observer.observe(track, {
+            attributes: true,
+            attributeFilter: ["style", "class"],
+          })
+          track.addEventListener(
+            "transitionend",
+            (event: TransitionEvent) => {
+              if (event.target === track && event.propertyName === "transform")
+                check()
+            },
+            { signal: events.signal }
+          )
+          check()
+        })
+      }, label)
     await screen.getByRole("button", "Previous slide").tap()
-    await expect.poll(shownSlide).toBe("Safety review")
+    await waitForSettledSlide("Safety review")
     await screen.getByRole("button", "Next slide").tap()
-    await expect.poll(shownSlide).toBe("Campaign delivery")
+    await waitForSettledSlide("Campaign delivery")
     const slides = browser.locator(
       '[data-slot="carousel-content"] > [data-slot="carousel-item"]'
     )
@@ -224,10 +259,18 @@ test(
     const optionA = screen.getByRole("button", /^Option A/)
     const optionB = screen.getByRole("button", /^Option B/)
     const read = () =>
-      browser.evaluate(() => {
+      browser.evaluate(async () => {
         const node = [...document.querySelectorAll("button")].find((button) =>
           button.textContent?.startsWith("Option B")
         )!
+        const shadowTransition = node
+          .getAnimations()
+          .find(
+            (animation) =>
+              animation instanceof CSSTransition &&
+              animation.transitionProperty === "box-shadow"
+          )
+        await shadowTransition?.finished
         const style = getComputedStyle(node)
         const probe = document.createElement("span")
         probe.style.color = "var(--ring)"
@@ -256,7 +299,8 @@ test(
     await expect(optionA).toBeFocused()
     await optionA.press("Tab")
     await expect(optionB).toBeFocused()
-    await expect.poll(async () => (await read()).ringed).toBe(true)
-    expect((await read()).box).toEqual(resting.box)
+    const focused = await read()
+    expect(focused.ringed).toBe(true)
+    expect(focused.box).toEqual(resting.box)
   }
 )

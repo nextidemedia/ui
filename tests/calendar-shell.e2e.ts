@@ -137,16 +137,54 @@ test(
         await expect(frame).toHaveAttribute("data-drawer-collapsed", collapsed)
         await expect(frame).toHaveAttribute("data-collapsed", collapsed)
       }
-      // Reverse a collapse while its text is still leaving.
-      await browser.evaluate(async () => {
-        const toggle = document.querySelector<HTMLButtonElement>(
-          '[data-slot="sidebar-toggle"]'
-        )!
-        toggle.click()
-        await new Promise((resolve) => setTimeout(resolve, 0))
-        toggle.click()
-        return null
-      })
+      const reducedMotion = await browser.evaluate(
+        () => matchMedia("(prefers-reduced-motion: reduce)").matches
+      )
+      if (reducedMotion) {
+        // Reduced motion settles directly, with no text transition to interrupt.
+        await collapse.tap()
+        await expectSettled("true")
+        await screen.getByRole("button", "Expand sidebar").first().tap()
+      } else {
+        await browser.evaluate(async () => {
+          const panel = document.querySelector(
+            '[data-slot="navigation-panel-frame"]'
+          )!
+          const toggle = panel.querySelector<HTMLButtonElement>(
+            '[data-slot="sidebar-toggle"]'
+          )!
+          const text = panel.querySelector<HTMLElement>(
+            '[data-slot="sidebar-brand-text"]'
+          )!
+          const events = new AbortController()
+          try {
+            const fadeStarted = new Promise<void>((resolve) => {
+              text.addEventListener(
+                "transitionstart",
+                (event: TransitionEvent) => {
+                  if (event.target === text && event.propertyName === "opacity")
+                    resolve()
+                },
+                { signal: events.signal }
+              )
+            })
+            toggle.click()
+            await fadeStarted
+            if (
+              panel.getAttribute("data-drawer-collapsed") !== "true" ||
+              panel.getAttribute("data-collapsed") !== "false"
+            ) {
+              throw new Error(
+                "Sidebar text must start fading before its icons collapse"
+              )
+            }
+            toggle.click()
+          } finally {
+            events.abort()
+          }
+          return null
+        })
+      }
       await expectSettled("false")
       await collapse.tap()
       await expectSettled("true")
